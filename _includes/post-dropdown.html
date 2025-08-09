@@ -1,0 +1,6 @@
+<select id="post-selector" onchange="if (this.value) { window.location = this.value; }">
+  <option value="">Select a post…</option>
+  {% for post in site.posts %}
+    <option value="{{ post.url | relative_url }}">{{ post.title }}</option>
+  {% endfor %}
+</select>
