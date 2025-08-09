@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title }} · {{ site.title }}</title>
+  <!-- Link our custom stylesheet -->
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+</head>
+<body>
+  <div class="container">
+    <!-- Site title -->
+    <header>
+      <h1 class="site-title">{{ site.title }}</h1>
+      {% if site.description %}
+        <p class="site-description">{{ site.description }}</p>
+      {% endif %}
+      <!-- Post dropdown navigation -->
+      {% include post-dropdown.html %}
+    </header>
+
+    <!-- Page content will be injected here -->
+    <main>
+      {{ content }}
+    </main>
+  </div>
+</body>
+</html>
