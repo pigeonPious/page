@@ -1,3 +1,7 @@
-title: Your Blog Title
-description: Short description of the site.
+title: My Site
 theme: minima
+# if this is a *project* site (not username.github.io), set:
+# baseurl: "/REPO_NAME"
+# url: "https://USERNAME.github.io"
+# Show future posts if you’re dating them ahead:
+# future: true

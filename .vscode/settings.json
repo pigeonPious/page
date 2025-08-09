@@ -1,0 +1,19 @@
+{
+    "workbench.colorCustomizations": {
+        "commandCenter.border": "#e7e7e799",
+        "titleBar.activeBackground": "#fc00cf",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.inactiveBackground": "#fc00cf99",
+        "titleBar.inactiveForeground": "#e7e7e799"
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/._*": true
+    },
+    "hide-files.files": [],
+    "peacock.color": "#fc00cf"
+}

@@ -1,5 +1,6 @@
 ---
 layout: post
-title: "First Post"
+title: "First post"
+date: 2025-08-09 10:00:00 -0700
 ---
-Hello world. This is my first Jekyll post.
+Your content…
