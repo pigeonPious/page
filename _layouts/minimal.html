@@ -4,26 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ page.title }} · {{ site.title }}</title>
-  <!-- Link our custom stylesheet -->
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 </head>
 <body>
-  <div class="container">
-    <!-- Site title -->
-    <header>
-      <h1 class="site-title">{{ site.title }}</h1>
-      {% if site.description %}
-        <p class="site-description">{{ site.description }}</p>
-      {% endif %}
-      <!-- Post dropdown navigation -->
-      {% include post-dropdown.html %}
-    </header>
-
-
-      <!-- updated minimal layout -->><!-- Page content will be injected here -->
-    <main>
-      {{ content }}
-    </main>
-  </div>
+  <aside class="edge-nav" aria-label="Primary">
+    <a href="{{ '/' | relative_url }}">Home</a>
+    <a href="{{ '/archive/' | relative_url }}">Archive</a>
+    <a href="{{ '/about/' | relative_url }}">About</a>
+  </aside>
+  <main class="main">
+    <div class="wrap">
+      <header class="site-header">
+        <h1 class="site-title">{{ site.title }}</h1>
+        {% if site.description %}<p class="site-tagline">{{ site.description }}</p>{% endif %}
+        {% include post-dropdown.html %}
+      </header>
+      <article class="content">
+        {{ content }}
+      </article>
+      <footer class="site-footer">
+        <hr class="rule">
+        <p>© {{ site.time | date: "%Y" }} {{ site.title }}</p>
+      </footer>
+    </div>
+  </main>
 </body>
 </html>

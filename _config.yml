@@ -1,7 +1,6 @@
-title: My Site
-theme: minima
-# if this is a *project* site (not username.github.io), set:
-# baseurl: "/REPO_NAME"
-# url: "https://USERNAME.github.io"
-# Show future posts if you’re dating them ahead:
-# future: true
+title: Minimal Notes
+description: Light, distraction‑free writing
+url: ""
+permalink: /:year/:month/:day/:title/
+plugins:
+  - jekyll-feed
