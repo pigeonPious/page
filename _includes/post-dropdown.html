@@ -1,9 +1,0 @@
-<label for="post-selector" class="sr-only">Jump to post</label>
-<select id="post-selector" onchange="if (this.value) window.location=this.value;">
-  <option value="">Open older post…</option>
-  {% for post in site.posts %}
-    <option value="{{ post.url | relative_url }}">
-      {{ post.title }} — {{ post.date | date: "%b %-d, %Y" }}
-    </option>
-  {% endfor %}
-</select>

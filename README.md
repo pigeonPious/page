@@ -1,26 +1,30 @@
-# Minimal Notes (Jekyll)
 
-**What you get**
-- Minimal layout mixing “page” and a Linux editor gutter
-- Tall, narrow center column; small title; generous top whitespace
-- Left-edge vertical nav tabs; thin rules; typewriter-style font
-- Post dropdown (open older posts) and an archive page
-- Two sample posts + images
+# Left-like Blog (GitHub Pages)
 
-**Use**
-1. Copy everything to your repo root.
-2. Commit & push to `main`.
-3. GitHub Pages will build automatically.
-4. Home shows the latest post; use the dropdown or `/archive/` for older posts.
+A Jekyll blog styled to look like a minimalist Linux text editor window.
 
-**New post**
-Create `_posts/YYYY-MM-DD-title.md`:
+## Use
+1. Download and unzip.
+2. Push the folder to a GitHub repository named `<username>.github.io` (or any repo and set GitHub Pages to build from the `main` branch).
+3. Visit your Pages URL. Menus:
+   - **File** / **Edit**: placeholder entries (non-functional).
+   - **Navigation**: About, Contact, Blog.
+   - **View**: toggles Light/Dark (stored in localStorage).
+   - **Log**: lists all posts.
+
+## New posts
+Create a new file in `_posts` named `YYYY-MM-DD-title.md` with front matter:
+
 ```yaml
 ---
-layout: minimal
-title: "Post Title"
-date: 2025-08-10 09:00:00 -0700
+title: "Your Title"
+date: 2025-08-10
 ---
-Content…
-![Alt]({{ '/assets/img/my-img.png' | relative_url }})
 ```
+
+Then write in Markdown. To add images, put files in `assets/images/` and use:
+
+```md
+![alt text](/assets/images/your-image.png)
+```
+Images float right and are smaller than the text width by default.

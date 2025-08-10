@@ -1,9 +1,19 @@
-title: Minimal Notes
-description: Light, distraction-free writing
 
-url: "https://pigeonpious.github.io"   # your GitHub Pages host
-baseurl: "/page"                        # repo name for project pages
-
-permalink: /:year/:month/:day/:title/
-plugins:
-  - jekyll-feed
+title: "Left-like Blog"
+description: "A minimal blog styled like a Linux text editor window"
+url: ""  # set to your GitHub Pages URL if you have one
+baseurl: ""  # e.g. /repo-name if using a project site
+markdown: kramdown
+permalink: /blog/:title/
+collections:
+  posts:
+    output: true
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: post
+      comments: false
+      author: "Admin"
+      image_style: "float-right"

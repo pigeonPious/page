@@ -1,14 +1,20 @@
+
 ---
-layout: minimal
-title: Home
+layout: default
+title: Blog
 ---
-{% assign post = site.posts.first %}
-{% if post %}
-<h2>{{ post.title }}</h2>
-<p class="date">{{ post.date | date: "%B %-d, %Y · %-I:%M %p" }}</p>
-{{ post.content }}
-<hr class="rule">
-<p><a href="{{ '/archive/' | relative_url }}">Browse the archive →</a></p>
-{% else %}
-<p>No posts yet.</p>
-{% endif %}
+<div class="post-header">
+  <div class="post-date">{{ site.time | date: "%b %-d, %Y" }}</div>
+  <h1 class="post-title"># Blog</h1>
+</div>
+
+<ul class="post-list">
+{% for post in site.posts %}
+  <li>
+    <a href="{{ post.url | relative_url }}"><strong>{{ post.title }}</strong></a>
+    <div class="meta">{{ post.date | date: "%b %-d, %Y" }}</div>
+    <p>{{ post.excerpt | strip_html | truncate: 140 }}</p>
+    <hr class="soft">
+  </li>
+{% endfor %}
+</ul>
