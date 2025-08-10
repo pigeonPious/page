@@ -1,8 +1,8 @@
 
 title: "Left-like Blog"
 description: "A minimal blog styled like a Linux text editor window"
-url: ""  # set to your GitHub Pages URL if you have one
-baseurl: ""  # e.g. /repo-name if using a project site
+url: "https://pigeonpious.github.io"
+baseurl: "/page"   # << important for project sites
 markdown: kramdown
 permalink: /blog/:title/
 collections:
