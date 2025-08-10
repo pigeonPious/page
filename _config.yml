@@ -2,7 +2,7 @@
 title: "Left-like Blog"
 description: "A minimal blog styled like a Linux text editor window"
 url: "https://pigeonpious.github.io"
-baseurl: "/page"   # << important for project sites
+baseurl: "/page"
 markdown: kramdown
 permalink: /blog/:title/
 collections:
@@ -14,6 +14,4 @@ defaults:
       type: "posts"
     values:
       layout: post
-      comments: false
       author: "Admin"
-      image_style: "float-right"

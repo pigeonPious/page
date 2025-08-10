@@ -1,0 +1,25 @@
+
+<aside class="sidebar">
+  <h3>Log</h3>
+  <ul class="tree">
+    {%- assign posts_by_year = site.posts | group_by_exp: "p", "p.date | date: '%Y'" -%}
+    {%- for year in posts_by_year -%}
+      <li>
+        <details open>
+          <summary>{{ year.name }}</summary>
+          {%- assign months = year.items | group_by_exp: "p", "p.date | date: '%B'" -%}
+          {%- for month in months -%}
+            <div class="month">
+              <details open>
+                <summary>{{ month.name }}</summary>
+                {%- for post in month.items -%}
+                  <div class="post"><a href="{{ post.url | relative_url }}">{{ post.title }}</a></div>
+                {%- endfor -%}
+              </details>
+            </div>
+          {%- endfor -%}
+        </details>
+      </li>
+    {%- endfor -%}
+  </ul>
+</aside>

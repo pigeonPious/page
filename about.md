@@ -9,4 +9,4 @@ permalink: /about/
   <h1 class="post-title"># About</h1>
 </div>
 
-<p>This site is a minimal blog with a Linux text-editor vibe. Use the menu bar above for navigation and the View menu to switch color modes.</p>
+<p>This site is a minimal blog with a Linux text-editor vibe.</p>

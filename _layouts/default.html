@@ -16,7 +16,6 @@
           <div class="menu-entry disabled">New File <span>Ctrl+N</span></div>
           <div class="menu-entry disabled">Open… <span>Ctrl+O</span></div>
           <div class="menu-entry disabled">Save <span>Ctrl+S</span></div>
-          <div class="menu-section"></div>
           <div class="menu-entry disabled">Quit</div>
         </div>
       </div>
@@ -26,7 +25,6 @@
         <div class="menu-dropdown">
           <div class="menu-entry disabled">Undo <span>Ctrl+Z</span></div>
           <div class="menu-entry disabled">Redo <span>Ctrl+Y</span></div>
-          <div class="menu-section"></div>
           <div class="menu-entry disabled">Find… <span>Ctrl+F</span></div>
         </div>
       </div>
@@ -61,8 +59,11 @@
     </div>
   </div>
 
-  <div class="container">
-    {{ content }}
+  <div class="shell">
+    {% include sidebar.html %}
+    <main class="container">
+      {{ content }}
+    </main>
   </div>
 
   <footer class="site-footer">

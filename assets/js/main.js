@@ -18,11 +18,9 @@
       e.preventDefault();
       return;
     }
-    // click outside closes menus
     if (!e.target.closest('.menu-dropdown')) closeAll();
   });
 
-  // View -> Mode switching
   document.querySelectorAll('[data-mode]').forEach(btn => {
     btn.addEventListener('click', e => {
       const mode = btn.getAttribute('data-mode');

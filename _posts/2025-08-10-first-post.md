@@ -1,5 +1,6 @@
 
 ---
+layout: post
 title: "First Post: Setting Up"
 date: 2025-08-10
 ---
