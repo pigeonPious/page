@@ -1,6 +1,9 @@
 title: Minimal Notes
-description: Light, distraction‑free writing
-url: ""
+description: Light, distraction-free writing
+
+url: "https://pigeonpious.github.io"   # your GitHub Pages host
+baseurl: "/page"                        # repo name for project pages
+
 permalink: /:year/:month/:day/:title/
 plugins:
   - jekyll-feed
