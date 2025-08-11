@@ -35,6 +35,15 @@ body{ margin:0;background:var(--bg);color:var(--text);
 @media (max-width:900px){#cornerGif{width:120px;height:90px;right:12px;bottom:12px;}}
 footer.site-footer{color:var(--muted);font-size:12px;padding:20px 16px;max-width:1200px;margin:0 auto;}
 
+/* Global link color reset (match preview template; no blue/purple) */
+a{ color: var(--link); text-decoration: none; }
+a:visited{ color: var(--link); }
+a:hover{ text-decoration: underline; }
+
+/* Sidebar and content links should also avoid visited purple */
+.tree a:visited{ color: var(--link); }
+.post-content a:visited{ color: var(--link); }
+
 /* Taskbar links should look like plain menu text (match preview-v17) */
 .menu-bar a{
   color: var(--text);
