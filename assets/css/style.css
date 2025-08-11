@@ -37,6 +37,7 @@ footer.site-footer{color:var(--muted);font-size:12px;padding:20px 16px;max-width
 
 /* Global link color reset (match preview template; no blue/purple) */
 a{ color: var(--link); text-decoration: none; }
+a:link{ color: var(--link); }
 a:visited{ color: var(--link); }
 a:hover{ text-decoration: underline; }
 
@@ -44,12 +45,15 @@ a:hover{ text-decoration: underline; }
 .tree a:visited{ color: var(--link); }
 .post-content a:visited{ color: var(--link); }
 
-/* Taskbar links should look like plain menu text (match preview-v17) */
-.menu-bar a{
-  color: var(--text);
-  text-decoration: none;
+/* Taskbar links: force color across all states to avoid blue/purple */
+.menu-bar a,
+.menu-bar a:link,
+.menu-bar a:visited,
+.menu-bar a:hover,
+.menu-bar a:active{
+  color: var(--text) !important;
+  text-decoration: none !important;
 }
-.menu-bar a:visited{ color: var(--text); }
 
 /* Keep underline on hover/focus for top labels only */
 .menu-item:hover > .label,
@@ -57,8 +61,14 @@ a:hover{ text-decoration: underline; }
 
 /* Dropdown entries use the muted link tone, not browser blue */
 .menu-dropdown a,
-.menu-entry{ color: var(--link); text-decoration: none; }
-.menu-dropdown a:visited{ color: var(--link); }
+.menu-dropdown a:link,
+.menu-dropdown a:visited,
+.menu-dropdown a:hover,
+.menu-dropdown a:active,
+.menu-entry{
+  color: var(--link) !important;
+  text-decoration: none;
+}
 
 /* Optional: remove default focus ring on labels (underline still indicates focus) */
 .menu-item .label:focus{ outline: none; }
