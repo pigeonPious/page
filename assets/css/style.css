@@ -34,3 +34,22 @@ body{ margin:0;background:var(--bg);color:var(--text);
 #cornerGif{position:fixed;right:18px;bottom:18px;z-index:500;width:160px;height:120px;border:1px solid var(--rule);background:#000 center/cover no-repeat;opacity:.85;border-radius:2px;}
 @media (max-width:900px){#cornerGif{width:120px;height:90px;right:12px;bottom:12px;}}
 footer.site-footer{color:var(--muted);font-size:12px;padding:20px 16px;max-width:1200px;margin:0 auto;}
+
+/* Taskbar links should look like plain menu text (match preview-v17) */
+.menu-bar a{
+  color: var(--text);
+  text-decoration: none;
+}
+.menu-bar a:visited{ color: var(--text); }
+
+/* Keep underline on hover/focus for top labels only */
+.menu-item:hover > .label,
+.menu-item:focus-within > .label{ text-decoration: underline; }
+
+/* Dropdown entries use the muted link tone, not browser blue */
+.menu-dropdown a,
+.menu-entry{ color: var(--link); text-decoration: none; }
+.menu-dropdown a:visited{ color: var(--link); }
+
+/* Optional: remove default focus ring on labels (underline still indicates focus) */
+.menu-item .label:focus{ outline: none; }
