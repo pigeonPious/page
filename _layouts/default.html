@@ -1,75 +1,86 @@
-
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ page.title }} | {{ site.title }}</title>
-  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% if page.title %}{{ page.title }} — {% endif %}{{ site.title }}</title>
+<link href="{{ '/assets/css/style.css' | relative_url }}" rel="stylesheet">
 </head>
 <body>
-  <div class="menu-bar" role="menubar" aria-label="Application Menu">
-    <div class="menu-bar-inner">
-      <div class="menu-item" tabindex="0">
-        <div class="label" data-menu>File</div>
-        <div class="menu-dropdown">
-          <div class="menu-entry disabled">New File <span>Ctrl+N</span></div>
-          <div class="menu-entry disabled">Open… <span>Ctrl+O</span></div>
-          <div class="menu-entry disabled">Save <span>Ctrl+S</span></div>
-          <div class="menu-entry disabled">Quit</div>
-        </div>
+<div class="menu-bar">
+  <div class="menu-bar-inner">
+    <div class="menu-star">*</div>
+    <div class="menu-item"><a class="label" href="#" data-menu>File</a>
+      <div class="menu-dropdown">
+        <div class="menu-entry">New</div>
+        <div class="menu-entry">Open…</div>
+        <div class="menu-entry">Save</div>
       </div>
-
-      <div class="menu-item" tabindex="0">
-        <div class="label" data-menu>Edit</div>
-        <div class="menu-dropdown">
-          <div class="menu-entry disabled">Undo <span>Ctrl+Z</span></div>
-          <div class="menu-entry disabled">Redo <span>Ctrl+Y</span></div>
-          <div class="menu-entry disabled">Find… <span>Ctrl+F</span></div>
-        </div>
+    </div>
+    <div class="menu-item"><a class="label" href="#" data-menu>Edit</a>
+      <div class="menu-dropdown">
+        <div class="menu-entry">Undo</div>
+        <div class="menu-entry">Redo</div>
       </div>
-
-      <div class="menu-item" tabindex="0">
-        <div class="label" data-menu>Navigation</div>
-        <div class="menu-dropdown">
-          <a class="menu-entry" href="{{ '/about/' | relative_url }}">About</a>
-          <a class="menu-entry" href="{{ '/contact/' | relative_url }}">Contact</a>
-          <a class="menu-entry" href="{{ '/' | relative_url }}">Blog</a>
-        </div>
+    </div>
+    <div class="menu-item"><a class="label" href="#" data-menu>Navigation</a>
+      <div class="menu-dropdown">
+        <a class="menu-entry" href="{{ '/about/' | relative_url }}">About</a>
+        <a class="menu-entry" href="{{ '/contact/' | relative_url }}">Contact</a>
+        <a class="menu-entry" href="{{ '/' | relative_url }}">Blog</a>
       </div>
-
-      <div class="menu-item" tabindex="0">
-        <div class="label" data-menu>View</div>
-        <div class="menu-dropdown">
-          <div class="menu-entry" data-mode="dark">Dark mode</div>
-          <div class="menu-entry" data-mode="light">Light mode</div>
-        </div>
+    </div>
+    <div class="menu-item"><a class="label" href="#" data-menu>View</a>
+      <div class="menu-dropdown">
+        <div class="menu-entry" data-mode="dark">Dark</div>
+        <div class="menu-entry" data-mode="light">Light</div>
       </div>
-
-      <div class="menu-item" tabindex="0">
-        <div class="label" data-menu>Log</div>
-        <div class="menu-dropdown">
-          {% for post in site.posts %}
-            <a class="menu-entry" href="{{ post.url | relative_url }}">{{ post.title }}</a>
-          {% endfor %}
-        </div>
+    </div>
+    <div class="menu-item"><a class="label" href="#" data-menu>Log</a>
+      <div class="menu-dropdown">
+        {% for p in site.posts %}
+          <a class="menu-entry" href="{{ p.url | relative_url }}">{{ p.title }}</a>
+        {% endfor %}
       </div>
-
-      <div class="mode-indicator">Mode: <span id="modeIndicator">{% if page.mode == 'light' %}Light{% else %}Dark{% endif %}</span></div>
     </div>
   </div>
+</div>
 
-  <div class="shell">
-    {% include sidebar.html %}
-    <main class="container">
-      {{ content }}
-    </main>
-  </div>
+<div class="frame">
+  <aside class="left-pane">
+    <h3>Posts</h3>
+    <ul class="tree">
+      {% assign grouped = site.posts | group_by_exp: 'p', 'p.date | date: "%Y"' %}
+      {% for y in grouped %}
+      <li><details open><summary>{{ y.name }}</summary>
+        <ul>
+        {% assign months = y.items | group_by_exp: 'p', 'p.date | date: "%B"' %}
+        {% for m in months %}
+          <li><details open><summary>{{ m.name }}</summary>
+            <ul>
+              {% for p in m.items %}
+                <li><a href="{{ p.url | relative_url }}">{{ p.title }}</a></li>
+              {% endfor %}
+            </ul>
+          </details></li>
+        {% endfor %}
+        </ul>
+      </details></li>
+      {% endfor %}
+    </ul>
+  </aside>
+  <div></div>
 
-  <footer class="site-footer">
-    <span>&copy; {{ site.time | date: '%Y' }} {{ site.title }}</span>
-  </footer>
+  <main class="center-content">
+    {{ content }}
+  </main>
+  <div></div>
+</div>
 
-  <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+<div id="hoverNote" role="tooltip"></div>
+<div id="cornerGif" aria-hidden="true" title="Corner GIF"></div>
+
+<script>window.SITE_GIF_URL = "{{ site.corner_gif_url }}";</script>
+<script src="{{ '/assets/js/main.js' | relative_url }}"></script>
 </body>
 </html>

@@ -1,20 +1,14 @@
-
 ---
 layout: default
 title: Blog
 ---
-<div class="post-header">
-  <div class="post-date">{{ site.time | date: "%b %-d, %Y" }}</div>
+<header class="post-header">
   <h1 class="post-title"># Blog</h1>
-</div>
+  <div class="post-date">{{ site.time | date: "%b %-d, %Y" }}</div>
+</header>
 
-<ul class="post-list">
+<section class="post-content">
 {% for post in site.posts %}
-  <li>
-    <a href="{{ post.url | relative_url }}"><strong>{{ post.title }}</strong></a>
-    <div class="meta">{{ post.date | date: "%b %-d, %Y" }}</div>
-    <p>{{ post.excerpt | strip_html | truncate: 140 }}</p>
-    <hr class="soft">
-  </li>
+- <a href="{{ post.url | relative_url }}">{{ post.title }}</a> <span class="post-date" style="margin-left:6px;">{{ post.date | date: "%b %-d, %Y" }}</span><br/>
 {% endfor %}
-</ul>
+</section>

@@ -1,17 +1,14 @@
-
 title: "Left-like Blog"
-description: "A minimal blog styled like a Linux text editor window"
-url: "https://pigeonpious.github.io"
-baseurl: "/page"
+description: "A minimal blog styled like a text editor"
+url: "https://YOUR-USER.github.io"
+baseurl: ""
 markdown: kramdown
 permalink: /blog/:title/
-collections:
-  posts:
-    output: true
+corner_gif_url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btPCcdNniyf0ArS/giphy.gif"
 defaults:
   - scope:
       path: ""
-      type: "posts"
+      type: posts
     values:
       layout: post
       author: "Admin"
