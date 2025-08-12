@@ -3,7 +3,7 @@
 *{box-sizing:border-box}
 html,body{height:100%}
 body{ margin:0;background:var(--bg);color:var(--text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   line-height:1.55;letter-spacing:-0.2px;font-size:13px; }
 .menu-bar{user-select:none;background:var(--menu-bg);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:999;}
 .menu-bar-inner{display:flex;align-items:center;gap:14px;padding:3px 10px;font-size:12px;}
@@ -34,41 +34,9 @@ body{ margin:0;background:var(--bg);color:var(--text);
 #cornerGif{position:fixed;right:18px;bottom:18px;z-index:500;width:160px;height:120px;border:1px solid var(--rule);background:#000 center/cover no-repeat;opacity:.85;border-radius:2px;}
 @media (max-width:900px){#cornerGif{width:120px;height:90px;right:12px;bottom:12px;}}
 footer.site-footer{color:var(--muted);font-size:12px;padding:20px 16px;max-width:1200px;margin:0 auto;}
-
-/* Global link color reset (match preview template; no blue/purple) */
-a{ color: var(--link); text-decoration: none; }
-a:link{ color: var(--link); }
-a:visited{ color: var(--link); }
-a:hover{ text-decoration: underline; }
-
-/* Sidebar and content links should also avoid visited purple */
-.tree a:visited{ color: var(--link); }
-.post-content a:visited{ color: var(--link); }
-
-/* Taskbar links: force color across all states to avoid blue/purple */
-.menu-bar a,
-.menu-bar a:link,
-.menu-bar a:visited,
-.menu-bar a:hover,
-.menu-bar a:active{
-  color: var(--text) !important;
-  text-decoration: none !important;
-}
-
-/* Keep underline on hover/focus for top labels only */
-.menu-item:hover > .label,
-.menu-item:focus-within > .label{ text-decoration: underline; }
-
-/* Dropdown entries use the muted link tone, not browser blue */
-.menu-dropdown a,
-.menu-dropdown a:link,
-.menu-dropdown a:visited,
-.menu-dropdown a:hover,
-.menu-dropdown a:active,
-.menu-entry{
-  color: var(--link) !important;
-  text-decoration: none;
-}
-
-/* Optional: remove default focus ring on labels (underline still indicates focus) */
+a{ color: var(--link); text-decoration: none; } a:link{ color: var(--link);} a:visited{ color: var(--link);} a:hover{ text-decoration: underline; }
+.tree a:visited{ color: var(--link); } .post-content a:visited{ color: var(--link); }
+.menu-bar a,.menu-bar a:link,.menu-bar a:visited,.menu-bar a:hover,.menu-bar a:active{ color: var(--text) !important; text-decoration: none !important; }
+.menu-item:hover > .label,.menu-item:focus-within > .label{ text-decoration: underline; }
+.menu-dropdown a,.menu-dropdown a:link,.menu-dropdown a:visited,.menu-dropdown a:hover,.menu-dropdown a:active,.menu-entry{ color: var(--link) !important; text-decoration: none; }
 .menu-item .label:focus{ outline: none; }
