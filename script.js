@@ -95,11 +95,23 @@ function setTheme(mode, customBg) {
     document.body.classList.remove('dark-mode');
     document.body.classList.add('custom-mode');
     document.body.style.setProperty('--bg', customBg);
-    // Determine if color is light or dark for contrast
-    const rgb = customBg.startsWith('#') ? hexToRgb(customBg) : parseRgb(customBg);
-    const luminance = rgb ? (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) : 255;
-    const fg = luminance > 186 ? '#232323' : '#eaeaea';
+    document.body.style.setProperty('--menu-bg', customBg);
+    // Extract lightness from HSL string
+    let fg = '#232323';
+    let l = 100;
+    if (customBg.startsWith('hsl')) {
+      const m = customBg.match(/hsl\(\d+,\s*\d+%?,\s*(\d+)%?\)/);
+      if (m) l = parseInt(m[1]);
+    } else {
+      // fallback to luminance calculation for rgb/hex
+      const rgb = customBg.startsWith('#') ? hexToRgb(customBg) : parseRgb(customBg);
+      const luminance = rgb ? (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) : 255;
+      l = (luminance / 255) * 100;
+    }
+    if (l < 60) fg = '#fff';
+    else fg = '#232323';
     document.body.style.setProperty('--fg', fg);
+    document.body.style.setProperty('--menu-fg', fg);
     localStorage.setItem('theme', 'custom');
     localStorage.setItem('customBg', customBg);
   } else if (mode === 'dark') {
@@ -107,12 +119,16 @@ function setTheme(mode, customBg) {
     document.body.classList.add('dark-mode');
     document.body.style.removeProperty('--bg');
     document.body.style.removeProperty('--fg');
+    document.body.style.removeProperty('--menu-bg');
+    document.body.style.removeProperty('--menu-fg');
     localStorage.setItem('theme', 'dark');
     localStorage.removeItem('customBg');
   } else {
     document.body.classList.remove('dark-mode', 'custom-mode');
     document.body.style.removeProperty('--bg');
     document.body.style.removeProperty('--fg');
+    document.body.style.removeProperty('--menu-bg');
+    document.body.style.removeProperty('--menu-fg');
     localStorage.setItem('theme', 'light');
     localStorage.removeItem('customBg');
   }
@@ -149,6 +165,15 @@ function setupViewMenu() {
     customEntry.setAttribute('data-mode', 'custom');
     customEntry.textContent = 'Custom…';
     viewMenu.appendChild(customEntry);
+  }
+  // Add random color entry if not present
+  let randomEntry = viewMenu ? viewMenu.querySelector('.menu-entry[data-mode="random"]') : null;
+  if (!randomEntry && viewMenu) {
+    randomEntry = document.createElement('div');
+    randomEntry.className = 'menu-entry';
+    randomEntry.setAttribute('data-mode', 'random');
+    randomEntry.textContent = 'Random';
+    viewMenu.appendChild(randomEntry);
   }
   // Add custom color menu if not present
   let customMenu = document.getElementById('customColorMenu');
@@ -212,6 +237,24 @@ function setupViewMenu() {
         hueSlider.value = h; satSlider.value = s; lightSlider.value = l;
         updateCustomColor();
         customMenu.style.display = 'block';
+      } else if (mode === 'random') {
+        // Generate random HSL values
+        const h = Math.floor(Math.random() * 361);
+        const s = Math.floor(Math.random() * 41) + 30; // 30-70% for pleasant colors
+        const l = Math.floor(Math.random() * 31) + 15; // 15-45% for darkish backgrounds
+        const hsl = `hsl(${h},${s}%,${l}%)`;
+        // Set sliders and preview if custom menu exists
+        if (customMenu) {
+          hueSlider.value = h;
+          satSlider.value = s;
+          lightSlider.value = l;
+          hueVal.textContent = h;
+          satVal.textContent = s;
+          lightVal.textContent = l;
+          colorPreview.style.background = hsl;
+        }
+        setTheme('custom', hsl);
+        customMenu.style.display = 'none';
       } else {
         setTheme(mode);
         customMenu.style.display = 'none';
