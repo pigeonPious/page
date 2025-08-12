@@ -90,9 +90,86 @@ function setupHoverNotes() {
   });
 }
 
+function setTheme(mode, customBg) {
+  if (mode === 'custom' && customBg) {
+    document.body.classList.remove('dark-mode');
+    document.body.classList.add('custom-mode');
+    document.body.style.setProperty('--bg', customBg);
+    // Determine if color is light or dark for contrast
+    const rgb = customBg.startsWith('#') ? hexToRgb(customBg) : parseRgb(customBg);
+    const luminance = rgb ? (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) : 255;
+    const fg = luminance > 186 ? '#232323' : '#eaeaea';
+    document.body.style.setProperty('--fg', fg);
+    localStorage.setItem('theme', 'custom');
+    localStorage.setItem('customBg', customBg);
+  } else if (mode === 'dark') {
+    document.body.classList.remove('custom-mode');
+    document.body.classList.add('dark-mode');
+    document.body.style.removeProperty('--bg');
+    document.body.style.removeProperty('--fg');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    document.body.classList.remove('dark-mode', 'custom-mode');
+    document.body.style.removeProperty('--bg');
+    document.body.style.removeProperty('--fg');
+    localStorage.setItem('theme', 'light');
+  }
+}
+
+function hexToRgb(hex) {
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+  const num = parseInt(hex, 16);
+  return [num >> 16, (num >> 8) & 255, num & 255];
+}
+function parseRgb(rgbStr) {
+  const m = rgbStr.match(/rgb\s*\((\d+),\s*(\d+),\s*(\d+)\)/);
+  return m ? [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])] : null;
+}
+
+function setupViewMenu() {
+  document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
+    entry.addEventListener('click', () => {
+      setTheme(entry.getAttribute('data-mode'));
+    });
+  });
+  // Add custom color entry
+  let customEntry = document.querySelector('.menu-entry[data-mode="custom"]');
+  if (!customEntry) {
+    customEntry = document.createElement('div');
+    customEntry.className = 'menu-entry';
+    customEntry.setAttribute('data-mode', 'custom');
+    customEntry.textContent = 'Custom…';
+    document.querySelector('.menu-item .menu-dropdown').appendChild(customEntry);
+  }
+  // Add color input if not present
+  let colorInput = document.getElementById('customColorInput');
+  if (!colorInput) {
+    colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.id = 'customColorInput';
+    document.body.appendChild(colorInput);
+  }
+  customEntry.addEventListener('click', () => {
+    colorInput.value = localStorage.getItem('customBg') || '#f7f7f7';
+    colorInput.click();
+  });
+  colorInput.addEventListener('input', () => {
+    setTheme('custom', colorInput.value);
+  });
+  // On load, set theme from localStorage
+  const saved = localStorage.getItem('theme');
+  if (saved === 'custom') {
+    setTheme('custom', localStorage.getItem('customBg') || '#f7f7f7');
+  } else if (saved === 'dark' || saved === 'light') {
+    setTheme(saved);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   setupMenus();
   setupHoverNotes();
+  setupViewMenu();
   const response = await fetch("posts/index.json");
   const posts = await response.json();
   populateSidebar(posts);
