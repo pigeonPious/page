@@ -1,7 +1,7 @@
 title: "Left-like Blog"
 description: "A minimal blog styled like a text editor"
-url: "https://YOUR-USER.github.io"
-baseurl: ""
+url: "https://pigeonpious.github.io"
+baseurl: "/page"
 markdown: kramdown
 permalink: /blog/:title/
 corner_gif_url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btPCcdNniyf0ArS/giphy.gif"
