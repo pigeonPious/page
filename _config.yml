@@ -3,6 +3,5 @@ url: "https://pigeonpious.github.io"
 baseurl: ""
 markdown: kramdown
 permalink: /:categories/:year/:month/:day/:title/
-plugins:
-  - jekyll-feed
+
 theme: nil
