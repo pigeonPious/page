@@ -156,14 +156,38 @@ function setupViewMenu() {
     customMenu = document.createElement('div');
     customMenu.id = 'customColorMenu';
     customMenu.innerHTML = `
-      <label for="customColorInput">Background:</label>
-      <input type="color" id="customColorInput" value="#f7f7f7">
+      <label>Background Color (HSL):</label>
+      <div class="slider-group"><label>H</label><input type="range" min="0" max="360" value="210" id="hueSlider"><span id="hueVal">210</span></div>
+      <div class="slider-group"><label>S</label><input type="range" min="0" max="100" value="10" id="satSlider"><span id="satVal">10</span></div>
+      <div class="slider-group"><label>L</label><input type="range" min="0" max="100" value="15" id="lightSlider"><span id="lightVal">15</span></div>
+      <span class="color-preview" id="colorPreview"></span>
       <button class="close-btn" type="button">Close</button>
     `;
     document.body.appendChild(customMenu);
   }
-  const colorInput = customMenu.querySelector('#customColorInput');
+  const hueSlider = customMenu.querySelector('#hueSlider');
+  const satSlider = customMenu.querySelector('#satSlider');
+  const lightSlider = customMenu.querySelector('#lightSlider');
+  const hueVal = customMenu.querySelector('#hueVal');
+  const satVal = customMenu.querySelector('#satVal');
+  const lightVal = customMenu.querySelector('#lightVal');
+  const colorPreview = customMenu.querySelector('#colorPreview');
   const closeBtn = customMenu.querySelector('.close-btn');
+
+  function hslString() {
+    return `hsl(${hueSlider.value},${satSlider.value}%,${lightSlider.value}%)`;
+  }
+  function updateCustomColor() {
+    hueVal.textContent = hueSlider.value;
+    satVal.textContent = satSlider.value;
+    lightVal.textContent = lightSlider.value;
+    const hsl = hslString();
+    colorPreview.style.background = hsl;
+    setTheme('custom', hsl);
+  }
+  [hueSlider, satSlider, lightSlider].forEach(slider => {
+    slider.oninput = updateCustomColor;
+  });
   // Remove any previous click handlers to avoid duplicates
   document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
     const newEntry = entry.cloneNode(true);
@@ -178,7 +202,15 @@ function setupViewMenu() {
         const rect = entry.getBoundingClientRect();
         customMenu.style.left = rect.left + 'px';
         customMenu.style.top = (rect.bottom + window.scrollY) + 'px';
-        colorInput.value = localStorage.getItem('customBg') || '#f7f7f7';
+        // Load last custom color or default
+        let h = 210, s = 10, l = 15;
+        const last = localStorage.getItem('customBg');
+        if (last && last.startsWith('hsl')) {
+          const m = last.match(/hsl\((\d+),\s*(\d+)%?,\s*(\d+)%?\)/);
+          if (m) { h = +m[1]; s = +m[2]; l = +m[3]; }
+        }
+        hueSlider.value = h; satSlider.value = s; lightSlider.value = l;
+        updateCustomColor();
         customMenu.style.display = 'block';
       } else {
         setTheme(mode);
@@ -186,9 +218,6 @@ function setupViewMenu() {
       }
     };
   });
-  colorInput.oninput = () => {
-    setTheme('custom', colorInput.value);
-  };
   closeBtn.onclick = () => {
     customMenu.style.display = 'none';
   };
@@ -201,7 +230,7 @@ function setupViewMenu() {
   // On load, set theme from localStorage
   const saved = localStorage.getItem('theme');
   if (saved === 'custom') {
-    setTheme('custom', localStorage.getItem('customBg') || '#f7f7f7');
+    setTheme('custom', localStorage.getItem('customBg') || 'hsl(210,10%,15%)');
   } else if (saved === 'dark' || saved === 'light') {
     setTheme(saved);
   }
