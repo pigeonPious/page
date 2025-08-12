@@ -1,6 +1,6 @@
 title: "Left-like Blog"
 description: "A minimal blog styled like a text editor"
-url: "https://YOUR-USER.github.io"
+url: "https://pigeonpious.github.io/"
 baseurl: ""
 markdown: kramdown
 permalink: /blog/:title/
