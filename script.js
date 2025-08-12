@@ -132,16 +132,16 @@ function parseRgb(rgbStr) {
 function setupViewMenu() {
   // Add custom color entry if not present
   let customEntry = document.querySelector('.menu-entry[data-mode="custom"]');
-  if (!customEntry) {
+  // Find the View menu dropdown (the one with Light/Dark)
+  const viewMenu = Array.from(document.querySelectorAll('.menu-item .menu-dropdown')).find(dropdown => {
+    return Array.from(dropdown.children).some(child => child.textContent === 'Dark' || child.textContent === 'Light');
+  });
+  if (!customEntry && viewMenu) {
     customEntry = document.createElement('div');
     customEntry.className = 'menu-entry';
     customEntry.setAttribute('data-mode', 'custom');
     customEntry.textContent = 'Custom…';
-    // Find the View menu dropdown
-    const viewMenu = Array.from(document.querySelectorAll('.menu-item .menu-dropdown')).find(dropdown => {
-      return Array.from(dropdown.children).some(child => child.textContent === 'Dark' || child.textContent === 'Light');
-    });
-    if (viewMenu) viewMenu.appendChild(customEntry);
+    viewMenu.appendChild(customEntry);
   }
   // Add color input if not present
   let colorInput = document.getElementById('customColorInput');
@@ -152,7 +152,11 @@ function setupViewMenu() {
     colorInput.style.display = 'none';
     document.body.appendChild(colorInput);
   }
-  // Set up click handlers for all theme buttons
+  // Remove any previous click handlers to avoid duplicates
+  document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
+    entry.replaceWith(entry.cloneNode(true));
+  });
+  // Re-select after cloning
   document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
     entry.onclick = (e) => {
       const mode = entry.getAttribute('data-mode');
