@@ -130,12 +130,19 @@ function parseRgb(rgbStr) {
 }
 
 function setupViewMenu() {
-  // Add custom color entry if not present
-  let customEntry = document.querySelector('.menu-entry[data-mode="custom"]');
   // Find the View menu dropdown (the one with Light/Dark)
   const viewMenu = Array.from(document.querySelectorAll('.menu-item .menu-dropdown')).find(dropdown => {
     return Array.from(dropdown.children).some(child => child.textContent === 'Dark' || child.textContent === 'Light');
   });
+  // Ensure Light and Dark entries have data-mode attributes
+  if (viewMenu) {
+    Array.from(viewMenu.children).forEach(child => {
+      if (child.textContent === 'Dark') child.setAttribute('data-mode', 'dark');
+      if (child.textContent === 'Light') child.setAttribute('data-mode', 'light');
+    });
+  }
+  // Add custom color entry if not present
+  let customEntry = viewMenu ? viewMenu.querySelector('.menu-entry[data-mode="custom"]') : null;
   if (!customEntry && viewMenu) {
     customEntry = document.createElement('div');
     customEntry.className = 'menu-entry';
@@ -154,7 +161,8 @@ function setupViewMenu() {
   }
   // Remove any previous click handlers to avoid duplicates
   document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
-    entry.replaceWith(entry.cloneNode(true));
+    const newEntry = entry.cloneNode(true);
+    entry.parentNode.replaceChild(newEntry, entry);
   });
   // Re-select after cloning
   document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
