@@ -108,11 +108,13 @@ function setTheme(mode, customBg) {
     document.body.style.removeProperty('--bg');
     document.body.style.removeProperty('--fg');
     localStorage.setItem('theme', 'dark');
+    localStorage.removeItem('customBg');
   } else {
     document.body.classList.remove('dark-mode', 'custom-mode');
     document.body.style.removeProperty('--bg');
     document.body.style.removeProperty('--fg');
     localStorage.setItem('theme', 'light');
+    localStorage.removeItem('customBg');
   }
 }
 
@@ -128,19 +130,18 @@ function parseRgb(rgbStr) {
 }
 
 function setupViewMenu() {
-  document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
-    entry.addEventListener('click', () => {
-      setTheme(entry.getAttribute('data-mode'));
-    });
-  });
-  // Add custom color entry
+  // Add custom color entry if not present
   let customEntry = document.querySelector('.menu-entry[data-mode="custom"]');
   if (!customEntry) {
     customEntry = document.createElement('div');
     customEntry.className = 'menu-entry';
     customEntry.setAttribute('data-mode', 'custom');
     customEntry.textContent = 'Custom…';
-    document.querySelector('.menu-item .menu-dropdown').appendChild(customEntry);
+    // Find the View menu dropdown
+    const viewMenu = Array.from(document.querySelectorAll('.menu-item .menu-dropdown')).find(dropdown => {
+      return Array.from(dropdown.children).some(child => child.textContent === 'Dark' || child.textContent === 'Light');
+    });
+    if (viewMenu) viewMenu.appendChild(customEntry);
   }
   // Add color input if not present
   let colorInput = document.getElementById('customColorInput');
@@ -148,15 +149,24 @@ function setupViewMenu() {
     colorInput = document.createElement('input');
     colorInput.type = 'color';
     colorInput.id = 'customColorInput';
+    colorInput.style.display = 'none';
     document.body.appendChild(colorInput);
   }
-  customEntry.addEventListener('click', () => {
-    colorInput.value = localStorage.getItem('customBg') || '#f7f7f7';
-    colorInput.click();
+  // Set up click handlers for all theme buttons
+  document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
+    entry.onclick = (e) => {
+      const mode = entry.getAttribute('data-mode');
+      if (mode === 'custom') {
+        colorInput.value = localStorage.getItem('customBg') || '#f7f7f7';
+        colorInput.click();
+      } else {
+        setTheme(mode);
+      }
+    };
   });
-  colorInput.addEventListener('input', () => {
+  colorInput.oninput = () => {
     setTheme('custom', colorInput.value);
-  });
+  };
   // On load, set theme from localStorage
   const saved = localStorage.getItem('theme');
   if (saved === 'custom') {
