@@ -1,0 +1,53 @@
+
+:root{ --bg:#272727; --text:#acada8; --muted:#6a696c; --rule:#343235; --menu-bg:var(--bg); --link:#c7c9c3; }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{ margin:0;background:var(--bg);color:var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height:1.55;letter-spacing:-0.2px;font-size:13px; }
+
+/* Taskbar */
+.menu-bar{user-select:none;background:var(--menu-bg);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:999;}
+.menu-bar-inner{display:flex;align-items:center;gap:14px;padding:3px 10px;font-size:12px;}
+.menu-star{margin-right:8px;opacity:.85}
+.menu-item{position:relative}
+.menu-item>.label{padding:1px 3px;cursor:default}
+.menu-item:hover>.label,.menu-item:focus-within>.label{text-decoration:underline}
+.menu-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:100px;background:var(--bg);border:1px solid var(--rule);padding:4px;}
+.menu-item.open>.menu-dropdown{display:block}
+.menu-entry{display:flex;justify-content:space-between;gap:12px;padding:3px 6px;cursor:pointer;text-decoration:none;color:var(--link)}
+.menu-entry:hover{background:rgba(255,255,255,0.05)}
+
+/* Layout */
+.frame{display:grid;grid-template-columns:110px 0 minmax(300px,540px) 1fr;column-gap:0;max-width:1200px;margin:28px auto 120px;padding:0 16px;}
+.left-pane{padding-right:2px;padding-top:25px;}
+.left-pane h3{margin:0 0 6px 0;font-size:12px;color:var(--muted);font-weight:600;}
+.tree{list-style:none;margin:0;padding:0}
+.tree summary{cursor:pointer;outline:none;font-size:12px;color:var(--text);padding:0;margin:0}
+.tree ul{list-style:none;margin:0;padding:0}
+.tree a{display:block;padding:0;margin:0;color:var(--link);text-decoration:none;font-size:12px}
+.tree a:hover{text-decoration:underline}
+
+/* Content */
+.post-header{margin-bottom:10px}
+.post-title{font-size:13px;font-weight:700;margin:0}
+.post-date{color:var(--muted);font-size:10px;margin:2px 0 28px 0}
+
+/* Images: float right so text wraps, then clear below using .clear-after */
+.post-content img.float-right{
+  float:right;
+  max-width:48%;
+  height:auto;
+  margin:4px 0 10px 14px;  /* gap so text doesn't touch image */
+  border:1px solid var(--rule);
+  shape-outside: inset(0 round 0); /* keep rectangular wrap */
+}
+.clear-after{clear:both;height:0;overflow:hidden;} /* forces next block below floats */
+
+/* Hover note tooltip */
+.note-link{color:var(--link);text-decoration:underline;cursor:help;position:relative;}
+#hoverNote{position:fixed;z-index:1000;pointer-events:none;background:var(--bg);border:1px solid var(--rule);padding:6px 8px;min-width:140px;max-width:260px;font-size:12px;color:var(--muted);display:none;box-shadow:none;}
+
+/* Bottom-right GIF slot */
+#cornerGif{position:fixed;right:18px;bottom:18px;z-index:500;width:160px;height:120px;border:1px solid var(--rule);background:#000 url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btPCcdNniyf0ArS/giphy.gif') center/cover no-repeat;opacity:.85;border-radius:2px;}
+@media (max-width:900px){#cornerGif{width:120px;height:90px;right:12px;bottom:12px;}}

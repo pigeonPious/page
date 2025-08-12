@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Left‑like Blog</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="menu-bar">
+  <div class="menu-bar-inner">
+    <div class="menu-star">*</div>
+    <div class="menu-item"><div class="label" data-menu>File</div><div class="menu-dropdown"><div class="menu-entry" id="new-post">New</div></div></div>
+    <div class="menu-item"><div class="label" data-menu>Edit</div><div class="menu-dropdown"><div class="menu-entry disabled">Undo</div></div></div>
+    <div class="menu-item"><div class="label" data-menu>Navigation</div><div class="menu-dropdown"><a class="menu-entry" href="#">About</a><a class="menu-entry" href="#">Contact</a><a class="menu-entry" href="#">Blog</a></div></div>
+    <div class="menu-item"><div class="label" data-menu>View</div><div class="menu-dropdown"><div class="menu-entry" data-mode="dark">Dark</div><div class="menu-entry" data-mode="light">Light</div></div></div>
+    <div class="menu-item"><div class="label" data-menu>Log</div><div class="menu-dropdown" id="post-list-dropdown"></div></div>
+  </div>
+</div>
+
+<div class="frame">
+  <aside class="left-pane">
+    <h3>Posts</h3>
+    <ul class="tree" id="sidebar-posts"></ul>
+  </aside>
+  <div></div>
+  <main class="center-content">
+    <header class="post-header">
+      <h1 class="post-title" id="post-title"># Blog</h1>
+      <div class="post-date" id="post-date"></div>
+    </header>
+    <section class="post-content" id="post-content"></section>
+  </main>
+  <div></div>
+</div>
+
+<div id="hoverNote" role="tooltip"></div>
+<div id="cornerGif" aria-hidden="true" title="Corner GIF"></div>
+
+<script src="script.js"></script>
+</body>
+</html>

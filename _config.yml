@@ -1,7 +1,0 @@
-title: Pigeon Pious
-url: "https://pigeonpious.github.io"
-baseurl: ""
-markdown: kramdown
-permalink: /:categories/:year/:month/:day/:title/
-
-theme: nil
