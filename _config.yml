@@ -1,14 +1,8 @@
 title: Pigeon Pious
-description: Minimal left‑pane blog
 url: "https://pigeonpious.github.io"
 baseurl: ""
-permalink: /:title/
 markdown: kramdown
-kramdown:
-  input: GFM
-plugins: []
-exclude:
-  - README.md
-  - node_modules
-  - package.json
-  - package-lock.json
+permalink: /:categories/:year/:month/:day/:title/
+plugins:
+  - jekyll-feed
+theme: nil

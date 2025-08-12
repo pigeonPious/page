@@ -1,95 +1,224 @@
+---
+layout: nil
+---
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>{{ page.title | default: site.title }}</title>
-<link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+<title>{% if page.title %}{{ page.title }} — {% endif %}{{ site.title }}</title>
+<style>
+:root{ --bg:#272727; --text:#acada8; --muted:#6a696c; --rule:#343235; --menu-bg:var(--bg); --link:#c7c9c3; }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{ margin:0;background:var(--bg);color:var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height:1.55;letter-spacing:-0.2px;font-size:13px; }
+
+/* Taskbar */
+.menu-bar{user-select:none;background:var(--menu-bg);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:999;}
+.menu-bar-inner{display:flex;align-items:center;gap:14px;padding:3px 10px;font-size:12px;}
+.menu-star{margin-right:8px;opacity:.85}
+.menu-item{position:relative}
+.menu-item>.label{padding:1px 3px;cursor:default}
+.menu-item:hover>.label,.menu-item:focus-within>.label{text-decoration:underline}
+.menu-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:100px;background:var(--bg);border:1px solid var(--rule);padding:4px;}
+.menu-item.open>.menu-dropdown{display:block}
+.menu-entry{display:flex;justify-content:space-between;gap:12px;padding:3px 6px;cursor:pointer;text-decoration:none;color:var(--link)}
+.menu-entry:hover{background:rgba(255,255,255,0.05)}
+
+/* Layout */
+.frame{display:grid;grid-template-columns:110px 0 minmax(300px,540px) 1fr;column-gap:0;max-width:1200px;margin:28px auto 120px;padding:0 16px;}
+.left-pane{padding-right:2px;padding-top:25px;}
+.left-pane h3{margin:0 0 6px 0;font-size:12px;color:var(--muted);font-weight:600;}
+.tree{list-style:none;margin:0;padding:0}
+.tree summary{cursor:pointer;outline:none;font-size:12px;color:var(--text);padding:0;margin:0}
+.tree ul{list-style:none;margin:0;padding:0}
+.tree a{display:block;padding:0;margin:0;color:var(--link);text-decoration:none;font-size:12px}
+.tree a:hover{text-decoration:underline}
+
+/* Content */
+.post-header{margin-bottom:10px}
+.post-title{font-size:13px;font-weight:700;margin:0}
+.post-date{color:var(--muted);font-size:10px;margin:2px 0 28px 0}
+
+/* Images: float right so text wraps, then clear below using .clear-after */
+.post-content img.float-right{
+  float:right;
+  max-width:48%;
+  height:auto;
+  margin:4px 0 10px 14px;  /* gap so text doesn't touch image */
+  border:1px solid var(--rule);
+  shape-outside: inset(0 round 0); /* keep rectangular wrap */
+}
+.clear-after{clear:both;height:0;overflow:hidden;} /* forces next block below floats */
+
+/* Hover note tooltip */
+.note-link{color:var(--link);text-decoration:underline;cursor:help;position:relative;}
+#hoverNote{position:fixed;z-index:1000;pointer-events:none;background:var(--bg);border:1px solid var(--rule);padding:6px 8px;min-width:140px;max-width:260px;font-size:12px;color:var(--muted);display:none;box-shadow:none;}
+
+/* Bottom-right GIF slot */
+#cornerGif{position:fixed;right:18px;bottom:18px;z-index:500;width:160px;height:120px;border:1px solid var(--rule);background:#000 url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btPCcdNniyf0ArS/giphy.gif') center/cover no-repeat;opacity:.85;border-radius:2px;}
+@media (max-width:900px){#cornerGif{width:120px;height:90px;right:12px;bottom:12px;}}
+</style>
 </head>
-<body>
-<div class="menu-bar">
-  <div class="menu-bar-inner">
-    <div class="menu-star">*</div>
-    <div class="menu-item"><div class="label" data-menu>File</div>
-      <div class="menu-dropdown">
-        <a class="menu-entry" href="https://github.com/{{ site.url | replace:'https://','' }}/new/main/_posts" target="_blank" rel="noopener">New Post<span>⌘N</span></a>
-        <a class="menu-entry" href="{{ '/' | relative_url }}">Open Home<span>⌘O</span></a>
-        <a class="menu-entry" href="{{ '/posts/' | relative_url }}">Open Posts<span>⌘⇧O</span></a>
-        <a class="menu-entry" href="{{ '/feed.xml' | relative_url }}">RSS<span>⌘R</span></a>
+<body class="{{ page.mode | default: 'dark' }}">
+  <div class="menu-bar">
+    <div class="menu-bar-inner">
+      <div class="menu-star">*</div>
+
+      <div class="menu-item">
+        <div class="label" data-menu>File</div>
+        <div class="dropdown">
+          <a class="menu-entry" href="{{ '/' | relative_url }}">Open Home</a>
+          <a class="menu-entry" href="{{ '/posts/' | relative_url }}">Open Posts</a>
+          <a class="menu-entry" href="https://github.com/pigeonpious/pigeonpious.github.io/new/main/_posts" target="_blank" rel="noopener">New Post</a>
+          <a class="menu-entry" href="{{ '/feed.xml' | relative_url }}">RSS</a>
+        </div>
       </div>
-    </div>
-    <div class="menu-item"><div class="label" data-menu>Edit</div>
-      <div class="menu-dropdown">
-        <div class="menu-entry" data-action="back">Back<span>⌘[</span></div>
-        <div class="menu-entry" data-action="forward">Forward<span>⌘]</span></div>
-        <div class="menu-entry" data-action="find">Find in Posts…<span>⌘F</span></div>
+
+      <div class="menu-item">
+        <div class="label" data-menu>Edit</div>
+        <div class="dropdown">
+          <div class="menu-entry" data-nav="back">Back⌘[</div>
+          <div class="menu-entry" data-nav="forward">Forward⌘]</div>
+          <div class="menu-entry" data-find>Find in Posts…⌘F</div>
+        </div>
       </div>
-    </div>
-    <div class="menu-item"><div class="label" data-menu>Navigation</div>
-      <div class="menu-dropdown">
-        <a class="menu-entry" href="{{ '/' | relative_url }}">Home</a>
-        <a class="menu-entry" href="{{ '/posts/' | relative_url }}">Blog</a>
-        <a class="menu-entry" href="{{ '/about/' | relative_url }}">About</a>
-        <a class="menu-entry" href="mailto:hello@example.com">Contact</a>
+
+      <div class="menu-item">
+        <div class="label" data-menu>Navigation</div>
+        <div class="dropdown">
+          <a class="menu-entry" href="{{ '/' | relative_url }}">Home</a>
+          <a class="menu-entry" href="{{ '/posts/' | relative_url }}">Blog</a>
+          <a class="menu-entry" href="{{ '/about/' | relative_url }}">About</a>
+          <a class="menu-entry" href="mailto:contact@pigeonpious.com">Contact</a>
+        </div>
       </div>
-    </div>
-    <div class="menu-item"><div class="label" data-menu>View</div>
-      <div class="menu-dropdown">
-        <div class="menu-entry" data-mode="dark">Dark</div>
-        <div class="menu-entry" data-mode="light">Light</div>
+
+      <div class="menu-item">
+        <div class="label" data-menu>View</div>
+        <div class="dropdown">
+          <div class="menu-entry" data-mode="dark">Dark</div>
+          <div class="menu-entry" data-mode="light">Light</div>
+        </div>
       </div>
-    </div>
-    <div class="menu-item"><div class="label" data-menu>Log</div>
-      <div class="menu-dropdown">
-        {% for post in site.posts limit:8 %}
-          <a class="menu-entry" href="{{ post.url | relative_url }}">{{ post.title }}</a>
-        {% endfor %}
+
+      <div class="menu-item">
+        <div class="label" data-menu>Log</div>
+        <div class="dropdown">
+          {% assign recent = site.posts | slice: 0, 3 %}
+          {% for p in recent %}
+          <a class="menu-entry" href="{{ p.url | relative_url }}">{{ p.title }}</a>
+          {% endfor %}
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="frame">
-  <aside class="left-pane">
-    <h3>Posts</h3>
-    <ul class="tree">
-      {% assign years = site.posts | group_by_exp:'post', 'post.date | date: "%Y"' %}
-      {% for y in years %}
+  <div class="frame">
+    <aside class="left-pane">
+      <h3>Posts</h3>
+      <ul class="tree" id="postTree">
+        {% assign years = site.posts | group_by_exp: 'p', 'p.date | date: "%Y"' %}
+        {% for y in years %}
         <li>
-          <details {% if forloop.first %}open{% endif %}><summary>{{ y.name }}</summary>
-          <ul>
-            {% assign months = y.items | group_by_exp:'post', 'post.date | date: "%B"' %}
-            {% for m in months %}
+          <details {% if forloop.first %}open{% endif %}>
+            <summary>{{ y.name }}</summary>
+            <ul>
+              {% assign months = y.items | group_by_exp: 'p', 'p.date | date: "%B"' %}
+              {% for m in months %}
               <li>
-                <details {% if forloop.first %}open{% endif %}><summary>{{ m.name }}</summary>
+                <details {% if forloop.first %}open{% endif %}>
+                  <summary>{{ m.name }}</summary>
                   <ul>
-                  {% for post in m.items %}
-                    <li><a href="{{ post.url | relative_url }}">{{ post.title }}</a></li>
-                  {% endfor %}
+                    {% for p in m.items %}
+                    <li><a href="{{ p.url | relative_url }}">{{ p.title }}</a></li>
+                    {% endfor %}
                   </ul>
                 </details>
               </li>
-            {% endfor %}
-          </ul>
+              {% endfor %}
+            </ul>
           </details>
         </li>
-      {% endfor %}
-    </ul>
-  </aside>
-  <div></div>
-  <main class="center-content">
-    {{ content }}
-  </main>
-  <div></div>
-</div>
+        {% endfor %}
+      </ul>
+    </aside>
 
-<div id="hoverNote" role="tooltip"></div>
+    <div></div>
 
-<footer class="site-footer">
-  <hr/>
-  <div>{{ site.title }} — {{ "now" | date: "%b %d, %Y" }}</div>
-</footer>
+    <main class="center-content">
+      <header class="post-header">
+        <h1 class="post-title">{{ page.title | default: site.title }}</h1>
+        <div class="post-date">{% if page.date %}{{ page.date | date: "%b %d, %Y" }}{% endif %}</div>
+      </header>
+      <section class="post-content">
+        {{ content }}
+      </section>
 
-<script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+      <div class="clear-after"></div>
+    </main>
+
+    <div id="hoverNote" role="tooltip" aria-hidden="true"></div>
+    <div id="cornerGif" aria-hidden="true"></div>
+  </div>
+
+<script>
+// Basic dropdown toggles
+document.addEventListener('click', (e) => {
+  const label = e.target.closest('.menu-item .label');
+  document.querySelectorAll('.menu-item.open').forEach(mi => mi.classList.remove('open'));
+  if (label) {
+    label.parentElement.classList.toggle('open');
+    e.stopPropagation();
+  }
+});
+
+// History actions
+document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', e => {
+  const dir = el.getAttribute('data-nav');
+  if (dir === 'back') history.back();
+  if (dir === 'forward') history.forward();
+}));
+
+// Find filter opens prompt and highlights matches in the left tree
+document.querySelectorAll('[data-find]').forEach(el => el.addEventListener('click', () => {
+  const q = prompt('Filter posts (substring):');
+  if (q === null) return;
+  const items = document.querySelectorAll('#postTree a');
+  items.forEach(a => {
+    const show = a.textContent.toLowerCase().includes(q.toLowerCase());
+    a.parentElement.style.display = show ? '' : 'none';
+  });
+}));
+
+// Theme
+const stored = localStorage.getItem('theme');
+if (stored) document.documentElement.dataset.theme = stored;
+document.querySelectorAll('.menu-entry[data-mode]').forEach(el => el.addEventListener('click', () => {
+  const mode = el.getAttribute('data-mode');
+  document.documentElement.dataset.theme = mode;
+  localStorage.setItem('theme', mode);
+}));
+
+// Hover notes
+const note = document.getElementById('hoverNote');
+document.addEventListener('mouseover', (e) => {
+  const target = e.target.closest('.note-link');
+  if (!target) return;
+  note.textContent = target.getAttribute('data-note') || '';
+  note.style.display = 'block';
+});
+document.addEventListener('mousemove', (e) => {
+  if (note.style.display === 'block') {
+    note.style.left = (e.clientX + 12) + 'px';
+    note.style.top = (e.clientY + 12) + 'px';
+  }
+});
+document.addEventListener('mouseout', (e) => {
+  if (e.target.closest('.note-link')) note.style.display = 'none';
+});
+</script>
 </body>
 </html>
