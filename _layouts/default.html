@@ -1,45 +1,48 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% if page.title %}{{ page.title }} — {% endif %}{{ site.title }}</title>
-<link href="{{ '/assets/css/style.css' | relative_url }}" rel="stylesheet">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>{{ page.title | default: site.title }}</title>
+<link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 </head>
 <body>
 <div class="menu-bar">
   <div class="menu-bar-inner">
     <div class="menu-star">*</div>
-    <div class="menu-item"><a class="label" href="#" data-menu>File</a>
+    <div class="menu-item"><div class="label" data-menu>File</div>
       <div class="menu-dropdown">
-        <div class="menu-entry">New</div>
-        <div class="menu-entry">Open…</div>
-        <div class="menu-entry">Save</div>
+        <a class="menu-entry" href="https://github.com/{{ site.url | replace:'https://','' }}/new/main/_posts" target="_blank" rel="noopener">New Post<span>⌘N</span></a>
+        <a class="menu-entry" href="{{ '/' | relative_url }}">Open Home<span>⌘O</span></a>
+        <a class="menu-entry" href="{{ '/posts/' | relative_url }}">Open Posts<span>⌘⇧O</span></a>
+        <a class="menu-entry" href="{{ '/feed.xml' | relative_url }}">RSS<span>⌘R</span></a>
       </div>
     </div>
-    <div class="menu-item"><a class="label" href="#" data-menu>Edit</a>
+    <div class="menu-item"><div class="label" data-menu>Edit</div>
       <div class="menu-dropdown">
-        <div class="menu-entry">Undo</div>
-        <div class="menu-entry">Redo</div>
+        <div class="menu-entry" data-action="back">Back<span>⌘[</span></div>
+        <div class="menu-entry" data-action="forward">Forward<span>⌘]</span></div>
+        <div class="menu-entry" data-action="find">Find in Posts…<span>⌘F</span></div>
       </div>
     </div>
-    <div class="menu-item"><a class="label" href="#" data-menu>Navigation</a>
+    <div class="menu-item"><div class="label" data-menu>Navigation</div>
       <div class="menu-dropdown">
+        <a class="menu-entry" href="{{ '/' | relative_url }}">Home</a>
+        <a class="menu-entry" href="{{ '/posts/' | relative_url }}">Blog</a>
         <a class="menu-entry" href="{{ '/about/' | relative_url }}">About</a>
-        <a class="menu-entry" href="{{ '/contact/' | relative_url }}">Contact</a>
-        <a class="menu-entry" href="{{ '/' | relative_url }}">Blog</a>
+        <a class="menu-entry" href="mailto:hello@example.com">Contact</a>
       </div>
     </div>
-    <div class="menu-item"><a class="label" href="#" data-menu>View</a>
+    <div class="menu-item"><div class="label" data-menu>View</div>
       <div class="menu-dropdown">
         <div class="menu-entry" data-mode="dark">Dark</div>
         <div class="menu-entry" data-mode="light">Light</div>
       </div>
     </div>
-    <div class="menu-item"><a class="label" href="#" data-menu>Log</a>
+    <div class="menu-item"><div class="label" data-menu>Log</div>
       <div class="menu-dropdown">
-        {% for p in site.posts %}
-          <a class="menu-entry" href="{{ p.url | relative_url }}">{{ p.title }}</a>
+        {% for post in site.posts limit:8 %}
+          <a class="menu-entry" href="{{ post.url | relative_url }}">{{ post.title }}</a>
         {% endfor %}
       </div>
     </div>
@@ -50,27 +53,30 @@
   <aside class="left-pane">
     <h3>Posts</h3>
     <ul class="tree">
-      {% assign grouped = site.posts | group_by_exp: 'p', 'p.date | date: "%Y"' %}
-      {% for y in grouped %}
-      <li><details open><summary>{{ y.name }}</summary>
-        <ul>
-        {% assign months = y.items | group_by_exp: 'p', 'p.date | date: "%B"' %}
-        {% for m in months %}
-          <li><details open><summary>{{ m.name }}</summary>
-            <ul>
-              {% for p in m.items %}
-                <li><a href="{{ p.url | relative_url }}">{{ p.title }}</a></li>
-              {% endfor %}
-            </ul>
-          </details></li>
-        {% endfor %}
-        </ul>
-      </details></li>
+      {% assign years = site.posts | group_by_exp:'post', 'post.date | date: "%Y"' %}
+      {% for y in years %}
+        <li>
+          <details {% if forloop.first %}open{% endif %}><summary>{{ y.name }}</summary>
+          <ul>
+            {% assign months = y.items | group_by_exp:'post', 'post.date | date: "%B"' %}
+            {% for m in months %}
+              <li>
+                <details {% if forloop.first %}open{% endif %}><summary>{{ m.name }}</summary>
+                  <ul>
+                  {% for post in m.items %}
+                    <li><a href="{{ post.url | relative_url }}">{{ post.title }}</a></li>
+                  {% endfor %}
+                  </ul>
+                </details>
+              </li>
+            {% endfor %}
+          </ul>
+          </details>
+        </li>
       {% endfor %}
     </ul>
   </aside>
   <div></div>
-
   <main class="center-content">
     {{ content }}
   </main>
@@ -78,9 +84,12 @@
 </div>
 
 <div id="hoverNote" role="tooltip"></div>
-<div id="cornerGif" aria-hidden="true" title="Corner GIF"></div>
 
-<script>window.SITE_GIF_URL = "{{ site.corner_gif_url }}";</script>
+<footer class="site-footer">
+  <hr/>
+  <div>{{ site.title }} — {{ "now" | date: "%b %d, %Y" }}</div>
+</footer>
+
 <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
 </body>
 </html>
