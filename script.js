@@ -150,15 +150,20 @@ function setupViewMenu() {
     customEntry.textContent = 'Custom…';
     viewMenu.appendChild(customEntry);
   }
-  // Add color input if not present
-  let colorInput = document.getElementById('customColorInput');
-  if (!colorInput) {
-    colorInput = document.createElement('input');
-    colorInput.type = 'color';
-    colorInput.id = 'customColorInput';
-    colorInput.style.display = 'none';
-    document.body.appendChild(colorInput);
+  // Add custom color menu if not present
+  let customMenu = document.getElementById('customColorMenu');
+  if (!customMenu) {
+    customMenu = document.createElement('div');
+    customMenu.id = 'customColorMenu';
+    customMenu.innerHTML = `
+      <label for="customColorInput">Background:</label>
+      <input type="color" id="customColorInput" value="#f7f7f7">
+      <button class="close-btn" type="button">Close</button>
+    `;
+    document.body.appendChild(customMenu);
   }
+  const colorInput = customMenu.querySelector('#customColorInput');
+  const closeBtn = customMenu.querySelector('.close-btn');
   // Remove any previous click handlers to avoid duplicates
   document.querySelectorAll('.menu-entry[data-mode]').forEach(entry => {
     const newEntry = entry.cloneNode(true);
@@ -169,16 +174,30 @@ function setupViewMenu() {
     entry.onclick = (e) => {
       const mode = entry.getAttribute('data-mode');
       if (mode === 'custom') {
+        // Position the custom menu below the clicked entry
+        const rect = entry.getBoundingClientRect();
+        customMenu.style.left = rect.left + 'px';
+        customMenu.style.top = (rect.bottom + window.scrollY) + 'px';
         colorInput.value = localStorage.getItem('customBg') || '#f7f7f7';
-        colorInput.click();
+        customMenu.style.display = 'block';
       } else {
         setTheme(mode);
+        customMenu.style.display = 'none';
       }
     };
   });
   colorInput.oninput = () => {
     setTheme('custom', colorInput.value);
   };
+  closeBtn.onclick = () => {
+    customMenu.style.display = 'none';
+  };
+  // Hide custom menu if clicking outside
+  document.addEventListener('mousedown', e => {
+    if (customMenu.style.display === 'block' && !customMenu.contains(e.target) && !e.target.matches('.menu-entry[data-mode="custom"]')) {
+      customMenu.style.display = 'none';
+    }
+  });
   // On load, set theme from localStorage
   const saved = localStorage.getItem('theme');
   if (saved === 'custom') {

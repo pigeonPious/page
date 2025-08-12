@@ -10,9 +10,9 @@
 }
 
 body.dark-mode {
-  --bg: #181a1b;
+  --bg: #23272e;
   --fg: #eaeaea;
-  --sidebar-bg: #23272e;
+  --sidebar-bg: #2c313a;
   --sidebar-fg: #eaeaea;
   --accent: #6ca0f6;
   --menu-bg: #23272e;
@@ -30,6 +30,48 @@ body.custom-mode {
   left: 0;
   top: 0;
   z-index: 2000;
+}
+
+#customColorMenu {
+  display: none;
+  position: absolute;
+  min-width: 160px;
+  background: var(--menu-bg);
+  color: var(--menu-fg);
+  border: 1px solid var(--border);
+  padding: 10px 14px 10px 14px;
+  z-index: 2001;
+  box-shadow: none;
+  border-radius: 3px;
+}
+
+#customColorMenu label {
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+#customColorMenu input[type="color"] {
+  vertical-align: middle;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  margin-right: 8px;
+}
+
+#customColorMenu .close-btn {
+  background: none;
+  border: none;
+  color: var(--menu-fg);
+  font-size: 13px;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+#customColorMenu .close-btn:hover {
+  background: var(--sidebar-bg);
 }
 
 * {
