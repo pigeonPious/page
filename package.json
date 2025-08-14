@@ -1,0 +1,13 @@
+{
+  "name": "pppage-blog",
+  "version": "1.0.0", 
+  "description": "Personal blog with Netlify functions",
+  "dependencies": {
+    "@octokit/rest": "^19.0.0",
+    "faunadb": "^4.8.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "build": "echo 'Static site, no build needed'"
+  }
+}

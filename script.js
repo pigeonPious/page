@@ -288,3 +288,535 @@ document.addEventListener("DOMContentLoaded", async () => {
   populateSidebar(posts);
   if (posts.length > 0) loadPost(posts[0].slug);
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const editorContent = document.getElementById('editorContent');
+  const updateEditorBackground = () => {
+    const siteBackground = getComputedStyle(document.body).backgroundColor;
+    editorContent.style.backgroundColor = siteBackground;
+  };
+
+  // Update background on theme change
+  document.querySelectorAll('[data-mode]').forEach(modeButton => {
+    modeButton.addEventListener('click', updateEditorBackground);
+  });
+
+  // Initial background update
+  updateEditorBackground();
+});
+
+// Open and close the text editor modal
+const newPostButton = document.getElementById('new-post');
+const textEditorModal = document.getElementById('textEditorModal');
+const closeEditorButton = document.getElementById('closeEditor');
+
+newPostButton.addEventListener('click', () => {
+  textEditorModal.style.display = 'block';
+});
+
+closeEditorButton.addEventListener('click', () => {
+  textEditorModal.style.display = 'none';
+});
+
+// Close modal if clicking outside of it
+document.addEventListener('click', (event) => {
+  if (event.target === textEditorModal) {
+    textEditorModal.style.display = 'none';
+  }
+});
+
+document.getElementById('bluesky-share').onclick = function() {
+  let text = '';
+  // If user has selected text, use that
+  if (window.getSelection && window.getSelection().toString().trim()) {
+    text = window.getSelection().toString().trim();
+  } else {
+    // Otherwise use the current post content (strip HTML)
+    const postContent = document.getElementById('post-content');
+    if (postContent) {
+      text = postContent.innerText.trim();
+    }
+  }
+  // Limit to 300 chars for Bluesky post
+  if (text.length > 300) text = text.slice(0, 297) + '...';
+  // Open Bluesky draft in new tab
+  const url = `https://bsky.app/compose?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+};
+
+document.getElementById('twitter-share').onclick = function() {
+  let text = '';
+  // If user has selected text, use that
+  if (window.getSelection && window.getSelection().toString().trim()) {
+    text = window.getSelection().toString().trim();
+  } else {
+    // Otherwise use the current post content (strip HTML)
+    const postContent = document.getElementById('post-content');
+    if (postContent) {
+      text = postContent.innerText.trim();
+    }
+  }
+  // Limit to 280 chars for Twitter
+  if (text.length > 280) text = text.slice(0, 277) + '...';
+  // Open Twitter draft in new tab
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+};
+
+document.querySelector('[data-menu="File"] .menu-entry').addEventListener('click', (event) => {
+  if (event.target.textContent === 'New') {
+    const editorContent = document.getElementById('editorContent');
+    const siteBackground = getComputedStyle(document.body).backgroundColor;
+    editorContent.style.backgroundColor = siteBackground;
+  }
+});
+
+// Enhanced Editor Functionality
+class EditorManager {
+  constructor() {
+    this.categories = [];
+    this.currentDraft = null;
+    this.init();
+  }
+
+  async init() {
+    await this.loadCategories();
+    this.populateCategorySelect();
+    this.setupEditorEventListeners();
+    this.checkForEditingDraft();
+  }
+
+  async loadCategories() {
+    try {
+      const response = await fetch('data/categories.json');
+      this.categories = await response.json();
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      this.categories = ['general'];
+    }
+  }
+
+  populateCategorySelect() {
+    const select = document.getElementById('categorySelect');
+    if (!select) return;
+
+    select.innerHTML = this.categories.map(cat => 
+      `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`
+    ).join('');
+  }
+
+  checkForEditingDraft() {
+    const draftData = sessionStorage.getItem('editingDraft');
+    if (draftData) {
+      const draft = JSON.parse(draftData);
+      this.currentDraft = draft;
+      
+      // Populate editor with draft data
+      const content = document.getElementById('editorContent');
+      const categorySelect = document.getElementById('categorySelect');
+      
+      if (content) content.value = draft.content;
+      if (categorySelect) categorySelect.value = draft.category;
+      
+      // Clear session storage
+      sessionStorage.removeItem('editingDraft');
+    }
+  }
+
+  setupEditorEventListeners() {
+    // Make Note functionality
+    const makeNoteBtn = document.getElementById('makeNote');
+    if (makeNoteBtn) {
+      makeNoteBtn.addEventListener('click', () => this.handleMakeNote());
+    }
+
+    // Post functionality
+    const postBtn = document.getElementById('postToGitHub');
+    if (postBtn) {
+      postBtn.addEventListener('click', () => this.handlePost());
+    }
+
+    // Save Draft functionality
+    const saveDraftBtn = document.getElementById('saveDraft');
+    if (saveDraftBtn) {
+      saveDraftBtn.addEventListener('click', () => this.handleSaveDraft());
+    }
+
+    // New Category functionality
+    const newCategoryBtn = document.getElementById('new-category');
+    if (newCategoryBtn) {
+      newCategoryBtn.addEventListener('click', () => this.handleNewCategory());
+    }
+
+    // Modal event listeners
+    this.setupModalListeners();
+  }
+
+  handleMakeNote() {
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+    
+    if (!selectedText) {
+      this.showMessage('Error', 'Please select some text first to add a note.');
+      return;
+    }
+
+    document.getElementById('selectedText').textContent = selectedText;
+    document.getElementById('noteModal').style.display = 'block';
+  }
+
+  async handlePost() {
+    const content = document.getElementById('editorContent').value.trim();
+    const category = document.getElementById('categorySelect').value;
+    
+    if (!content) {
+      this.showMessage('Error', 'Please enter some content before posting.');
+      return;
+    }
+
+    // Generate post data
+    const title = this.extractTitle(content) || 'Untitled Post';
+    const slug = this.generateSlug(title);
+
+    const postData = {
+      title: title,
+      content: this.processContent(content),
+      category: category,
+      slug: slug
+    };
+
+    try {
+      const response = await fetch('/.netlify/functions/save-post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData)
+      });
+
+      if (response.ok) {
+        this.showMessage('Success', 'Post published successfully!');
+        // Clear editor
+        document.getElementById('editorContent').value = '';
+      } else {
+        const error = await response.json();
+        this.showMessage('Error', error.error || 'Failed to publish post.');
+      }
+      
+    } catch (error) {
+      console.error('Error publishing post:', error);
+      this.showMessage('Error', 'Failed to publish post. Please try again.');
+    }
+  }
+
+  async handleSaveDraft() {
+    const content = document.getElementById('editorContent').value.trim();
+    const category = document.getElementById('categorySelect').value;
+    
+    if (!content) {
+      this.showMessage('Error', 'Please enter some content before saving.');
+      return;
+    }
+
+    const title = this.extractTitle(content) || 'Untitled Draft';
+    
+    const draftData = {
+      id: this.currentDraft ? this.currentDraft.id : null,
+      title: title,
+      content: content,
+      category: category
+    };
+
+    try {
+      const response = await fetch('/.netlify/functions/save-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(draftData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        this.showMessage('Success', 'Draft saved successfully!');
+        this.currentDraft = result.draft;
+      } else {
+        const error = await response.json();
+        this.showMessage('Error', error.error || 'Failed to save draft.');
+      }
+      
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      this.showMessage('Error', 'Failed to save draft. Please try again.');
+    }
+  }
+
+  handleNewCategory() {
+    document.getElementById('categoryModal').style.display = 'block';
+  }
+
+  setupModalListeners() {
+    // Note Modal
+    const noteModal = document.getElementById('noteModal');
+    const addNoteBtn = document.getElementById('addNote');
+    const cancelNoteBtn = document.getElementById('cancelNote');
+    
+    if (addNoteBtn) {
+      addNoteBtn.addEventListener('click', () => {
+        const noteText = document.getElementById('noteText').value.trim();
+        if (noteText) {
+          this.addNoteToSelection(noteText);
+          noteModal.style.display = 'none';
+          document.getElementById('noteText').value = '';
+        }
+      });
+    }
+
+    if (cancelNoteBtn) {
+      cancelNoteBtn.addEventListener('click', () => {
+        noteModal.style.display = 'none';
+        document.getElementById('noteText').value = '';
+      });
+    }
+
+    // Category Modal
+    const categoryModal = document.getElementById('categoryModal');
+    const addCategoryBtn = document.getElementById('addCategory');
+    const cancelCategoryBtn = document.getElementById('cancelCategory');
+    
+    if (addCategoryBtn) {
+      addCategoryBtn.addEventListener('click', () => {
+        const categoryName = document.getElementById('categoryName').value.trim().toLowerCase();
+        if (categoryName && !this.categories.includes(categoryName)) {
+          this.addNewCategory(categoryName);
+          categoryModal.style.display = 'none';
+          document.getElementById('categoryName').value = '';
+        }
+      });
+    }
+
+    if (cancelCategoryBtn) {
+      cancelCategoryBtn.addEventListener('click', () => {
+        categoryModal.style.display = 'none';
+        document.getElementById('categoryName').value = '';
+      });
+    }
+
+    // Message Modal
+    const messageModal = document.getElementById('messageModal');
+    const closeMessageBtn = document.getElementById('closeMessage');
+    
+    if (closeMessageBtn) {
+      closeMessageBtn.addEventListener('click', () => {
+        messageModal.style.display = 'none';
+      });
+    }
+
+    // Close modals when clicking outside
+    [noteModal, categoryModal, messageModal].forEach(modal => {
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.style.display = 'none';
+          }
+        });
+      }
+    });
+  }
+
+  addNoteToSelection(noteText) {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const selectedText = range.toString();
+      
+      // Create note element
+      const noteElement = document.createElement('span');
+      noteElement.className = 'note-link';
+      noteElement.setAttribute('data-note', noteText);
+      noteElement.textContent = selectedText;
+      
+      // Replace selection with note element
+      range.deleteContents();
+      range.insertNode(noteElement);
+      
+      // Clear selection
+      selection.removeAllRanges();
+    }
+  }
+
+  async addNewCategory(categoryName) {
+    this.categories.push(categoryName);
+    
+    try {
+      // Save to GitHub repository categories file
+      const response = await fetch('/.netlify/functions/save-category', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ category: categoryName })
+      });
+
+      if (response.ok) {
+        this.populateCategorySelect();
+        this.showMessage('Success', `Category "${categoryName}" added successfully!`);
+      } else {
+        throw new Error('Failed to save category');
+      }
+      
+    } catch (error) {
+      console.error('Error adding category:', error);
+      // Fallback for development
+      this.populateCategorySelect();
+      this.showMessage('Success', `Category "${categoryName}" added successfully!`);
+    }
+  }
+
+  showMessage(title, text) {
+    document.getElementById('messageTitle').textContent = title;
+    document.getElementById('messageText').textContent = text;
+    document.getElementById('messageModal').style.display = 'block';
+  }
+
+  extractTitle(content) {
+    const lines = content.split('\n');
+    const firstLine = lines[0].trim();
+    return firstLine.length > 0 && firstLine.length < 100 ? firstLine : null;
+  }
+
+  generateSlug(title) {
+    return title.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  formatDateForPost(dateStr) {
+    const date = new Date(dateStr);
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${date.getFullYear()}-${months[date.getMonth()]}-${date.getDate()}`;
+  }
+
+  processContent(content) {
+    // Convert line breaks to HTML and preserve note links
+    return content.replace(/\n/g, '<br>');
+  }
+}
+
+// Enhanced Post Management with Categories
+async function loadPostsWithCategories() {
+  try {
+    const response = await fetch('posts/index.json');
+    const posts = await response.json();
+    
+    // Group posts by category
+    const categorizedPosts = {};
+    posts.forEach(post => {
+      const category = post.category || 'general';
+      if (!categorizedPosts[category]) {
+        categorizedPosts[category] = [];
+      }
+      categorizedPosts[category].push(post);
+    });
+    
+    populateCategorizedSidebar(categorizedPosts);
+    populateCategorizedDropdown(categorizedPosts);
+    
+  } catch (error) {
+    console.error('Error loading posts:', error);
+  }
+}
+
+function populateCategorizedSidebar(categorizedPosts) {
+  const sidebar = document.getElementById("sidebar-posts");
+  if (!sidebar) return;
+  
+  sidebar.innerHTML = '';
+  
+  for (const category in categorizedPosts) {
+    const categoryEl = document.createElement("li");
+    categoryEl.innerHTML = `<details open><summary>${category.charAt(0).toUpperCase() + category.slice(1)}</summary><ul></ul></details>`;
+    sidebar.appendChild(categoryEl);
+    
+    const categoryUl = categoryEl.querySelector("ul");
+    const posts = categorizedPosts[category];
+    
+    // Group by year/month within category
+    const yearMap = {};
+    posts.forEach(post => {
+      const [year, month] = post.date.split("-");
+      if (!yearMap[year]) yearMap[year] = {};
+      if (!yearMap[year][month]) yearMap[year][month] = [];
+      yearMap[year][month].push(post);
+    });
+    
+    for (const year in yearMap) {
+      const yearEl = document.createElement("li");
+      yearEl.innerHTML = `<details><summary>${year}</summary><ul></ul></details>`;
+      categoryUl.appendChild(yearEl);
+      
+      const yearUl = yearEl.querySelector("ul");
+      for (const month in yearMap[year]) {
+        const monthEl = document.createElement("li");
+        monthEl.innerHTML = `<details><summary>${month}</summary><ul></ul></details>`;
+        yearUl.appendChild(monthEl);
+        
+        const monthUl = monthEl.querySelector("ul");
+        yearMap[year][month].forEach(post => {
+          const postLink = document.createElement("a");
+          postLink.href = "#";
+          postLink.textContent = post.title;
+          postLink.onclick = () => loadPost(post.slug);
+          
+          const li = document.createElement("li");
+          li.appendChild(postLink);
+          monthUl.appendChild(li);
+        });
+      }
+    }
+  }
+}
+
+function populateCategorizedDropdown(categorizedPosts) {
+  const dropdown = document.getElementById("post-list-dropdown");
+  if (!dropdown) return;
+  
+  dropdown.innerHTML = '';
+  
+  for (const category in categorizedPosts) {
+    // Add category header
+    const categoryHeader = document.createElement("div");
+    categoryHeader.className = "menu-entry category-header";
+    categoryHeader.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+    categoryHeader.style.fontWeight = "bold";
+    categoryHeader.style.backgroundColor = "var(--border)";
+    dropdown.appendChild(categoryHeader);
+    
+    // Add posts in category
+    categorizedPosts[category].forEach(post => {
+      const postEntry = document.createElement("a");
+      postEntry.className = "menu-entry";
+      postEntry.href = "#";
+      postEntry.textContent = post.title;
+      postEntry.style.paddingLeft = "20px";
+      postEntry.onclick = () => loadPost(post.slug);
+      dropdown.appendChild(postEntry);
+    });
+  }
+}
+
+// Initialize editor manager on editor page
+let editorManager;
+if (document.getElementById('editorContent')) {
+  document.addEventListener('DOMContentLoaded', () => {
+    editorManager = new EditorManager();
+  });
+}
+
+// Update existing initialization to use categorized posts
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('post-list-dropdown')) {
+    loadPostsWithCategories();
+  }
+});

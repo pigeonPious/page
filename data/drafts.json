@@ -1,0 +1,26 @@
+[
+  {
+    "id": "draft-1",
+    "title": "Thoughts on Web Development",
+    "content": "I've been thinking about the evolution of web development and how frameworks have changed...",
+    "category": "general",
+    "created": "2025-08-10T10:30:00Z",
+    "modified": "2025-08-10T11:45:00Z"
+  },
+  {
+    "id": "draft-2", 
+    "title": "My Morning Routine",
+    "content": "Every day I wake up at 6 AM and start with meditation. Then I make coffee...",
+    "category": "general",
+    "created": "2025-08-11T08:15:00Z",
+    "modified": "2025-08-12T09:20:00Z"
+  },
+  {
+    "id": "draft-3",
+    "title": "Book Review: Clean Code",
+    "content": "Just finished reading Clean Code by Robert Martin. The key takeaways are...",
+    "category": "general", 
+    "created": "2025-08-12T14:00:00Z",
+    "modified": "2025-08-13T16:30:00Z"
+  }
+]
