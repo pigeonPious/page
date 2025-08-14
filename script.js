@@ -387,11 +387,13 @@ class EditorManager {
   }
 
   async init() {
+    console.log('🏗️ EditorManager initializing...');
     await this.loadCategories();
     this.populateCategorySelect();
     this.setupEditorEventListeners();
     this.checkForEditingDraft();
     this.checkAuthStatus();
+    console.log('✅ EditorManager initialization complete');
   }
 
   async loadCategories() {
@@ -480,22 +482,36 @@ class EditorManager {
   }
 
   setupEditorEventListeners() {
+    console.log('🔧 Setting up editor event listeners...');
+    
     // Make Note functionality
     const makeNoteBtn = document.getElementById('makeNote');
     if (makeNoteBtn) {
+      console.log('✅ Found makeNote button, attaching listener');
       makeNoteBtn.addEventListener('click', () => this.handleMakeNote());
+    } else {
+      console.log('❌ makeNote button not found');
     }
 
     // Post functionality
     const postBtn = document.getElementById('postToGitHub');
     if (postBtn) {
-      postBtn.addEventListener('click', () => this.handlePost());
+      console.log('✅ Found postToGitHub button, attaching listener');
+      postBtn.addEventListener('click', () => {
+        console.log('🖱️ Post button clicked!');
+        this.handlePost();
+      });
+    } else {
+      console.log('❌ postToGitHub button not found');
     }
 
     // Save Draft functionality
     const saveDraftBtn = document.getElementById('saveDraft');
     if (saveDraftBtn) {
+      console.log('✅ Found saveDraft button, attaching listener');
       saveDraftBtn.addEventListener('click', () => this.handleSaveDraft());
+    } else {
+      console.log('❌ saveDraft button not found');
     }
 
     // New Category functionality
@@ -522,10 +538,16 @@ class EditorManager {
   }
 
   async handlePost() {
+    console.log('🚀 handlePost() called!');
+    
     const content = document.getElementById('editorContent').value.trim();
     const category = document.getElementById('categorySelect').value;
     
+    console.log('📝 Content:', content);
+    console.log('📂 Category:', category);
+    
     if (!content) {
+      console.log('❌ No content provided');
       this.showMessage('Error', 'Please enter some content before posting.');
       return;
     }
@@ -896,9 +918,15 @@ function populateCategorizedDropdown(categorizedPosts) {
 // Initialize editor manager on editor page
 let editorManager;
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('📄 DOM Content Loaded');
+  
   // Initialize editor manager if we're on the editor page
-  if (document.getElementById('editorContent')) {
+  const editorContent = document.getElementById('editorContent');
+  if (editorContent) {
+    console.log('📝 Found editor content, initializing EditorManager...');
     editorManager = new EditorManager();
+  } else {
+    console.log('ℹ️ Not on editor page, skipping EditorManager');
   }
   
   // Load categorized posts if we have the dropdown
