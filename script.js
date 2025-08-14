@@ -461,7 +461,9 @@ class EditorManager {
 
     try {
       // Check authentication via auth-check endpoint
-      const response = await fetch('/.netlify/functions/auth-check');
+      const response = await fetch('/.netlify/functions/auth-check', {
+        credentials: 'include' // Include cookies for authentication
+      });
       const data = await response.json();
       
       if (data.authenticated) {
@@ -589,14 +591,19 @@ class EditorManager {
       slug: slug
     };
 
+    console.log('📤 Sending post data:', postData);
+
     try {
       const response = await fetch('/.netlify/functions/save-post', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify(postData)
       });
+
+      console.log('📡 Response status:', response.status);
 
       if (response.ok) {
         this.showMessage('Success', 'Post published successfully!');
@@ -639,6 +646,7 @@ class EditorManager {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify(draftData)
       });
 
@@ -763,6 +771,7 @@ class EditorManager {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({ category: categoryName })
       });
 
@@ -786,9 +795,32 @@ class EditorManager {
   }
 
   showMessage(title, text) {
-    document.getElementById('messageTitle').textContent = title;
-    document.getElementById('messageText').textContent = text;
-    document.getElementById('messageModal').style.display = 'block';
+    console.log('📢 Showing message:', title, text);
+    
+    const messageModal = document.getElementById('messageModal');
+    const messageTitle = document.getElementById('messageTitle');
+    const messageText = document.getElementById('messageText');
+    
+    if (!messageModal || !messageTitle || !messageText) {
+      console.error('❌ Modal elements not found');
+      // Fallback to alert if modal elements are missing
+      alert(title + ': ' + text);
+      return;
+    }
+    
+    messageTitle.textContent = title;
+    messageText.textContent = text;
+    
+    // Ensure modal is properly positioned and visible
+    messageModal.style.display = 'block';
+    messageModal.style.position = 'fixed';
+    messageModal.style.zIndex = '9999';
+    messageModal.style.left = '0';
+    messageModal.style.top = '0';
+    messageModal.style.width = '100%';
+    messageModal.style.height = '100%';
+    
+    console.log('✅ Modal should be visible now');
   }
 
   extractTitle(content) {
@@ -818,7 +850,8 @@ class EditorManager {
   async handleLogout() {
     try {
       const response = await fetch('/.netlify/functions/logout', {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include' // Include cookies for authentication
       });
       
       if (response.ok) {
