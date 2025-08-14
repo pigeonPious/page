@@ -1,7 +1,7 @@
 const { getStore } = require('@netlify/blobs');
 
 exports.handler = async (event, context) => {
-  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'piouspigeon';
+  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'pigeonPious';
   
   // Check authentication via cookie
   const cookies = event.headers.cookie || '';

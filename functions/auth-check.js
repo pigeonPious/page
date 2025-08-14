@@ -1,6 +1,6 @@
 // Simple authentication check for GitHub OAuth admin
 exports.handler = async (event, context) => {
-  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'piouspigeon';
+  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'pigeonPious';
   
   if (event.httpMethod !== 'GET') {
     return {
