@@ -1,7 +1,7 @@
 const { Octokit } = require("@octokit/rest");
 
 exports.handler = async (event, context) => {
-  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'julianelwood';
+  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'piouspigeon';
   
   // Check authentication via cookie
   const cookies = event.headers.cookie || '';

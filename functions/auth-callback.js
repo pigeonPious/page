@@ -1,6 +1,6 @@
 // GitHub OAuth callback handler for simple admin authentication
 exports.handler = async (event, context) => {
-  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'julianelwood';
+  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'piouspigeon';
   
   if (event.httpMethod !== 'GET') {
     return {
