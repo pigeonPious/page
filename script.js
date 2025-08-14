@@ -433,32 +433,49 @@ class EditorManager {
 
   async checkAuthStatus() {
     const statusElement = document.getElementById('auth-status');
+    const logoutBtn = document.getElementById('logout-btn');
     if (!statusElement) return;
 
     try {
-      // Try to make a simple request to check authentication
-      const response = await fetch('/.netlify/functions/get-drafts');
+      // Check authentication via auth-check endpoint
+      const response = await fetch('/.netlify/functions/auth-check');
+      const data = await response.json();
       
-      if (response.status === 401) {
-        statusElement.textContent = '🔒 Login Required';
-        statusElement.style.color = '#ff6b6b';
-        statusElement.title = 'You need to log in to use editor functions. Click to learn more.';
-        statusElement.style.cursor = 'pointer';
-        statusElement.onclick = () => {
-          this.showMessage('Authentication Required', 
-            'To use the editor, you need to:\n\n1. Ask the site administrator to enable Netlify Identity\n2. Get an invitation to create an account\n3. Set up your password\n\nOnce logged in, all editor functions will work!');
-        };
-      } else {
+      if (data.authenticated) {
         statusElement.textContent = '✅ Logged In';
         statusElement.style.color = '#51cf66';
-        statusElement.title = 'You are authenticated and can use all editor functions';
+        statusElement.title = `You are authenticated as ${data.user.username} and can use all editor functions`;
         statusElement.style.cursor = 'default';
         statusElement.onclick = null;
+        
+        // Show logout button
+        if (logoutBtn) {
+          logoutBtn.style.display = 'block';
+          logoutBtn.onclick = () => this.handleLogout();
+        }
+      } else {
+        statusElement.textContent = '🔒 Login Required';
+        statusElement.style.color = '#ff6b6b';
+        statusElement.title = 'Click to sign in with GitHub';
+        statusElement.style.cursor = 'pointer';
+        statusElement.onclick = () => {
+          window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+        };
+        
+        // Hide logout button
+        if (logoutBtn) {
+          logoutBtn.style.display = 'none';
+        }
       }
     } catch (error) {
       statusElement.textContent = '⚠️ Connection Error';
       statusElement.style.color = '#ffd43b';
       statusElement.title = 'Cannot connect to server';
+      
+      // Hide logout button on error
+      if (logoutBtn) {
+        logoutBtn.style.display = 'none';
+      }
     }
   }
 
@@ -538,7 +555,7 @@ class EditorManager {
         // Clear editor
         document.getElementById('editorContent').value = '';
       } else if (response.status === 401) {
-        this.showMessage('Authentication Required', 'Please log in to publish posts. If you don\'t have an account, ask the site administrator to enable Netlify Identity and invite you.');
+        this.showMessage('Authentication Required', 'Please sign in with GitHub to publish posts. Click the "🔒 Login Required" status to sign in.');
       } else {
         const error = await response.json();
         this.showMessage('Error', error.error || 'Failed to publish post.');
@@ -582,7 +599,7 @@ class EditorManager {
         this.showMessage('Success', 'Draft saved successfully!');
         this.currentDraft = result.draft;
       } else if (response.status === 401) {
-        this.showMessage('Authentication Required', 'Please log in to save drafts. If you don\'t have an account, ask the site administrator to enable Netlify Identity and invite you.');
+        this.showMessage('Authentication Required', 'Please sign in with GitHub to save drafts. Click the "🔒 Login Required" status to sign in.');
       } else {
         const error = await response.json();
         this.showMessage('Error', error.error || 'Failed to save draft.');
@@ -707,7 +724,7 @@ class EditorManager {
       } else if (response.status === 401) {
         // Remove from local array since save failed
         this.categories = this.categories.filter(cat => cat !== categoryName);
-        this.showMessage('Authentication Required', 'Please log in to add categories. If you don\'t have an account, ask the site administrator to enable Netlify Identity and invite you.');
+        this.showMessage('Authentication Required', 'Please sign in with GitHub to add categories. Click the "🔒 Login Required" status to sign in.');
       } else {
         throw new Error('Failed to save category');
       }
@@ -748,6 +765,24 @@ class EditorManager {
   processContent(content) {
     // Convert line breaks to HTML and preserve note links
     return content.replace(/\n/g, '<br>');
+  }
+
+  async handleLogout() {
+    try {
+      const response = await fetch('/.netlify/functions/logout', {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        // Redirect to home page after logout
+        window.location.href = '/index.html';
+      } else {
+        this.showMessage('Error', 'Failed to logout. Please try again.');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      this.showMessage('Error', 'Network error during logout. Please try again.');
+    }
   }
 }
 

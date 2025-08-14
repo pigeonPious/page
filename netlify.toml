@@ -7,17 +7,7 @@
   command = "echo 'Local development'"
   port = 8888
 
-[[redirects]]
-  from = "/admin/*"
-  to = "/admin/:splat"
-  status = 200
-  condition = {Role = ["admin"]}
-
-[[redirects]]
-  from = "/editor.html"
-  to = "/editor.html"
-  status = 200
-  condition = {Role = ["admin"]}
+# No redirects needed - authentication handled via cookies
 
 [[redirects]]
   from = "/drafts.html" 

@@ -1,12 +1,39 @@
 const { Octokit } = require("@octokit/rest");
 
 exports.handler = async (event, context) => {
-  // Check if user is authenticated
-  const { user } = context.clientContext;
-  if (!user) {
+  const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'julianelwood';
+  
+  // Check authentication via cookie
+  const cookies = event.headers.cookie || '';
+  const adminSessionMatch = cookies.match(/admin_session=([^;]+)/);
+  
+  if (!adminSessionMatch) {
     return {
       statusCode: 401,
       body: JSON.stringify({ error: "Authentication required" })
+    };
+  }
+
+  try {
+    // Verify session token
+    const sessionToken = adminSessionMatch[1];
+    const decoded = Buffer.from(sessionToken, 'base64').toString();
+    const [username, timestamp] = decoded.split(':');
+    
+    // Check if session is valid (24 hours)
+    const sessionAge = Date.now() - parseInt(timestamp);
+    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+    
+    if (sessionAge > maxAge || username !== ADMIN_GITHUB_USERNAME) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: "Session expired or unauthorized" })
+      };
+    }
+  } catch (error) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: "Invalid session" })
     };
   }
 

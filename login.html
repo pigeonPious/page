@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+      padding: 40px;
+    }
+    
+    .login-title {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+    
+    .login-description {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+      max-width: 500px;
+      color: var(--muted);
+    }
+    
+    .login-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 30px;
+      background: #24292e;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+    
+    .login-btn:hover {
+      background: #1a1e22;
+      transform: translateY(-2px);
+    }
+    
+    .github-icon {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+    
+    .pigeon-alternative {
+      margin-top: 30px;
+      padding: 20px;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      max-width: 400px;
+    }
+    
+    .pigeon-alternative h3 {
+      margin: 0 0 10px 0;
+      font-size: 1.3em;
+    }
+    
+    .pigeon-alternative p {
+      margin: 0 0 15px 0;
+      color: var(--muted);
+    }
+    
+    .pigeon-btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: opacity 0.3s ease;
+    }
+    
+    .pigeon-btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+<div class="menu-bar">
+  <div class="menu-bar-inner">
+    <div class="menu-star">*</div>
+    <div class="menu-item"><div class="label" data-menu>File</div><div class="menu-dropdown"><a class="menu-entry" href="index.html">Back to Blog</a></div></div>
+    <div class="menu-item"><div class="label" data-menu>View</div><div class="menu-dropdown"><div class="menu-entry" data-mode="dark">Dark</div><div class="menu-entry" data-mode="light">Light</div></div></div>
+  </div>
+</div>
+
+<div class="login-container">
+  <div class="login-title">🔐 Admin Login</div>
+  
+  <div class="login-description">
+    This blog requires admin authentication to access the editor and management features.
+  </div>
+  
+  <a href="#" id="github-login" class="login-btn">
+    <svg class="github-icon" viewBox="0 0 16 16" version="1.1" aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+    </svg>
+    Sign in with GitHub
+  </a>
+  
+  <div style="font-size: 0.9em; color: var(--muted);">
+    Only the blog owner can access admin features
+  </div>
+  
+  <div class="pigeon-alternative">
+    <h3>🐦 Not the Admin?</h3>
+    <p>If you're not the blog owner but still want to try something fun...</p>
+    <a href="pigeon-test.html" class="pigeon-btn">Take the Pigeon Test</a>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Apply theme if saved
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    document.body.className = savedTheme;
+  }
+  
+  // Theme switching
+  document.querySelectorAll('[data-mode]').forEach(button => {
+    button.addEventListener('click', () => {
+      const mode = button.dataset.mode;
+      document.body.className = mode;
+      localStorage.setItem('theme', mode);
+    });
+  });
+  
+  // Handle GitHub login
+  document.getElementById('github-login').addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    try {
+      // Get GitHub client ID from the server
+      const response = await fetch('/.netlify/functions/get-github-client-id');
+      const data = await response.json();
+      
+      if (data.clientId) {
+        const redirectUri = encodeURIComponent(window.location.origin + '/.netlify/functions/auth-callback');
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectPath = urlParams.get('redirect') || '/editor.html';
+        const state = encodeURIComponent(redirectPath);
+        
+        const githubAuthUrl = `https://github.com/login/oauth/authorize?` +
+          `client_id=${data.clientId}&` +
+          `redirect_uri=${redirectUri}&` +
+          `scope=read:user&` +
+          `state=${state}`;
+        
+        window.location.href = githubAuthUrl;
+      } else {
+        alert('GitHub OAuth is not configured. Please contact the site administrator.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login is currently unavailable. Please try again later.');
+    }
+  });
+});
+</script>
+</body>
+</html>
