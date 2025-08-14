@@ -49,6 +49,11 @@ exports.handler = async (event, context) => {
 
     const userData = await userResponse.json();
     
+    // Debug logging
+    console.log('OAuth callback - userData:', userData);
+    console.log('OAuth callback - expected admin:', ADMIN_GITHUB_USERNAME);
+    console.log('OAuth callback - environment:', process.env.CONTEXT);
+    
     // Check if user is the admin
     const isAdmin = userData.login === ADMIN_GITHUB_USERNAME;
     
@@ -57,16 +62,18 @@ exports.handler = async (event, context) => {
       const sessionToken = Buffer.from(`${userData.login}:${Date.now()}`).toString('base64');
       
       // Set secure cookie and redirect to original destination
-      // Note: Remove Secure flag for local development, add back for HTTPS production
-      const isProduction = process.env.CONTEXT === 'production';
-      const cookieFlags = isProduction 
-        ? 'HttpOnly; Secure; SameSite=Strict; Max-Age=86400; Path=/'
-        : 'HttpOnly; SameSite=Strict; Max-Age=86400; Path=/';
+      // Force to use non-secure cookies for now to debug
+      const cookieFlags = 'HttpOnly; SameSite=Lax; Max-Age=86400; Path=/';
+      
+      console.log('OAuth callback - setting cookie with flags:', cookieFlags);
+      console.log('OAuth callback - session token:', sessionToken);
       
       const headers = {
         'Set-Cookie': `admin_session=${sessionToken}; ${cookieFlags}`,
         'Location': state || '/editor.html'
       };
+      
+      console.log('OAuth callback - redirect headers:', headers);
       
       return {
         statusCode: 302,
