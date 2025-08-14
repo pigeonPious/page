@@ -70,8 +70,8 @@ class AuthManager {
   }
 
   showLoginRequired() {
-    // Instead of complex auth, show pigeon test
-    window.location.href = '/pigeon-test.html';
+    // Redirect to main page for unauthorized access
+    window.location.href = '/index.html';
   }
 
   isAuthenticated() {

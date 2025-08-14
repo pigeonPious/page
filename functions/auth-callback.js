@@ -68,11 +68,11 @@ exports.handler = async (event, context) => {
         body: ''
       };
     } else {
-      // Not the admin - redirect to pigeon test
+      // Not the admin - redirect to main page
       return {
         statusCode: 302,
         headers: {
-          'Location': '/pigeon-test.html'
+          'Location': '/index.html'
         },
         body: ''
       };
@@ -83,7 +83,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers: {
-        'Location': '/pigeon-test.html'
+        'Location': '/index.html'
       },
       body: ''
     };
