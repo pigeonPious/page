@@ -4,7 +4,7 @@
   "description": "Personal blog with Netlify functions",
   "dependencies": {
     "@octokit/rest": "^19.0.0",
-    "faunadb": "^4.8.0"
+    "@netlify/blobs": "^6.0.0"
   },
   "devDependencies": {},
   "scripts": {

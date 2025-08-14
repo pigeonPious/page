@@ -30,56 +30,42 @@
 
 ## 🛠 Netlify Setup Instructions
 
-### 1. Deploy to Netlify
+> **📖 For detailed step-by-step instructions, see [NETLIFY_SETUP.md](NETLIFY_SETUP.md)**
 
-1. **Connect Repository**: 
-   - Go to [Netlify](https://netlify.com) and sign in
-   - Click "New site from Git"
-   - Connect your GitHub repository
-   - Set build command: `echo 'Static site'`
-   - Set publish directory: `page`
+### Quick Setup Summary
 
-### 2. Environment Variables
+1. **Deploy to Netlify**: 
+   - Connect your GitHub repository to Netlify
+   - Set publish directory to `page`
+   - Set functions directory to `page/functions`
 
-In Netlify Dashboard > Site Settings > Environment variables, add:
-
-```bash
-GITHUB_TOKEN=your_github_personal_access_token
-GITHUB_REPO=your_username/your_repository_name
-GITHUB_BRANCH=main
-FAUNADB_SECRET=your_fauna_db_secret
-```
-
-### 3. Enable Netlify Identity
-
-1. Go to Site Settings > Identity
-2. Click "Enable Identity"
-3. Set Registration preferences to "Invite only"
-4. Enable Git Gateway under Services
-5. Invite yourself as a user
-
-### 4. Setup FaunaDB (for drafts)
-
-1. Go to [FaunaDB](https://fauna.com) and create account
-2. Create new database called "pppage-blog"
-3. Create collection called "drafts"
-4. Create index called "drafts_by_user":
-   ```javascript
-   {
-     name: "drafts_by_user",
-     source: "drafts",
-     terms: [{ field: ["data", "userId"] }]
-   }
+2. **Environment Variables**:
+   ```bash
+   GITHUB_TOKEN=your_github_personal_access_token
+   GITHUB_REPO=your_username/your_repository_name
+   GITHUB_BRANCH=main
    ```
-5. Generate admin key and add to Netlify environment variables
 
-### 5. GitHub Personal Access Token
+3. **Enable Services**:
+   - Enable Netlify Identity (invite only)
+   - Create GitHub Personal Access Token with `repo` permissions
+   - Create GitHub Personal Access Token with `repo` permissions
+
+4. **Test Authentication**:
+   - Invite yourself as a user
+4. **Test Authentication**:
+   - Invite yourself as a user
+   - Test access to `/editor.html` and `/drafts.html`
+
+### 4. GitHub Personal Access Token
 
 1. Go to GitHub Settings > Developer settings > Personal access tokens
 2. Generate new token with these permissions:
    - `repo` (Full control of private repositories)
    - `workflow` (Update GitHub Action workflows)
 3. Add token to Netlify environment variables
+
+> **📖 For complete step-by-step instructions, see [NETLIFY_SETUP.md](NETLIFY_SETUP.md)**
 
 ## 🔧 Local Development
 
@@ -158,15 +144,15 @@ The interface is fully responsive and works on:
 - Ensure repository exists and is accessible
 
 **Draft Issues**:
-- Verify FaunaDB setup and credentials
-- Check database and collection names
-- Ensure index is created properly
+- Verify Netlify Identity is properly configured
+- Check that you're logged in when saving drafts
+- Check browser console for JavaScript errors
+- Try clearing browser cache and reloading
 
 ## 🔄 Updates & Maintenance
 
 - Posts are automatically backed up to GitHub
-- Drafts are stored in FaunaDB with redundancy
-- Regular backups recommended for FaunaDB
+- Drafts are stored in Netlify Blob Store with automatic scaling
 - Monitor Netlify function usage and logs
 
 ---

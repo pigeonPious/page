@@ -1,9 +1,4 @@
-const faunadb = require('faunadb');
-const q = faunadb.query;
-
-const client = new faunadb.Client({
-  secret: process.env.FAUNADB_SECRET
-});
+const { getStore } = require('@netlify/blobs');
 
 exports.handler = async (event, context) => {
   const { user } = context.clientContext;
@@ -31,12 +26,20 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Verify the draft belongs to the user before deleting
-    const draft = await client.query(
-      q.Get(q.Ref(q.Collection('drafts'), id))
-    );
+    const store = getStore('drafts');
+    const blobKey = `${user.sub}-${id}`;
+    
+    // Verify the draft exists and belongs to the user
+    const existingDraft = await store.get(blobKey);
+    if (!existingDraft) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: "Draft not found" })
+      };
+    }
 
-    if (draft.data.userId !== user.sub) {
+    const draftData = JSON.parse(existingDraft);
+    if (draftData.userId !== user.sub) {
       return {
         statusCode: 403,
         body: JSON.stringify({ error: "Unauthorized to delete this draft" })
@@ -44,9 +47,7 @@ exports.handler = async (event, context) => {
     }
 
     // Delete the draft
-    await client.query(
-      q.Delete(q.Ref(q.Collection('drafts'), id))
-    );
+    await store.delete(blobKey);
 
     return {
       statusCode: 200,

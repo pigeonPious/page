@@ -87,10 +87,35 @@ class DraftsManager {
   }
 
   async deleteDraft(id) {
-    this.drafts = this.drafts.filter(d => d.id !== id);
-    // In a real app, you'd send this to your backend
-    console.log('Draft deleted:', id);
-    this.renderDrafts();
+    try {
+      const response = await fetch('/.netlify/functions/delete-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: id })
+      });
+
+      if (response.ok) {
+        // Remove from local array
+        this.drafts = this.drafts.filter(d => d.id !== id);
+        this.renderDrafts();
+        console.log('Draft deleted successfully');
+      } else {
+        const error = await response.json();
+        console.error('Error deleting draft:', error);
+        alert('Failed to delete draft. Please try again.');
+      }
+      
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+      // Fallback for development - remove locally
+      this.drafts = this.drafts.filter(d => d.id !== id);
+      this.renderDrafts();
+      console.log('Draft deleted locally (development mode)');
+    }
+
+    this.draftToDelete = null;
   }
 
   setupEventListeners() {

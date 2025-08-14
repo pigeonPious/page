@@ -283,10 +283,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupMenus();
   setupHoverNotes();
   setupViewMenu();
-  const response = await fetch("posts/index.json");
-  const posts = await response.json();
-  populateSidebar(posts);
-  if (posts.length > 0) loadPost(posts[0].slug);
+  
+  // Load posts with categories if we have the dropdown
+  if (document.getElementById('post-list-dropdown')) {
+    await loadPostsWithCategories();
+  } else {
+    // Fallback for pages without the dropdown
+    const response = await fetch("posts/index.json");
+    const posts = await response.json();
+    populateSidebar(posts);
+    if (posts.length > 0) loadPost(posts[0].slug);
+  }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -384,6 +391,7 @@ class EditorManager {
     this.populateCategorySelect();
     this.setupEditorEventListeners();
     this.checkForEditingDraft();
+    this.checkAuthStatus();
   }
 
   async loadCategories() {
@@ -420,6 +428,37 @@ class EditorManager {
       
       // Clear session storage
       sessionStorage.removeItem('editingDraft');
+    }
+  }
+
+  async checkAuthStatus() {
+    const statusElement = document.getElementById('auth-status');
+    if (!statusElement) return;
+
+    try {
+      // Try to make a simple request to check authentication
+      const response = await fetch('/.netlify/functions/get-drafts');
+      
+      if (response.status === 401) {
+        statusElement.textContent = '🔒 Login Required';
+        statusElement.style.color = '#ff6b6b';
+        statusElement.title = 'You need to log in to use editor functions. Click to learn more.';
+        statusElement.style.cursor = 'pointer';
+        statusElement.onclick = () => {
+          this.showMessage('Authentication Required', 
+            'To use the editor, you need to:\n\n1. Ask the site administrator to enable Netlify Identity\n2. Get an invitation to create an account\n3. Set up your password\n\nOnce logged in, all editor functions will work!');
+        };
+      } else {
+        statusElement.textContent = '✅ Logged In';
+        statusElement.style.color = '#51cf66';
+        statusElement.title = 'You are authenticated and can use all editor functions';
+        statusElement.style.cursor = 'default';
+        statusElement.onclick = null;
+      }
+    } catch (error) {
+      statusElement.textContent = '⚠️ Connection Error';
+      statusElement.style.color = '#ffd43b';
+      statusElement.title = 'Cannot connect to server';
     }
   }
 
@@ -498,6 +537,8 @@ class EditorManager {
         this.showMessage('Success', 'Post published successfully!');
         // Clear editor
         document.getElementById('editorContent').value = '';
+      } else if (response.status === 401) {
+        this.showMessage('Authentication Required', 'Please log in to publish posts. If you don\'t have an account, ask the site administrator to enable Netlify Identity and invite you.');
       } else {
         const error = await response.json();
         this.showMessage('Error', error.error || 'Failed to publish post.');
@@ -505,7 +546,7 @@ class EditorManager {
       
     } catch (error) {
       console.error('Error publishing post:', error);
-      this.showMessage('Error', 'Failed to publish post. Please try again.');
+      this.showMessage('Network Error', 'Failed to connect to the server. Please check your internet connection and try again.');
     }
   }
 
@@ -540,6 +581,8 @@ class EditorManager {
         const result = await response.json();
         this.showMessage('Success', 'Draft saved successfully!');
         this.currentDraft = result.draft;
+      } else if (response.status === 401) {
+        this.showMessage('Authentication Required', 'Please log in to save drafts. If you don\'t have an account, ask the site administrator to enable Netlify Identity and invite you.');
       } else {
         const error = await response.json();
         this.showMessage('Error', error.error || 'Failed to save draft.');
@@ -547,7 +590,7 @@ class EditorManager {
       
     } catch (error) {
       console.error('Error saving draft:', error);
-      this.showMessage('Error', 'Failed to save draft. Please try again.');
+      this.showMessage('Network Error', 'Failed to connect to the server. Please check your internet connection and try again.');
     }
   }
 
@@ -661,15 +704,19 @@ class EditorManager {
       if (response.ok) {
         this.populateCategorySelect();
         this.showMessage('Success', `Category "${categoryName}" added successfully!`);
+      } else if (response.status === 401) {
+        // Remove from local array since save failed
+        this.categories = this.categories.filter(cat => cat !== categoryName);
+        this.showMessage('Authentication Required', 'Please log in to add categories. If you don\'t have an account, ask the site administrator to enable Netlify Identity and invite you.');
       } else {
         throw new Error('Failed to save category');
       }
       
     } catch (error) {
       console.error('Error adding category:', error);
-      // Fallback for development
-      this.populateCategorySelect();
-      this.showMessage('Success', `Category "${categoryName}" added successfully!`);
+      // Remove from local array since save failed
+      this.categories = this.categories.filter(cat => cat !== categoryName);
+      this.showMessage('Network Error', 'Failed to save category to server. Please check your internet connection and try again.');
     }
   }
 
@@ -722,6 +769,11 @@ async function loadPostsWithCategories() {
     
     populateCategorizedSidebar(categorizedPosts);
     populateCategorizedDropdown(categorizedPosts);
+    
+    // Load the first post if available
+    if (posts.length > 0) {
+      loadPost(posts[0].slug);
+    }
     
   } catch (error) {
     console.error('Error loading posts:', error);
@@ -808,14 +860,13 @@ function populateCategorizedDropdown(categorizedPosts) {
 
 // Initialize editor manager on editor page
 let editorManager;
-if (document.getElementById('editorContent')) {
-  document.addEventListener('DOMContentLoaded', () => {
-    editorManager = new EditorManager();
-  });
-}
-
-// Update existing initialization to use categorized posts
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize editor manager if we're on the editor page
+  if (document.getElementById('editorContent')) {
+    editorManager = new EditorManager();
+  }
+  
+  // Load categorized posts if we have the dropdown
   if (document.getElementById('post-list-dropdown')) {
     loadPostsWithCategories();
   }

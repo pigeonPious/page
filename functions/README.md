@@ -35,10 +35,25 @@ Once deployed, these functions will be available:
 - `/.netlify/functions/save-draft` - Save a draft
 - `/.netlify/functions/get-drafts` - Get user's drafts
 - `/.netlify/functions/delete-draft` - Delete a draft
+- `/.netlify/functions/save-category` - Save a new category
 
 ## Security
 
 - Posts are saved to your GitHub repository via the GitHub API
-- Drafts are stored in Netlify's database tied to user identity
+- Drafts are stored in Netlify Blob Store tied to user identity
 - Only authenticated users can modify content
 - Public visitors can only read published posts
+
+## Storage
+
+- **Published Posts**: Stored in GitHub repository as JSON files
+- **Drafts**: Stored in Netlify Blob Store (included with Netlify hosting)
+- **Categories**: Stored in GitHub repository in `data/categories.json`
+- **User Authentication**: Handled by Netlify Identity
+
+## Benefits
+
+- **No External Database**: Everything runs on Netlify infrastructure
+- **Automatic Backups**: GitHub provides version control for published content
+- **Scalable**: Netlify Blob Store scales automatically
+- **Cost-Effective**: No additional database costs

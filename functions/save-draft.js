@@ -1,9 +1,4 @@
-const faunadb = require('faunadb');
-const q = faunadb.query;
-
-const client = new faunadb.Client({
-  secret: process.env.FAUNADB_SECRET
-});
+const { getStore } = require('@netlify/blobs');
 
 exports.handler = async (event, context) => {
   const { user } = context.clientContext;
@@ -31,35 +26,37 @@ exports.handler = async (event, context) => {
       };
     }
 
+    const store = getStore('drafts');
+    const draftId = id || `draft-${Date.now()}`;
+    const now = new Date().toISOString();
+    
+    // Get existing draft if updating
+    let existingDraft = null;
+    if (id) {
+      try {
+        const existing = await store.get(`${user.sub}-${id}`);
+        existingDraft = existing ? JSON.parse(existing) : null;
+      } catch (error) {
+        // Draft doesn't exist, that's fine for new ones
+      }
+    }
+
     const draftData = {
-      id: id || `draft-${Date.now()}`,
+      id: draftId,
       title,
       content,
       category: category || 'general',
       userId: user.sub,
-      created: id ? undefined : new Date().toISOString(),
-      modified: new Date().toISOString()
+      created: existingDraft ? existingDraft.created : now,
+      modified: now
     };
 
-    let result;
-    if (id) {
-      // Update existing draft
-      result = await client.query(
-        q.Update(
-          q.Ref(q.Collection('drafts'), id),
-          { data: draftData }
-        )
-      );
-    } else {
-      // Create new draft
-      result = await client.query(
-        q.Create(q.Collection('drafts'), { data: draftData })
-      );
-    }
+    // Save to Netlify Blob Store
+    await store.set(`${user.sub}-${draftId}`, JSON.stringify(draftData));
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, draft: result.data })
+      body: JSON.stringify({ success: true, draft: draftData })
     };
 
   } catch (error) {

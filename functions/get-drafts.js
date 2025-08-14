@@ -1,9 +1,4 @@
-const faunadb = require('faunadb');
-const q = faunadb.query;
-
-const client = new faunadb.Client({
-  secret: process.env.FAUNADB_SECRET
-});
+const { getStore } = require('@netlify/blobs');
 
 exports.handler = async (event, context) => {
   const { user } = context.clientContext;
@@ -22,23 +17,35 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const result = await client.query(
-      q.Map(
-        q.Paginate(
-          q.Match(q.Index('drafts_by_user'), user.sub)
-        ),
-        q.Lambda('ref', q.Get(q.Var('ref')))
-      )
-    );
+    const store = getStore('drafts');
+    
+    // List all blobs and filter by user
+    const { blobs } = await store.list();
+    const userPrefix = `${user.sub}-`;
+    
+    const userDrafts = [];
+    
+    // Get all drafts for this user
+    for (const blob of blobs) {
+      if (blob.key.startsWith(userPrefix)) {
+        try {
+          const draftData = await store.get(blob.key);
+          if (draftData) {
+            const draft = JSON.parse(draftData);
+            userDrafts.push(draft);
+          }
+        } catch (error) {
+          console.error(`Error parsing draft ${blob.key}:`, error);
+        }
+      }
+    }
 
-    const drafts = result.data.map(item => ({
-      id: item.ref.id,
-      ...item.data
-    }));
+    // Sort by modified date (most recent first)
+    userDrafts.sort((a, b) => new Date(b.modified) - new Date(a.modified));
 
     return {
       statusCode: 200,
-      body: JSON.stringify(drafts)
+      body: JSON.stringify(userDrafts)
     };
 
   } catch (error) {
