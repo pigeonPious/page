@@ -94,7 +94,11 @@
   <div class="menu-bar-inner">
     <div class="menu-star">*</div>
     <div class="menu-item"><div class="label" data-menu>File</div><div class="menu-dropdown"><a class="menu-entry" href="index.html">Back to Blog</a></div></div>
+    <div class="menu-item"><div class="label" data-menu>Edit</div><div class="menu-dropdown"><div class="menu-entry disabled">Undo</div></div></div>
+    <div class="menu-item"><div class="label" data-menu>Navigation</div><div class="menu-dropdown"><a class="menu-entry" href="#">About</a><a class="menu-entry" href="#">Contact</a><a class="menu-entry" href="#">Blog</a></div></div>
     <div class="menu-item"><div class="label" data-menu>View</div><div class="menu-dropdown"><div class="menu-entry" data-mode="dark">Dark</div><div class="menu-entry" data-mode="light">Light</div></div></div>
+    <div class="menu-item"><div class="label" data-menu>Log</div><div class="menu-dropdown" id="post-list-dropdown"></div></div>
+    <div class="menu-item"><div class="label" data-menu>Connect</div><div class="menu-dropdown"><div class="menu-entry" id="bluesky-share">Share to Bluesky</div><div class="menu-entry" id="twitter-share">Share to Twitter</div></div></div>
   </div>
 </div>
 
@@ -164,7 +168,83 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Login is currently unavailable. Please try again later.');
     }
   });
+  
+  // Load posts for Log menu
+  if (document.getElementById('post-list-dropdown')) {
+    loadPostsWithCategories();
+  }
+  
+  // Handle social sharing
+  document.getElementById('bluesky-share').onclick = function() {
+    let text = '';
+    const url = window.location.href;
+    text = `Check out this blog: ${url}`;
+    
+    if (text.length > 300) text = text.slice(0, 297) + '...';
+    const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(text)}`;
+    window.open(blueskyUrl, '_blank');
+  };
+
+  document.getElementById('twitter-share').onclick = function() {
+    let text = '';
+    const url = window.location.href;
+    text = `Check out this blog: ${url}`;
+    
+    if (text.length > 280) text = text.slice(0, 277) + '...';
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(twitterUrl, '_blank');
+  };
 });
+
+// Load posts with categories for Log menu
+async function loadPostsWithCategories() {
+  try {
+    const response = await fetch('posts/index.json');
+    const posts = await response.json();
+    
+    // Group posts by category
+    const categorizedPosts = {};
+    posts.forEach(post => {
+      const category = post.category || 'general';
+      if (!categorizedPosts[category]) {
+        categorizedPosts[category] = [];
+      }
+      categorizedPosts[category].push(post);
+    });
+    
+    populateCategorizedDropdown(categorizedPosts);
+  } catch (error) {
+    console.error('Error loading posts:', error);
+  }
+}
+
+function populateCategorizedDropdown(categorizedPosts) {
+  const dropdown = document.getElementById('post-list-dropdown');
+  if (!dropdown) return;
+  
+  dropdown.innerHTML = '';
+  
+  Object.keys(categorizedPosts).sort().forEach(category => {
+    // Add category header
+    const categoryHeader = document.createElement('div');
+    categoryHeader.className = 'category-header';
+    categoryHeader.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+    dropdown.appendChild(categoryHeader);
+    
+    // Add posts in this category
+    categorizedPosts[category].forEach(post => {
+      const link = document.createElement('a');
+      link.className = 'menu-entry';
+      link.href = `posts/${post.slug}.json`;
+      link.textContent = post.title;
+      link.onclick = function(e) {
+        e.preventDefault();
+        // Could add post viewing functionality here
+      };
+      dropdown.appendChild(link);
+    });
+  });
+}
 </script>
 </body>
 </html>
