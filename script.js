@@ -539,6 +539,11 @@ class EditorManager {
 
   async handlePost() {
     console.log('🚀 handlePost() called!');
+    console.log('🔍 Button elements:', {
+      postBtn: document.getElementById('postToGitHub'),
+      content: document.getElementById('editorContent'),
+      category: document.getElementById('categorySelect')
+    });
     
     const content = document.getElementById('editorContent').value.trim();
     const category = document.getElementById('categorySelect').value;
@@ -918,15 +923,9 @@ function populateCategorizedDropdown(categorizedPosts) {
 // Initialize editor manager on editor page
 let editorManager;
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('📄 DOM Content Loaded');
-  
   // Initialize editor manager if we're on the editor page
-  const editorContent = document.getElementById('editorContent');
-  if (editorContent) {
-    console.log('📝 Found editor content, initializing EditorManager...');
+  if (document.getElementById('editorContent')) {
     editorManager = new EditorManager();
-  } else {
-    console.log('ℹ️ Not on editor page, skipping EditorManager');
   }
   
   // Load categorized posts if we have the dropdown
