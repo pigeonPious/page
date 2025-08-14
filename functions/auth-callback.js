@@ -57,8 +57,14 @@ exports.handler = async (event, context) => {
       const sessionToken = Buffer.from(`${userData.login}:${Date.now()}`).toString('base64');
       
       // Set secure cookie and redirect to original destination
+      // Note: Remove Secure flag for local development, add back for HTTPS production
+      const isProduction = process.env.CONTEXT === 'production';
+      const cookieFlags = isProduction 
+        ? 'HttpOnly; Secure; SameSite=Strict; Max-Age=86400; Path=/'
+        : 'HttpOnly; SameSite=Strict; Max-Age=86400; Path=/';
+      
       const headers = {
-        'Set-Cookie': `admin_session=${sessionToken}; HttpOnly; Secure; SameSite=Strict; Max-Age=86400; Path=/`,
+        'Set-Cookie': `admin_session=${sessionToken}; ${cookieFlags}`,
         'Location': state || '/editor.html'
       };
       

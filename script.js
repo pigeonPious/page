@@ -811,16 +811,26 @@ class EditorManager {
     messageTitle.textContent = title;
     messageText.textContent = text;
     
-    // Ensure modal is properly positioned and visible
+    // Ensure modal is properly displayed and centered
     messageModal.style.display = 'block';
     messageModal.style.position = 'fixed';
     messageModal.style.zIndex = '9999';
-    messageModal.style.left = '0';
-    messageModal.style.top = '0';
-    messageModal.style.width = '100%';
-    messageModal.style.height = '100%';
+    messageModal.style.left = '50%';
+    messageModal.style.top = '50%';
+    messageModal.style.transform = 'translate(-50%, -50%)';
+    messageModal.style.width = 'auto';
+    messageModal.style.height = 'auto';
+    messageModal.style.backgroundColor = 'rgba(0,0,0,0.5)'; // Background overlay
     
-    console.log('✅ Modal should be visible now');
+    // Ensure the modal content is properly styled
+    const modalContent = messageModal.querySelector('.modal-content');
+    if (modalContent) {
+      modalContent.style.margin = '0';
+      modalContent.style.position = 'relative';
+      modalContent.style.transform = 'none';
+    }
+    
+    console.log('✅ Modal should be visible and centered now');
   }
 
   extractTitle(content) {
