@@ -70,6 +70,8 @@ function setupMenus() {
 
 function setupHoverNotes() {
   const tip = document.getElementById('hoverNote');
+  if (!tip) return; // Guard clause - exit if element doesn't exist
+  
   function place(x, y) {
     const pad = 10;
     const rect = tip.getBoundingClientRect();
@@ -298,6 +300,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   const editorContent = document.getElementById('editorContent');
+  if (!editorContent) return; // Guard clause - only run on editor page
+  
   const updateEditorBackground = () => {
     const siteBackground = getComputedStyle(document.body).backgroundColor;
     editorContent.style.backgroundColor = siteBackground;
@@ -317,66 +321,83 @@ const newPostButton = document.getElementById('new-post');
 const textEditorModal = document.getElementById('textEditorModal');
 const closeEditorButton = document.getElementById('closeEditor');
 
-newPostButton.addEventListener('click', () => {
-  textEditorModal.style.display = 'block';
-});
+if (newPostButton && textEditorModal) {
+  newPostButton.addEventListener('click', () => {
+    textEditorModal.style.display = 'block';
+  });
+}
 
-closeEditorButton.addEventListener('click', () => {
-  textEditorModal.style.display = 'none';
-});
+if (closeEditorButton && textEditorModal) {
+  closeEditorButton.addEventListener('click', () => {
+    textEditorModal.style.display = 'none';
+  });
+}
 
 // Close modal if clicking outside of it
-document.addEventListener('click', (event) => {
-  if (event.target === textEditorModal) {
-    textEditorModal.style.display = 'none';
-  }
-});
-
-document.getElementById('bluesky-share').onclick = function() {
-  let text = '';
-  // If user has selected text, use that
-  if (window.getSelection && window.getSelection().toString().trim()) {
-    text = window.getSelection().toString().trim();
-  } else {
-    // Otherwise use the current post content (strip HTML)
-    const postContent = document.getElementById('post-content');
-    if (postContent) {
-      text = postContent.innerText.trim();
+if (textEditorModal) {
+  document.addEventListener('click', (event) => {
+    if (event.target === textEditorModal) {
+      textEditorModal.style.display = 'none';
     }
-  }
-  // Limit to 300 chars for Bluesky post
-  if (text.length > 300) text = text.slice(0, 297) + '...';
-  // Open Bluesky draft in new tab
-  const url = `https://bsky.app/compose?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
-};
+  });
+}
 
-document.getElementById('twitter-share').onclick = function() {
-  let text = '';
-  // If user has selected text, use that
-  if (window.getSelection && window.getSelection().toString().trim()) {
-    text = window.getSelection().toString().trim();
-  } else {
-    // Otherwise use the current post content (strip HTML)
-    const postContent = document.getElementById('post-content');
-    if (postContent) {
-      text = postContent.innerText.trim();
+const blueskyShareBtn = document.getElementById('bluesky-share');
+if (blueskyShareBtn) {
+  blueskyShareBtn.onclick = function() {
+    let text = '';
+    // If user has selected text, use that
+    if (window.getSelection && window.getSelection().toString().trim()) {
+      text = window.getSelection().toString().trim();
+    } else {
+      // Otherwise use the current post content (strip HTML)
+      const postContent = document.getElementById('post-content');
+      if (postContent) {
+        text = postContent.innerText.trim();
+      }
     }
-  }
-  // Limit to 280 chars for Twitter
-  if (text.length > 280) text = text.slice(0, 277) + '...';
-  // Open Twitter draft in new tab
-  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
-};
+    // Limit to 300 chars for Bluesky post
+    if (text.length > 300) text = text.slice(0, 297) + '...';
+    // Open Bluesky draft in new tab
+    const url = `https://bsky.app/compose?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+}
 
-document.querySelector('[data-menu="File"] .menu-entry').addEventListener('click', (event) => {
-  if (event.target.textContent === 'New') {
-    const editorContent = document.getElementById('editorContent');
-    const siteBackground = getComputedStyle(document.body).backgroundColor;
-    editorContent.style.backgroundColor = siteBackground;
-  }
-});
+const twitterShareBtn = document.getElementById('twitter-share');
+if (twitterShareBtn) {
+  twitterShareBtn.onclick = function() {
+    let text = '';
+    // If user has selected text, use that
+    if (window.getSelection && window.getSelection().toString().trim()) {
+      text = window.getSelection().toString().trim();
+    } else {
+      // Otherwise use the current post content (strip HTML)
+      const postContent = document.getElementById('post-content');
+      if (postContent) {
+        text = postContent.innerText.trim();
+      }
+    }
+    // Limit to 280 chars for Twitter
+    if (text.length > 280) text = text.slice(0, 277) + '...';
+    // Open Twitter draft in new tab
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+}
+
+const fileMenuEntry = document.querySelector('[data-menu="File"] .menu-entry');
+if (fileMenuEntry) {
+  fileMenuEntry.addEventListener('click', (event) => {
+    if (event.target.textContent === 'New') {
+      const editorContent = document.getElementById('editorContent');
+      if (editorContent) {
+        const siteBackground = getComputedStyle(document.body).backgroundColor;
+        editorContent.style.backgroundColor = siteBackground;
+      }
+    }
+  });
+}
 
 // Enhanced Editor Functionality
 class EditorManager {
