@@ -1,10 +1,21 @@
 // Dynamically load post content
 async function loadPost(slug) {
-  const response = await fetch(`posts/${slug}.json`);
-  const post = await response.json();
-  document.getElementById("post-title").textContent = post.title;
-  document.getElementById("post-date").textContent = post.date;
-  document.getElementById("post-content").innerHTML = post.content;
+  try {
+    const response = await fetch(`posts/${slug}.json`);
+    const post = await response.json();
+    
+    // Guard clauses - only update elements if they exist
+    const postTitle = document.getElementById("post-title");
+    const postDate = document.getElementById("post-date");
+    const postContent = document.getElementById("post-content");
+    
+    if (postTitle) postTitle.textContent = post.title;
+    if (postDate) postDate.textContent = post.date;
+    if (postContent) postContent.innerHTML = post.content;
+    
+  } catch (error) {
+    console.error('Error loading post:', error);
+  }
 }
 
 function populateSidebar(posts) {
@@ -896,8 +907,8 @@ async function loadPostsWithCategories() {
     populateCategorizedSidebar(categorizedPosts);
     populateCategorizedDropdown(categorizedPosts);
     
-    // Load the first post if available
-    if (posts.length > 0) {
+    // Load the first post if available AND if we're on a page that displays posts
+    if (posts.length > 0 && document.getElementById('post-content')) {
       loadPost(posts[0].slug);
     }
     
