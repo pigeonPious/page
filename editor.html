@@ -179,9 +179,9 @@ Select text and press Ctrl+M to add notes.">
 <!-- Image Magazine - Draggable Box Style 1 Frame -->
 <div id="imageMagazine" class="box-style-1 image-magazine hidden">
   <div class="image-magazine-header">
-    <span class="image-magazine-title">🖼️ Image Magazine</span>
+    <span class="image-magazine-title">Image Magazine</span>
     <div class="image-magazine-controls">
-      <button class="image-magazine-btn" id="import-image-btn">📤 Import</button>
+      <button class="image-magazine-btn" id="import-image-btn">Import</button>
       <button class="image-magazine-btn close-btn" id="close-magazine-btn">×</button>
     </div>
   </div>
@@ -225,7 +225,7 @@ const editor = {
     document.getElementById('keywords-btn').addEventListener('mousedown', (e) => {
       e.preventDefault(); // Prevent text deselection
     });
-    document.getElementById('keywords-btn').addEventListener('click', () => this.showKeywordsInput());
+    document.getElementById('keywords-btn').addEventListener('click', (e) => this.showKeywordsInput(e));
     
     // Export button
     document.getElementById('export-btn').addEventListener('mousedown', (e) => {
@@ -363,31 +363,56 @@ const editor = {
     this.showModal('keywordsModal');
   },
 
-  showKeywordsInput() {
+  showKeywordsInput(clickEvent = null) {
+    const options = clickEvent ? { anchorToClick: true, clickEvent } : {};
     this.showBoxInput('keywordsInputBox', (keywords) => {
       if (keywords.trim()) {
         this.currentKeywords = keywords.trim();
         document.getElementById('current-keywords').textContent = this.currentKeywords;
         console.log('Keywords updated:', this.currentKeywords);
       }
-    }, this.currentKeywords || 'general');
+    }, this.currentKeywords || 'general', options);
   },
 
   // Box Style 1 Input System
-  showBoxInput(boxId, onConfirm, initialValue = '') {
+  showBoxInput(boxId, onConfirm, initialValue = '', options = {}) {
     const box = document.getElementById(boxId);
     const input = box.querySelector('input');
     
-    // Position the box near the cursor or button
-    const selection = window.getSelection();
+    // Position the box - prioritize click position for non-taskbar inputs
     let x = 100, y = 100;
     
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      x = rect.left;
-      y = rect.bottom + 5;
+    if (options.anchorToClick && options.clickEvent) {
+      // Use click position for FLAGS and other non-taskbar inputs
+      x = options.clickEvent.clientX + 10;
+      y = options.clickEvent.clientY + 10;
+    } else {
+      // Fallback to cursor/selection position for taskbar inputs
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        x = rect.left;
+        y = rect.bottom + 5;
+      } else {
+        // Use stored mouse position if available
+        x = window.lastMouseX || 100;
+        y = window.lastMouseY || 100;
+      }
     }
+    
+    // Ensure popup stays within viewport boundaries
+    const boxWidth = 300; // Approximate width
+    const boxHeight = 40; // Approximate height
+    
+    if (x + boxWidth > window.innerWidth) {
+      x = window.innerWidth - boxWidth - 10;
+    }
+    if (y + boxHeight > window.innerHeight) {
+      y = window.innerHeight - boxHeight - 10;
+    }
+    if (x < 10) x = 10;
+    if (y < 10) y = 10;
     
     box.style.left = x + 'px';
     box.style.top = y + 'px';
@@ -1340,10 +1365,10 @@ const editor = {
     const imageInfo = document.createElement('div');
     imageInfo.className = 'editor-image-info';
     imageInfo.innerHTML = `
-      <span class="image-filename">📷 ${imageData.name}</span>
+      <span class="image-filename">${imageData.name}</span>
       <span class="image-actions">
-        <button class="image-action-btn" onclick="editor.editImageAlt(this)" title="Edit Alt Text">✏️</button>
-        <button class="image-action-btn" onclick="editor.removeImage(this)" title="Remove Image">🗑️</button>
+        <button class="image-action-btn" onclick="editor.editImageAlt(this)" title="Edit Alt Text">Edit</button>
+        <button class="image-action-btn" onclick="editor.removeImage(this)" title="Remove Image">Remove</button>
       </span>
     `;
     
@@ -1431,7 +1456,7 @@ const editor = {
       <div class="image-modal-overlay">
         <div class="image-modal-content">
           <div class="image-modal-header">
-            <span class="image-modal-title">📷 ${imageData.name}</span>
+            <span class="image-modal-title">${imageData.name}</span>
             <button class="image-modal-close">×</button>
           </div>
           <div class="image-modal-body">
