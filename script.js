@@ -306,12 +306,32 @@ function setupViewMenu() {
   }
 }
 
+// Wait for shared taskbar to load completely
+async function waitForTaskbar() {
+  return new Promise((resolve) => {
+    const checkForDropdown = () => {
+      const dropdown = document.getElementById('post-list-dropdown');
+      if (dropdown) {
+        console.log('Taskbar loaded, dropdown found');
+        resolve();
+      } else {
+        console.log('Waiting for taskbar to load...');
+        setTimeout(checkForDropdown, 50);
+      }
+    };
+    checkForDropdown();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Track mouse position for popup anchoring
   document.addEventListener('mousemove', (e) => {
     window.lastMouseX = e.clientX;
     window.lastMouseY = e.clientY;
   });
+  
+  // Wait for shared taskbar to load before initializing posts
+  await waitForTaskbar();
   
   setupMenus();
   setupHoverNotes();
