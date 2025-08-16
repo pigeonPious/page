@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Emergency Modal Fix Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test-button {
+            padding: 15px 25px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .emergency {
+            background: #dc3545;
+        }
+        .emergency:hover {
+            background: #c82333;
+        }
+        .test-frame {
+            border: 2px solid #333;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚨 Emergency Modal Centering Fix Test</h1>
+    
+    <div class="status error">
+        <strong>⚠️ ISSUE:</strong> Export modal still appearing offset to the left
+    </div>
+    
+    <div class="status success">
+        <strong>🔧 FIX APPLIED:</strong> Ultra-aggressive modal centering with fallback methods
+    </div>
+    
+    <h2>Test the Fix:</h2>
+    <button class="test-button emergency" onclick="testExportModal()">🧪 Test Export Modal (Emergency Fix)</button>
+    <button class="test-button" onclick="testCategoryModal()">🧪 Test Category Modal</button>
+    <button class="test-button" onclick="testAllModals()">🧪 Test All Modals</button>
+    
+    <h3>Live Test Environment:</h3>
+    <iframe id="testFrame" class="test-frame" src="simple-editor.html" width="100%" height="600px"></iframe>
+    
+    <div id="testResults" style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 5px;">
+        <h3>Test Results:</h3>
+        <div id="resultsList">Click a test button to begin testing...</div>
+    </div>
+
+<script>
+function logResult(message, type = 'info') {
+    const resultsList = document.getElementById('resultsList');
+    const timestamp = new Date().toLocaleTimeString();
+    const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+    
+    resultsList.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${timestamp}] ${message}</div>`;
+    resultsList.scrollTop = resultsList.scrollHeight;
+    console.log(message);
+}
+
+function testExportModal() {
+    logResult('🚨 TESTING EXPORT MODAL WITH EMERGENCY FIX...', 'info');
+    
+    const iframe = document.getElementById('testFrame');
+    const iframeWindow = iframe.contentWindow;
+    
+    try {
+        // Add test content
+        const textarea = iframe.contentDocument.getElementById('editorTextarea');
+        const titleInput = iframe.contentDocument.getElementById('postTitle');
+        
+        if (textarea && titleInput) {
+            textarea.value = 'Emergency test content for modal fix verification';
+            titleInput.value = 'Emergency Modal Test';
+            logResult('✅ Added test content to editor', 'success');
+            
+            // Trigger export
+            setTimeout(() => {
+                if (iframeWindow.localEditor && iframeWindow.localEditor.exportPost) {
+                    logResult('🎭 Triggering export modal...', 'info');
+                    iframeWindow.localEditor.exportPost();
+                    
+                    // Check positioning after delay
+                    setTimeout(() => {
+                        const exportModal = iframe.contentDocument.getElementById('exportModal');
+                        if (exportModal && exportModal.style.display !== 'none') {
+                            const rect = exportModal.getBoundingClientRect();
+                            const iframeRect = iframe.getBoundingClientRect();
+                            
+                            // Calculate relative position within iframe
+                            const relativeX = rect.x - iframeRect.x;
+                            const relativeY = rect.y - iframeRect.y;
+                            const iframeCenter = iframe.offsetWidth / 2;
+                            
+                            logResult(`📍 Modal position: x=${Math.round(relativeX)}, y=${Math.round(relativeY)}`, 'info');
+                            logResult(`📍 Iframe center: ${Math.round(iframeCenter)}`, 'info');
+                            logResult(`📍 Modal width: ${Math.round(rect.width)}`, 'info');
+                            
+                            // Check if reasonably centered
+                            const modalCenter = relativeX + rect.width / 2;
+                            const offsetFromCenter = Math.abs(modalCenter - iframeCenter);
+                            
+                            if (offsetFromCenter < 50) {
+                                logResult('✅ SUCCESS: Export modal appears centered!', 'success');
+                            } else {
+                                logResult(`❌ ISSUE: Modal offset by ${Math.round(offsetFromCenter)}px from center`, 'error');
+                            }
+                        } else {
+                            logResult('❌ Export modal not visible', 'error');
+                        }
+                    }, 1000);
+                } else {
+                    logResult('❌ localEditor.exportPost not available', 'error');
+                }
+            }, 500);
+        } else {
+            logResult('❌ Editor elements not found in iframe', 'error');
+        }
+    } catch (error) {
+        logResult(`❌ Test failed: ${error.message}`, 'error');
+    }
+}
+
+function testCategoryModal() {
+    logResult('🧪 Testing Category Modal...', 'info');
+    
+    const iframe = document.getElementById('testFrame');
+    const iframeWindow = iframe.contentWindow;
+    
+    try {
+        setTimeout(() => {
+            if (iframeWindow.localEditor && iframeWindow.localEditor.showCategoryModal) {
+                iframeWindow.localEditor.showCategoryModal();
+                logResult('✅ Category modal triggered', 'success');
+            } else {
+                logResult('❌ Category modal function not available', 'error');
+            }
+        }, 500);
+    } catch (error) {
+        logResult(`❌ Category test failed: ${error.message}`, 'error');
+    }
+}
+
+function testAllModals() {
+    logResult('🚀 Running comprehensive modal test...', 'info');
+    
+    setTimeout(() => testExportModal(), 500);
+    setTimeout(() => testCategoryModal(), 3000);
+    
+    setTimeout(() => {
+        logResult('✅ All modal tests completed', 'success');
+        logResult('📋 Check console in iframe for detailed positioning debug info', 'info');
+    }, 5000);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    logResult('🎯 Emergency Modal Fix Test Page Loaded', 'success');
+    logResult('📝 The iframe below contains the updated simple-editor.html', 'info');
+    logResult('🔧 Applied ultra-aggressive modal centering + fallback methods', 'info');
+});
+</script>
+</body>
+</html>

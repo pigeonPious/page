@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Positioning Diagnostic</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e8e8e8;
+            line-height: 1.6;
+        }
+        
+        .diagnostic-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background: #0066cc;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .test-button:hover {
+            background: #0052a3;
+        }
+        
+        .diagnostic-info {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #0066cc;
+        }
+        
+        .position-log {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 0, 0, 0.3); /* Red background to see positioning */
+            z-index: 999999;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-box {
+            background: #2a2a2a;
+            color: #e8e8e8;
+            border: 3px solid #0066cc;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 500px;
+            max-height: 400px;
+            position: relative;
+            margin: 0 auto;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #e8e8e8;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .viewport-info {
+            background: #444;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagnostic-container">
+        <h1>🔬 Modal Positioning Diagnostic Tool</h1>
+        
+        <div class="diagnostic-info">
+            <h2>🎯 Purpose</h2>
+            <p>This tool will help us identify exactly where the modal positioning issue is occurring. 
+            The modal below uses the exact same CSS and JavaScript logic as the simple-editor.html modals.</p>
+        </div>
+        
+        <div class="viewport-info" id="viewportInfo">
+            Loading viewport information...
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="test-button" onclick="showDiagnosticModal()">
+                🧪 Show Diagnostic Modal
+            </button>
+            
+            <button class="test-button" onclick="logCurrentViewport()">
+                📊 Log Viewport Info
+            </button>
+            
+            <button class="test-button" onclick="clearLog()">
+                🗑️ Clear Log
+            </button>
+        </div>
+        
+        <div class="diagnostic-info">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li><strong>Click "Show Diagnostic Modal"</strong> - Modal should appear centered with red background overlay</li>
+                <li><strong>Report what you see:</strong>
+                    <ul>
+                        <li>✅ <strong>Success:</strong> Modal appears centered in viewport</li>
+                        <li>❌ <strong>Offset Issue:</strong> Modal appears offset left/up (only bottom-right visible)</li>
+                        <li>⚠️ <strong>Other:</strong> Modal appears somewhere else</li>
+                    </ul>
+                </li>
+                <li><strong>Check position log below</strong> for exact coordinates</li>
+            </ol>
+        </div>
+        
+        <div class="position-log" id="positionLog">
+            Position diagnostics will appear here...
+        </div>
+    </div>
+
+    <!-- Diagnostic Modal -->
+    <div id="diagnosticModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeDiagnosticModal()">&times;</button>
+            <h2>🎯 Modal Position Test</h2>
+            <p><strong>Can you see this text clearly?</strong></p>
+            <p>If yes, the modal is properly centered!</p>
+            <p>If you can only see part of this modal (especially if you can only see the bottom-right corner), 
+            then we have confirmed the positioning issue.</p>
+            <div style="margin: 20px 0;">
+                <button class="test-button" onclick="logModalPosition()">
+                    📊 Log My Position
+                </button>
+                <button class="test-button" onclick="closeDiagnosticModal()">
+                    ✅ Close Modal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateViewportInfo() {
+            const info = document.getElementById('viewportInfo');
+            info.innerHTML = `
+Viewport: ${window.innerWidth} × ${window.innerHeight}px
+Screen: ${screen.width} × ${screen.height}px
+Device Pixel Ratio: ${window.devicePixelRatio}
+User Agent: ${navigator.userAgent.substring(0, 60)}...
+            `.trim();
+        }
+
+        function log(message) {
+            const logElement = document.getElementById('positionLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function showDiagnosticModal() {
+            log('🎭 Showing diagnostic modal...');
+            
+            const modal = document.getElementById('diagnosticModal');
+            
+            // Apply the exact same logic as simple-editor.html
+            modal.classList.add('show');
+            
+            // Log initial position
+            setTimeout(() => {
+                logModalPosition();
+            }, 100);
+        }
+
+        function closeDiagnosticModal() {
+            const modal = document.getElementById('diagnosticModal');
+            modal.classList.remove('show');
+            log('❌ Modal closed');
+        }
+
+        function logModalPosition() {
+            const modal = document.getElementById('diagnosticModal');
+            const box = modal.querySelector('.modal-box');
+            
+            if (!modal || !box) {
+                log('❌ Modal elements not found');
+                return;
+            }
+            
+            const modalRect = modal.getBoundingClientRect();
+            const boxRect = box.getBoundingClientRect();
+            
+            log('📊 MODAL POSITION DIAGNOSTIC:');
+            log(`   Viewport: ${window.innerWidth} × ${window.innerHeight}`);
+            log(`   Modal overlay: x=${modalRect.x}, y=${modalRect.y}, w=${modalRect.width}, h=${modalRect.height}`);
+            log(`   Modal content: x=${boxRect.x}, y=${boxRect.y}, w=${boxRect.width}, h=${boxRect.height}`);
+            
+            const viewportCenterX = window.innerWidth / 2;
+            const viewportCenterY = window.innerHeight / 2;
+            const modalCenterX = boxRect.x + boxRect.width / 2;
+            const modalCenterY = boxRect.y + boxRect.height / 2;
+            
+            log(`   Viewport center: ${viewportCenterX}, ${viewportCenterY}`);
+            log(`   Modal center: ${modalCenterX}, ${modalCenterY}`);
+            log(`   Offset from center: x=${modalCenterX - viewportCenterX}, y=${modalCenterY - viewportCenterY}`);
+            
+            // Check if modal is visible in viewport
+            const fullyVisible = (
+                boxRect.x >= 0 && 
+                boxRect.y >= 0 && 
+                boxRect.x + boxRect.width <= window.innerWidth && 
+                boxRect.y + boxRect.height <= window.innerHeight
+            );
+            
+            log(`   Fully visible in viewport: ${fullyVisible ? 'YES ✅' : 'NO ❌'}`);
+            
+            if (!fullyVisible) {
+                log('   🚨 ISSUE DETECTED: Modal is not fully visible in viewport!');
+                if (boxRect.x < 0) log('   📍 Modal extends off LEFT edge');
+                if (boxRect.y < 0) log('   📍 Modal extends off TOP edge');
+                if (boxRect.x + boxRect.width > window.innerWidth) log('   📍 Modal extends off RIGHT edge');
+                if (boxRect.y + boxRect.height > window.innerHeight) log('   📍 Modal extends off BOTTOM edge');
+            }
+            
+            log('');
+        }
+
+        function logCurrentViewport() {
+            log('📱 Current viewport information:');
+            log(`   Window: ${window.innerWidth} × ${window.innerHeight}`);
+            log(`   Screen: ${screen.width} × ${screen.height}`);
+            log(`   Device Pixel Ratio: ${window.devicePixelRatio}`);
+            log(`   Scroll: x=${window.scrollX}, y=${window.scrollY}`);
+            log('');
+        }
+
+        function clearLog() {
+            document.getElementById('positionLog').textContent = '';
+            log('🧹 Log cleared');
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeDiagnosticModal();
+            }
+        });
+
+        // Close modal with escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeDiagnosticModal();
+            }
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            updateViewportInfo();
+            log('🔬 Modal positioning diagnostic tool loaded');
+            log('📝 Ready to test modal positioning...');
+        });
+
+        // Update viewport info on resize
+        window.addEventListener('resize', updateViewportInfo);
+    </script>
+</body>
+</html>

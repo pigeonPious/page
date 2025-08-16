@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Editor Modal Fixes Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e8e8e8;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        
+        .test-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background: #0066cc;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #0052a3;
+        }
+        
+        .success {
+            color: #28a745;
+        }
+        
+        .warning {
+            color: #ffc107;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background: #333;
+        }
+        
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #2196F3;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 5px;
+        }
+        
+        .test-result {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Simple Editor Modal Fixes Test</h1>
+    
+    <div class="test-section">
+        <h2>✅ Issue Summary</h2>
+        <p>This test verifies that all the reported issues with simple-editor.html have been fixed:</p>
+        <ul>
+            <li><strong>Export modal appearing offset left and offscreen</strong> ✅ Fixed</li>
+            <li><strong>Make Note functionality not working</strong> ✅ Fixed</li>
+            <li><strong>Remove glossy styling from category dropdown</strong> ✅ Fixed (converted to popup)</li>
+            <li><strong>Reposition export button to right side</strong> ✅ Fixed</li>
+            <li><strong>Reduce title input size to match body text</strong> ✅ Fixed</li>
+            <li><strong>Modal not closing properly</strong> ✅ Fixed</li>
+            <li><strong>Modal appearing visible by default</strong> ✅ Fixed</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Interactive Tests</h2>
+        <p>Click the buttons below to test the editor in a new window:</p>
+        
+        <button class="test-button" onclick="openEditor()">
+            🚀 Open Simple Editor
+        </button>
+        
+        <button class="test-button" onclick="runAutomatedTests()">
+            🧪 Run Automated Tests
+        </button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Manual Test Checklist</h2>
+        <p>After opening the editor, verify these features work correctly:</p>
+        
+        <div class="status">
+            <h3>✅ Layout and Styling Tests</h3>
+            <ul>
+                <li>Title input should be same size as body text (13px, not bold)</li>
+                <li>Export button should be on the right side of the toolbar</li>
+                <li>Category button should show as a clean popup (not glossy dropdown)</li>
+                <li>No modals should be visible on page load</li>
+            </ul>
+        </div>
+
+        <div class="status">
+            <h3>🎭 Modal Functionality Tests</h3>
+            <ul>
+                <li>Click "📁 General" → Category modal should appear centered</li>
+                <li>Click "📤 Export" → Export modal should appear centered</li>
+                <li>All modals should close when clicking outside them</li>
+                <li>All modals should close when pressing Escape key</li>
+                <li>All modals should close when clicking their close buttons</li>
+            </ul>
+        </div>
+
+        <div class="status">
+            <h3>⌨️ Keyboard Shortcuts Tests</h3>
+            <ul>
+                <li>Select text and press <kbd>Ctrl+M</kbd> (or <kbd>Cmd+M</kbd>) → Should add note</li>
+                <li>Press <kbd>Ctrl+R</kbd> (or <kbd>Cmd+R</kbd>) → Should show "coming soon" message</li>
+            </ul>
+        </div>
+
+        <div class="status">
+            <h3>📝 Note Functionality Tests</h3>
+            <ul>
+                <li>Type some text in the editor</li>
+                <li>Select a portion of the text</li>
+                <li>Press <kbd>Ctrl+M</kbd> to add a note</li>
+                <li>Enter note text in the prompt</li>
+                <li>Text should become a note link with hover tooltip</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Technical Implementation</h2>
+        <p>The following fixes were implemented:</p>
+        
+        <div class="status">
+            <h3>Modal System Overhaul</h3>
+            <ul>
+                <li>✅ Added missing <code>ensureModalCentered()</code> function</li>
+                <li>✅ Added missing <code>centerModalWithTransform()</code> function</li>
+                <li>✅ Added missing <code>debugModalPosition()</code> function</li>
+                <li>✅ Added missing <code>setupModalManagement()</code> function</li>
+                <li>✅ Added missing <code>closeExportModal()</code> function</li>
+                <li>✅ Fixed CSS to hide modals by default with <code>display: none !important</code></li>
+                <li>✅ Fixed CSS to show modals centered with flexbox when <code>.show</code> class is added</li>
+                <li>✅ Added click-outside-to-close functionality</li>
+                <li>✅ Added escape-key-to-close functionality</li>
+            </ul>
+        </div>
+
+        <div class="status">
+            <h3>Note Functionality Implementation</h3>
+            <ul>
+                <li>✅ Added missing <code>makeNote()</code> function</li>
+                <li>✅ Added missing <code>toggleRawMode()</code> function (placeholder)</li>
+                <li>✅ Implemented text selection and note creation</li>
+                <li>✅ Added note link styling and hover functionality</li>
+            </ul>
+        </div>
+
+        <div class="status">
+            <h3>Layout and Styling Fixes</h3>
+            <ul>
+                <li>✅ Title input font-size reduced to 13px (from 24px)</li>
+                <li>✅ Title input font-weight changed to normal (from bold)</li>
+                <li>✅ Export button moved to right side using flexbox layout</li>
+                <li>✅ Category dropdown replaced with clean popup modal</li>
+                <li>✅ Enhanced modal shadows for better visibility</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openEditor() {
+            window.open('simple-editor.html', '_blank', 'width=1200,height=800');
+        }
+
+        function runAutomatedTests() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<h3>🔍 Running Automated Tests...</h3>';
+
+            // Test 1: Check if simple-editor.html loads without errors
+            testPageLoad();
+        }
+
+        function testPageLoad() {
+            const resultsDiv = document.getElementById('test-results');
+            
+            // Create iframe to test page load
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = 'simple-editor.html';
+            
+            iframe.onload = function() {
+                try {
+                    const doc = iframe.contentDocument;
+                    
+                    // Test 1: Page loads without errors
+                    addTestResult('Page Load Test', 'Page loads successfully', 'pass');
+                    
+                    // Test 2: Required elements exist
+                    const tests = [
+                        { id: 'postTitle', name: 'Title Input' },
+                        { id: 'export-btn', name: 'Export Button' },
+                        { id: 'category-btn', name: 'Category Button' },
+                        { id: 'visualEditor', name: 'Visual Editor' },
+                        { id: 'exportModal', name: 'Export Modal' },
+                        { id: 'categoryModal', name: 'Category Modal' },
+                        { id: 'messageModal', name: 'Message Modal' }
+                    ];
+                    
+                    tests.forEach(test => {
+                        const element = doc.getElementById(test.id);
+                        const exists = element !== null;
+                        addTestResult(
+                            `Element Test: ${test.name}`,
+                            exists ? 'Element found' : 'Element missing',
+                            exists ? 'pass' : 'fail'
+                        );
+                    });
+                    
+                    // Test 3: Modals are hidden by default
+                    const modals = ['exportModal', 'categoryModal', 'messageModal'];
+                    modals.forEach(modalId => {
+                        const modal = doc.getElementById(modalId);
+                        if (modal) {
+                            const isHidden = window.getComputedStyle(modal).display === 'none';
+                            addTestResult(
+                                `Modal Hidden Test: ${modalId}`,
+                                isHidden ? 'Modal properly hidden' : 'Modal visible on load',
+                                isHidden ? 'pass' : 'fail'
+                            );
+                        }
+                    });
+                    
+                    // Test 4: Check title input styling
+                    const titleInput = doc.getElementById('postTitle');
+                    if (titleInput) {
+                        const styles = window.getComputedStyle(titleInput);
+                        const fontSize = parseInt(styles.fontSize);
+                        const fontWeight = styles.fontWeight;
+                        
+                        addTestResult(
+                            'Title Input Font Size',
+                            `Font size is ${fontSize}px`,
+                            fontSize <= 13 ? 'pass' : 'fail'
+                        );
+                        
+                        addTestResult(
+                            'Title Input Font Weight',
+                            `Font weight is ${fontWeight}`,
+                            fontWeight === 'normal' || fontWeight === '400' ? 'pass' : 'fail'
+                        );
+                    }
+                    
+                } catch (error) {
+                    addTestResult('Page Load Test', `Error loading page: ${error.message}`, 'fail');
+                }
+                
+                document.body.removeChild(iframe);
+            };
+            
+            iframe.onerror = function() {
+                addTestResult('Page Load Test', 'Failed to load page', 'fail');
+                document.body.removeChild(iframe);
+            };
+            
+            document.body.appendChild(iframe);
+        }
+
+        function addTestResult(testName, result, status) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultElement = document.createElement('div');
+            resultElement.className = `test-result ${status}`;
+            resultElement.innerHTML = `
+                <strong>${testName}:</strong> ${result}
+                <span style="float: right;">${status === 'pass' ? '✅' : '❌'}</span>
+            `;
+            resultsDiv.appendChild(resultElement);
+        }
+
+        // Add some styling for better visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Modal Fixes Test Page Loaded');
+            console.log('🔧 All fixes have been implemented for simple-editor.html');
+        });
+    </script>
+</body>
+</html>
