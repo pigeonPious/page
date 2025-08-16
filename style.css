@@ -240,7 +240,20 @@ html, body {
   margin: 2px 0 28px 0;
 }
 
-/* All images in posts - uniform 150x150 square format */
+/* Post content with enhanced text flow for magazine-style layout */
+.post-content {
+  text-align: justify; /* Justify text for magazine appearance */
+  line-height: 1.6; /* Slightly taller line height for readability */
+  hyphens: auto; /* Enable automatic hyphenation */
+  word-wrap: break-word; /* Allow long words to break */
+}
+
+.post-content p {
+  margin: 0 0 14px 0;
+  text-indent: 0; /* No paragraph indentation */
+}
+
+/* All images in posts - uniform 150x150 square format with text wrapping */
 .post-content img {
   width: 150px !important;
   height: 150px !important;
@@ -249,22 +262,24 @@ html, body {
   border-radius: 4px;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  float: right; /* Default float right for text wrapping */
+  margin: 8px 0 12px 16px; /* Enhanced margins for better text flow */
+  shape-outside: margin-box; /* Better text wrapping around the entire margin box */
+  clear: none; /* Allow images to stack/overlap for magazine-style layout */
 }
 
-/* Float-right images maintain floating behavior but are still square */
+/* Specific float-left class for left-aligned images */
+.post-content img.float-left {
+  float: left;
+  margin: 8px 16px 12px 0; /* Enhanced margins for better text flow */
+  shape-outside: margin-box; /* Better text wrapping */
+}
+
+/* Float-right images (explicit class) */
 .post-content img.float-right {
   float: right;
-  margin: 4px 0 10px 14px;  /* gap so text doesn't touch image */
-  shape-outside: inset(0 round 0); /* keep rectangular wrap */
-  width: 150px !important;
-  height: 150px !important;
-  object-fit: cover !important;
-}
-
-/* Regular images (non-floating) are centered */
-.post-content img:not(.float-right) {
-  margin: 16px auto;
-  display: block;
+  margin: 8px 0 12px 16px; /* Enhanced margins for better text flow */
+  shape-outside: margin-box; /* Better text wrapping */
 }
 
 /* Hover effects for all images */

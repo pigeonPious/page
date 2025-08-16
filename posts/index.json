@@ -34,5 +34,11 @@
     "title": "Image System Test",
     "date": "2025-August-16",
     "category": "general"
+  },
+  {
+    "slug": "text-wrapping-test",
+    "title": "Magazine-Style Text Wrapping Test",
+    "date": "2025-August-16",
+    "category": "general"
   }
 ]
