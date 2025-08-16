@@ -56,7 +56,7 @@
     <div class="editor-tools">
       <div class="editor-tools-left">
         <span id="category-btn">📁 <span id="current-category">General</span></span>
-        <span id="images-btn">🖼️ Images</span>
+        <span id="images-btn">IMAGES</span>
       </div>
       <div class="editor-tools-right">
         <span id="export-btn">📤 Export</span>
@@ -163,12 +163,24 @@ Select text and press Ctrl+M to add notes.">
   <span class="message-text">Message will appear here</span>
 </div>
 
+<!-- Box Style 1 Inputs -->
+<div id="noteInputBox" class="box-style-1 hidden">
+  <input type="text" placeholder="Enter your note..." maxlength="200">
+</div>
+
+<div id="publishInputBox" class="box-style-1 hidden">
+  <input type="text" placeholder="Commit message (optional)..." maxlength="100">
+</div>
+
+<div id="exportInputBox" class="box-style-1 hidden">
+  <input type="text" placeholder="Filename (optional)..." maxlength="50">
+</div>
+
 <!-- Image Magazine - Draggable Box Style 1 Frame -->
 <div id="imageMagazine" class="box-style-1 image-magazine hidden">
   <div class="image-magazine-header">
-    <span class="image-magazine-title">🖼️ Image Magazine</span>
     <div class="image-magazine-controls">
-      <button class="image-magazine-btn" id="import-image-btn">📤 Import</button>
+      <button class="image-magazine-btn" id="import-image-btn">Import</button>
       <button class="image-magazine-btn close-btn" id="close-magazine-btn">×</button>
     </div>
   </div>
@@ -200,6 +212,10 @@ const editor = {
     this.setupModalManagement();
     this.setupImageMagazine();
     this.checkGitHubConfig();
+    
+    // Check if we're editing an existing post
+    this.checkForPostEditing();
+    
     console.log('Simple Editor initialized');
   },
 
@@ -548,7 +564,78 @@ const editor = {
   },
 
   publishPost() {
-    this.showMessage('GitHub publishing feature coming soon!');
+    console.log('publishPost() called!');
+    
+    const title = document.getElementById('postTitle').value.trim();
+    const content = document.getElementById('visualEditor').innerHTML.trim();
+    
+    if (!title) {
+      this.showMessage('Please enter a title for your post.');
+      return;
+    }
+    
+    if (!content) {
+      this.showMessage('Please write some content for your post.');
+      return;
+    }
+
+    // Check GitHub config
+    const config = this.getGitHubConfig();
+    if (!config || !config.token || !config.repo) {
+      this.showMessage('Please set up GitHub configuration first. Go to Connect > Setup GitHub.', 'Setup Required');
+      return;
+    }
+
+    // Show box style 1 input for commit message
+    this.showBoxInput('publishInputBox', async (commitMessage) => {
+      // Determine if we're editing an existing post
+      const isEditing = !!this.editingSlug;
+      const slug = isEditing ? this.editingSlug : this.generateSlug(title);
+      
+      // Use appropriate commit message
+      const defaultMessage = isEditing ? `Update post: ${title}` : `Add post: ${title}`;
+      const finalCommitMessage = commitMessage || defaultMessage;
+      
+      // Generate post data
+      const date = new Date().toISOString().split('T')[0];
+      const formattedDate = this.formatDateForPost(date);
+      
+      const postData = {
+        title: title,
+        content: this.processContent(content),
+        category: this.currentCategory,
+        date: formattedDate
+      };
+
+      console.log('Publishing to GitHub:', postData);
+
+      try {
+        // Save post to GitHub with custom commit message
+        await this.savePostToGitHub(slug, postData, config, finalCommitMessage);
+        
+        // Show appropriate success message
+        const successMessage = isEditing 
+          ? `Post "${title}" updated successfully!`
+          : 'Post published successfully to GitHub!';
+        this.showMessage(successMessage, '🎉 Success');
+        
+        // Clear editor and editing state
+        document.getElementById('postTitle').value = '';
+        document.getElementById('visualEditor').innerHTML = '';
+        this.currentCategory = 'general';
+        document.getElementById('current-category').textContent = 'General';
+        
+        // Clear editing mode
+        if (isEditing) {
+          this.editingSlug = null;
+          document.title = 'Simple Editor - ppPage';
+        }
+        
+      } catch (error) {
+        console.error('Error publishing post:', error);
+        this.showMessage(error.message || 'Failed to publish post to GitHub.', '❌ Error');
+      }
+    }, defaultMessage);
   },
 
   // Utility functions
@@ -562,6 +649,100 @@ const editor = {
       document.getElementById('message-content').textContent = message;
       this.showModal('messageModal');
     }
+  },
+
+  // =============================================================================
+  // POST EDITING FUNCTIONS
+  // =============================================================================
+
+  // Check if we're editing an existing post
+  async checkForPostEditing() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const editSlug = urlParams.get('edit');
+    
+    // Also check sessionStorage for post slug
+    const sessionSlug = sessionStorage.getItem('editingPostSlug');
+    const slugToEdit = editSlug || sessionSlug;
+    
+    if (slugToEdit) {
+      console.log('Editing mode detected for slug:', slugToEdit);
+      
+      // Clear the session storage
+      if (sessionSlug) {
+        sessionStorage.removeItem('editingPostSlug');
+      }
+      
+      // Load the post
+      await this.loadPostForEditing(slugToEdit);
+    }
+  },
+
+  // Load an existing post for editing
+  async loadPostForEditing(slug) {
+    const config = this.getGitHubConfig();
+    
+    if (!config || !config.token || !config.repo) {
+      this.showMessage('GitHub Not Configured', 'Please configure GitHub connection to edit posts.');
+      return;
+    }
+
+    try {
+      // Show loading indicator
+      document.getElementById('postTitle').placeholder = 'Loading post...';
+      
+      const [owner, repo] = config.repo.split('/');
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/posts/${slug}.json`, {
+        headers: {
+          'Authorization': `token ${config.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Post not found: ${slug}`);
+      }
+
+      const fileData = await response.json();
+      const postContent = JSON.parse(atob(fileData.content));
+      
+      // Populate the editor with existing post data
+      document.getElementById('postTitle').value = postContent.title || '';
+      document.getElementById('postTitle').placeholder = 'Post Title';
+      
+      // Convert markdown content back to visual content if needed
+      const visualContent = this.convertMarkdownToVisual(postContent.content || '');
+      document.getElementById('visualEditor').innerHTML = visualContent;
+      
+      // Set category
+      if (postContent.category) {
+        this.currentCategory = postContent.category;
+        document.getElementById('current-category').textContent = 
+          postContent.category.charAt(0).toUpperCase() + postContent.category.slice(1);
+      }
+      
+      // Store the original slug for overwriting
+      this.editingSlug = slug;
+      
+      // Update page title to indicate editing
+      document.title = `✏️ Editing: ${postContent.title} - Simple Editor`;
+      
+      // Show success message
+      this.showMessage(`Now editing "${postContent.title}". When you publish, it will overwrite the existing post.`);
+      
+    } catch (error) {
+      console.error('Error loading post for editing:', error);
+      this.showMessage('Load Failed', `Failed to load post "${slug}": ${error.message}`);
+      
+      // Reset placeholder
+      document.getElementById('postTitle').placeholder = 'Post Title';
+    }
+  },
+
+  // Convert markdown content to visual editor content
+  convertMarkdownToVisual(markdownContent) {
+    // For now, return the content as-is
+    // In a full implementation, this would parse markdown and convert to HTML
+    return markdownContent;
   },
 
   isValidationMessage(message) {
@@ -612,6 +793,84 @@ const editor = {
     setTimeout(() => {
       box.classList.add('hidden');
     }, 3000);
+  },
+
+  // Box Style 1 Input System
+  showBoxInput(boxId, onConfirm, initialValue = '') {
+    const box = document.getElementById(boxId);
+    const input = box.querySelector('input');
+    
+    // Position the box near the cursor or button
+    const selection = window.getSelection();
+    let x = 100, y = 100;
+    
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      x = rect.left;
+      y = rect.bottom + 5;
+    } else {
+      // Use stored mouse position if available
+      x = window.lastMouseX || 100;
+      y = window.lastMouseY || 100;
+    }
+    
+    // Ensure popup stays within viewport boundaries
+    const boxWidth = 300; // Approximate width
+    const boxHeight = 40; // Approximate height
+    
+    if (x + boxWidth > window.innerWidth) {
+      x = window.innerWidth - boxWidth - 10;
+    }
+    if (y + boxHeight > window.innerHeight) {
+      y = window.innerHeight - boxHeight - 10;
+    }
+    if (x < 10) x = 10;
+    if (y < 10) y = 10;
+    
+    box.style.left = x + 'px';
+    box.style.top = y + 'px';
+    box.classList.remove('hidden');
+    
+    input.value = initialValue;
+    input.focus();
+    input.select();
+    
+    // Handle Enter and Escape
+    const handleKeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const value = input.value.trim();
+        this.hideBoxInput(boxId);
+        if (onConfirm) onConfirm(value);
+        input.removeEventListener('keydown', handleKeydown);
+        document.removeEventListener('click', handleClickOutside);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        this.hideBoxInput(boxId);
+        input.removeEventListener('keydown', handleKeydown);
+        document.removeEventListener('click', handleClickOutside);
+      }
+    };
+    
+    // Handle click outside
+    const handleClickOutside = (e) => {
+      if (!box.contains(e.target)) {
+        this.hideBoxInput(boxId);
+        input.removeEventListener('keydown', handleKeydown);
+        document.removeEventListener('click', handleClickOutside);
+      }
+    };
+    
+    input.addEventListener('keydown', handleKeydown);
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+  },
+
+  hideBoxInput(boxId) {
+    const box = document.getElementById(boxId);
+    box.classList.add('hidden');
   },
 
   // =============================================================================
@@ -668,7 +927,7 @@ const editor = {
     magazine.classList.remove('hidden');
     
     // Position magazine (default center-right)
-    const x = window.innerWidth - 370;
+    const x = window.innerWidth - 134;
     const y = 100;
     magazine.style.left = Math.max(20, x) + 'px';
     magazine.style.top = y + 'px';
@@ -681,6 +940,29 @@ const editor = {
   hideImageMagazine() {
     document.getElementById('imageMagazine').classList.add('hidden');
     this.imageMagazineVisible = false;
+    
+    // Cleanup any ongoing drag operations
+    this.cleanupImageDragging();
+  },
+
+  // Clean up any ongoing image drag operations
+  cleanupImageDragging() {
+    // Remove any drag clones that might be stuck on screen
+    const dragClones = document.querySelectorAll('.image-dragging');
+    dragClones.forEach(clone => {
+      if (clone.parentNode) {
+        clone.parentNode.removeChild(clone);
+      }
+    });
+    
+    // Reset drag state
+    this.draggedImage = null;
+    
+    // Remove drag-over styling from visual editor
+    const visualEditor = document.getElementById('visualEditor');
+    if (visualEditor) {
+      visualEditor.classList.remove('drag-over');
+    }
   },
 
   // Make magazine draggable
@@ -842,6 +1124,26 @@ const editor = {
       if (!isDragging) return;
       
       isDragging = false;
+      
+      // Check if dropped on close button (delete)
+      const closeBtn = document.getElementById('close-magazine-btn');
+      if (closeBtn) {
+        const closeBtnRect = closeBtn.getBoundingClientRect();
+        if (e.clientX >= closeBtnRect.left && e.clientX <= closeBtnRect.right &&
+            e.clientY >= closeBtnRect.top && e.clientY <= closeBtnRect.bottom) {
+          // Delete the image
+          this.deleteImageFromRepository(this.draggedImage);
+          // Cleanup and exit early
+          if (dragClone) {
+            document.body.removeChild(dragClone);
+            dragClone = null;
+          }
+          this.draggedImage = null;
+          document.removeEventListener('mousemove', handleImageDrag);
+          document.removeEventListener('mouseup', stopImageDrag);
+          return;
+        }
+      }
       
       // Check if dropped on visual editor
       const visualEditor = document.getElementById('visualEditor');
@@ -1134,6 +1436,91 @@ const editor = {
     document.addEventListener('keydown', handleEsc);
   },
 
+  // Delete image from GitHub repository (drag-to-delete functionality)
+  async deleteImageFromRepository(imageData) {
+    const config = this.getGitHubConfig();
+    
+    if (!config || !config.token || !config.repo) {
+      this.showMessage('GitHub Not Configured', 'Please configure GitHub connection to delete images.');
+      return;
+    }
+
+    if (!imageData || imageData.isDemo) {
+      this.showMessage('Cannot Delete', 'Cannot delete demo images.');
+      return;
+    }
+
+    // Confirm deletion
+    if (!confirm(`Delete "${imageData.name}" from repository?\n\nThis cannot be undone and will remove the image permanently.`)) {
+      return;
+    }
+
+    try {
+      const [owner, repo] = config.repo.split('/');
+      
+      // Get the file's SHA to delete it
+      const sha = imageData.sha || await this.getImageSha(imageData.path, config);
+      
+      if (!sha) {
+        throw new Error('Could not retrieve file SHA for deletion');
+      }
+
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${imageData.path}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `token ${config.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Delete image: ${imageData.name}`,
+          sha: sha,
+          branch: config.branch || 'main'
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`GitHub API error: ${error.message}`);
+      }
+
+      // Remove from local images array
+      this.images = this.images.filter(img => img.path !== imageData.path);
+      
+      // Refresh the gallery
+      this.refreshImageGallery();
+      
+      this.showMessage('Image Deleted', `${imageData.name} has been deleted from the repository.`);
+      
+    } catch (error) {
+      console.error('Delete error:', error);
+      this.showMessage('Delete Failed', `Failed to delete ${imageData.name}: ${error.message}`);
+    }
+  },
+
+  // Helper function to get image SHA for deletion
+  async getImageSha(imagePath, config) {
+    try {
+      const [owner, repo] = config.repo.split('/');
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${imagePath}`, {
+        headers: {
+          'Authorization': `token ${config.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      return data.sha;
+    } catch (error) {
+      console.error('Error getting image SHA:', error);
+      return null;
+    }
+  },
+
   // Convert visual content to markdown format
   convertToMarkdown(htmlContent) {
     // Create a temporary container to parse the HTML
@@ -1180,6 +1567,143 @@ const editor = {
       .replace(/^\s+|\s+$/g, '')
       .trim();
 
+    return content;
+  },
+
+  // =============================================================================
+  // GITHUB PUBLISHING FUNCTIONS
+  // =============================================================================
+
+  async savePostToGitHub(slug, postData, config, commitMessage = null) {
+    const [owner, repo] = config.repo.split('/');
+    const branch = config.branch || 'main';
+    
+    // Use custom commit message or default
+    const message = commitMessage || `Add post: ${postData.title}`;
+    
+    // Save post file
+    const postPath = `posts/${slug}.json`;
+    const postContent = JSON.stringify(postData, null, 2);
+    
+    await this.createOrUpdateGitHubFile(
+      owner, repo, branch, postPath, 
+      message, 
+      postContent, config.token
+    );
+
+    // Update index
+    await this.updatePostIndex(owner, repo, branch, slug, postData, config.token);
+  },
+
+  async createOrUpdateGitHubFile(owner, repo, branch, path, message, content, token) {
+    // First, try to get the existing file to get its SHA
+    let sha = null;
+    try {
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (response.ok) {
+        const file = await response.json();
+        sha = file.sha;
+      }
+    } catch (error) {
+      // File doesn't exist, that's fine
+    }
+
+    // Create or update the file
+    const payload = {
+      message: message,
+      content: btoa(content),
+      branch: branch
+    };
+    
+    if (sha) {
+      payload.sha = sha;
+    }
+
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`GitHub API error: ${error.message}`);
+    }
+
+    return response.json();
+  },
+
+  async updatePostIndex(owner, repo, branch, slug, postData, token) {
+    try {
+      // Get current index
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/posts/index.json?ref=${branch}`, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      let indexContent = [];
+      let sha = null;
+
+      if (response.ok) {
+        const indexFile = await response.json();
+        indexContent = JSON.parse(atob(indexFile.content));
+        sha = indexFile.sha;
+      }
+
+      // Add new post to index (remove existing if updating)
+      indexContent = indexContent.filter(post => post.slug !== slug);
+      indexContent.push({
+        slug: slug,
+        title: postData.title,
+        date: postData.date,
+        category: postData.category || 'general'
+      });
+
+      // Sort by date (newest first)
+      indexContent.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      // Update index file
+      await this.createOrUpdateGitHubFile(
+        owner, repo, branch, 'posts/index.json',
+        `Update index for post: ${postData.title}`,
+        JSON.stringify(indexContent, null, 2),
+        token
+      );
+
+    } catch (error) {
+      console.error('Error updating index:', error);
+      throw new Error('Failed to update post index');
+    }
+  },
+
+  formatDateForPost(dateStr) {
+    const date = new Date(dateStr);
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${date.getFullYear()}-${months[date.getMonth()]}-${date.getDate()}`;
+  },
+
+  // Helper functions for publishing
+  generateSlug(title) {
+    return title.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  },
+
+  processContent(content) {
+    // Convert HTML content to preserve formatting and note links
     return content;
   }
 };

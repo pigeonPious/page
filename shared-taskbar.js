@@ -19,7 +19,7 @@ function getSharedTaskbarHTML() {
 <div class="menu-bar">
   <div class="menu-bar-inner">
     <div class="menu-star" id="star-button">*</div>
-    <div class="menu-item"><div class="label" data-menu>File</div><div class="menu-dropdown"><a class="menu-entry" id="new-post" href="editor.html">New</a></div></div>
+    <div class="menu-item"><div class="label" data-menu>File</div><div class="menu-dropdown"><a class="menu-entry" id="new-post" href="editor.html">New</a><div class="menu-entry admin-only" id="edit-post-button" style="display: none;">Edit Post</div></div></div>
     <div class="menu-item"><div class="label" data-menu>Edit</div><div class="menu-dropdown"><div class="menu-entry disabled">Undo</div><div class="menu-entry editor-only" id="make-note-button">Make Note</div></div></div>
     <div class="menu-item"><div class="label" data-menu>Navigation</div><div class="menu-dropdown" id="navigation-dropdown">
       <a class="menu-entry" href="index.html">Blog</a>
@@ -94,6 +94,19 @@ function loadSharedTaskbar() {
         e.preventDefault();
         e.stopPropagation();
         handleMakeNote();
+      });
+    }
+
+    // Check authentication status and show/hide admin features
+    checkAuthStatusForTaskbar();
+
+    // Add Edit Post button event listener
+    const editPostButton = document.getElementById('edit-post-button');
+    if (editPostButton) {
+      editPostButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleEditPost();
       });
     }
   } catch (error) {
@@ -232,6 +245,76 @@ function applyInitialTheme() {
       document.body.classList.remove('dark-mode', 'custom-mode');
     }
   }
+}
+
+// Check authentication status and show/hide admin features
+async function checkAuthStatusForTaskbar() {
+  try {
+    // Check authentication via auth-check endpoint
+    const response = await fetch('/.netlify/functions/auth-check', {
+      credentials: 'include' // Include cookies for authentication
+    });
+    const data = await response.json();
+    
+    if (data.authenticated && data.user && data.user.isAdmin) {
+      // Show admin-only features
+      const adminElements = document.querySelectorAll('.admin-only');
+      adminElements.forEach(element => {
+        element.style.display = 'block';
+      });
+    } else {
+      // Hide admin-only features
+      const adminElements = document.querySelectorAll('.admin-only');
+      adminElements.forEach(element => {
+        element.style.display = 'none';
+      });
+    }
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    // Hide admin features on error
+    const adminElements = document.querySelectorAll('.admin-only');
+    adminElements.forEach(element => {
+      element.style.display = 'none';
+    });
+  }
+}
+
+// Handle Edit Post button click
+function handleEditPost() {
+  // Check if we're on the main site with a post loaded
+  const postContent = document.getElementById('post-content');
+  
+  if (!postContent) {
+    alert('No post is currently loaded. Please navigate to a post first, then click Edit Post.');
+    return;
+  }
+
+  // Get the current post slug from URL hash or find it in the page
+  let currentSlug = null;
+  
+  // Try to get slug from URL hash
+  if (window.location.hash && window.location.hash.startsWith('#')) {
+    currentSlug = window.location.hash.substring(1);
+  } else {
+    // Look for post identifier in the page
+    const postTitle = document.querySelector('h1');
+    if (postTitle) {
+      // Convert title to potential slug format
+      currentSlug = postTitle.textContent.toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+  }
+  
+  if (!currentSlug) {
+    alert('Cannot determine which post to edit. Please ensure you have a post loaded.');
+    return;
+  }
+
+  // Store the post slug for editing and redirect to editor
+  sessionStorage.setItem('editingPostSlug', currentSlug);
+  window.location.href = 'editor.html?edit=' + encodeURIComponent(currentSlug);
 }
 
 // Load the shared taskbar when the page loads - after other scripts
