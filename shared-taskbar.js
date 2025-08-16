@@ -23,8 +23,11 @@ function getSharedTaskbarHTML() {
     <div class="menu-item"><div class="label" data-menu>Edit</div><div class="menu-dropdown"><div class="menu-entry disabled">Undo</div><div class="menu-entry editor-only" id="make-note-button">Make Note</div></div></div>
     <div class="menu-item"><div class="label" data-menu>Navigation</div><div class="menu-dropdown"><a class="menu-entry" href="index.html">Blog</a><a class="menu-entry" href="#">About</a><a class="menu-entry" href="#">Contact</a></div></div>
     <div class="menu-item"><div class="label" data-menu>View</div><div class="menu-dropdown"><div class="menu-entry" data-mode="dark">Dark</div><div class="menu-entry" data-mode="light">Light</div><div class="menu-entry" data-mode="custom">Custom…</div><div class="menu-entry" data-mode="random">Random</div></div></div>
-    <div class="menu-item"><div class="label" data-menu>Log</div><div class="menu-dropdown" id="post-list-dropdown"><div class="menu-entry" id="refresh-posts">🔄 Refresh Posts</div></div></div>
+    <div class="menu-item"><div class="label" data-menu>Log</div><div class="menu-dropdown" id="post-list-dropdown"><div class="menu-entry" id="refresh-posts">Refresh Posts</div></div></div>
     <div class="menu-item"><div class="label" data-menu>Connect</div><div class="menu-dropdown"><div class="menu-entry" id="bluesky-share">Share to Bluesky</div><div class="menu-entry" id="twitter-share">Share to Twitter</div></div></div>
+    <div class="taskbar-status editor-only">
+      <span id="github-status" onclick="editor.setupGitHub()">not connected</span>
+    </div>
   </div>
 </div>
   `;

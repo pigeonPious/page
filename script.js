@@ -293,6 +293,12 @@ function setupViewMenu() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // Track mouse position for popup anchoring
+  document.addEventListener('mousemove', (e) => {
+    window.lastMouseX = e.clientX;
+    window.lastMouseY = e.clientY;
+  });
+  
   setupMenus();
   setupHoverNotes();
   setupViewMenu();
@@ -793,6 +799,12 @@ class EditorManager {
   showMessage(title, text) {
     console.log('📢 Showing message:', title, text);
     
+    // Use Box Style 1 for validation messages
+    if (this.isValidationMessage(text)) {
+      this.showBoxMessage(text);
+      return;
+    }
+    
     const messageModal = document.getElementById('messageModal');
     const messageTitle = document.getElementById('messageTitle');
     const messageText = document.getElementById('messageText');
@@ -827,6 +839,63 @@ class EditorManager {
     }
     
     console.log('✅ Modal should be visible and centered now');
+  }
+
+  isValidationMessage(message) {
+    // Determine if this is a simple validation message that should use Box Style 1
+    const validationKeywords = [
+      'Please enter some content',
+      'Please select some text',
+      'Please fill in',
+      'Please enter',
+      'Please write'
+    ];
+    return validationKeywords.some(keyword => message.includes(keyword));
+  }
+
+  showBoxMessage(message) {
+    // First try to find an existing message box, or create one if needed
+    let box = document.getElementById('messageBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'messageBox';
+      box.className = 'box-style-1 message-box hidden';
+      box.innerHTML = '<span class="message-text">Message will appear here</span>';
+      document.body.appendChild(box);
+    }
+    
+    const textSpan = box.querySelector('.message-text');
+    textSpan.textContent = message;
+    
+    // Get mouse position, or use center if no mouse data
+    let x = window.lastMouseX || (window.innerWidth / 2 - 150);
+    let y = window.lastMouseY || (window.innerHeight / 3);
+    
+    // Offset the popup slightly below and to the right of the mouse
+    x += 10;
+    y += 10;
+    
+    // Ensure popup stays within viewport boundaries
+    const boxWidth = 300; // Approximate width
+    const boxHeight = 50; // Approximate height
+    
+    if (x + boxWidth > window.innerWidth) {
+      x = window.innerWidth - boxWidth - 10;
+    }
+    if (y + boxHeight > window.innerHeight) {
+      y = window.innerHeight - boxHeight - 10;
+    }
+    if (x < 10) x = 10;
+    if (y < 10) y = 10;
+    
+    box.style.left = x + 'px';
+    box.style.top = y + 'px';
+    box.classList.remove('hidden');
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      box.classList.add('hidden');
+    }, 3000);
   }
 
   extractTitle(content) {

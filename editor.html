@@ -36,11 +36,16 @@ Select text and press Ctrl+M to add notes.">
         <span class="tool-value" id="current-category">General</span>
       </div>
       
+      <div class="tool-button" id="images-btn">
+        IMAGES
+        <span class="tool-value">Manage Images</span>
+      </div>
+      
       <div class="tool-button" id="export-btn">
         EXPORT
       </div>
       
-      <div class="tool-button" id="publish-btn" style="display: none;">
+      <div class="tool-button" id="publish-btn">
         PUBLISH
       </div>
     </div>
@@ -160,6 +165,32 @@ Select text and press Ctrl+M to add notes.">
   <input type="text" placeholder="Filename (optional)..." maxlength="50">
 </div>
 
+<div id="messageBox" class="box-style-1 message-box hidden">
+  <span class="message-text">Message will appear here</span>
+</div>
+
+<!-- Image Magazine - Draggable Box Style 1 Frame -->
+<div id="imageMagazine" class="box-style-1 image-magazine hidden">
+  <div class="image-magazine-header">
+    <span class="image-magazine-title">🖼️ Image Magazine</span>
+    <div class="image-magazine-controls">
+      <button class="image-magazine-btn" id="import-image-btn">📤 Import</button>
+      <button class="image-magazine-btn close-btn" id="close-magazine-btn">×</button>
+    </div>
+  </div>
+  <div class="image-magazine-content">
+    <div class="image-gallery" id="imageGallery">
+      <div class="no-images-message">
+        <p>No images found in repository</p>
+        <p><small>Click Import to add images</small></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file input for image upload -->
+<input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
+
 <script>
 // Simple Editor - Optimized and Clean
 const editor = {
@@ -173,6 +204,7 @@ const editor = {
     this.setupEventListeners();
     // this.setupMenus(); // Disabled - using shared taskbar menu system
     this.setupModalManagement();
+    this.setupImageMagazine();
     this.checkGitHubConfig();
     console.log('Simple Editor initialized');
     
@@ -193,6 +225,12 @@ const editor = {
       e.preventDefault(); // Prevent text deselection
     });
     document.getElementById('export-btn').addEventListener('click', () => this.exportPost());
+    
+    // Images button
+    document.getElementById('images-btn').addEventListener('mousedown', (e) => {
+      e.preventDefault(); // Prevent text deselection
+    });
+    document.getElementById('images-btn').addEventListener('click', () => this.toggleImageMagazine());
     
     // Publish button
     document.getElementById('publish-btn').addEventListener('mousedown', (e) => {
@@ -218,8 +256,12 @@ const editor = {
       }
       if (e.key === 'Escape') {
         this.closeAllModals();
+        this.hideImageMagazine();
       }
     });
+
+    // Image magazine event listeners
+    this.setupImageEventListeners();
   },
 
   // Menu system
@@ -574,13 +616,18 @@ const editor = {
   // GitHub integration
   checkGitHubConfig() {
     const config = this.getGitHubConfig();
+    const statusElement = document.getElementById('github-status');
+    
+    if (!statusElement) return; // Not on editor page
+    
     if (config && config.token && config.repo) {
-      document.getElementById('github-setup').innerHTML = 
-        '<span class="github-connected">✅ GitHub connected</span> ' +
-        '<button onclick="editor.setupGitHub()" class="btn" style="margin-left: 10px;">Edit</button>';
-      document.getElementById('publish-mode').textContent = 'or publish directly to GitHub!';
-      document.getElementById('publish-btn').style.display = 'inline-block';
-      document.getElementById('export-btn').classList.remove('primary');
+      statusElement.textContent = 'connected';
+      statusElement.style.color = 'var(--accent)';
+      document.getElementById('publish-btn').style.display = 'block';
+    } else {
+      statusElement.textContent = 'not connected';
+      statusElement.style.color = 'var(--muted)';
+      document.getElementById('publish-btn').style.display = 'block';
     }
   },
 
@@ -814,14 +861,483 @@ const editor = {
 
   // Utility functions
   showMessage(message, title = 'Simple Editor') {
-    document.getElementById('message-title').textContent = title;
-    document.getElementById('message-content').textContent = message;
-    this.showModal('messageModal');
+    // Use Box Style 1 for validation and simple messages
+    if (this.isValidationMessage(message)) {
+      this.showBoxMessage(message);
+    } else {
+      // Use modal for complex messages
+      document.getElementById('message-title').textContent = title;
+      document.getElementById('message-content').textContent = message;
+      this.showModal('messageModal');
+    }
+  },
+
+  isValidationMessage(message) {
+    // Determine if this is a simple validation message that should use Box Style 1
+    const validationKeywords = [
+      'Please enter a title',
+      'Please write some content',
+      'Please select some text',
+      'Please fill in',
+      'Please enter',
+      'Please write'
+    ];
+    return validationKeywords.some(keyword => message.includes(keyword));
+  },
+
+  showBoxMessage(message) {
+    const box = document.getElementById('messageBox');
+    const textSpan = box.querySelector('.message-text');
+    
+    textSpan.textContent = message;
+    
+    // Get mouse position, or use center if no mouse data
+    let x = window.lastMouseX || (window.innerWidth / 2 - 150);
+    let y = window.lastMouseY || (window.innerHeight / 3);
+    
+    // Offset the popup slightly below and to the right of the mouse
+    x += 10;
+    y += 10;
+    
+    // Ensure popup stays within viewport boundaries
+    const boxWidth = 300; // Approximate width
+    const boxHeight = 50; // Approximate height
+    
+    if (x + boxWidth > window.innerWidth) {
+      x = window.innerWidth - boxWidth - 10;
+    }
+    if (y + boxHeight > window.innerHeight) {
+      y = window.innerHeight - boxHeight - 10;
+    }
+    if (x < 10) x = 10;
+    if (y < 10) y = 10;
+    
+    box.style.left = x + 'px';
+    box.style.top = y + 'px';
+    box.classList.remove('hidden');
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      box.classList.add('hidden');
+    }, 3000);
+  },
+
+  // =============================================================================
+  // IMAGE MANAGEMENT FUNCTIONS
+  // =============================================================================
+
+  // Initialize image magazine functionality
+  setupImageMagazine() {
+    this.imageMagazineVisible = false;
+    this.draggedImage = null;
+    this.images = []; // Store available images
+    
+    // Load existing images from GitHub
+    this.loadImagesFromRepository();
+  },
+
+  // Setup image-related event listeners
+  setupImageEventListeners() {
+    // Import button
+    document.getElementById('import-image-btn').addEventListener('click', () => {
+      document.getElementById('imageFileInput').click();
+    });
+
+    // Close magazine button
+    document.getElementById('close-magazine-btn').addEventListener('click', () => {
+      this.hideImageMagazine();
+    });
+
+    // File input change
+    document.getElementById('imageFileInput').addEventListener('change', (e) => {
+      this.handleImageUpload(e.target.files);
+      e.target.value = ''; // Reset input
+    });
+
+    // Make magazine draggable
+    this.setupMagazineDragging();
+
+    // Setup visual editor as drop zone
+    this.setupVisualEditorDropZone();
+  },
+
+  // Toggle image magazine visibility
+  toggleImageMagazine() {
+    if (this.imageMagazineVisible) {
+      this.hideImageMagazine();
+    } else {
+      this.showImageMagazine();
+    }
+  },
+
+  // Show image magazine
+  showImageMagazine() {
+    const magazine = document.getElementById('imageMagazine');
+    magazine.classList.remove('hidden');
+    
+    // Position magazine (default center-right)
+    const x = window.innerWidth - 370;
+    const y = 100;
+    magazine.style.left = Math.max(20, x) + 'px';
+    magazine.style.top = y + 'px';
+    
+    this.imageMagazineVisible = true;
+    this.refreshImageGallery();
+  },
+
+  // Hide image magazine
+  hideImageMagazine() {
+    document.getElementById('imageMagazine').classList.add('hidden');
+    this.imageMagazineVisible = false;
+  },
+
+  // Make magazine draggable
+  setupMagazineDragging() {
+    const magazine = document.getElementById('imageMagazine');
+    const header = magazine.querySelector('.image-magazine-header');
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.image-magazine-btn')) return; // Don't drag when clicking buttons
+      
+      isDragging = true;
+      const rect = magazine.getBoundingClientRect();
+      dragOffset.x = e.clientX - rect.left;
+      dragOffset.y = e.clientY - rect.top;
+      
+      document.addEventListener('mousemove', handleDrag);
+      document.addEventListener('mouseup', stopDrag);
+      e.preventDefault();
+    });
+
+    function handleDrag(e) {
+      if (!isDragging) return;
+      
+      const x = e.clientX - dragOffset.x;
+      const y = e.clientY - dragOffset.y;
+      
+      // Keep within viewport
+      const maxX = window.innerWidth - magazine.offsetWidth;
+      const maxY = window.innerHeight - magazine.offsetHeight;
+      
+      magazine.style.left = Math.max(0, Math.min(maxX, x)) + 'px';
+      magazine.style.top = Math.max(0, Math.min(maxY, y)) + 'px';
+    }
+
+    function stopDrag() {
+      isDragging = false;
+      document.removeEventListener('mousemove', handleDrag);
+      document.removeEventListener('mouseup', stopDrag);
+    }
+  },
+
+  // Load images from GitHub repository
+  async loadImagesFromRepository() {
+    try {
+      const config = this.getGitHubConfig();
+      if (!config || !config.token || !config.repo) {
+        console.log('GitHub not configured, using demo images');
+        this.images = this.getDemoImages();
+        return;
+      }
+
+      const [owner, repo] = config.repo.split('/');
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/assets`, {
+        headers: {
+          'Authorization': `token ${config.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (response.ok) {
+        const files = await response.json();
+        this.images = files
+          .filter(file => file.type === 'file' && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name))
+          .map(file => ({
+            name: file.name,
+            url: file.download_url,
+            path: file.path,
+            sha: file.sha
+          }));
+      } else {
+        console.log('Assets folder not found, using demo images');
+        this.images = this.getDemoImages();
+      }
+    } catch (error) {
+      console.error('Error loading images:', error);
+      this.images = this.getDemoImages();
+    }
+  },
+
+  // Get demo images if no repository is configured
+  getDemoImages() {
+    return [
+      {
+        name: 'sample.gif',
+        url: 'assets/sample.gif',
+        path: 'assets/sample.gif',
+        isDemo: true
+      }
+    ];
+  },
+
+  // Refresh the image gallery display
+  refreshImageGallery() {
+    const gallery = document.getElementById('imageGallery');
+    
+    if (this.images.length === 0) {
+      gallery.innerHTML = `
+        <div class="no-images-message">
+          <p>No images found in repository</p>
+          <p><small>Click Import to add images</small></p>
+        </div>
+      `;
+      return;
+    }
+
+    gallery.innerHTML = this.images.map(image => `
+      <div class="image-item" data-image-name="${image.name}" data-image-url="${image.url}" data-image-path="${image.path}">
+        <img src="${image.url}" alt="${image.name}" loading="lazy">
+        <div class="image-name">${image.name}</div>
+      </div>
+    `).join('');
+
+    // Add drag functionality to image items
+    gallery.querySelectorAll('.image-item').forEach(item => {
+      this.setupImageDragging(item);
+    });
+  },
+
+  // Setup dragging for individual images
+  setupImageDragging(imageItem) {
+    let isDragging = false;
+    let dragClone = null;
+
+    imageItem.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      
+      // Create drag clone
+      dragClone = imageItem.cloneNode(true);
+      dragClone.classList.add('image-dragging');
+      dragClone.style.position = 'fixed';
+      dragClone.style.width = '80px';
+      dragClone.style.height = '80px';
+      dragClone.style.zIndex = '9999';
+      dragClone.style.pointerEvents = 'none';
+      document.body.appendChild(dragClone);
+
+      // Store image data for dropping
+      this.draggedImage = {
+        name: imageItem.dataset.imageName,
+        url: imageItem.dataset.imageUrl,
+        path: imageItem.dataset.imagePath
+      };
+
+      document.addEventListener('mousemove', handleImageDrag);
+      document.addEventListener('mouseup', stopImageDrag);
+      e.preventDefault();
+    });
+
+    const handleImageDrag = (e) => {
+      if (!isDragging || !dragClone) return;
+      
+      dragClone.style.left = (e.clientX - 40) + 'px';
+      dragClone.style.top = (e.clientY - 40) + 'px';
+    };
+
+    const stopImageDrag = (e) => {
+      if (!isDragging) return;
+      
+      isDragging = false;
+      
+      // Check if dropped on visual editor
+      const visualEditor = document.getElementById('visualEditor');
+      const rect = visualEditor.getBoundingClientRect();
+      
+      if (e.clientX >= rect.left && e.clientX <= rect.right &&
+          e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        this.insertImageIntoEditor(this.draggedImage);
+      }
+
+      // Cleanup
+      if (dragClone) {
+        document.body.removeChild(dragClone);
+        dragClone = null;
+      }
+      this.draggedImage = null;
+      
+      document.removeEventListener('mousemove', handleImageDrag);
+      document.removeEventListener('mouseup', stopImageDrag);
+      
+      // Remove drag-over styling
+      visualEditor.classList.remove('drag-over');
+    };
+  },
+
+  // Setup visual editor as drop zone
+  setupVisualEditorDropZone() {
+    const visualEditor = document.getElementById('visualEditor');
+
+    // Handle drag over
+    visualEditor.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      visualEditor.classList.add('drag-over');
+    });
+
+    // Handle drag leave
+    visualEditor.addEventListener('dragleave', (e) => {
+      if (!visualEditor.contains(e.relatedTarget)) {
+        visualEditor.classList.remove('drag-over');
+      }
+    });
+
+    // Handle drop
+    visualEditor.addEventListener('drop', (e) => {
+      e.preventDefault();
+      visualEditor.classList.remove('drag-over');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        this.handleImageUpload(files);
+      }
+    });
+
+    // Also handle mouse events for our custom dragging
+    visualEditor.addEventListener('mouseenter', (e) => {
+      if (this.draggedImage) {
+        visualEditor.classList.add('drag-over');
+      }
+    });
+
+    visualEditor.addEventListener('mouseleave', () => {
+      visualEditor.classList.remove('drag-over');
+    });
+  },
+
+  // Handle image file upload
+  async handleImageUpload(files) {
+    const config = this.getGitHubConfig();
+    
+    if (!config || !config.token || !config.repo) {
+      this.showMessage('GitHub Setup Required', 'Please configure GitHub connection in Connect > Setup GitHub to upload images.');
+      return;
+    }
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        this.showMessage('Invalid File', `${file.name} is not an image file.`);
+        continue;
+      }
+
+      try {
+        await this.uploadImageToGitHub(file, config);
+        this.showMessage('Upload Success', `${file.name} uploaded successfully!`);
+      } catch (error) {
+        console.error('Upload error:', error);
+        this.showMessage('Upload Failed', `Failed to upload ${file.name}: ${error.message}`);
+      }
+    }
+
+    // Refresh the image gallery
+    await this.loadImagesFromRepository();
+    this.refreshImageGallery();
+  },
+
+  // Upload image to GitHub repository
+  async uploadImageToGitHub(file, config) {
+    const [owner, repo] = config.repo.split('/');
+    
+    // Read file as base64
+    const base64Content = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target.result.split(',')[1]; // Remove data:image/... prefix
+        resolve(base64);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Create unique filename to avoid conflicts
+    const timestamp = Date.now();
+    const filename = `${timestamp}-${file.name}`;
+    const path = `assets/${filename}`;
+
+    const payload = {
+      message: `Add image: ${filename}`,
+      content: base64Content,
+      branch: config.branch || 'main'
+    };
+
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${config.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`GitHub API error: ${error.message}`);
+    }
+
+    return response.json();
+  },
+
+  // Insert image into the visual editor
+  insertImageIntoEditor(imageData) {
+    const visualEditor = document.getElementById('visualEditor');
+    
+    // Create image element
+    const img = document.createElement('img');
+    img.src = imageData.url;
+    img.alt = imageData.name;
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.display = 'block';
+    img.style.margin = '8px 0';
+    
+    // Add click handler for potential future editing
+    img.addEventListener('click', () => {
+      this.showMessage('Image Info', `Image: ${imageData.name}\nPath: ${imageData.path}`);
+    });
+
+    // Insert at cursor position or at the end
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0 && visualEditor.contains(selection.focusNode)) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(img);
+      
+      // Move cursor after image
+      range.setStartAfter(img);
+      range.setEndAfter(img);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      // Append to end if no selection
+      visualEditor.appendChild(img);
+    }
+
+    // Add some spacing
+    const br = document.createElement('br');
+    img.parentNode.insertBefore(br, img.nextSibling);
+    
+    this.showMessage('Image Added', `${imageData.name} has been added to your post!`);
   }
 };
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+  // Track mouse position for popup anchoring
+  document.addEventListener('mousemove', (e) => {
+    window.lastMouseX = e.clientX;
+    window.lastMouseY = e.clientY;
+  });
+  
   // Make makeNote function available globally BEFORE taskbar loads
   window.makeNoteFromTaskbar = () => {
     if (typeof editor !== 'undefined' && editor.makeNote) {

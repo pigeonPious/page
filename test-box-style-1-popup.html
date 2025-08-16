@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Box Style 1 Popup Test</title>
+  <link rel="stylesheet" href="editor.css">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 20px;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    
+    .test-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .test-button {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 10px 10px 0;
+      font-size: 14px;
+    }
+    
+    /* Dark mode button - ensure good contrast */
+    body.dark-mode .test-button {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* Light mode button - ensure good contrast */
+    body:not(.dark-mode) .test-button {
+      background: var(--accent);
+      color: white;
+    }
+    
+    .test-button:hover {
+      opacity: 0.9;
+    }
+    
+    h1 {
+      color: var(--accent);
+    }
+    
+    .instruction {
+      background: var(--menu-bg);
+      border: 1px solid var(--border);
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>📦 Box Style 1 Popup Test</h1>
+    
+    <div class="instruction">
+      <h3>Test Instructions:</h3>
+      <p>Click the buttons below to test the new Box Style 1 popup messages. These should appear as small boxes in the center-top area of the screen and auto-disappear after 3 seconds.</p>
+    </div>
+    
+    <h3>Theme Test:</h3>
+    <button class="test-button" onclick="toggleTheme()">Toggle Dark/Light Mode</button>
+    
+    <h3>Validation Message Tests:</h3>
+    <button class="test-button" onclick="testTitleValidation()">Test "Please enter a title" message</button>
+    <button class="test-button" onclick="testContentValidation()">Test "Please write some content" message</button>
+    <button class="test-button" onclick="testSelectTextValidation()">Test "Please select some text" message</button>
+    
+    <h3>Non-Validation Message Test:</h3>
+    <button class="test-button" onclick="testComplexMessage()">Test Complex Message (should use modal)</button>
+    
+    <h3>Current Implementation Status:</h3>
+    <ul>
+      <li>✅ Box Style 1 CSS added</li>
+      <li>✅ showBoxMessage function implemented</li>
+      <li>✅ Validation detection logic added</li>
+      <li>✅ Auto-hide after 3 seconds</li>
+    </ul>
+  </div>
+
+  <!-- Box Style 1 Message Box -->
+  <div id="messageBox" class="box-style-1 message-box hidden">
+    <span class="message-text">Message will appear here</span>
+  </div>
+
+  <!-- Modal for complex messages -->
+  <div id="messageModal" class="modal">
+    <div class="modal-content">
+      <h3 id="message-title">Simple Editor</h3>
+      <p id="message-content"></p>
+      <div class="modal-buttons">
+        <button onclick="closeModal()" class="btn primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simplified editor object for testing
+    const editor = {
+      isValidationMessage(message) {
+        const validationKeywords = [
+          'Please enter a title',
+          'Please write some content',
+          'Please select some text',
+          'Please fill in',
+          'Please enter',
+          'Please write'
+        ];
+        return validationKeywords.some(keyword => message.includes(keyword));
+      },
+
+      showBoxMessage(message) {
+        const box = document.getElementById('messageBox');
+        const textSpan = box.querySelector('.message-text');
+        
+        textSpan.textContent = message;
+        
+        // Get mouse position, or use center if no mouse data
+        let x = window.lastMouseX || (window.innerWidth / 2 - 150);
+        let y = window.lastMouseY || (window.innerHeight / 3);
+        
+        // Offset the popup slightly below and to the right of the mouse
+        x += 10;
+        y += 10;
+        
+        // Ensure popup stays within viewport boundaries
+        const boxWidth = 300; // Approximate width
+        const boxHeight = 50; // Approximate height
+        
+        if (x + boxWidth > window.innerWidth) {
+          x = window.innerWidth - boxWidth - 10;
+        }
+        if (y + boxHeight > window.innerHeight) {
+          y = window.innerHeight - boxHeight - 10;
+        }
+        if (x < 10) x = 10;
+        if (y < 10) y = 10;
+        
+        box.style.left = x + 'px';
+        box.style.top = y + 'px';
+        box.classList.remove('hidden');
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          box.classList.add('hidden');
+        }, 3000);
+      },
+
+      showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        modal.style.cssText = '';
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+      },
+
+      showMessage(message, title = 'Simple Editor') {
+        // Use Box Style 1 for validation and simple messages
+        if (this.isValidationMessage(message)) {
+          this.showBoxMessage(message);
+        } else {
+          // Use modal for complex messages
+          document.getElementById('message-title').textContent = title;
+          document.getElementById('message-content').textContent = message;
+          this.showModal('messageModal');
+        }
+      }
+    };
+
+    // Test functions
+    function testTitleValidation() {
+      editor.showMessage('Please enter a title for your post.');
+    }
+
+    function testContentValidation() {
+      editor.showMessage('Please write some content for your post.');
+    }
+
+    function testSelectTextValidation() {
+      editor.showMessage('Please select some text first to create a note.');
+    }
+
+    function testComplexMessage() {
+      editor.showMessage('This is a more complex message that should appear in a modal dialog instead of a simple box popup. It contains multiple sentences and detailed information.', 'Complex Message');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('messageModal');
+      modal.style.display = 'none';
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      console.log('Theme toggled. Dark mode:', document.body.classList.contains('dark-mode'));
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal')) {
+        closeModal();
+      }
+    });
+
+    // Track mouse position for popup anchoring
+    document.addEventListener('mousemove', (e) => {
+      window.lastMouseX = e.clientX;
+      window.lastMouseY = e.clientY;
+    });
+
+    console.log('📦 Box Style 1 Popup Test Page Loaded');
+  </script>
+</body>
+</html>
