@@ -168,6 +168,10 @@ Select text and press Ctrl+M to add notes.">
   <input type="text" placeholder="Filename (optional)..." maxlength="50">
 </div>
 
+<div id="keywordsInputBox" class="box-style-1 hidden">
+  <input type="text" placeholder="e.g. devlog:ProjectName, programming, design" maxlength="200">
+</div>
+
 <div id="messageBox" class="box-style-1 message-box hidden">
   <span class="message-text">Message will appear here</span>
 </div>
@@ -221,7 +225,7 @@ const editor = {
     document.getElementById('keywords-btn').addEventListener('mousedown', (e) => {
       e.preventDefault(); // Prevent text deselection
     });
-    document.getElementById('keywords-btn').addEventListener('click', () => this.showModal('keywordsModal'));
+    document.getElementById('keywords-btn').addEventListener('click', () => this.showKeywordsInput());
     
     // Export button
     document.getElementById('export-btn').addEventListener('mousedown', (e) => {
@@ -357,6 +361,16 @@ const editor = {
     const keywordsInput = document.getElementById('keywords-input');
     keywordsInput.value = this.currentKeywords || 'general';
     this.showModal('keywordsModal');
+  },
+
+  showKeywordsInput() {
+    this.showBoxInput('keywordsInputBox', (keywords) => {
+      if (keywords.trim()) {
+        this.currentKeywords = keywords.trim();
+        document.getElementById('current-keywords').textContent = this.currentKeywords;
+        console.log('Keywords updated:', this.currentKeywords);
+      }
+    }, this.currentKeywords || 'general');
   },
 
   // Box Style 1 Input System
@@ -1373,7 +1387,7 @@ const editor = {
       visualEditor.appendChild(document.createElement('br'));
     }
     
-    this.showMessage('Image Added', `${imageData.name} has been added to your post!`);
+    // Image added silently - no confirmation popup needed
   },
 
   // Edit image alt text

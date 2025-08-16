@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Navigation Test</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Taskbar will be loaded by shared-taskbar.js -->
+
+<div class="frame">
+  <main class="center-content">
+    <div id="post-content">
+      <h1>Quick Navigation Test</h1>
+      <p>Testing if the Navigation menu dropdown works...</p>
+      
+      <div style="margin: 20px 0; padding: 15px; border: 2px solid var(--border); border-radius: 4px;">
+        <h3>Test Instructions:</h3>
+        <ol>
+          <li>Click on "Navigation" in the menu bar above</li>
+          <li>The dropdown should appear with options like "Most Recent", "Random Post", etc.</li>
+          <li>Try clicking the star (*) button - it should navigate to the most recent post</li>
+          <li>Try the "Random Post" option</li>
+        </ol>
+      </div>
+      
+      <div id="console-log" style="background: var(--bg-alt); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
+        <strong>Console Log:</strong><br>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="shared-taskbar.js"></script>
+<script src="script.js"></script>
+
+<script>
+// Capture console logs for debugging
+const consoleLog = document.getElementById('console-log');
+const originalLog = console.log;
+const originalError = console.error;
+const originalWarn = console.warn;
+
+function addToLog(type, message) {
+  const timestamp = new Date().toLocaleTimeString();
+  consoleLog.innerHTML += `<div style="color: ${type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'inherit'}">[${timestamp}] ${type.toUpperCase()}: ${message}</div>`;
+  consoleLog.scrollTop = consoleLog.scrollHeight;
+}
+
+console.log = function(...args) {
+  addToLog('log', args.join(' '));
+  originalLog.apply(console, args);
+};
+
+console.error = function(...args) {
+  addToLog('error', args.join(' '));
+  originalError.apply(console, args);
+};
+
+console.warn = function(...args) {
+  addToLog('warn', args.join(' '));
+  originalWarn.apply(console, args);
+};
+
+// Monitor for menu interactions
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('label')) {
+    addToLog('log', `Menu label clicked: "${e.target.textContent.trim()}"`);
+  }
+  if (e.target.classList.contains('menu-entry')) {
+    addToLog('log', `Menu entry clicked: "${e.target.textContent.trim()}"`);
+  }
+  if (e.target.id === 'star-button') {
+    addToLog('log', 'Star button clicked!');
+  }
+});
+
+// Monitor for class changes on menu items
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+      const target = mutation.target;
+      if (target.classList.contains('menu-item')) {
+        const label = target.querySelector('.label');
+        const labelText = label ? label.textContent.trim() : 'Unknown';
+        const isOpen = target.classList.contains('open');
+        addToLog('log', `Menu "${labelText}" ${isOpen ? 'OPENED' : 'CLOSED'}`);
+      }
+    }
+  });
+});
+
+// Start observing when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+      observer.observe(item, { attributes: true });
+    });
+    addToLog('log', `Started monitoring ${menuItems.length} menu items`);
+  }, 1000);
+});
+</script>
+
+</body>
+</html>
