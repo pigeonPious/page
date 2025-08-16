@@ -240,11 +240,11 @@ html, body {
   margin: 2px 0 28px 0;
 }
 
-/* All images in posts - uniform 300x300 square format */
+/* All images in posts - uniform 150x150 square format */
 .post-content img {
-  width: 300px;
-  height: 300px;
-  object-fit: cover;
+  width: 150px !important;
+  height: 150px !important;
+  object-fit: cover !important;
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
@@ -256,6 +256,9 @@ html, body {
   float: right;
   margin: 4px 0 10px 14px;  /* gap so text doesn't touch image */
   shape-outside: inset(0 round 0); /* keep rectangular wrap */
+  width: 150px !important;
+  height: 150px !important;
+  object-fit: cover !important;
 }
 
 /* Regular images (non-floating) are centered */
@@ -278,8 +281,8 @@ html, body {
 /* Responsive behavior for mobile */
 @media (max-width: 640px) {
   .post-content img {
-    width: 280px;
-    height: 280px;
+    width: 120px !important;
+    height: 120px !important;
   }
 }
 
