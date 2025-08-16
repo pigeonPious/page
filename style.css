@@ -206,26 +206,31 @@ html, body {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Layout */
-.frame {
-  display: grid;
-  grid-template-columns: 110px 40px minmax(300px, 540px) 1fr;
-  column-gap: 0;
+/* Layout - Match editor spacing */
+.main-layout {
   max-width: 1200px;
-  margin: 28px auto 120px;
-  padding: 0 16px;
+  margin: 40px auto 120px;
+  padding: 0 40px;
+  display: flex;
+  gap: 60px;
 }
 
-.left-pane {
-  padding-right: 2px;
+.sidebar {
+  width: 160px;
+  flex-shrink: 0;
   padding-top: 25px;
 }
 
-.left-pane h3 {
+.sidebar h3 {
   margin: 0 0 6px 0;
   font-size: 12px;
   color: var(--muted);
   font-weight: 600;
+}
+
+.content-area {
+  flex: 1;
+  max-width: 600px;
 }
 
 .tree {
@@ -263,11 +268,6 @@ html, body {
 }
 
 /* Content */
-.center-content {
-  grid-column: 3; /* Position in the third column of the grid */
-  width: 100%;
-}
-
 .post-header {
   margin-bottom: 10px;
 }
