@@ -240,42 +240,44 @@ html, body {
   margin: 2px 0 28px 0;
 }
 
-/* Images: float right so text wraps, then clear below using .clear-after */
-.post-content img.float-right {
-  float: right;
-  max-width: 48%;
-  height: auto;
-  margin: 4px 0 10px 14px;  /* gap so text doesn't touch image */
-  border: 1px solid var(--border);
-  shape-outside: inset(0 round 0); /* keep rectangular wrap */
-}
-
-/* Regular images in posts - uniform 300x300 square format */
-.post-content img:not(.float-right) {
+/* All images in posts - uniform 300x300 square format */
+.post-content img {
   width: 300px;
   height: 300px;
   object-fit: cover;
-  margin: 16px auto;
-  display: block;
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.post-content img:not(.float-right):hover {
+/* Float-right images maintain floating behavior but are still square */
+.post-content img.float-right {
+  float: right;
+  margin: 4px 0 10px 14px;  /* gap so text doesn't touch image */
+  shape-outside: inset(0 round 0); /* keep rectangular wrap */
+}
+
+/* Regular images (non-floating) are centered */
+.post-content img:not(.float-right) {
+  margin: 16px auto;
+  display: block;
+}
+
+/* Hover effects for all images */
+.post-content img:hover {
   transform: scale(1.02);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Click-to-expand functionality for images */
-.post-content img:not(.float-right):active {
+/* Click-to-expand functionality for all images */
+.post-content img:active {
   transform: scale(0.98);
 }
 
 /* Responsive behavior for mobile */
 @media (max-width: 640px) {
-  .post-content img:not(.float-right) {
+  .post-content img {
     width: 280px;
     height: 280px;
   }

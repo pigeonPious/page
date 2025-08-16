@@ -347,8 +347,7 @@ function setupImageModal() {
   // Add click handlers to all images in post content
   document.addEventListener('click', function(e) {
     if (e.target.tagName === 'IMG' && 
-        e.target.closest('.post-content') && 
-        !e.target.classList.contains('float-right')) {
+        e.target.closest('.post-content')) {
       e.preventDefault();
       showImageModal(e.target);
     }
