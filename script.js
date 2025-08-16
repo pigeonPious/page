@@ -328,8 +328,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   // Load posts with categories if we have the dropdown
   if (document.getElementById('post-list-dropdown')) {
+    console.log('Found post-list-dropdown, loading posts with categories...');
     await loadPostsWithCategories();
   } else {
+    console.log('No post-list-dropdown found, using fallback...');
     // Fallback for pages without the dropdown
     const timestamp = new Date().getTime();
     const response = await fetch(`posts/index.json?t=${timestamp}`);
@@ -1028,10 +1030,14 @@ class EditorManager {
 
 // Enhanced Post Management with Categories
 async function loadPostsWithCategories() {
+  console.log('Starting loadPostsWithCategories...');
   try {
     // Add cache busting to ensure we get the latest posts
     const timestamp = new Date().getTime();
-    const response = await fetch(`posts/index.json?t=${timestamp}`);
+    const url = `posts/index.json?t=${timestamp}`;
+    console.log('Fetching posts from:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -1039,6 +1045,11 @@ async function loadPostsWithCategories() {
     
     const posts = await response.json();
     console.log('Loaded posts:', posts); // Debug logging
+    
+    if (!posts || posts.length === 0) {
+      console.warn('No posts found in index.json');
+      return;
+    }
     
     // Group posts by category
     const categorizedPosts = {};
@@ -1057,12 +1068,14 @@ async function loadPostsWithCategories() {
     
     // Load the first post if available AND if we're on a page that displays posts
     if (posts.length > 0 && document.getElementById('post-content')) {
+      console.log('Loading first post:', posts[0].slug);
       loadPost(posts[0].slug);
     }
     
   } catch (error) {
     console.error('Error loading posts:', error);
     console.error('Error details:', error.message);
+    console.error('Stack trace:', error.stack);
   }
 }
 
@@ -1126,7 +1139,25 @@ function populateCategorizedDropdown(categorizedPosts) {
   const dropdown = document.getElementById("post-list-dropdown");
   if (!dropdown) return;
   
+  // Clear only the post entries, preserve the refresh button
+  const refreshButton = dropdown.querySelector('#refresh-posts');
   dropdown.innerHTML = '';
+  
+  // Re-add the refresh button first
+  if (refreshButton) {
+    dropdown.appendChild(refreshButton);
+  } else {
+    // Create refresh button if it doesn't exist
+    const newRefreshButton = document.createElement("div");
+    newRefreshButton.className = "menu-entry";
+    newRefreshButton.id = "refresh-posts";
+    newRefreshButton.textContent = "Refresh Posts";
+    newRefreshButton.addEventListener('click', async () => {
+      console.log('Refreshing posts...');
+      await loadPostsWithCategories();
+    });
+    dropdown.appendChild(newRefreshButton);
+  }
   
   for (const category in categorizedPosts) {
     // Add category header
