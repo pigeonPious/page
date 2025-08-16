@@ -297,12 +297,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupHoverNotes();
   setupViewMenu();
   
+  // Add refresh posts functionality
+  const refreshButton = document.getElementById('refresh-posts');
+  if (refreshButton) {
+    refreshButton.addEventListener('click', async () => {
+      console.log('Refreshing posts...');
+      await loadPostsWithCategories();
+    });
+  }
+  
   // Load posts with categories if we have the dropdown
   if (document.getElementById('post-list-dropdown')) {
     await loadPostsWithCategories();
   } else {
     // Fallback for pages without the dropdown
-    const response = await fetch("posts/index.json");
+    const timestamp = new Date().getTime();
+    const response = await fetch(`posts/index.json?t=${timestamp}`);
     const posts = await response.json();
     populateSidebar(posts);
     if (posts.length > 0) loadPost(posts[0].slug);
@@ -327,32 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateEditorBackground();
 });
 
-// Open and close the text editor modal
-const newPostButton = document.getElementById('new-post');
-const textEditorModal = document.getElementById('textEditorModal');
-const closeEditorButton = document.getElementById('closeEditor');
-
-if (newPostButton && textEditorModal) {
-  newPostButton.addEventListener('click', () => {
-    textEditorModal.style.display = 'block';
-  });
-}
-
-if (closeEditorButton && textEditorModal) {
-  closeEditorButton.addEventListener('click', () => {
-    textEditorModal.style.display = 'none';
-  });
-}
-
-// Close modal if clicking outside of it
-if (textEditorModal) {
-  document.addEventListener('click', (event) => {
-    if (event.target === textEditorModal) {
-      textEditorModal.style.display = 'none';
-    }
-  });
-}
-
+// Social sharing functionality
 const blueskyShareBtn = document.getElementById('bluesky-share');
 if (blueskyShareBtn) {
   blueskyShareBtn.onclick = function() {
@@ -891,8 +876,16 @@ class EditorManager {
 // Enhanced Post Management with Categories
 async function loadPostsWithCategories() {
   try {
-    const response = await fetch('posts/index.json');
+    // Add cache busting to ensure we get the latest posts
+    const timestamp = new Date().getTime();
+    const response = await fetch(`posts/index.json?t=${timestamp}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const posts = await response.json();
+    console.log('Loaded posts:', posts); // Debug logging
     
     // Group posts by category
     const categorizedPosts = {};
@@ -904,6 +897,8 @@ async function loadPostsWithCategories() {
       categorizedPosts[category].push(post);
     });
     
+    console.log('Categorized posts:', categorizedPosts); // Debug logging
+    
     populateCategorizedSidebar(categorizedPosts);
     populateCategorizedDropdown(categorizedPosts);
     
@@ -914,6 +909,7 @@ async function loadPostsWithCategories() {
     
   } catch (error) {
     console.error('Error loading posts:', error);
+    console.error('Error details:', error.message);
   }
 }
 

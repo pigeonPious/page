@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theme Consistency Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .test-button {
+      margin: 5px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #007acc;
+      color: white;
+      cursor: pointer;
+    }
+    .test-button:hover {
+      background: #005a9e;
+    }
+    .iframe-container {
+      margin: 10px 0;
+      border: 1px solid #ddd;
+    }
+    iframe {
+      width: 100%;
+      height: 400px;
+      border: none;
+    }
+    .test-log {
+      background: #f5f5f5;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Theme Consistency Test</h1>
+<p>This test verifies that theme changes on the main site properly affect the simple editor and vice versa.</p>
+
+<div class="test-section">
+  <h2>Test Controls</h2>
+  <button class="test-button" onclick="setTestTheme('light')">Set Light Theme</button>
+  <button class="test-button" onclick="setTestTheme('dark')">Set Dark Theme</button>
+  <button class="test-button" onclick="setTestTheme('custom', 'hsl(240, 100%, 20%)')">Set Custom Blue Theme</button>
+  <button class="test-button" onclick="setTestTheme('custom', 'hsl(120, 50%, 30%)')">Set Custom Green Theme</button>
+  <button class="test-button" onclick="clearThemes()">Clear All Themes</button>
+  <button class="test-button" onclick="checkThemeState()">Check Current Theme State</button>
+</div>
+
+<div class="test-section">
+  <h2>Main Site</h2>
+  <div class="iframe-container">
+    <iframe id="mainSite" src="index.html"></iframe>
+  </div>
+</div>
+
+<div class="test-section">
+  <h2>Simple Editor</h2>
+  <div class="iframe-container">
+    <iframe id="simpleEditor" src="editor.html"></iframe>
+  </div>
+</div>
+
+<div class="test-section">
+  <h2>Test Log</h2>
+  <div id="testLog" class="test-log"></div>
+</div>
+
+<script>
+function log(message) {
+  const testLog = document.getElementById('testLog');
+  const timestamp = new Date().toLocaleTimeString();
+  testLog.textContent += `[${timestamp}] ${message}\n`;
+  testLog.scrollTop = testLog.scrollHeight;
+}
+
+function setTestTheme(theme, customBg = null) {
+  localStorage.setItem('theme', theme);
+  if (theme === 'custom' && customBg) {
+    localStorage.setItem('customBg', customBg);
+    log(`Set theme to custom with background: ${customBg}`);
+  } else {
+    localStorage.removeItem('customBg');
+    log(`Set theme to: ${theme}`);
+  }
+  
+  // Reload both iframes to test theme application
+  setTimeout(() => {
+    document.getElementById('mainSite').src = document.getElementById('mainSite').src;
+    document.getElementById('simpleEditor').src = document.getElementById('simpleEditor').src;
+    log('Reloaded both pages to apply theme');
+  }, 100);
+}
+
+function clearThemes() {
+  localStorage.removeItem('theme');
+  localStorage.removeItem('customBg');
+  log('Cleared all theme preferences');
+  
+  // Reload both iframes
+  setTimeout(() => {
+    document.getElementById('mainSite').src = document.getElementById('mainSite').src;
+    document.getElementById('simpleEditor').src = document.getElementById('simpleEditor').src;
+    log('Reloaded both pages to clear themes');
+  }, 100);
+}
+
+function checkThemeState() {
+  const theme = localStorage.getItem('theme');
+  const customBg = localStorage.getItem('customBg');
+  
+  log(`Current localStorage state:`);
+  log(`  theme: ${theme || 'not set'}`);
+  log(`  customBg: ${customBg || 'not set'}`);
+  
+  // Try to access iframe content to check applied themes
+  try {
+    const mainSiteDoc = document.getElementById('mainSite').contentDocument;
+    const simpleEditorDoc = document.getElementById('simpleEditor').contentDocument;
+    
+    if (mainSiteDoc) {
+      const mainClasses = mainSiteDoc.body.className;
+      log(`Main site body classes: "${mainClasses}"`);
+    }
+    
+    if (simpleEditorDoc) {
+      const editorClasses = simpleEditorDoc.body.className;
+      log(`Simple editor body classes: "${editorClasses}"`);
+    }
+  } catch (e) {
+    log('Cannot access iframe content (cross-origin restrictions)');
+  }
+}
+
+// Initial setup
+document.addEventListener('DOMContentLoaded', () => {
+  log('Theme consistency test loaded');
+  checkThemeState();
+  
+  // Add event listeners to detect iframe loads
+  document.getElementById('mainSite').addEventListener('load', () => {
+    log('Main site loaded');
+  });
+  
+  document.getElementById('simpleEditor').addEventListener('load', () => {
+    log('Simple editor loaded');
+  });
+});
+
+// Instructions for manual testing
+log('MANUAL TESTING INSTRUCTIONS:');
+log('1. Use the theme buttons above to change themes');
+log('2. Verify both main site and simple editor change accordingly');
+log('3. Test theme switching within each iframe using their taskbar dropdowns');
+log('4. Verify changes persist when navigating between pages');
+log('5. Check that box style 1 inputs maintain proper styling in all themes');
+</script>
+
+</body>
+</html>

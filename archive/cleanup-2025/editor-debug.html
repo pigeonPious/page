@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor Debug</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+
+<div style="padding: 20px;">
+  <h1>Editor Debug Page</h1>
+  <p>Testing if CSS loads properly...</p>
+  
+  <div class="frame">
+    <main class="center-content">
+      <div class="editor-main-column">
+        <div class="editor-header">
+          <input type="text" id="postTitle" class="title-input" placeholder="Test title...">
+        </div>
+        
+        <div class="editor-main">
+          <div id="visualEditor" class="visual-editor" contenteditable="true" 
+               data-placeholder="Test content area...">
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+console.log('Debug script starting...');
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded successfully');
+  console.log('Title input element:', document.getElementById('postTitle'));
+  console.log('Visual editor element:', document.getElementById('visualEditor'));
+  
+  // Test if CSS is working
+  const body = document.body;
+  const computedStyle = window.getComputedStyle(body);
+  console.log('Body background color:', computedStyle.backgroundColor);
+  console.log('Body color:', computedStyle.color);
+});
+
+console.log('Debug script loaded');
+</script>
+
+</body>
+</html>

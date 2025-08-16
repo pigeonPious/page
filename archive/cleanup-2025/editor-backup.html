@@ -839,8 +839,34 @@ const localEditor = editor;
 </script>
 
 <!-- Load shared scripts after the main editor is defined -->
-<script src="shared-taskbar.js"></script>
-<script src="script.js"></script>
+<script>
+// Load shared taskbar with error handling
+console.log('Loading shared taskbar...');
+try {
+  // First load the shared taskbar script
+  const script1 = document.createElement('script');
+  script1.src = 'shared-taskbar.js';
+  script1.onload = () => {
+    console.log('Shared taskbar script loaded');
+    // Then load the main script
+    const script2 = document.createElement('script');
+    script2.src = 'script.js';
+    script2.onload = () => {
+      console.log('Main script loaded');
+    };
+    script2.onerror = (error) => {
+      console.error('Failed to load script.js:', error);
+    };
+    document.head.appendChild(script2);
+  };
+  script1.onerror = (error) => {
+    console.error('Failed to load shared-taskbar.js:', error);
+  };
+  document.head.appendChild(script1);
+} catch (error) {
+  console.error('Error loading scripts:', error);
+}
+</script>
 
 </body>
 </html>

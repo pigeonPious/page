@@ -5,19 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Left‑like Blog</title>
   <link rel="stylesheet" href="style.css">
+  <script src="shared-taskbar.js"></script>
+  <script src="script.js"></script>
 </head>
 <body>
-<div class="menu-bar">
-  <div class="menu-bar-inner">
-    <div class="menu-star">*</div>
-    <div class="menu-item"><div class="label" data-menu>File</div><div class="menu-dropdown"><a class="menu-entry" id="new-post" href="editor.html">New</a><a class="menu-entry" href="drafts.html">View Drafts</a></div></div>
-    <div class="menu-item"><div class="label" data-menu>Edit</div><div class="menu-dropdown"><div class="menu-entry disabled">Undo</div></div></div>
-    <div class="menu-item"><div class="label" data-menu>Navigation</div><div class="menu-dropdown"><a class="menu-entry" href="#">About</a><a class="menu-entry" href="#">Contact</a><a class="menu-entry" href="#">Blog</a></div></div>
-    <div class="menu-item"><div class="label" data-menu>View</div><div class="menu-dropdown"><div class="menu-entry" data-mode="dark">Dark</div><div class="menu-entry" data-mode="light">Light</div></div></div>
-    <div class="menu-item"><div class="label" data-menu>Log</div><div class="menu-dropdown" id="post-list-dropdown"></div></div>
-    <div class="menu-item"><div class="label" data-menu>Connect</div><div class="menu-dropdown"><div class="menu-entry" id="bluesky-share">Share to Bluesky</div><div class="menu-entry" id="twitter-share">Share to Twitter</div></div></div>
-  </div>
-</div>
+<!-- Taskbar will be loaded by shared-taskbar.js -->
 
 <div class="frame">
   <aside class="left-pane">
@@ -37,19 +29,6 @@
 
 <div id="hoverNote" role="tooltip"></div>
 <div id="cornerGif" aria-hidden="true" title="Corner GIF"></div>
-
-<div id="textEditorModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="close-btn" id="closeEditor">&times;</span>
-    <h2>Create New Post</h2>
-    <textarea id="editorContent" placeholder="Write your post here..."></textarea>
-    <div class="editor-actions">
-      <button id="postToGitHub">Post to GitHub</button>
-      <button id="selectCategory">Select Categories</button>
-      <button id="makeNote">Make Note</button>
-    </div>
-  </div>
-</div>
 
 <script src="script.js"></script>
 </body>

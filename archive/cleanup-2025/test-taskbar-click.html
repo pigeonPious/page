@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Taskbar Click</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<h2>Taskbar Click Test</h2>
+<p>This page tests if the shared taskbar buttons are clickable.</p>
+
+<div id="log-container">
+  <div class="log">Page loaded, waiting for taskbar...</div>
+</div>
+
+<!-- Make functions available -->
+<script>
+function log(message) {
+  const container = document.getElementById('log-container');
+  const logEntry = document.createElement('div');
+  logEntry.className = 'log';
+  logEntry.textContent = new Date().toLocaleTimeString() + ': ' + message;
+  container.appendChild(logEntry);
+  console.log(message);
+}
+
+// Create a fake editor object for testing
+const editor = {
+  makeNote: function() {
+    log('editor.makeNote() called successfully!');
+    alert('Make Note worked!');
+  }
+};
+
+// Create the global function
+window.makeNoteFromTaskbar = () => {
+  log('makeNoteFromTaskbar() called');
+  editor.makeNote();
+};
+
+// Global function to handle Make Note clicks from taskbar
+function handleMakeNote() {
+  log('handleMakeNote called from taskbar');
+  if (typeof editor !== 'undefined' && editor.makeNote) {
+    log('Using editor.makeNote()');
+    editor.makeNote();
+  } else if (typeof window.makeNoteFromTaskbar !== 'undefined') {
+    log('Using window.makeNoteFromTaskbar()');
+    window.makeNoteFromTaskbar();
+  } else {
+    log('Make note function not available');
+  }
+}
+
+log('Test setup complete');
+</script>
+
+<!-- Load shared taskbar -->
+<script src="shared-taskbar.js"></script>
+
+</body>
+</html>
