@@ -333,7 +333,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Wait for shared taskbar to load before initializing posts
   await waitForTaskbar();
   
-  setupMenus();
+  // Don't call setupMenus() - shared taskbar handles menu system
   setupHoverNotes();
   setupViewMenu();
   
