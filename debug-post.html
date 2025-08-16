@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Debug Post Button</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="menu-bar">
+  <div class="menu-bar-inner">
+    <div class="menu-star">*</div>
+    <div class="menu-item"><div class="label">Debug</div></div>
+    <div id="auth-status" style="margin-left: auto; padding: 5px 10px; font-size: 12px; color: var(--muted);">Checking login...</div>
+  </div>
+</div>
+
+<div style="padding: 40px;">
+  <h1>Post Button Debug Page</h1>
+  
+  <div style="margin-bottom: 20px;">
+    <h3>Authentication Status:</h3>
+    <div id="debug-auth-status">Checking...</div>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label for="debugContent">Content:</label><br>
+    <textarea id="debugContent" style="width: 500px; height: 100px;" placeholder="Enter test content...">Test post content from debug page</textarea>
+  </div>
+  
+  <div style="margin-bottom: 20px;">
+    <label for="debugCategory">Category:</label>
+    <select id="debugCategory">
+      <option value="general">General</option>
+      <option value="tech">Tech</option>
+    </select>
+  </div>
+  
+  <button id="debugPostBtn" style="padding: 10px 20px; font-size: 16px;">Test Post Button</button>
+  
+  <div id="debug-output" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 100px; background: #f5f5f5;">
+    Click the button to test...
+  </div>
+</div>
+
+<script>
+// Debug version of the post functionality
+class DebugPostTester {
+  constructor() {
+    this.setupEventListeners();
+    this.checkAuthStatus();
+  }
+  
+  setupEventListeners() {
+    const postBtn = document.getElementById('debugPostBtn');
+    if (postBtn) {
+      postBtn.addEventListener('click', () => this.testPost());
+    }
+  }
+  
+  async checkAuthStatus() {
+    const statusElement = document.getElementById('auth-status');
+    const debugStatusElement = document.getElementById('debug-auth-status');
+    
+    try {
+      const response = await fetch('/.netlify/functions/auth-check');
+      const data = await response.json();
+      
+      if (data.authenticated) {
+        statusElement.textContent = '✅ Logged In';
+        statusElement.style.color = '#51cf66';
+        debugStatusElement.innerHTML = '<strong>✅ AUTHENTICATED</strong><br>User: ' + data.user.username + '<br>Admin: ' + data.user.isAdmin;
+        debugStatusElement.style.color = 'green';
+      } else {
+        statusElement.textContent = '🔒 Login Required';
+        statusElement.style.color = '#ff6b6b';
+        debugStatusElement.innerHTML = '<strong>❌ NOT AUTHENTICATED</strong><br>Message: ' + data.message + '<br><a href="/login.html">Click here to login</a>';
+        debugStatusElement.style.color = 'red';
+      }
+    } catch (error) {
+      statusElement.textContent = '⚠️ Connection Error';
+      statusElement.style.color = '#ffd43b';
+      debugStatusElement.innerHTML = '<strong>⚠️ ERROR</strong><br>Failed to check auth: ' + error.message;
+      debugStatusElement.style.color = 'orange';
+    }
+  }
+  
+  async testPost() {
+    const output = document.getElementById('debug-output');
+    const content = document.getElementById('debugContent').value.trim();
+    const category = document.getElementById('debugCategory').value;
+    
+    output.innerHTML = '<strong>🔄 Testing Post Function...</strong><br><br>';
+    
+    if (!content) {
+      output.innerHTML += '❌ Error: No content provided<br>';
+      return;
+    }
+    
+    // Generate post data (simplified version)
+    const title = content.split('\n')[0].substring(0, 50) || 'Debug Test Post';
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    
+    const postData = {
+      title: title,
+      content: content,
+      category: category,
+      slug: slug
+    };
+    
+    output.innerHTML += '📝 Generated Post Data:<br>';
+    output.innerHTML += 'Title: ' + title + '<br>';
+    output.innerHTML += 'Slug: ' + slug + '<br>';
+    output.innerHTML += 'Category: ' + category + '<br><br>';
+    
+    try {
+      output.innerHTML += '📡 Making API call to save-post function...<br>';
+      
+      const response = await fetch('/.netlify/functions/save-post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData)
+      });
+      
+      output.innerHTML += '📊 Response Status: ' + response.status + ' ' + response.statusText + '<br>';
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        output.innerHTML += '✅ <strong>SUCCESS!</strong><br>';
+        output.innerHTML += 'Response: ' + JSON.stringify(result, null, 2) + '<br>';
+      } else if (response.status === 401) {
+        output.innerHTML += '🔒 <strong>AUTHENTICATION REQUIRED</strong><br>';
+        output.innerHTML += 'Error: ' + result.error + '<br>';
+        output.innerHTML += '<a href="/login.html">Click here to login with GitHub</a><br>';
+      } else {
+        output.innerHTML += '❌ <strong>ERROR</strong><br>';
+        output.innerHTML += 'Response: ' + JSON.stringify(result, null, 2) + '<br>';
+      }
+      
+    } catch (error) {
+      output.innerHTML += '💥 <strong>NETWORK ERROR</strong><br>';
+      output.innerHTML += 'Error: ' + error.message + '<br>';
+      console.error('Post test error:', error);
+    }
+  }
+}
+
+// Initialize debug tester
+document.addEventListener('DOMContentLoaded', function() {
+  new DebugPostTester();
+});
+</script>
+</body>
+</html>

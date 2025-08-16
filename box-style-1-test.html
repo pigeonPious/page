@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box Style 1 Interface Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .test-section { background: white; margin: 20px 0; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .status { padding: 10px; border-radius: 3px; margin: 10px 0; }
+        .pass { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .instructions { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        iframe { width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 3px; margin: 10px 0; }
+        .feature-list { list-style: none; padding: 0; }
+        .feature-list li { padding: 5px 0; }
+        .feature-list li:before { content: '✓ '; color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>📦 Box Style 1 Interface Test</h1>
+    <p>Testing the new minimal "box style 1" interface for Make Note, Export, and Publish functions.</p>
+
+    <div class="test-section">
+        <h2>🎯 What is "Box Style 1"?</h2>
+        <div class="status info">
+            <strong>Box Style 1 Characteristics:</strong>
+            <ul class="feature-list">
+                <li>Matches the taskbar dropdown menu style exactly</li>
+                <li>Simple box with border, no description text</li>
+                <li>Single line input, no wider than necessary</li>
+                <li>No confirmation buttons - Enter to confirm, Escape to cancel</li>
+                <li>Efficient and minimal design</li>
+                <li>Positioned near the cursor or action area</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Instructions</h2>
+        <div class="instructions">
+            <strong>1. Test Make Note (Box Style 1):</strong>
+            <ol>
+                <li>Type some text in the editor below</li>
+                <li>Select some text</li>
+                <li>Click <strong>Edit → Make Note</strong> OR press <strong>Ctrl+M</strong></li>
+                <li>Should show a minimal box input near the selection</li>
+                <li>Type note text and press <strong>Enter</strong> to confirm</li>
+                <li>Or press <strong>Escape</strong> to cancel</li>
+            </ol>
+            
+            <strong>2. Test Export (Box Style 1):</strong>
+            <ol>
+                <li>Enter a title and some content</li>
+                <li>Click the <strong>EXPORT</strong> button</li>
+                <li>Should show a minimal box for filename input</li>
+                <li>Default filename should be pre-filled</li>
+                <li>Press <strong>Enter</strong> to download file</li>
+            </ol>
+            
+            <strong>3. Test Publish (Box Style 1):</strong>
+            <ol>
+                <li>Set up GitHub config first (if needed)</li>
+                <li>Click the <strong>PUBLISH</strong> button</li>
+                <li>Should show a minimal box for commit message</li>
+                <li>Default commit message should be pre-filled</li>
+                <li>Press <strong>Enter</strong> to publish to GitHub</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Simple Editor with Box Style 1</h2>
+        <iframe src="editor.html"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Expected Results</h2>
+        <div class="status pass">
+            <strong>Box Style 1 should provide:</strong>
+            <ul class="feature-list">
+                <li>Minimal, efficient interface</li>
+                <li>No modal dialogs for these functions</li>
+                <li>Fast keyboard-driven workflow</li>
+                <li>Visual consistency with taskbar style</li>
+                <li>Clean, uncluttered experience</li>
+                <li>Positioned contextually near user action</li>
+            </ul>
+        </div>
+        
+        <div class="status info">
+            <strong>Behavior Check:</strong>
+            <ul>
+                <li><strong>Make Note:</strong> Box appears near selected text</li>
+                <li><strong>Export:</strong> Box appears, file downloads on Enter</li>
+                <li><strong>Publish:</strong> Box appears, publishes to GitHub on Enter</li>
+                <li><strong>Keyboard:</strong> Enter confirms, Escape cancels</li>
+                <li><strong>Click Outside:</strong> Cancels input</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎨 Design Comparison</h2>
+        <div class="status">
+            <strong>Old Style:</strong> Large modal dialogs with titles, descriptions, multiple buttons<br>
+            <strong>Box Style 1:</strong> Minimal input box matching taskbar dropdown aesthetic
+        </div>
+        <p>This creates a more streamlined, efficient editing experience that matches the overall interface design philosophy.</p>
+    </div>
+</body>
+</html>
