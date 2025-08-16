@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posts Loading Debug Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .error { background: #ffeeee; }
+        .success { background: #eeffee; }
+    </style>
+</head>
+<body>
+    <h1>Posts Loading Debug Test</h1>
+    <button onclick="testPostsLoading()">Test Posts Loading</button>
+    <div id="results"></div>
+
+    <script>
+        async function testPostsLoading() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="log">Starting tests...</div>';
+            
+            try {
+                // Test 1: Check if index.json exists
+                results.innerHTML += '<div class="log">Test 1: Fetching posts/index.json...</div>';
+                const timestamp = new Date().getTime();
+                const response = await fetch(`posts/index.json?t=${timestamp}`);
+                
+                if (!response.ok) {
+                    results.innerHTML += `<div class="log error">HTTP Error: ${response.status} ${response.statusText}</div>`;
+                    return;
+                }
+                
+                const posts = await response.json();
+                results.innerHTML += `<div class="log success">Success! Found ${posts.length} posts</div>`;
+                results.innerHTML += `<div class="log">Posts: ${JSON.stringify(posts, null, 2)}</div>`;
+                
+                // Test 2: Try to fetch the first post
+                if (posts.length > 0) {
+                    const firstPost = posts[0];
+                    results.innerHTML += `<div class="log">Test 2: Fetching first post: ${firstPost.slug}</div>`;
+                    
+                    const postResponse = await fetch(`posts/${firstPost.slug}.json?t=${timestamp}`);
+                    if (!postResponse.ok) {
+                        results.innerHTML += `<div class="log error">Error fetching post: ${postResponse.status}</div>`;
+                        return;
+                    }
+                    
+                    const postData = await postResponse.json();
+                    results.innerHTML += `<div class="log success">Post loaded successfully!</div>`;
+                    results.innerHTML += `<div class="log">Title: ${postData.title}</div>`;
+                }
+                
+                // Test 3: Check dropdown element
+                results.innerHTML += '<div class="log">Test 3: Checking for dropdown element...</div>';
+                const dropdown = document.getElementById('post-list-dropdown');
+                if (dropdown) {
+                    results.innerHTML += '<div class="log success">Dropdown element found</div>';
+                } else {
+                    results.innerHTML += '<div class="log error">Dropdown element NOT found</div>';
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<div class="log error">Error: ${error.message}</div>`;
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

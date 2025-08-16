@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigation Test</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Taskbar will be loaded by shared-taskbar.js -->
+
+<div class="frame">
+  <main class="center-content">
+    <div id="post-content">
+      <h1>Navigation System Test</h1>
+      <p>Testing the new navigation and keywords system:</p>
+      
+      <h2>Features to Test:</h2>
+      <ul>
+        <li><strong>Star Button (*)</strong> - Should navigate to most recent post</li>
+        <li><strong>Navigation > Most Recent</strong> - Should navigate to most recent post</li>
+        <li><strong>Navigation > Random Post</strong> - Should navigate to a random post</li>
+        <li><strong>Navigation > All Posts ></strong> - Should show submenu with all posts</li>
+        <li><strong>Navigation > Devlog ></strong> - Should show submenu organized by project</li>
+      </ul>
+      
+      <h2>Keywords System:</h2>
+      <p>Posts now use flexible keywords instead of fixed categories:</p>
+      <ul>
+        <li>General posts: <code>general</code> or custom keywords</li>
+        <li>Devlog posts: <code>devlog:ProjectName</code> (e.g., <code>devlog:Hablet</code>)</li>
+        <li>Multiple keywords: <code>design, testing, css</code></li>
+      </ul>
+      
+      <h2>Test Status:</h2>
+      <div id="test-results">
+        <p>Loading tests...</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="shared-taskbar.js"></script>
+<script src="script.js"></script>
+
+<script>
+// Test the navigation functionality
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('=== Navigation Test Started ===');
+  
+  const testResults = document.getElementById('test-results');
+  let testOutput = '<h3>Test Results:</h3><ul>';
+  
+  // Wait for posts to load
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Test 1: Check if posts are loaded
+  if (window.allPosts && window.allPosts.length > 0) {
+    testOutput += '<li>✅ Posts loaded successfully: ' + window.allPosts.length + ' posts found</li>';
+    
+    // Test 2: Check star button exists
+    const starButton = document.getElementById('star-button');
+    if (starButton) {
+      testOutput += '<li>✅ Star button found in taskbar</li>';
+    } else {
+      testOutput += '<li>❌ Star button not found</li>';
+    }
+    
+    // Test 3: Check navigation menu items
+    const mostRecent = document.getElementById('most-recent-post');
+    const randomPost = document.getElementById('random-post');
+    const allPosts = document.getElementById('all-posts-menu');
+    const devlogMenu = document.getElementById('devlog-menu');
+    
+    if (mostRecent) testOutput += '<li>✅ Most Recent button found</li>';
+    else testOutput += '<li>❌ Most Recent button not found</li>';
+    
+    if (randomPost) testOutput += '<li>✅ Random Post button found</li>';
+    else testOutput += '<li>❌ Random Post button not found</li>';
+    
+    if (allPosts) testOutput += '<li>✅ All Posts submenu found</li>';
+    else testOutput += '<li>❌ All Posts submenu not found</li>';
+    
+    if (devlogMenu) testOutput += '<li>✅ Devlog submenu found</li>';
+    else testOutput += '<li>❌ Devlog submenu not found</li>';
+    
+    // Test 4: Check for devlog posts
+    const devlogPosts = window.allPosts.filter(post => {
+      const keywords = post.keywords || post.category || '';
+      return keywords.includes('devlog');
+    });
+    
+    if (devlogPosts.length > 0) {
+      testOutput += '<li>✅ Found ' + devlogPosts.length + ' devlog posts</li>';
+      devlogPosts.forEach(post => {
+        const keywords = post.keywords || post.category;
+        const match = keywords.match(/devlog:([^,]+)/);
+        const project = match ? match[1].trim() : 'Unknown';
+        testOutput += '<li>&nbsp;&nbsp;&nbsp;- ' + post.title + ' (Project: ' + project + ')</li>';
+      });
+    } else {
+      testOutput += '<li>⚠️ No devlog posts found</li>';
+    }
+    
+    // Test 5: Check submenu creation
+    const allPostsSubmenu = allPosts ? allPosts.querySelector('.menu-submenu') : null;
+    if (allPostsSubmenu) {
+      testOutput += '<li>✅ All Posts submenu created with ' + allPostsSubmenu.children.length + ' items</li>';
+    } else {
+      testOutput += '<li>❌ All Posts submenu not created</li>';
+    }
+    
+    const devlogSubmenu = devlogMenu ? devlogMenu.querySelector('.menu-submenu') : null;
+    if (devlogSubmenu) {
+      testOutput += '<li>✅ Devlog submenu created with ' + devlogSubmenu.children.length + ' items</li>';
+    } else {
+      testOutput += '<li>❌ Devlog submenu not created</li>';
+    }
+    
+  } else {
+    testOutput += '<li>❌ No posts loaded</li>';
+  }
+  
+  testOutput += '</ul>';
+  testOutput += '<p><strong>Try clicking the navigation elements to test functionality!</strong></p>';
+  
+  testResults.innerHTML = testOutput;
+  console.log('=== Navigation Test Complete ===');
+});
+</script>
+
+</body>
+</html>

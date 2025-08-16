@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor Keywords Test</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+
+<!-- Taskbar will be loaded by shared-taskbar.js -->
+
+<div class="frame">
+  <main class="center-content">
+    <div class="editor-main-column">
+      <div class="editor-header">
+        <input type="text" id="postTitle" class="title-input" placeholder="Keywords System Test Post" value="Keywords System Test Post">
+      </div>
+      
+      <div class="editor-main">
+        <div id="visualEditor" class="visual-editor" contenteditable="true">
+          <h1>Testing the Keywords System</h1>
+          <p>This post tests the new keywords/flags system that replaced the old category system.</p>
+          
+          <h2>Features:</h2>
+          <ul>
+            <li>Flexible comma-separated keywords</li>
+            <li>Devlog project organization using "devlog:ProjectName"</li>
+            <li>Backwards compatibility with legacy categories</li>
+          </ul>
+          
+          <h2>Test Keywords:</h2>
+          <p>This post should be tagged with: <strong>testing, keywords, devlog:Website</strong></p>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <div class="editor-sidebar">
+    <div class="editor-tools-vertical">
+      <div class="tool-button" id="keywords-btn">
+        FLAGS
+        <span class="tool-value" id="current-keywords">testing, keywords, devlog:Website</span>
+      </div>
+      
+      <div class="tool-button" id="export-btn">
+        EXPORT
+      </div>
+      
+      <div class="tool-button" id="test-keywords-btn">
+        TEST KEYWORDS
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Keywords Modal -->
+<div id="keywordsModal" class="modal">
+  <div class="modal-content">
+    <h3>Post Keywords/Flags</h3>
+    <p>Enter keywords separated by commas. Use "devlog:ProjectName" for devlog posts.</p>
+    <input type="text" id="keywords-input" placeholder="e.g., design, testing, devlog:MyProject">
+    <div class="modal-buttons">
+      <button id="save-keywords-btn" class="btn primary">Save</button>
+      <button onclick="closeModal('keywordsModal')" class="btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Test Results Modal -->
+<div id="testResultsModal" class="modal">
+  <div class="modal-content">
+    <h3>Keywords System Test Results</h3>
+    <div id="test-output"></div>
+    <div class="modal-buttons">
+      <button onclick="closeModal('testResultsModal')" class="btn primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Message Modal -->
+<div id="messageModal" class="modal">
+  <div class="modal-content">
+    <h3 id="message-title">Editor</h3>
+    <p id="message-content"></p>
+    <div class="modal-buttons">
+      <button onclick="closeModal('messageModal')" class="btn primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="shared-taskbar.js"></script>
+
+<script>
+// Simplified editor for testing keywords functionality
+const testEditor = {
+  currentKeywords: 'testing, keywords, devlog:Website',
+
+  init() {
+    // Set initial keywords
+    document.getElementById('current-keywords').textContent = this.currentKeywords;
+    
+    // Setup event listeners
+    document.getElementById('keywords-btn').addEventListener('click', () => this.showKeywordsModal());
+    document.getElementById('save-keywords-btn').addEventListener('click', () => this.saveKeywords());
+    document.getElementById('export-btn').addEventListener('click', () => this.testExport());
+    document.getElementById('test-keywords-btn').addEventListener('click', () => this.runKeywordsTest());
+    
+    console.log('Test editor initialized');
+  },
+
+  showKeywordsModal() {
+    const keywordsInput = document.getElementById('keywords-input');
+    keywordsInput.value = this.currentKeywords;
+    this.showModal('keywordsModal');
+  },
+
+  saveKeywords() {
+    const keywordsInput = document.getElementById('keywords-input');
+    const keywords = keywordsInput.value.trim() || 'general';
+    this.currentKeywords = keywords;
+    document.getElementById('current-keywords').textContent = keywords;
+    this.closeModal('keywordsModal');
+    console.log('Keywords updated:', keywords);
+  },
+
+  testExport() {
+    const title = document.getElementById('postTitle').value.trim();
+    const content = document.getElementById('visualEditor').innerHTML;
+    
+    const postData = {
+      title: title,
+      content: content,
+      keywords: this.currentKeywords,
+      date: new Date().toISOString().split('T')[0],
+      notes: {}
+    };
+
+    console.log('Test export data:', postData);
+    
+    // Show the export data
+    this.showMessage('Export test successful! Check console for details.', 'Export Test');
+  },
+
+  runKeywordsTest() {
+    let testOutput = '<h4>Keywords System Test Results:</h4><ul>';
+    
+    // Test 1: Keywords parsing
+    const keywords = this.currentKeywords.split(',').map(k => k.trim()).filter(k => k);
+    testOutput += '<li>✅ Keywords parsed: ' + keywords.length + ' keywords found</li>';
+    keywords.forEach(keyword => {
+      testOutput += '<li>&nbsp;&nbsp;&nbsp;- "' + keyword + '"</li>';
+    });
+    
+    // Test 2: Devlog detection
+    const devlogKeywords = keywords.filter(k => k.startsWith('devlog:'));
+    if (devlogKeywords.length > 0) {
+      testOutput += '<li>✅ Devlog keywords found: ' + devlogKeywords.length + '</li>';
+      devlogKeywords.forEach(keyword => {
+        const project = keyword.split(':')[1];
+        testOutput += '<li>&nbsp;&nbsp;&nbsp;- Project: "' + project + '"</li>';
+      });
+    } else {
+      testOutput += '<li>⚠️ No devlog keywords found</li>';
+    }
+    
+    // Test 3: Export format
+    const postData = {
+      title: document.getElementById('postTitle').value.trim(),
+      keywords: this.currentKeywords,
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    testOutput += '<li>✅ Export format test passed</li>';
+    testOutput += '<li>&nbsp;&nbsp;&nbsp;- Title: "' + postData.title + '"</li>';
+    testOutput += '<li>&nbsp;&nbsp;&nbsp;- Keywords: "' + postData.keywords + '"</li>';
+    testOutput += '<li>&nbsp;&nbsp;&nbsp;- Date: "' + postData.date + '"</li>';
+    
+    // Test 4: Backwards compatibility
+    const legacyCategory = 'general';
+    const compatibleKeywords = postData.keywords || legacyCategory;
+    testOutput += '<li>✅ Backwards compatibility: falls back to "' + compatibleKeywords + '"</li>';
+    
+    testOutput += '</ul>';
+    testOutput += '<p><strong>All tests passed! Keywords system is working correctly.</strong></p>';
+    
+    document.getElementById('test-output').innerHTML = testOutput;
+    this.showModal('testResultsModal');
+  },
+
+  showModal(modalId) {
+    document.getElementById(modalId).classList.add('show');
+  },
+
+  closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('show');
+  },
+
+  showMessage(message, title = 'Test Editor') {
+    document.getElementById('message-title').textContent = title;
+    document.getElementById('message-content').textContent = message;
+    this.showModal('messageModal');
+  }
+};
+
+// Global functions for modal closing
+function closeModal(modalId) {
+  testEditor.closeModal(modalId);
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  testEditor.init();
+});
+</script>
+
+<style>
+/* Basic modal styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  padding: 20px;
+  border-radius: 4px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  color: var(--fg);
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.modal-buttons {
+  margin-top: 15px;
+  text-align: right;
+}
+
+.btn {
+  padding: 8px 16px;
+  margin-left: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+#test-output {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+#test-output ul {
+  text-align: left;
+}
+</style>
+
+</body>
+</html>

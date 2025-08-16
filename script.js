@@ -337,26 +337,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupHoverNotes();
   setupViewMenu();
   
-  // Add refresh posts functionality
-  const refreshButton = document.getElementById('refresh-posts');
-  if (refreshButton) {
-    refreshButton.addEventListener('click', async () => {
-      console.log('Refreshing posts...');
-      await loadPostsWithCategories();
-    });
-  }
-  
-  // Load posts with categories if we have the dropdown
-  if (document.getElementById('post-list-dropdown')) {
-    console.log('Found post-list-dropdown, loading posts with categories...');
-    await loadPostsWithCategories();
+  // Load posts with new navigation system
+  if (document.getElementById('navigation-dropdown')) {
+    console.log('Found navigation-dropdown, loading posts with keywords...');
+    await loadPostsWithKeywords();
   } else {
-    console.log('No post-list-dropdown found, using fallback...');
+    console.log('No navigation-dropdown found, using fallback...');
     // Fallback for pages without the dropdown
     const timestamp = new Date().getTime();
     const response = await fetch(`posts/index.json?t=${timestamp}`);
     const posts = await response.json();
-    populateSidebar(posts);
     if (posts.length > 0) loadPost(posts[0].slug);
   }
   
@@ -1214,3 +1204,153 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPostsWithCategories();
   }
 });
+
+// New Navigation System with Keywords/Flags
+function setupNavigationMenus(posts) {
+  // Set up star button click
+  const starButton = document.getElementById('star-button');
+  if (starButton) {
+    starButton.addEventListener('click', () => {
+      if (posts.length > 0) {
+        loadPost(posts[0].slug); // Load most recent post
+      }
+    });
+  }
+
+  // Set up "Most Recent" button
+  const mostRecentButton = document.getElementById('most-recent-post');
+  if (mostRecentButton) {
+    mostRecentButton.addEventListener('click', () => {
+      if (posts.length > 0) {
+        loadPost(posts[0].slug);
+      }
+    });
+  }
+
+  // Set up "Random Post" button
+  const randomButton = document.getElementById('random-post');
+  if (randomButton) {
+    randomButton.addEventListener('click', () => {
+      if (posts.length > 0) {
+        const randomIndex = Math.floor(Math.random() * posts.length);
+        loadPost(posts[randomIndex].slug);
+      }
+    });
+  }
+
+  // Set up "All Posts" submenu
+  setupAllPostsSubmenu(posts);
+  
+  // Set up "Devlog" submenu
+  setupDevlogSubmenu(posts);
+}
+
+function setupAllPostsSubmenu(posts) {
+  const allPostsMenu = document.getElementById('all-posts-menu');
+  if (!allPostsMenu) return;
+
+  // Create submenu
+  const submenu = document.createElement('div');
+  submenu.className = 'menu-submenu';
+  
+  posts.forEach(post => {
+    const postEntry = document.createElement('div');
+    postEntry.className = 'menu-entry';
+    postEntry.textContent = post.title;
+    postEntry.addEventListener('click', () => loadPost(post.slug));
+    submenu.appendChild(postEntry);
+  });
+  
+  allPostsMenu.appendChild(submenu);
+}
+
+function setupDevlogSubmenu(posts) {
+  const devlogMenu = document.getElementById('devlog-menu');
+  if (!devlogMenu) return;
+
+  // Filter devlog posts and organize by project
+  const devlogProjects = {};
+  
+  posts.forEach(post => {
+    // Support both keywords and legacy category fields
+    const keywords = post.keywords || post.category || '';
+    if (keywords.includes('devlog')) {
+      // Extract project name from "devlog:ProjectName" format
+      const match = keywords.match(/devlog:([^,]+)/);
+      const project = match ? match[1].trim() : 'General';
+      
+      if (!devlogProjects[project]) {
+        devlogProjects[project] = [];
+      }
+      devlogProjects[project].push(post);
+    }
+  });
+
+  // Create submenu
+  const submenu = document.createElement('div');
+  submenu.className = 'menu-submenu';
+  
+  Object.keys(devlogProjects).forEach(project => {
+    const projectHeader = document.createElement('div');
+    projectHeader.className = 'menu-entry category-header';
+    projectHeader.textContent = project;
+    projectHeader.style.fontWeight = 'bold';
+    projectHeader.style.backgroundColor = 'var(--border)';
+    submenu.appendChild(projectHeader);
+    
+    devlogProjects[project].forEach(post => {
+      const postEntry = document.createElement('div');
+      postEntry.className = 'menu-entry';
+      postEntry.style.paddingLeft = '20px';
+      postEntry.textContent = post.title;
+      postEntry.addEventListener('click', () => loadPost(post.slug));
+      submenu.appendChild(postEntry);
+    });
+  });
+  
+  devlogMenu.appendChild(submenu);
+}
+
+// Update the main loading function to use keywords
+async function loadPostsWithKeywords() {
+  console.log('Starting loadPostsWithKeywords...');
+  try {
+    const timestamp = new Date().getTime();
+    const url = `posts/index.json?t=${timestamp}`;
+    console.log('Fetching posts from:', url);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const posts = await response.json();
+    console.log('Loaded posts:', posts);
+    
+    if (!posts || posts.length === 0) {
+      console.warn('No posts found in index.json');
+      return;
+    }
+    
+    // Sort posts by date (most recent first)
+    posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Store posts globally for navigation functions
+    window.allPosts = posts;
+    
+    // Set up navigation menus
+    setupNavigationMenus(posts);
+    
+    // Load the first post if available
+    if (posts.length > 0 && document.getElementById('post-content')) {
+      console.log('Loading first post:', posts[0].slug);
+      loadPost(posts[0].slug);
+    }
+    
+  } catch (error) {
+    console.error('Error loading posts:', error);
+    console.error('Error details:', error.message);
+    console.error('Stack trace:', error.stack);
+  }
+}

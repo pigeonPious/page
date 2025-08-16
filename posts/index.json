@@ -1,44 +1,56 @@
 [
   {
-    "slug": "first-post",
-    "title": "First Post",
-    "date": "2025-August-10",
-    "category": "general"
-  },
-  {
-    "slug": "second-post",
-    "title": "Second Post",
-    "date": "2025-August-11",
-    "category": "general"
-  },
-  {
-    "slug": "untitled-post",
-    "title": "Untitled Post",
-    "date": "2025-August-14",
-    "category": "general"
-  },
-  {
-    "slug": "test-test-test-pat",
-    "title": "test test test pat",
-    "date": "2025-August-15",
-    "category": "general"
-  },
-  {
-    "slug": "test",
-    "title": "test",
-    "date": "2025-August-15",
-    "category": "general"
-  },
-  {
-    "slug": "image-test",
-    "title": "Image System Test",
+    "slug": "website-devlog-1",
+    "title": "Blog System Improvements",
     "date": "2025-August-16",
-    "category": "general"
+    "keywords": "devlog:Website, javascript, design"
+  },
+  {
+    "slug": "hablet-devlog-1",
+    "title": "Hablet Project - Initial Setup",
+    "date": "2025-August-16",
+    "keywords": "devlog:Hablet, programming, rust"
   },
   {
     "slug": "text-wrapping-test",
     "title": "Magazine-Style Text Wrapping Test",
     "date": "2025-August-16",
-    "category": "general"
+    "keywords": "design, testing"
+  },
+  {
+    "slug": "image-test",
+    "title": "Image System Test",
+    "date": "2025-August-16",
+    "keywords": "testing, images"
+  },
+  {
+    "slug": "test-test-test-pat",
+    "title": "test test test pat",
+    "date": "2025-August-15",
+    "keywords": "general"
+  },
+  {
+    "slug": "test",
+    "title": "test",
+    "date": "2025-August-15",
+    "keywords": "general"
+  },
+  {
+    "slug": "untitled-post",
+    "title": "Untitled Post",
+    "date": "2025-August-14",
+    "keywords": "general"
+  },
+  {
+    "slug": "second-post",
+    "title": "Second Post",
+    "date": "2025-August-11",
+    "keywords": "general"
+  },
+  {
+    "slug": "first-post",
+    "title": "First Post",
+    "date": "2025-August-10",
+    "keywords": "general"
   }
 ]

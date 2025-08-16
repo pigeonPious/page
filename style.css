@@ -157,11 +157,6 @@ html, body {
   display: none !important;
 }
 
-.menu-star {
-  margin-right: 8px;
-  opacity: .85;
-}
-
 .menu-item {
   position: relative;
   background: var(--menu-bg);
@@ -205,6 +200,50 @@ html, body {
 
 .menu-entry:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* Menu separator */
+.menu-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Submenu styles */
+.menu-entry.has-submenu {
+  position: relative;
+}
+
+.menu-submenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: 200px;
+  background: var(--menu-bg);
+  border: 1px solid var(--border);
+  padding: 4px;
+  z-index: 1000;
+}
+
+.menu-entry.has-submenu:hover .menu-submenu {
+  display: block;
+}
+
+.menu-submenu .menu-entry {
+  white-space: nowrap;
+}
+
+/* Make star clickable */
+.menu-star {
+  margin-right: 8px;
+  opacity: .85;
+  cursor: pointer;
+  padding: 1px 3px;
+}
+
+.menu-star:hover {
+  text-decoration: underline;
 }
 
 /* Layout - Unit-based system matching editor */

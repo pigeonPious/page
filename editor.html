@@ -31,9 +31,9 @@ Select text and press Ctrl+M to add notes.">
   
   <div class="editor-sidebar">
     <div class="editor-tools-vertical">
-      <div class="tool-button" id="category-btn">
-        CATEGORY
-        <span class="tool-value" id="current-category">General</span>
+      <div class="tool-button" id="keywords-btn">
+        FLAGS
+        <span class="tool-value" id="current-keywords">general</span>
       </div>
       
       <div class="tool-button" id="images-btn">
@@ -85,18 +85,21 @@ Select text and press Ctrl+M to add notes.">
   </div>
 </div>
 
-<!-- Category Selection Modal -->
-<div id="categoryModal" class="modal">
+<!-- Keywords/Flags Input Modal -->
+<div id="keywordsModal" class="modal">
   <div class="modal-content">
-    <h3>Select Category</h3>
-    <div class="category-options">
-      <div class="category-option" data-category="general">General</div>
-      <div class="category-option" data-category="tech">Tech</div>
-      <div class="category-option" data-category="personal">Personal</div>
-      <div class="category-option" data-category="thoughts">Thoughts</div>
+    <h3>Post Flags/Keywords</h3>
+    <div class="input-section">
+      <label for="keywords-input">Keywords (separated by commas):</label>
+      <input type="text" id="keywords-input" placeholder="e.g. devlog:ProjectName, programming, design">
+      <div class="keywords-help">
+        Use "devlog:ProjectName" to categorize as devlog project<br>
+        Separate multiple keywords with commas
+      </div>
     </div>
     <div class="modal-buttons">
-      <button onclick="editor.closeModal('categoryModal')" class="btn">Cancel</button>
+      <button onclick="editor.closeModal('keywordsModal')" class="btn">Cancel</button>
+      <button onclick="editor.saveKeywords()" class="btn btn-primary">Save</button>
     </div>
   </div>
 </div>
@@ -195,7 +198,7 @@ Select text and press Ctrl+M to add notes.">
 // Simple Editor - Optimized and Clean
 const editor = {
   // Core state
-  currentCategory: 'general',
+  currentKeywords: 'general',
   isRawMode: false,
   noteCounter: 1,
 
@@ -214,11 +217,11 @@ const editor = {
 
   // Event listeners
   setupEventListeners() {
-    // Category button
-    document.getElementById('category-btn').addEventListener('mousedown', (e) => {
+    // Keywords button
+    document.getElementById('keywords-btn').addEventListener('mousedown', (e) => {
       e.preventDefault(); // Prevent text deselection
     });
-    document.getElementById('category-btn').addEventListener('click', () => this.showModal('categoryModal'));
+    document.getElementById('keywords-btn').addEventListener('click', () => this.showModal('keywordsModal'));
     
     // Export button
     document.getElementById('export-btn').addEventListener('mousedown', (e) => {
@@ -238,15 +241,11 @@ const editor = {
     });
     document.getElementById('publish-btn').addEventListener('click', () => this.publishPost());
     
-    // Category options
-    document.querySelectorAll('.category-option').forEach(option => {
-      option.addEventListener('click', () => {
-        this.currentCategory = option.dataset.category;
-        document.getElementById('current-category').textContent = 
-          option.textContent;
-        this.closeModal('categoryModal');
-      });
-    });
+    // Keywords modal save button
+    const saveKeywordsBtn = document.getElementById('save-keywords-btn');
+    if (saveKeywordsBtn) {
+      saveKeywordsBtn.addEventListener('click', () => this.saveKeywords());
+    }
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
@@ -346,6 +345,20 @@ const editor = {
     });
   },
 
+  saveKeywords() {
+    const keywordsInput = document.getElementById('keywords-input');
+    const keywords = keywordsInput.value.trim() || 'general';
+    this.currentKeywords = keywords;
+    document.getElementById('current-keywords').textContent = keywords;
+    this.closeModal('keywordsModal');
+  },
+
+  showKeywordsModal() {
+    const keywordsInput = document.getElementById('keywords-input');
+    keywordsInput.value = this.currentKeywords || 'general';
+    this.showModal('keywordsModal');
+  },
+
   // Box Style 1 Input System
   showBoxInput(boxId, onConfirm, initialValue = '') {
     const box = document.getElementById(boxId);
@@ -411,8 +424,8 @@ const editor = {
   newDocument() {
     document.getElementById('postTitle').value = '';
     document.getElementById('visualEditor').innerHTML = '';
-    this.currentCategory = 'general';
-    document.getElementById('current-category').textContent = 'General';
+    this.currentKeywords = 'general';
+    document.getElementById('current-keywords').textContent = 'general';
     console.log('New document created');
   },
 
@@ -493,7 +506,7 @@ const editor = {
       const post = {
         title,
         content,
-        category: this.currentCategory,
+        keywords: this.currentKeywords,
         date: new Date().toISOString(),
         id: finalFilename,
         notes: this.extractNotes()
@@ -556,7 +569,7 @@ const editor = {
     const draft = {
       title,
       content,
-      category: this.currentCategory,
+      keywords: this.currentKeywords,
       saved: new Date().toISOString()
     };
 
@@ -577,7 +590,7 @@ const editor = {
       list.innerHTML = drafts.map((draft, index) => `
         <div style="border: 1px solid var(--border); padding: 10px; margin: 5px 0; border-radius: 3px;">
           <strong>${draft.title}</strong><br>
-          <small>Category: ${draft.category} | Saved: ${new Date(draft.saved).toLocaleDateString()}</small><br>
+          <small>Keywords: ${draft.keywords || draft.category || 'general'} | Saved: ${new Date(draft.saved).toLocaleDateString()}</small><br>
           <button onclick="editor.loadDraft(${index})" class="btn primary" style="margin: 5px 5px 0 0;">Load</button>
           <button onclick="editor.deleteDraft(${index})" class="btn">Delete</button>
         </div>
@@ -594,9 +607,8 @@ const editor = {
     if (draft) {
       document.getElementById('postTitle').value = draft.title;
       document.getElementById('visualEditor').innerHTML = draft.content;
-      this.currentCategory = draft.category;
-      document.getElementById('current-category').textContent = 
-        draft.category.charAt(0).toUpperCase() + draft.category.slice(1);
+      this.currentKeywords = draft.keywords || draft.category || 'general'; // backwards compatibility
+      document.getElementById('current-keywords').textContent = this.currentKeywords;
       
       this.closeModal('draftsModal');
       this.showMessage('Draft loaded successfully!');
@@ -704,7 +716,7 @@ const editor = {
       const postData = {
         title: title,
         content: this.processContent(content),
-        category: this.currentCategory,
+        keywords: this.currentKeywords,
         date: formattedDate
       };
 
@@ -719,8 +731,8 @@ const editor = {
         // Clear editor
         document.getElementById('postTitle').value = '';
         document.getElementById('visualEditor').innerHTML = '';
-        this.currentCategory = 'general';
-        document.getElementById('current-category').textContent = 'General';
+        this.currentKeywords = 'general';
+        document.getElementById('current-keywords').textContent = 'general';
         
       } catch (error) {
         console.error('Error publishing post:', error);
@@ -823,7 +835,7 @@ const editor = {
         slug: slug,
         title: postData.title,
         date: postData.date,
-        category: postData.category || 'general'
+        keywords: postData.keywords || 'general'
       });
 
       // Sort by date (newest first)
