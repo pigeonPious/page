@@ -374,11 +374,14 @@ const editor = {
       return;
     }
 
-    const content = document.getElementById('visualEditor').innerHTML;
-    if (!content.trim()) {
+    const rawContent = document.getElementById('visualEditor').innerHTML;
+    if (!rawContent.trim()) {
       this.showMessage('Please write some content for your post.');
       return;
     }
+
+    // Convert visual content to markdown-friendly format
+    const content = this.convertToMarkdown(rawContent);
 
     const post = {
       title,
@@ -980,18 +983,46 @@ const editor = {
   insertImageIntoEditor(imageData) {
     const visualEditor = document.getElementById('visualEditor');
     
-    // Create image element
+    // Create image preview container
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'editor-image-preview';
+    imageContainer.contentEditable = false; // Prevent editing of the image itself
+    imageContainer.dataset.imageName = imageData.name;
+    imageContainer.dataset.imagePath = imageData.path;
+    imageContainer.dataset.imageUrl = imageData.url;
+    
+    // Create the visual image
     const img = document.createElement('img');
     img.src = imageData.url;
     img.alt = imageData.name;
     img.style.maxWidth = '100%';
     img.style.height = 'auto';
     img.style.display = 'block';
-    img.style.margin = '8px 0';
     
-    // Add click handler for potential future editing
-    img.addEventListener('click', () => {
-      this.showMessage('Image Info', `Image: ${imageData.name}\nPath: ${imageData.path}`);
+    // Create image info overlay
+    const imageInfo = document.createElement('div');
+    imageInfo.className = 'editor-image-info';
+    imageInfo.innerHTML = `
+      <span class="image-filename">📷 ${imageData.name}</span>
+      <span class="image-actions">
+        <button class="image-action-btn" onclick="editor.editImageAlt(this)" title="Edit Alt Text">✏️</button>
+        <button class="image-action-btn" onclick="editor.removeImage(this)" title="Remove Image">🗑️</button>
+      </span>
+    `;
+    
+    // Add elements to container
+    imageContainer.appendChild(img);
+    imageContainer.appendChild(imageInfo);
+    
+    // Add click handler for full-size viewing
+    img.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent container click
+      this.showFullSizeImage(imageData);
+    });
+
+    // Add click handler for container (show info)
+    imageContainer.addEventListener('click', () => {
+      this.showMessage('Image Info', `Image: ${imageData.name}\nPath: ${imageData.path}\nClick the image to view full size\nClick the edit button to change alt text`);
     });
 
     // Insert at cursor position or at the end
@@ -999,23 +1030,157 @@ const editor = {
     if (selection.rangeCount > 0 && visualEditor.contains(selection.focusNode)) {
       const range = selection.getRangeAt(0);
       range.deleteContents();
-      range.insertNode(img);
+      range.insertNode(imageContainer);
       
-      // Move cursor after image
-      range.setStartAfter(img);
-      range.setEndAfter(img);
+      // Add line breaks for better spacing
+      const brBefore = document.createElement('br');
+      const brAfter = document.createElement('br');
+      imageContainer.parentNode.insertBefore(brBefore, imageContainer);
+      imageContainer.parentNode.insertBefore(brAfter, imageContainer.nextSibling);
+      
+      // Move cursor after the image
+      range.setStartAfter(brAfter);
+      range.setEndAfter(brAfter);
       selection.removeAllRanges();
       selection.addRange(range);
     } else {
       // Append to end if no selection
-      visualEditor.appendChild(img);
+      visualEditor.appendChild(document.createElement('br'));
+      visualEditor.appendChild(imageContainer);
+      visualEditor.appendChild(document.createElement('br'));
     }
-
-    // Add some spacing
-    const br = document.createElement('br');
-    img.parentNode.insertBefore(br, img.nextSibling);
     
     this.showMessage('Image Added', `${imageData.name} has been added to your post!`);
+  },
+
+  // Edit image alt text
+  editImageAlt(button) {
+    const container = button.closest('.editor-image-preview');
+    const img = container.querySelector('img');
+    const currentAlt = img.alt;
+    
+    this.showBoxInput('noteInputBox', (newAlt) => {
+      if (newAlt !== null && newAlt !== undefined) {
+        img.alt = newAlt || container.dataset.imageName;
+        this.showMessage('Alt Text Updated', 'Image alt text has been updated.');
+      }
+    }, currentAlt);
+  },
+
+  // Remove image from editor
+  removeImage(button) {
+    const container = button.closest('.editor-image-preview');
+    const imageName = container.dataset.imageName;
+    
+    if (confirm(`Remove image "${imageName}" from your post?`)) {
+      // Remove the container and surrounding line breaks
+      const prev = container.previousSibling;
+      const next = container.nextSibling;
+      
+      if (prev && prev.nodeName === 'BR') prev.remove();
+      if (next && next.nodeName === 'BR') next.remove();
+      
+      container.remove();
+      this.showMessage('Image Removed', `${imageName} has been removed from your post.`);
+    }
+  },
+
+  // Show full-size image in modal
+  showFullSizeImage(imageData) {
+    // Create modal for full-size image
+    const modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.innerHTML = `
+      <div class="image-modal-overlay">
+        <div class="image-modal-content">
+          <div class="image-modal-header">
+            <span class="image-modal-title">📷 ${imageData.name}</span>
+            <button class="image-modal-close">×</button>
+          </div>
+          <div class="image-modal-body">
+            <img src="${imageData.url}" alt="${imageData.name}" class="full-size-image">
+          </div>
+          <div class="image-modal-footer">
+            <small>Path: ${imageData.path}</small>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add to document
+    document.body.appendChild(modal);
+
+    // Add event listeners
+    const closeBtn = modal.querySelector('.image-modal-close');
+    const overlay = modal.querySelector('.image-modal-overlay');
+
+    closeBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(modal);
+      }
+    });
+
+    // ESC key to close
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        document.body.removeChild(modal);
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+  },
+
+  // Convert visual content to markdown format
+  convertToMarkdown(htmlContent) {
+    // Create a temporary container to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+
+    // Convert image previews to markdown
+    const imagePreviews = tempDiv.querySelectorAll('.editor-image-preview');
+    imagePreviews.forEach(preview => {
+      const img = preview.querySelector('img');
+      const imagePath = preview.dataset.imagePath;
+      const altText = img.alt || preview.dataset.imageName;
+      
+      // Create markdown image syntax
+      const markdown = `![${altText}](${imagePath})`;
+      
+      // Replace the preview with markdown text
+      const textNode = document.createTextNode(markdown);
+      preview.parentNode.replaceChild(textNode, preview);
+    });
+
+    // Convert other HTML elements to markdown-friendly format
+    let content = tempDiv.innerHTML;
+    
+    // Basic HTML to markdown conversions
+    content = content
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+      .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+      .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+      .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n')
+      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n')
+      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n')
+      .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n')
+      .replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n')
+      .replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n');
+
+    // Clean up extra whitespace and line breaks
+    content = content
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/^\s+|\s+$/g, '')
+      .trim();
+
+    return content;
   }
 };
 

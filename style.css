@@ -134,7 +134,6 @@ html, body {
   padding: 1px 10px;
   font-size: 12px;
   height: 100%;
-  justify-content: space-between;
 }
 
 .taskbar-status {
@@ -150,6 +149,11 @@ html, body {
 
 .taskbar-status span:hover {
   text-decoration: underline;
+}
+
+/* Hide editor-only elements on main site */
+.editor-only {
+  display: none !important;
 }
 
 .menu-star {
@@ -205,7 +209,7 @@ html, body {
 /* Layout */
 .frame {
   display: grid;
-  grid-template-columns: 110px 0 minmax(300px, 540px) 1fr;
+  grid-template-columns: 110px 40px minmax(300px, 540px) 1fr;
   column-gap: 0;
   max-width: 1200px;
   margin: 28px auto 120px;
@@ -259,6 +263,11 @@ html, body {
 }
 
 /* Content */
+.center-content {
+  grid-column: 3; /* Position in the third column of the grid */
+  width: 100%;
+}
+
 .post-header {
   margin-bottom: 10px;
 }
@@ -283,6 +292,37 @@ html, body {
   margin: 4px 0 10px 14px;  /* gap so text doesn't touch image */
   border: 1px solid var(--border);
   shape-outside: inset(0 round 0); /* keep rectangular wrap */
+}
+
+/* Regular images in posts - uniform 300x300 square format */
+.post-content img:not(.float-right) {
+  width: 300px;
+  height: 300px;
+  object-fit: cover;
+  margin: 16px auto;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.post-content img:not(.float-right):hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Click-to-expand functionality for images */
+.post-content img:not(.float-right):active {
+  transform: scale(0.98);
+}
+
+/* Responsive behavior for mobile */
+@media (max-width: 640px) {
+  .post-content img:not(.float-right) {
+    width: 280px;
+    height: 280px;
+  }
 }
 
 .clear-after {
@@ -337,8 +377,8 @@ html, body {
   }
 }
 
-/* Modal styles */
-.modal {
+/* Legacy modal styles - kept for potential future use */
+.legacy-modal {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -354,7 +394,7 @@ html, body {
   max-width: 600px;
 }
 
-.modal-content {
+.legacy-modal-content {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -400,8 +440,8 @@ textarea#editorContent {
   text-decoration: underline;
 }
 
-/* Modal Styles */
-.modal {
+/* Editor Modal Styles */
+.editor-modal {
   display: none;
   position: fixed;
   z-index: 1000;
@@ -412,7 +452,7 @@ textarea#editorContent {
   background-color: rgba(0,0,0,0.5);
 }
 
-.modal-content {
+.editor-modal-content {
   background-color: var(--bg);
   color: var(--fg);
   margin: 15% auto;
@@ -423,19 +463,19 @@ textarea#editorContent {
   border-radius: 5px;
 }
 
-.modal-content h3 {
+.editor-modal-content h3 {
   margin-top: 0;
 }
 
-.modal-content label {
+.editor-modal-content label {
   display: block;
   margin: 10px 0 5px 0;
   font-weight: bold;
 }
 
-.modal-content input,
-.modal-content textarea,
-.modal-content select {
+.editor-modal-content input,
+.editor-modal-content textarea,
+.editor-modal-content select {
   width: 100%;
   padding: 8px;
   margin-bottom: 15px;
@@ -445,7 +485,7 @@ textarea#editorContent {
   border-radius: 3px;
 }
 
-.modal-content textarea {
+.editor-modal-content textarea {
   height: 80px;
   resize: vertical;
 }
@@ -605,4 +645,97 @@ body.dark-mode .draft-btn.delete {
 
 .note-link:hover {
   background-color: rgba(58, 123, 213, 0.3);
+}
+
+/* Image modal styles for click-to-expand functionality */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: none;
+}
+
+.image-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.image-modal-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  background: var(--bg);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.image-modal-title {
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.image-modal-close {
+  background: none;
+  border: none;
+  color: var(--fg);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.image-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.image-modal-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg);
+}
+
+.full-size-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.image-modal-footer {
+  padding: 12px 20px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
 }

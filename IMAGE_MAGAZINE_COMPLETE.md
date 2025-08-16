@@ -25,11 +25,14 @@ The Image Magazine is a powerful new feature that enables seamless image managem
 - **Unique Naming**: Prevents conflicts with timestamp prefixes
 - **Progress Feedback**: Shows success/error messages for uploads
 
-### **4. Drag & Drop Integration**
+### **4. Visual Image Embedding & Preview**
 - **Visual Dragging**: Images show drag preview when being moved
 - **Drop Zone Highlighting**: Editor shows visual feedback during drag operations
 - **Smart Insertion**: Images inserted at cursor position or end of content
-- **Visual Embedding**: Images appear as actual images (not markdown) in editor
+- **Rich Preview Containers**: Images appear in bordered containers with filename overlay
+- **Interactive Controls**: Hover to reveal edit alt text and remove image buttons
+- **Clear Positioning**: Visual indicators show exactly where images will appear in final post
+- **Markdown Export**: Visual previews convert to proper markdown syntax on export
 
 ## 🏗️ **Implementation Details**
 

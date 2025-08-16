@@ -98,7 +98,9 @@
         <li><strong>Import Button:</strong> Allows uploading images to GitHub repository</li>
         <li><strong>Drag & Drop:</strong> Images can be dragged into visual editor</li>
         <li><strong>File Drop Zone:</strong> Visual editor accepts dropped image files</li>
-        <li><strong>Visual Embedding:</strong> Images appear in editor with markdown behind scenes</li>
+        <li><strong>Visual Preview:</strong> Images appear with clear visual preview showing exactly where they'll be in post</li>
+        <li><strong>Image Controls:</strong> Hover to see edit/remove buttons for each image</li>
+        <li><strong>Markdown Export:</strong> Images convert to proper markdown format when exporting</li>
     </div>
 </div>
 
@@ -132,8 +134,12 @@
         <li>✅ Click Import button → Should open file dialog for images</li>
         <li>✅ View sample.gif → Should appear in gallery if available</li>
         <li>✅ Drag image from gallery → Should show drag preview</li>
-        <li>✅ Drop image on editor → Should embed with visual preview</li>
+        <li>✅ Drop image on editor → Should show visual preview with filename and controls</li>
+        <li>✅ Hover over image → Should show edit (✏️) and delete (🗑️) buttons</li>
+        <li>✅ Click edit button → Should allow changing alt text</li>
+        <li>✅ Click delete button → Should remove image after confirmation</li>
         <li>✅ Drop files on editor → Should trigger upload process</li>
+        <li>✅ Export post → Should convert images to markdown format</li>
         <li>✅ Close with X button → Should hide magazine cleanly</li>
         <li>✅ ESC key → Should close magazine</li>
         <li>✅ Resize magazine → Should work with resize handles</li>

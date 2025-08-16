@@ -323,7 +323,78 @@ document.addEventListener("DOMContentLoaded", async () => {
     populateSidebar(posts);
     if (posts.length > 0) loadPost(posts[0].slug);
   }
+  
+  // Setup image click-to-expand functionality
+  setupImageModal();
 });
+
+// Image click-to-expand functionality for main site
+function setupImageModal() {
+  // Add click handlers to all images in post content
+  document.addEventListener('click', function(e) {
+    if (e.target.tagName === 'IMG' && 
+        e.target.closest('.post-content') && 
+        !e.target.classList.contains('float-right')) {
+      e.preventDefault();
+      showImageModal(e.target);
+    }
+  });
+  
+  // Handle escape key to close modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeImageModal();
+    }
+  });
+}
+
+function showImageModal(img) {
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'image-modal';
+  modal.innerHTML = `
+    <div class="image-modal-overlay">
+      <div class="image-modal-content">
+        <div class="image-modal-header">
+          <span class="image-modal-title">📷 ${img.alt || 'Image'}</span>
+          <button class="image-modal-close">×</button>
+        </div>
+        <div class="image-modal-body">
+          <img src="${img.src}" alt="${img.alt}" class="full-size-image">
+        </div>
+        <div class="image-modal-footer">
+          Click outside or press ESC to close
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to page
+  document.body.appendChild(modal);
+  
+  // Show modal with animation
+  requestAnimationFrame(() => {
+    modal.style.display = 'block';
+  });
+  
+  // Close handlers
+  modal.querySelector('.image-modal-close').addEventListener('click', () => {
+    closeImageModal();
+  });
+  
+  modal.querySelector('.image-modal-overlay').addEventListener('click', (e) => {
+    if (e.target.classList.contains('image-modal-overlay')) {
+      closeImageModal();
+    }
+  });
+}
+
+function closeImageModal() {
+  const modal = document.querySelector('.image-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const editorContent = document.getElementById('editorContent');
