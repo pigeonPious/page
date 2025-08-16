@@ -310,9 +310,9 @@ function setupViewMenu() {
 async function waitForTaskbar() {
   return new Promise((resolve) => {
     const checkForDropdown = () => {
-      const dropdown = document.getElementById('post-list-dropdown');
+      const dropdown = document.getElementById('navigation-dropdown');
       if (dropdown) {
-        console.log('Taskbar loaded, dropdown found');
+        console.log('Taskbar loaded, navigation dropdown found');
         resolve();
       } else {
         console.log('Waiting for taskbar to load...');

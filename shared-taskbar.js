@@ -104,20 +104,24 @@ function loadSharedTaskbar() {
 
 // Initialize menu system (dropdown functionality, etc.)
 function initializeMenuSystem() {
-  // Don't clone menu items - this removes onclick attributes
-  // Instead, just add event listeners to the existing items
+  console.log('Initializing menu system...');
   
-  // Menu dropdown functionality - using exact main site behavior
+  // Menu dropdown functionality
   const menuItems = document.querySelectorAll('.menu-item');
+  console.log(`Found ${menuItems.length} menu items`);
   
-  menuItems.forEach(item => {
+  menuItems.forEach((item, index) => {
     const label = item.querySelector('.label');
     const dropdown = item.querySelector('.menu-dropdown');
     
     if (label && dropdown) {
-      // Remove any existing click listeners on the label first
-      label.replaceWith(label.cloneNode(true));
-      const newLabel = item.querySelector('.label');
+      const labelText = label.textContent.trim();
+      console.log(`Setting up menu: "${labelText}"`);
+      
+      // Don't replace the label - just add event listeners directly
+      // Clear any existing event listeners by removing and re-adding
+      const newLabel = label.cloneNode(true);
+      label.parentNode.replaceChild(newLabel, label);
       
       // Prevent text deselection on mousedown
       newLabel.addEventListener('mousedown', (e) => {
@@ -126,6 +130,7 @@ function initializeMenuSystem() {
       
       newLabel.addEventListener('click', (e) => {
         e.stopPropagation();
+        console.log(`Menu "${labelText}" clicked`);
         
         // Close all other dropdowns
         menuItems.forEach(otherItem => {
@@ -135,7 +140,9 @@ function initializeMenuSystem() {
         });
         
         // Toggle current dropdown
+        const wasOpen = item.classList.contains('open');
         item.classList.toggle('open');
+        console.log(`Menu "${labelText}" is now: ${item.classList.contains('open') ? 'OPEN' : 'CLOSED'}`);
       });
     }
   });
