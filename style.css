@@ -9,6 +9,7 @@
   --border: #cccccc;
   --muted: #666666;
   --link: #232323;
+  --unit: 100px; /* Base unit size - same as editor */
 }
 
 body.dark-mode {
@@ -206,65 +207,20 @@ html, body {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Layout - Match editor spacing */
-.main-layout {
-  max-width: 1200px;
-  margin: 40px auto 120px;
-  padding: 0 40px;
-  display: flex;
-  gap: 60px;
+/* Layout - Unit-based system matching editor */
+.page-container {
+  min-height: calc(100vh - 24px);
+  padding: calc(var(--unit) * 2) calc(var(--unit) * 3) calc(var(--unit) * 3) calc(var(--unit) * 3);
+  box-sizing: border-box;
 }
 
-.sidebar {
-  width: 160px;
-  flex-shrink: 0;
-  padding-top: 25px;
-}
-
-.sidebar h3 {
-  margin: 0 0 6px 0;
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.content-area {
-  flex: 1;
-  max-width: 600px;
-}
-
-.tree {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.tree summary {
-  cursor: pointer;
-  outline: none;
-  font-size: 12px;
-  color: var(--text);
-  padding: 0;
-  margin: 0;
-}
-
-.tree ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.tree a {
-  display: block;
-  padding: 0;
-  margin: 0;
-  color: var(--link);
-  text-decoration: none;
-  font-size: 12px;
-}
-
-.tree a:hover {
-  text-decoration: underline;
+.main-column {
+  width: calc(100vw - calc(var(--unit) * 6));
+  max-width: calc(var(--unit) * 6);
+  background: var(--bg);
+  color: var(--fg);
+  box-sizing: border-box;
+  margin: 0 auto;
 }
 
 /* Content */

@@ -21,6 +21,12 @@ async function loadPost(slug) {
 function populateSidebar(posts) {
   const sidebar = document.getElementById("sidebar-posts");
   const dropdown = document.getElementById("post-list-dropdown");
+  
+  // Skip sidebar population if sidebar doesn't exist (clean main page layout)
+  if (!sidebar) {
+    console.log('Sidebar not found - using clean main page layout');
+  }
+  
   const yearMap = {};
 
   posts.forEach((post, index) => {
@@ -35,30 +41,38 @@ function populateSidebar(posts) {
   });
 
   for (const year in yearMap) {
-    const y = document.createElement("li");
-    y.innerHTML = `<details open><summary>${year}</summary><ul></ul></details>`;
-    sidebar.appendChild(y);
-    const yearUl = y.querySelector("ul");
-    for (const month in yearMap[year]) {
-      const m = document.createElement("li");
-      m.innerHTML = `<details open><summary>${month}</summary><ul></ul></details>`;
-      yearUl.appendChild(m);
-      const monthUl = m.querySelector("ul");
-      yearMap[year][month].forEach(post => {
-        const a = document.createElement("a");
-        a.href = "#";
-        a.textContent = post.title;
-        a.onclick = () => loadPost(post.slug);
-        const li = document.createElement("li");
-        li.appendChild(a);
-        monthUl.appendChild(li);
+    // Only populate sidebar if it exists
+    if (sidebar) {
+      const y = document.createElement("li");
+      y.innerHTML = `<details open><summary>${year}</summary><ul></ul></details>`;
+      sidebar.appendChild(y);
+      const yearUl = y.querySelector("ul");
+      for (const month in yearMap[year]) {
+        const m = document.createElement("li");
+        m.innerHTML = `<details open><summary>${month}</summary><ul></ul></details>`;
+        yearUl.appendChild(m);
+        const monthUl = m.querySelector("ul");
+        yearMap[year][month].forEach(post => {
+          const a = document.createElement("a");
+          a.href = "#";
+          a.textContent = post.title;
+          a.onclick = () => loadPost(post.slug);
+          const li = document.createElement("li");
+          li.appendChild(a);
+          monthUl.appendChild(li);
+        });
+      }
+    }
 
+    // Always populate dropdown menu for taskbar
+    for (const month in yearMap[year]) {
+      yearMap[year][month].forEach(post => {
         const drop = document.createElement("a");
         drop.className = "menu-entry";
         drop.href = "#";
         drop.textContent = post.title;
         drop.onclick = () => loadPost(post.slug);
-        dropdown.appendChild(drop);
+        if (dropdown) dropdown.appendChild(drop);
       });
     }
   }
@@ -1055,6 +1069,12 @@ async function loadPostsWithCategories() {
 
 function populateCategorizedSidebar(categorizedPosts) {
   const sidebar = document.getElementById("sidebar-posts");
+  
+  // Skip sidebar population if sidebar doesn't exist (clean main page layout)
+  if (!sidebar) {
+    console.log('Sidebar not found - using clean main page layout');
+    return;
+  }
   if (!sidebar) return;
   
   sidebar.innerHTML = '';
