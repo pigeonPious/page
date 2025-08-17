@@ -343,11 +343,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadPostsWithKeywords();
   } else {
     console.log('No navigation-dropdown found, using fallback...');
-    // Fallback for pages without the dropdown
-    const timestamp = new Date().getTime();
-    const response = await fetch(`posts/index.json?t=${timestamp}`);
-    const posts = await response.json();
-    if (posts.length > 0) loadPost(posts[0].slug);
+    // Fallback for pages without the dropdown - but only load post if not on editor page
+    if (!document.getElementById('visualEditor')) {
+      const timestamp = new Date().getTime();
+      const response = await fetch(`posts/index.json?t=${timestamp}`);
+      const posts = await response.json();
+      if (posts.length > 0) loadPost(posts[0].slug);
+    }
   }
   
   // Setup image click-to-expand functionality
@@ -1354,3 +1356,6 @@ async function loadPostsWithKeywords() {
     console.error('Stack trace:', error.stack);
   }
 }
+
+// Make loadPostsWithKeywords available globally for editor page
+window.loadPostsWithKeywords = loadPostsWithKeywords;
