@@ -82,9 +82,12 @@ const NavigationModule = () => ({
       postEntry.textContent = post.title;
       postEntry.tabIndex = 0;
       postEntry.setAttribute('role', 'menuitem');
-      ppPage.utils.addEvent(postEntry, 'click', () => {
-        this.navigateToPost(post.slug);
-      });
+      // Use function expression to capture correct slug
+      postEntry.addEventListener('click', (function(slug) {
+        return function() {
+          NavigationModuleInstance.navigateToPost(slug);
+        };
+      })(post.slug));
       submenu.appendChild(postEntry);
     });
     
@@ -238,7 +241,9 @@ const NavigationModule = () => ({
   }
 });
 
+const NavigationModuleInstance = NavigationModule();
+
 // Export the module factory
 if (typeof window !== 'undefined') {
-  window.NavigationModule = NavigationModule;
+  window.NavigationModule = () => NavigationModuleInstance;
 }
