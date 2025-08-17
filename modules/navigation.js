@@ -66,6 +66,12 @@ const NavigationModule = () => ({
     const menu = ppPage.utils.getElement('#all-posts-menu');
     if (!menu) return;
 
+    // Remove any existing submenu to prevent duplicates
+    const oldSubmenu = menu.querySelector('.menu-submenu');
+    if (oldSubmenu) {
+      oldSubmenu.remove();
+    }
+
     // Create submenu
     const submenu = document.createElement('div');
     submenu.className = 'menu-submenu';
@@ -74,6 +80,8 @@ const NavigationModule = () => ({
       const postEntry = document.createElement('div');
       postEntry.className = 'menu-entry';
       postEntry.textContent = post.title;
+      postEntry.tabIndex = 0;
+      postEntry.setAttribute('role', 'menuitem');
       ppPage.utils.addEvent(postEntry, 'click', () => {
         this.navigateToPost(post.slug);
       });
@@ -182,6 +190,8 @@ const NavigationModule = () => ({
       await postsModule.loadPosts();
       this.posts = postsModule.getAllPosts();
       this.setupNavigationMenus();
+      // Re-populate All Posts submenu after refresh
+      this.setupAllPostsMenu();
       ppPage.log('Posts refreshed successfully');
     }
   },
@@ -192,6 +202,8 @@ const NavigationModule = () => ({
       try {
         await postsModule.loadPost(slug);
         ppPage.log(`Navigated to post: ${slug}`);
+        // Re-populate All Posts submenu after navigation
+        this.setupAllPostsMenu();
       } catch (error) {
         ppPage.log(`Failed to navigate to post '${slug}': ${error.message}`, 'error');
       }

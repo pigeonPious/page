@@ -44,7 +44,7 @@ function generateBuildWord() {
   ];
   
   // Use build date as seed for consistent word per build
-  const buildDate = '20250818'; // This should be updated with each build
+  const buildDate = '20250817'; // Build number incremented for new commit
   let seed = 0;
   for (let i = 0; i < buildDate.length; i++) {
     seed += buildDate.charCodeAt(i);
