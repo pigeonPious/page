@@ -24,14 +24,40 @@
       { name: 'navigation', factory: NavigationModule },
       { name: 'editor', factory: EditorModule },
       { name: 'theme', factory: ThemeModule },
-      { name: 'taskbar', factory: () => window.TaskbarModule || { init: () => {} } },
+      { name: 'taskbar', factory: () => {
+        console.log('🔧 Creating taskbar module instance...');
+        if (window.TaskbarModule) {
+          // Return a proper module instance that wraps TaskbarModule
+          return {
+            async init() {
+              console.log('🔧 Taskbar module init() called');
+              if (typeof window.TaskbarModule.init === 'function') {
+                await window.TaskbarModule.init();
+              } else {
+                console.error('TaskbarModule.init() not available');
+              }
+            },
+            load: window.TaskbarModule.load,
+            initialize: window.TaskbarModule.initialize
+          };
+        } else {
+          console.error('TaskbarModule not found, creating fallback');
+          return { 
+            init: () => {
+              console.error('Taskbar module init called but TaskbarModule not available');
+            }
+          };
+        }
+      }},
       { name: 'console', factory: ConsoleModule }
     ];
 
     // Register modules
     for (const { name, factory } of modules) {
       if (typeof factory === 'function') {
+        console.log(`🔧 Registering module: ${name}`);
         await ppPage.registerModule(name, factory);
+        console.log(`✅ Module registered: ${name}`);
       } else {
         ppPage.log(`Module factory for '${name}' not found`, 'error');
       }
@@ -54,6 +80,15 @@
       ppPage.log('Initializing taskbar button connections...');
       window.TaskbarModule.initialize();
     }
+    
+    // Ensure taskbar is loaded - force initialization if needed
+    setTimeout(() => {
+      const menuBar = document.querySelector('.menu-bar');
+      if (!menuBar && window.TaskbarModule) {
+        ppPage.log('Taskbar not found, forcing initialization...');
+        window.TaskbarModule.init();
+      }
+    }, 1000);
 
     // Expose some global functions for backward compatibility
     window.loadPost = async function(slug) {

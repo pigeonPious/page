@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Button Click Test - Build 20250821</title>
+</head>
+<body>
+
+<h1>Button Click Test</h1>
+
+<!-- Simple post display area -->
+<div id="post-content" style="border: 1px solid #ccc; padding: 20px; margin: 20px;">
+  <h2 id="post-title">No post loaded</h2>
+  <p id="post-date">-</p>
+  <div id="post-content-body">Click a button to load a post.</div>
+</div>
+
+<!-- Console area -->
+<div id="persistent-console" style="border: 1px solid #666; padding: 10px; margin: 20px; height: 200px; overflow-y: auto; background: #f9f9f9; font-family: monospace; font-size: 12px;">
+  Console output will appear here...<br>
+</div>
+
+<!-- Load all modules -->
+<script src="../modules/core.js?v=20250821"></script>
+<script src="../modules/posts.js?v=20250821"></script>
+<script src="../modules/navigation.js?v=20250821"></script>
+<script src="../modules/editor.js?v=20250821"></script>
+<script src="../modules/theme.js?v=20250821"></script>
+<script src="../modules/taskbar.js?v=20250821"></script>
+<script src="../modules/console.js?v=20250821"></script>
+<script src="../modules/app.js?v=20250821"></script>
+
+<script>
+// Simple logging
+function log(message) {
+  const console = document.getElementById('persistent-console');
+  const time = new Date().toLocaleTimeString();
+  console.innerHTML += `[${time}] ${message}<br>`;
+  console.scrollTop = console.scrollHeight;
+}
+
+// Test functions
+function testDirectCall() {
+  log('Testing direct method calls...');
+  
+  if (window.ppPage) {
+    const postsModule = window.ppPage.getModule('posts');
+    if (postsModule) {
+      log('Posts module found, testing loadLatestPost...');
+      if (typeof postsModule.loadLatestPost === 'function') {
+        postsModule.loadLatestPost()
+          .then(() => log('loadLatestPost completed successfully'))
+          .catch(err => log(`loadLatestPost failed: ${err.message}`));
+      } else {
+        log('loadLatestPost method not found');
+      }
+    } else {
+      log('Posts module not found');
+    }
+  } else {
+    log('ppPage system not found');
+  }
+}
+
+function testButtonClick() {
+  log('Testing button clicks...');
+  
+  const starButton = document.getElementById('star-button');
+  if (starButton) {
+    log('Star button found, clicking...');
+    starButton.click();
+  } else {
+    log('Star button not found in DOM');
+  }
+}
+
+// Auto-test after delay
+setTimeout(() => {
+  log('Starting automatic tests...');
+  testDirectCall();
+  
+  setTimeout(() => {
+    testButtonClick();
+  }, 2000);
+}, 3000);
+</script>
+
+</body>
+</html>

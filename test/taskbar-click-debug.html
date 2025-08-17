@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taskbar Click Debug - Build 20250821</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .debug-panel {
+      margin: 20px;
+      padding: 15px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .debug-line {
+      margin: 5px 0;
+      padding: 3px;
+    }
+    .success { color: #28a745; }
+    .error { color: #dc3545; }
+    .info { color: #17a2b8; }
+    .test-button {
+      margin: 5px;
+      padding: 8px 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .test-button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-container">
+  <main class="main-column">
+    <header class="post-header">
+      <h1>Taskbar Button Click Debug</h1>
+      <div class="post-date">Build 20250821 - Debugging button event listeners</div>
+    </header>
+    
+    <section class="post-content">
+      <div class="debug-panel">
+        <h3>Debug Output</h3>
+        <div id="debug-output"></div>
+      </div>
+      
+      <div class="debug-panel">
+        <h3>Manual Button Tests</h3>
+        <button class="test-button" onclick="testStarButton()">Test Star Button</button>
+        <button class="test-button" onclick="testRandomButton()">Test Random Button</button>
+        <button class="test-button" onclick="testMostRecentButton()">Test Most Recent Button</button>
+        <button class="test-button" onclick="inspectModules()">Inspect Modules</button>
+        <button class="test-button" onclick="clearDebug()">Clear Debug</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- PPPage Modular System -->
+<script src="../modules/core.js?v=20250821"></script>
+<script src="../modules/posts.js?v=20250821"></script>
+<script src="../modules/navigation.js?v=20250821"></script>
+<script src="../modules/editor.js?v=20250821"></script>
+<script src="../modules/theme.js?v=20250821"></script>
+<script src="../modules/taskbar.js?v=20250821"></script>
+<script src="../modules/console.js?v=20250821"></script>
+<script src="../modules/app.js?v=20250821"></script>
+
+<script>
+let debugCount = 0;
+
+function addDebugLine(message, type = 'info') {
+  const output = document.getElementById('debug-output');
+  const line = document.createElement('div');
+  line.className = `debug-line ${type}`;
+  line.textContent = `[${++debugCount}] ${new Date().toLocaleTimeString()}: ${message}`;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
+}
+
+function clearDebug() {
+  document.getElementById('debug-output').innerHTML = '';
+  debugCount = 0;
+}
+
+function inspectModules() {
+  addDebugLine('=== Module Inspection ===', 'info');
+  
+  if (window.ppPage) {
+    addDebugLine('✓ window.ppPage exists', 'success');
+    
+    if (typeof window.ppPage.getModule === 'function') {
+      addDebugLine('✓ ppPage.getModule() method available', 'success');
+      
+      const postsModule = window.ppPage.getModule('posts');
+      if (postsModule) {
+        addDebugLine('✓ Posts module loaded', 'success');
+        
+        const methods = ['loadLatestPost', 'loadRandomPost', 'loadMostRecentPost'];
+        methods.forEach(method => {
+          if (typeof postsModule[method] === 'function') {
+            addDebugLine(`✓ ${method}() method available`, 'success');
+          } else {
+            addDebugLine(`✗ ${method}() method missing`, 'error');
+          }
+        });
+      } else {
+        addDebugLine('✗ Posts module not loaded', 'error');
+      }
+    } else {
+      addDebugLine('✗ ppPage.getModule() not available', 'error');
+    }
+  } else {
+    addDebugLine('✗ window.ppPage not found', 'error');
+  }
+  
+  // Check for buttons
+  const buttons = [
+    { id: 'star-button', name: 'Star Button' },
+    { id: 'random-post', name: 'Random Post Button' },
+    { id: 'most-recent-post', name: 'Most Recent Button' }
+  ];
+  
+  buttons.forEach(({ id, name }) => {
+    const button = document.getElementById(id);
+    if (button) {
+      addDebugLine(`✓ ${name} found in DOM`, 'success');
+      
+      // Check for event listeners (rough check)
+      const events = getEventListeners ? getEventListeners(button) : null;
+      if (events && events.click && events.click.length > 0) {
+        addDebugLine(`✓ ${name} has click listeners`, 'success');
+      } else {
+        addDebugLine(`? ${name} click listeners unknown (use dev tools)`, 'info');
+      }
+    } else {
+      addDebugLine(`✗ ${name} not found in DOM`, 'error');
+    }
+  });
+}
+
+function testStarButton() {
+  addDebugLine('=== Testing Star Button ===', 'info');
+  const button = document.getElementById('star-button');
+  if (button) {
+    addDebugLine('Star button found, simulating click...', 'info');
+    button.click();
+  } else {
+    addDebugLine('Star button not found', 'error');
+  }
+}
+
+function testRandomButton() {
+  addDebugLine('=== Testing Random Button ===', 'info');
+  const button = document.getElementById('random-post');
+  if (button) {
+    addDebugLine('Random button found, simulating click...', 'info');
+    button.click();
+  } else {
+    addDebugLine('Random button not found', 'error');
+  }
+}
+
+function testMostRecentButton() {
+  addDebugLine('=== Testing Most Recent Button ===', 'info');
+  const button = document.getElementById('most-recent-post');
+  if (button) {
+    addDebugLine('Most Recent button found, simulating click...', 'info');
+    button.click();
+  } else {
+    addDebugLine('Most Recent button not found', 'error');
+  }
+}
+
+// Auto-run inspection after modules load
+setTimeout(() => {
+  addDebugLine('Auto-running module inspection...', 'info');
+  inspectModules();
+}, 3000);
+
+// Listen for console module messages
+window.addEventListener('ppPageLog', (event) => {
+  addDebugLine(`Console: ${event.detail.message}`, 'info');
+});
+</script>
+
+</body>
+</html>

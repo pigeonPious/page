@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Button Event Debug - Build 20250821</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+    .error { color: red; }
+    .success { color: green; }
+    .info { color: blue; }
+  </style>
+</head>
+<body>
+
+<h1>Button Event Debug Test</h1>
+
+<div id="post-content">
+  <h2 id="post-title">Waiting for button clicks...</h2>
+  <div id="post-date">-</div>
+  <div>Post content will appear here when buttons work.</div>
+</div>
+
+<div class="debug" id="debug-output">
+  Debug output will appear here...<br>
+</div>
+
+<!-- Load modules -->
+<script src="modules/core.js?v=20250821"></script>
+<script src="modules/posts.js?v=20250821"></script>
+<script src="modules/navigation.js?v=20250821"></script>
+<script src="modules/editor.js?v=20250821"></script>
+<script src="modules/theme.js?v=20250821"></script>
+<script src="modules/taskbar.js?v=20250821"></script>
+<script src="modules/console.js?v=20250821"></script>
+<script src="modules/app.js?v=20250821"></script>
+
+<script>
+function debugLog(message, type = 'info') {
+  const output = document.getElementById('debug-output');
+  const time = new Date().toLocaleTimeString();
+  const className = type;
+  output.innerHTML += `<span class="${className}">[${time}] ${message}</span><br>`;
+  output.scrollTop = output.scrollHeight;
+}
+
+// Override console.log to capture all logs
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+console.log = function(...args) {
+  debugLog(`CONSOLE LOG: ${args.join(' ')}`, 'info');
+  originalConsoleLog.apply(console, args);
+};
+
+console.error = function(...args) {
+  debugLog(`CONSOLE ERROR: ${args.join(' ')}`, 'error');
+  originalConsoleError.apply(console, args);
+};
+
+// Track button clicks by overriding addEventListener on the buttons
+function trackButtonEvents() {
+  const buttons = ['star-button', 'random-post', 'most-recent-post'];
+  
+  buttons.forEach(buttonId => {
+    const button = document.getElementById(buttonId);
+    if (button) {
+      debugLog(`Found button: ${buttonId}`, 'success');
+      
+      // Override the addEventListener method for this button
+      const originalAddEventListener = button.addEventListener;
+      button.addEventListener = function(event, handler, options) {
+        debugLog(`Adding ${event} listener to ${buttonId}`, 'info');
+        
+        // Wrap the handler to add debugging
+        const wrappedHandler = function(e) {
+          debugLog(`${buttonId} ${event} event fired`, 'success');
+          try {
+            const result = handler.call(this, e);
+            debugLog(`${buttonId} handler completed successfully`, 'success');
+            return result;
+          } catch (error) {
+            debugLog(`${buttonId} handler error: ${error.message}`, 'error');
+            debugLog(`Stack: ${error.stack}`, 'error');
+            throw error;
+          }
+        };
+        
+        return originalAddEventListener.call(this, event, wrappedHandler, options);
+      };
+    } else {
+      debugLog(`Button not found: ${buttonId}`, 'error');
+    }
+  });
+}
+
+// Monitor post title changes
+function trackPostChanges() {
+  const titleElement = document.getElementById('post-title');
+  if (titleElement) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' || mutation.type === 'characterData') {
+          const newTitle = titleElement.textContent;
+          if (newTitle && newTitle !== 'Waiting for button clicks...') {
+            debugLog(`POST TITLE CHANGED: "${newTitle}"`, 'success');
+          }
+        }
+      });
+    });
+    
+    observer.observe(titleElement, { 
+      childList: true, 
+      subtree: true, 
+      characterData: true 
+    });
+  }
+}
+
+// Wait for DOM and track events
+setTimeout(() => {
+  debugLog('Setting up button event tracking...', 'info');
+  trackButtonEvents();
+  trackPostChanges();
+}, 1000);
+
+// Check system status periodically
+function checkSystemStatus() {
+  debugLog('--- System Status Check ---', 'info');
+  
+  if (window.ppPage) {
+    debugLog('ppPage system: AVAILABLE', 'success');
+    const postsModule = window.ppPage.getModule('posts');
+    if (postsModule) {
+      debugLog('Posts module: AVAILABLE', 'success');
+      debugLog(`Posts loaded: ${postsModule.posts?.length || 0}`, 'info');
+    } else {
+      debugLog('Posts module: NOT AVAILABLE', 'error');
+    }
+  } else {
+    debugLog('ppPage system: NOT AVAILABLE', 'error');
+  }
+  
+  const buttons = ['star-button', 'random-post', 'most-recent-post'];
+  buttons.forEach(id => {
+    const button = document.getElementById(id);
+    debugLog(`Button ${id}: ${button ? 'FOUND' : 'NOT FOUND'}`, button ? 'success' : 'error');
+  });
+}
+
+// Run status checks
+setTimeout(() => checkSystemStatus(), 2000);
+setTimeout(() => checkSystemStatus(), 5000);
+</script>
+
+</body>
+</html>

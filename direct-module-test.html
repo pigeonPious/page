@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Direct Module Test - Build 20250821</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+    .success { color: green; }
+    .error { color: red; }
+    .info { color: blue; }
+    button { margin: 5px; padding: 10px; }
+  </style>
+</head>
+<body>
+
+<h1>Direct Module Test</h1>
+
+<div class="test-section">
+  <h3>Post Display Area</h3>
+  <div id="post-content">
+    <h2 id="post-title">No post loaded</h2>
+    <div id="post-date">-</div>
+    <div>Post content will appear here</div>
+  </div>
+</div>
+
+<div class="test-section">
+  <h3>Direct Method Tests</h3>
+  <button onclick="testDirectLatest()">Test loadLatestPost() Directly</button>
+  <button onclick="testDirectRandom()">Test loadRandomPost() Directly</button>
+  <button onclick="testDirectMostRecent()">Test loadMostRecentPost() Directly</button>
+  <button onclick="inspectPosts()">Inspect Posts Module</button>
+</div>
+
+<div class="test-section">
+  <h3>Test Output</h3>
+  <div id="output" style="height: 300px; overflow-y: auto; background: #f5f5f5; padding: 10px; font-family: monospace; font-size: 12px;"></div>
+</div>
+
+<!-- Load modules -->
+<script src="modules/core.js?v=20250821"></script>
+<script src="modules/posts.js?v=20250821"></script>
+<script src="modules/navigation.js?v=20250821"></script>
+<script src="modules/editor.js?v=20250821"></script>
+<script src="modules/theme.js?v=20250821"></script>
+<script src="modules/taskbar.js?v=20250821"></script>
+<script src="modules/console.js?v=20250821"></script>
+<script src="modules/app.js?v=20250821"></script>
+
+<script>
+function log(message, type = 'info') {
+  const output = document.getElementById('output');
+  const time = new Date().toLocaleTimeString();
+  const className = type;
+  output.innerHTML += `<div class="${className}">[${time}] ${message}</div>`;
+  output.scrollTop = output.scrollHeight;
+}
+
+function testDirectLatest() {
+  log('Testing loadLatestPost() directly...', 'info');
+  
+  if (!window.ppPage) {
+    log('ERROR: window.ppPage not available', 'error');
+    return;
+  }
+  
+  const postsModule = window.ppPage.getModule('posts');
+  if (!postsModule) {
+    log('ERROR: Posts module not available', 'error');
+    return;
+  }
+  
+  if (typeof postsModule.loadLatestPost !== 'function') {
+    log('ERROR: loadLatestPost method not found', 'error');
+    return;
+  }
+  
+  log('Calling loadLatestPost()...', 'info');
+  postsModule.loadLatestPost()
+    .then(() => {
+      log('SUCCESS: loadLatestPost() completed', 'success');
+    })
+    .catch(error => {
+      log(`ERROR: loadLatestPost() failed: ${error.message}`, 'error');
+    });
+}
+
+function testDirectRandom() {
+  log('Testing loadRandomPost() directly...', 'info');
+  
+  const postsModule = window.ppPage?.getModule('posts');
+  if (!postsModule) {
+    log('ERROR: Posts module not available', 'error');
+    return;
+  }
+  
+  log('Calling loadRandomPost()...', 'info');
+  postsModule.loadRandomPost()
+    .then(() => {
+      log('SUCCESS: loadRandomPost() completed', 'success');
+    })
+    .catch(error => {
+      log(`ERROR: loadRandomPost() failed: ${error.message}`, 'error');
+    });
+}
+
+function testDirectMostRecent() {
+  log('Testing loadMostRecentPost() directly...', 'info');
+  
+  const postsModule = window.ppPage?.getModule('posts');
+  if (!postsModule) {
+    log('ERROR: Posts module not available', 'error');
+    return;
+  }
+  
+  log('Calling loadMostRecentPost()...', 'info');
+  postsModule.loadMostRecentPost()
+    .then(() => {
+      log('SUCCESS: loadMostRecentPost() completed', 'success');
+    })
+    .catch(error => {
+      log(`ERROR: loadMostRecentPost() failed: ${error.message}`, 'error');
+    });
+}
+
+function inspectPosts() {
+  log('Inspecting posts module...', 'info');
+  
+  if (!window.ppPage) {
+    log('window.ppPage: NOT AVAILABLE', 'error');
+    return;
+  }
+  log('window.ppPage: AVAILABLE', 'success');
+  
+  if (typeof window.ppPage.getModule !== 'function') {
+    log('ppPage.getModule: NOT A FUNCTION', 'error');
+    return;
+  }
+  log('ppPage.getModule: AVAILABLE', 'success');
+  
+  const postsModule = window.ppPage.getModule('posts');
+  if (!postsModule) {
+    log('Posts module: NOT LOADED', 'error');
+    return;
+  }
+  log('Posts module: LOADED', 'success');
+  
+  // Check posts array
+  if (postsModule.posts) {
+    log(`Posts array: ${postsModule.posts.length} posts loaded`, 'success');
+    if (postsModule.posts.length > 0) {
+      log(`First post: ${postsModule.posts[0].title}`, 'info');
+    }
+  } else {
+    log('Posts array: NOT AVAILABLE', 'error');
+  }
+  
+  // Check methods
+  const methods = ['loadLatestPost', 'loadRandomPost', 'loadMostRecentPost', 'loadPost', 'getAllPosts'];
+  methods.forEach(method => {
+    if (typeof postsModule[method] === 'function') {
+      log(`Method ${method}: AVAILABLE`, 'success');
+    } else {
+      log(`Method ${method}: MISSING`, 'error');
+    }
+  });
+}
+
+// Watch for post title changes
+const titleElement = document.getElementById('post-title');
+if (titleElement) {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList' || mutation.type === 'characterData') {
+        const newTitle = titleElement.textContent;
+        if (newTitle !== 'No post loaded') {
+          log(`Post title changed to: "${newTitle}"`, 'success');
+        }
+      }
+    });
+  });
+  
+  observer.observe(titleElement, { 
+    childList: true, 
+    subtree: true, 
+    characterData: true 
+  });
+}
+
+// Auto-run inspection after delay
+setTimeout(() => {
+  log('Auto-running inspection...', 'info');
+  inspectPosts();
+}, 3000);
+</script>
+
+</body>
+</html>

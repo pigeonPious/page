@@ -31,7 +31,30 @@ function handleMakeNote() {
   }
 }
 
+// Function to generate a random build identifier word
+function generateBuildWord() {
+  const words = [
+    'alpha', 'beta', 'gamma', 'delta', 'echo', 'foxtrot', 'golf', 'hotel',
+    'india', 'juliet', 'kilo', 'lima', 'mike', 'november', 'oscar', 'papa',
+    'quebec', 'romeo', 'sierra', 'tango', 'uniform', 'victor', 'whiskey',
+    'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden',
+    'silver', 'platinum', 'copper', 'iron', 'steel', 'crystal', 'diamond',
+    'ruby', 'sapphire', 'pearl', 'coral', 'amber', 'jade', 'onyx',
+    'marble', 'granite', 'quartz', 'opal', 'topaz', 'turquoise'
+  ];
+  
+  // Use build date as seed for consistent word per build
+  const buildDate = '20250822'; // This should be updated with each build
+  let seed = 0;
+  for (let i = 0; i < buildDate.length; i++) {
+    seed += buildDate.charCodeAt(i);
+  }
+  
+  return words[seed % words.length];
+}
+
 function getSharedTaskbarHTML() {
+  const buildWord = generateBuildWord();
   return `
 <div class="menu-bar">
   <div class="menu-bar-inner">
@@ -53,6 +76,7 @@ function getSharedTaskbarHTML() {
     <div class="taskbar-status editor-only">
       <span id="github-status" onclick="editor.setupGitHub()">not connected</span>
     </div>
+    <div class="build-indicator" style="margin-left: auto; padding: 0 8px; font-size: 11px; color: #666; font-family: monospace;">${buildWord}</div>
   </div>
 </div>
   `;
@@ -60,16 +84,24 @@ function getSharedTaskbarHTML() {
 
 function loadSharedTaskbar() {
   try {
+    console.log('🔧 loadSharedTaskbar() called');
+    
     const taskbarHTML = getSharedTaskbarHTML();
+    console.log('✅ Generated taskbar HTML, length:', taskbarHTML.length);
     
     // Find the existing menu bar and replace it
     const existingMenuBar = document.querySelector('.menu-bar');
     if (existingMenuBar) {
+      console.log('🔄 Replacing existing menu bar');
       existingMenuBar.outerHTML = taskbarHTML;
     } else {
-      // If no existing menu bar, insert at the beginning of body
+      console.log('➕ Inserting new menu bar at beginning of body');
       document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
     }
+    
+    // Verify insertion
+    const menuBarAfterInsert = document.querySelector('.menu-bar');
+    console.log('✅ Menu bar after insertion:', !!menuBarAfterInsert);
     
     // Show/hide editor-specific items based on page
     const isEditorPage = document.getElementById('postTitle') !== null;
@@ -89,9 +121,12 @@ function loadSharedTaskbar() {
     }, 50);
     
     // Initialize theme module's view menu if available
-    if (window.PPPageCore && window.PPPageCore.modules.theme) {
-      console.log('Setting up theme module view menu...');
-      window.PPPageCore.modules.theme.setupViewMenu();
+    if (window.ppPage) {
+      const themeModule = window.ppPage.getModule('theme');
+      if (themeModule && themeModule.setupViewMenu) {
+        console.log('Setting up theme module view menu...');
+        themeModule.setupViewMenu();
+      }
     }
     
     // Fallback: Initialize View menu if the setupViewMenu function exists globally
@@ -149,19 +184,67 @@ function initializeMenuSystem() {
     // Initialize basic menu dropdown functionality first
     initializeMenuDropdowns();
     
-    // Wait for PPPageCore and modules to be ready
-    const waitForModules = () => {
-      if (window.PPPageCore && window.PPPageCore.modules && window.PPPageCore.modules.posts) {
-        // Modules are ready, initialize buttons
-        initializeTaskbarButtons();
-      } else {
-        // Wait a bit longer and try again
-        setTimeout(waitForModules, 200);
+    // Wait for ppPage and modules to be ready with improved checking
+    const waitForModules = (retryCount = 0) => {
+      const maxRetries = 20; // Max 4 seconds of retries
+      
+      console.log(`Checking if modules are ready... (attempt ${retryCount + 1}/${maxRetries})`);
+      
+      if (!window.ppPage || typeof window.ppPage.getModule !== 'function') {
+        console.log('PPPage system not ready, waiting...');
+        if (retryCount < maxRetries) {
+          setTimeout(() => waitForModules(retryCount + 1), 200);
+        } else {
+          console.error('PPPage system failed to initialize after maximum retries');
+        }
+        return;
+      }
+      
+      const postsModule = window.ppPage.getModule('posts');
+      if (!postsModule) {
+        console.log('Posts module not ready, waiting...');
+        if (retryCount < maxRetries) {
+          setTimeout(() => waitForModules(retryCount + 1), 200);
+        } else {
+          console.error('Posts module failed to load after maximum retries');
+        }
+        return;
+      }
+      
+      // Check if posts module has the required methods
+      const requiredMethods = ['loadLatestPost', 'loadRandomPost', 'loadMostRecentPost'];
+      const hasAllMethods = requiredMethods.every(method => typeof postsModule[method] === 'function');
+      
+      if (!hasAllMethods) {
+        console.log('Posts module methods not ready, waiting...');
+        if (retryCount < maxRetries) {
+          setTimeout(() => waitForModules(retryCount + 1), 200);
+        } else {
+          console.error('Posts module methods failed to initialize after maximum retries');
+        }
+        return;
+      }
+      
+      // Check if posts are loaded
+      if (!postsModule.posts || postsModule.posts.length === 0) {
+        console.log('Posts data not loaded yet, waiting...');
+        if (retryCount < maxRetries) {
+          setTimeout(() => waitForModules(retryCount + 1), 200);
+        } else {
+          console.error('Posts data failed to load after maximum retries');
+        }
+        return;
+      }
+      
+      console.log(`All modules ready with ${postsModule.posts.length} posts loaded, initializing buttons...`);
+      const success = initializeTaskbarButtons();
+      if (!success && retryCount < maxRetries) {
+        console.log('Button initialization failed, retrying...');
+        setTimeout(() => waitForModules(retryCount + 1), 500);
       }
     };
     
     waitForModules();
-    console.log('Menu system initialization started...');
   } catch (error) {
     console.error('Error initializing menu system:', error);
   }
@@ -372,76 +455,132 @@ function initializeTaskbarButtons() {
   try {
     console.log('Connecting taskbar buttons to modules...');
     
+    // Verify ppPage system is available
+    if (!window.ppPage) {
+      console.error('PPPage system not available for taskbar buttons');
+      return false;
+    }
+    
+    // Verify getModule function exists
+    if (typeof window.ppPage.getModule !== 'function') {
+      console.error('PPPage getModule function not available');
+      return false;
+    }
+    
+    // Get posts module and verify it has required methods
+    const postsModule = window.ppPage.getModule('posts');
+    if (!postsModule) {
+      console.error('Posts module not available - retrying in 500ms...');
+      setTimeout(initializeTaskbarButtons, 500);
+      return false;
+    }
+    
+    console.log('Posts module found, checking methods...');
+    const requiredMethods = ['loadLatestPost', 'loadRandomPost', 'loadMostRecentPost'];
+    const availableMethods = requiredMethods.filter(method => typeof postsModule[method] === 'function');
+    
+    if (availableMethods.length !== requiredMethods.length) {
+      console.error(`Posts module missing methods. Available: ${availableMethods.join(', ')}`);
+      console.error(`Missing: ${requiredMethods.filter(m => !availableMethods.includes(m)).join(', ')}`);
+      return false;
+    }
+    
+    console.log('All required posts methods available, setting up buttons...');
+    
     // Initialize star button functionality (for latest post)
     const starButton = document.getElementById('star-button');
     if (starButton) {
-      starButton.addEventListener('click', (e) => {
+      starButton.addEventListener('click', async (e) => {
         e.preventDefault();
         console.log('Star button clicked');
         
-        // Log feature description to console
-        logFeature('Latest Post', 'Quick access to the most recently published blog post');
-        
-        if (window.ppPage) {
-          const postsModule = window.ppPage.getModule('posts');
-          if (postsModule && postsModule.loadLatestPost) {
-            postsModule.loadLatestPost();
+        try {
+          // Log feature description to console
+          logFeature('Latest Post', 'Quick access to the most recently published blog post');
+          
+          if (window.ppPage) {
+            const postsModule = window.ppPage.getModule('posts');
+            if (postsModule && postsModule.loadLatestPost) {
+              console.log('Calling loadLatestPost...');
+              await postsModule.loadLatestPost();
+              console.log('loadLatestPost completed successfully');
+            } else {
+              console.error('Posts module or loadLatestPost method not available');
+            }
           } else {
-            console.error('Posts module or loadLatestPost method not available');
+            console.error('PPPage core not available');
           }
-        } else {
-          console.error('PPPage core not available');
+        } catch (error) {
+          console.error('Error in star button handler:', error);
         }
       });
       console.log('✅ Star button connected');
+    } else {
+      console.error('❌ Star button not found in DOM');
     }
 
     // Initialize random post button
     const randomPostButton = document.getElementById('random-post');
     if (randomPostButton) {
-      randomPostButton.addEventListener('click', (e) => {
+      randomPostButton.addEventListener('click', async (e) => {
         e.preventDefault();
         console.log('Random post button clicked');
         
-        // Log feature description to console
-        logFeature('Random Post', 'Navigate to a randomly selected blog post for discovery');
-        
-        if (window.ppPage) {
-          const postsModule = window.ppPage.getModule('posts');
-          if (postsModule && postsModule.loadRandomPost) {
-            postsModule.loadRandomPost();
+        try {
+          // Log feature description to console
+          logFeature('Random Post', 'Navigate to a randomly selected blog post for discovery');
+          
+          if (window.ppPage) {
+            const postsModule = window.ppPage.getModule('posts');
+            if (postsModule && postsModule.loadRandomPost) {
+              console.log('Calling loadRandomPost...');
+              await postsModule.loadRandomPost();
+              console.log('loadRandomPost completed successfully');
+            } else {
+              console.error('Posts module or loadRandomPost method not available');
+            }
           } else {
-            console.error('Posts module or loadRandomPost method not available');
+            console.error('PPPage core not available');
           }
-        } else {
-          console.error('PPPage core not available');
+        } catch (error) {
+          console.error('Error in random post button handler:', error);
         }
       });
       console.log('✅ Random post button connected');
+    } else {
+      console.error('❌ Random post button not found in DOM');
     }
 
     // Initialize most recent post button
     const mostRecentButton = document.getElementById('most-recent-post');
     if (mostRecentButton) {
-      mostRecentButton.addEventListener('click', (e) => {
+      mostRecentButton.addEventListener('click', async (e) => {
         e.preventDefault();
         console.log('Most recent button clicked');
         
-        // Log feature description to console
-        logFeature('Most Recent', 'Load the chronologically newest blog post');
-        
-        if (window.ppPage) {
-          const postsModule = window.ppPage.getModule('posts');
-          if (postsModule && postsModule.loadMostRecentPost) {
-            postsModule.loadMostRecentPost();
+        try {
+          // Log feature description to console
+          logFeature('Most Recent', 'Load the chronologically newest blog post');
+          
+          if (window.ppPage) {
+            const postsModule = window.ppPage.getModule('posts');
+            if (postsModule && postsModule.loadMostRecentPost) {
+              console.log('Calling loadMostRecentPost...');
+              await postsModule.loadMostRecentPost();
+              console.log('loadMostRecentPost completed successfully');
+            } else {
+              console.error('Posts module or loadMostRecentPost method not available');
+            }
           } else {
-            console.error('Posts module or loadMostRecentPost method not available');
+            console.error('PPPage core not available');
           }
-        } else {
-          console.error('PPPage core not available');
+        } catch (error) {
+          console.error('Error in most recent button handler:', error);
         }
       });
       console.log('✅ Most recent button connected');
+    } else {
+      console.error('❌ Most recent button not found in DOM');
     }
 
     // Initialize all posts menu button
@@ -465,8 +604,10 @@ function initializeTaskbarButtons() {
     }
 
     console.log('All taskbar buttons connected successfully');
+    return true;
   } catch (error) {
     console.error('Error connecting taskbar buttons:', error);
+    return false;
   }
 }
 
@@ -513,10 +654,16 @@ if (document.readyState === 'loading') {
 if (typeof window !== 'undefined') {
   window.TaskbarModule = {
     async init() {
-      console.log('Initializing Taskbar module...');
-      loadSharedTaskbar();
+      console.log('🔧 TaskbarModule.init() called');
+      try {
+        loadSharedTaskbar();
+        console.log('✅ TaskbarModule.init() completed successfully');
+      } catch (error) {
+        console.error('❌ TaskbarModule.init() failed:', error);
+      }
     },
     load: loadSharedTaskbar,
     initialize: initializeMenuSystem
   };
+  console.log('✅ TaskbarModule exported to window');
 }
