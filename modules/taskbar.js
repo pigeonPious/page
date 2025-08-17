@@ -3,6 +3,20 @@
  * Provides navigation menus without console dependencies
  */
 
+// Helper function to log feature descriptions to console
+function logFeature(featureName, description) {
+  try {
+    if (window.ppPage && window.ppPage.getModule) {
+      const consoleModule = window.ppPage.getModule('console');
+      if (consoleModule && consoleModule.logFeature) {
+        consoleModule.logFeature(featureName, description);
+      }
+    }
+  } catch (error) {
+    console.log(`Feature: ${featureName} - ${description}`);
+  }
+}
+
 // Global function to handle Make Note clicks from taskbar
 function handleMakeNote() {
   // Try multiple approaches to find the make note function
@@ -34,7 +48,7 @@ function getSharedTaskbarHTML() {
       <div class="menu-entry has-submenu" id="all-posts-menu">All Posts ></div>
       <div class="menu-entry has-submenu" id="devlog-menu">Devlog ></div>
     </div></div>
-    <div class="menu-item"><div class="label" data-menu>View</div><div class="menu-dropdown"><div class="menu-entry" data-mode="dark">Dark</div><div class="menu-entry" data-mode="light">Light</div><div class="menu-entry" data-mode="custom">Custom…</div><div class="menu-entry" data-mode="random">Random</div></div></div>
+    <div class="menu-item"><div class="label" data-menu>View</div><div class="menu-dropdown"><div class="menu-entry" data-mode="dark">Dark</div><div class="menu-entry" data-mode="light">Light</div><div class="menu-entry" data-mode="custom">Custom…</div><div class="menu-entry" data-mode="random">Random</div><div class="menu-separator"></div><div class="menu-entry" id="toggle-console">Console</div></div></div>
     <div class="menu-item"><div class="label" data-menu>Connect</div><div class="menu-dropdown"><div class="menu-entry" id="bluesky-share">Share to Bluesky</div><div class="menu-entry" id="twitter-share">Share to Twitter</div></div></div>
     <div class="taskbar-status editor-only">
       <span id="github-status" onclick="editor.setupGitHub()">not connected</span>
@@ -72,7 +86,13 @@ function loadSharedTaskbar() {
     // Initialize menu functionality after loading
     initializeMenuSystem();
     
-    // Initialize View menu if the setupViewMenu function exists
+    // Initialize theme module's view menu if available
+    if (window.PPPageCore && window.PPPageCore.modules.theme) {
+      console.log('Setting up theme module view menu...');
+      window.PPPageCore.modules.theme.setupViewMenu();
+    }
+    
+    // Fallback: Initialize View menu if the setupViewMenu function exists globally
     if (typeof setupViewMenu === 'function') {
       setupViewMenu();
     }
@@ -96,6 +116,10 @@ function loadSharedTaskbar() {
       makeNoteButton.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        
+        // Log feature description to console
+        logFeature('Make Note', 'Create contextual notes linked to selected text');
+        
         handleMakeNote();
       });
     }
@@ -110,6 +134,9 @@ function loadSharedTaskbar() {
 
 function initializeMenuSystem() {
   try {
+    // Initialize basic menu dropdown functionality first
+    initializeMenuDropdowns();
+    
     // Wait for PPPageCore and modules to be ready
     const waitForModules = () => {
       if (window.PPPageCore && window.PPPageCore.modules && window.PPPageCore.modules.posts) {
@@ -128,6 +155,192 @@ function initializeMenuSystem() {
   }
 }
 
+function initializeMenuDropdowns() {
+  console.log('Setting up menu dropdown functionality...');
+  
+  // Menu dropdown functionality
+  const menuItems = document.querySelectorAll('.menu-item');
+  console.log(`Found ${menuItems.length} menu items`);
+  
+  menuItems.forEach((item, index) => {
+    const label = item.querySelector('.label');
+    const dropdown = item.querySelector('.menu-dropdown');
+    
+    if (label && dropdown) {
+      const labelText = label.textContent.trim();
+      console.log(`Setting up menu: "${labelText}"`);
+      
+      // Prevent text deselection on mousedown
+      label.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // This prevents text deselection
+      });
+      
+      label.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        console.log(`Menu "${labelText}" clicked`);
+        
+        // Close all other dropdowns
+        menuItems.forEach(otherItem => {
+          if (otherItem !== item) {
+            otherItem.classList.remove('open');
+          }
+        });
+        
+        // Toggle current dropdown
+        const wasOpen = item.classList.contains('open');
+        item.classList.toggle('open');
+        console.log(`Menu "${labelText}" is now: ${item.classList.contains('open') ? 'OPEN' : 'CLOSED'}`);
+      });
+    }
+  });
+  
+  // Prevent text deselection on all menu entries
+  const menuEntries = document.querySelectorAll('.menu-entry');
+  menuEntries.forEach(entry => {
+    entry.addEventListener('mousedown', (e) => {
+      e.preventDefault(); // Prevent text deselection
+    });
+  });
+  
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', () => {
+    menuItems.forEach(item => {
+      item.classList.remove('open');
+    });
+  });
+  
+  // Setup theme switching for View menu
+  setupThemeSwitching();
+  
+  console.log('✅ Menu dropdown functionality initialized');
+}
+
+function setupThemeSwitching() {
+  console.log('Setting up theme switching...');
+  
+  // Handle theme mode buttons (Dark, Light, Custom, Random)
+  const themeButtons = document.querySelectorAll('[data-mode]');
+  console.log(`Found ${themeButtons.length} theme buttons`);
+  
+  themeButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const mode = button.getAttribute('data-mode');
+      console.log(`Theme button clicked: ${mode}`);
+      
+      // Log feature description to console
+      const descriptions = {
+        'dark': 'Switch to dark theme for comfortable night reading',
+        'light': 'Switch to light theme for daytime browsing',
+        'custom': 'Apply a custom color scheme for personalization',
+        'random': 'Generate a random color theme for visual variety'
+      };
+      if (descriptions[mode]) {
+        logFeature('Theme Switch', descriptions[mode]);
+      }
+      
+      // Use the theme module if available
+      if (window.PPPageCore && window.PPPageCore.modules.theme) {
+        const themeModule = window.PPPageCore.modules.theme;
+        
+        if (mode === 'dark') {
+          themeModule.setTheme('dark');
+        } else if (mode === 'light') {
+          themeModule.setTheme('light');
+        } else if (mode === 'custom') {
+          // For custom mode, we could show a color picker or use a default
+          themeModule.setTheme('custom', '#2a2a2a');
+        } else if (mode === 'random') {
+          // Generate random dark color for random mode
+          const h = Math.floor(Math.random() * 361);
+          const s = Math.floor(Math.random() * 41) + 30; // 30-70%
+          const l = Math.floor(Math.random() * 31) + 15; // 15-45%
+          const randomColor = `hsl(${h},${s}%,${l}%)`;
+          themeModule.setTheme('custom', randomColor);
+        }
+      } else {
+        // Fallback for basic theme switching without the theme module
+        console.log('Using fallback theme switching');
+        
+        if (mode === 'dark') {
+          document.body.classList.add('dark-mode');
+          document.body.classList.remove('custom-mode');
+          localStorage.setItem('ppPage_theme', 'dark');
+        } else if (mode === 'light') {
+          document.body.classList.remove('dark-mode', 'custom-mode');
+          localStorage.setItem('ppPage_theme', 'light');
+        } else if (mode === 'custom' || mode === 'random') {
+          // Generate a custom color
+          const h = mode === 'random' ? Math.floor(Math.random() * 361) : 210;
+          const s = mode === 'random' ? Math.floor(Math.random() * 41) + 30 : 20;
+          const l = mode === 'random' ? Math.floor(Math.random() * 31) + 15 : 25;
+          const color = `hsl(${h},${s}%,${l}%)`;
+          
+          document.body.classList.remove('dark-mode');
+          document.body.classList.add('custom-mode');
+          document.body.style.setProperty('--bg', color);
+          document.body.style.setProperty('--menu-bg', color);
+          
+          // Adjust text color based on lightness
+          const textColor = l < 50 ? '#ffffff' : '#232323';
+          document.body.style.setProperty('--fg', textColor);
+          document.body.style.setProperty('--menu-fg', textColor);
+          
+          localStorage.setItem('ppPage_theme', 'custom');
+        }
+      }
+    });
+  });
+  
+  // Setup console toggle button
+  const consoleToggleButton = document.getElementById('toggle-console');
+  if (consoleToggleButton) {
+    // Function to update button text based on console visibility
+    const updateConsoleButtonText = () => {
+      if (window.ppPage && window.ppPage.getModule) {
+        const consoleModule = window.ppPage.getModule('console');
+        if (consoleModule && consoleModule.isConsoleVisible) {
+          const isVisible = consoleModule.isConsoleVisible();
+          consoleToggleButton.textContent = isVisible ? 'Hide Console' : 'Show Console';
+        }
+      }
+    };
+    
+    // Set initial text
+    updateConsoleButtonText();
+    
+    consoleToggleButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Log feature description to console
+      logFeature('Console Toggle', 'Show/hide the debug console output window');
+      
+      // Toggle console visibility
+      if (window.ppPage && window.ppPage.getModule) {
+        const consoleModule = window.ppPage.getModule('console');
+        if (consoleModule) {
+          // Check current visibility and toggle
+          if (consoleModule.isConsoleVisible()) {
+            consoleModule.hide();
+          } else {
+            consoleModule.show();
+          }
+          
+          // Update button text after toggling
+          setTimeout(updateConsoleButtonText, 50);
+        }
+      }
+    });
+    console.log('✅ Console toggle button setup complete');
+  }
+  
+  console.log('✅ Theme switching setup complete');
+}
+
 function initializeTaskbarButtons() {
   try {
     console.log('Connecting taskbar buttons to modules...');
@@ -138,6 +351,10 @@ function initializeTaskbarButtons() {
       starButton.addEventListener('click', (e) => {
         e.preventDefault();
         console.log('Star button clicked');
+        
+        // Log feature description to console
+        logFeature('Latest Post', 'Quick access to the most recently published blog post');
+        
         if (window.PPPageCore && window.PPPageCore.modules.posts) {
           window.PPPageCore.modules.posts.loadLatestPost();
         } else {
@@ -153,6 +370,10 @@ function initializeTaskbarButtons() {
       randomPostButton.addEventListener('click', (e) => {
         e.preventDefault();
         console.log('Random post button clicked');
+        
+        // Log feature description to console
+        logFeature('Random Post', 'Navigate to a randomly selected blog post for discovery');
+        
         if (window.PPPageCore && window.PPPageCore.modules.posts) {
           window.PPPageCore.modules.posts.loadRandomPost();
         } else {
@@ -168,6 +389,10 @@ function initializeTaskbarButtons() {
       mostRecentButton.addEventListener('click', (e) => {
         e.preventDefault();
         console.log('Most recent button clicked');
+        
+        // Log feature description to console
+        logFeature('Most Recent', 'Load the chronologically newest blog post');
+        
         if (window.PPPageCore && window.PPPageCore.modules.posts) {
           window.PPPageCore.modules.posts.loadMostRecentPost();
         } else {

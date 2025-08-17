@@ -23,7 +23,8 @@
       { name: 'posts', factory: PostsModule },
       { name: 'navigation', factory: NavigationModule },
       { name: 'editor', factory: EditorModule },
-      { name: 'theme', factory: ThemeModule }
+      { name: 'theme', factory: ThemeModule },
+      { name: 'console', factory: ConsoleModule }
     ];
 
     // Register modules

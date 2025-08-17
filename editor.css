@@ -303,7 +303,7 @@ body {
 
 .title-input::placeholder {
   color: var(--muted);
-  opacity: 0.6;
+  opacity: 6;
   font-weight: normal;
 }
 
@@ -957,4 +957,145 @@ body.custom-mode .box-style-1.message-box {
 /* Hide the box by default */
 .hidden {
   display: none !important;
+}
+
+/* Console Output Styles - Box Style 1 */
+.console-output {
+  position: fixed !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--fg) !important;
+  font-family: inherit;
+  font-size: 12px;
+  z-index: 999;
+  width: 300px;
+  max-height: 200px;
+  border-radius: 0;
+  box-shadow: 0 2px 8px var(--modal-shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.console-output.minimized {
+  max-height: 30px;
+}
+
+.console-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.console-title {
+  font-weight: bold;
+  font-size: 12px;
+  color: var(--fg);
+}
+
+.console-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.console-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 0;
+  transition: background-color 0.2s;
+}
+
+.console-btn:hover {
+  background: var(--hover-bg);
+}
+
+.console-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+  max-height: 150px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.console-message {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 2px;
+  padding: 2px 4px;
+  border-radius: 0;
+  word-wrap: break-word;
+  align-items: flex-start;
+}
+
+.console-message.info {
+  background: transparent;
+}
+
+.console-message.debug {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.console-message.warning {
+  background: color-mix(in srgb, orange 20%, transparent);
+}
+
+.console-message.error {
+  background: color-mix(in srgb, red 20%, transparent);
+  color: var(--fg);
+}
+
+.console-message.feature {
+  background: color-mix(in srgb, green 15%, transparent);
+}
+
+.message-time {
+  color: var(--muted);
+  font-size: 10px;
+  min-width: 60px;
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+.message-type {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 45px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.message-text {
+  flex: 1;
+  color: var(--fg);
+}
+
+/* Theme consistency */
+body.dark-mode .console-output {
+  background: var(--bg) !important;
+  border-color: var(--border) !important;
+  color: var(--fg) !important;
+}
+
+body:not(.dark-mode) .console-output {
+  background: var(--bg) !important;
+  border-color: var(--border) !important;
+  color: var(--fg) !important;
+}
+
+body.custom-mode .console-output {
+  background: var(--bg) !important;
+  border-color: var(--border) !important;
+  color: var(--fg) !important;
 }
