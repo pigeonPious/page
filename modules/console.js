@@ -14,6 +14,18 @@ const ConsoleModule = () => {
   function createElement() {
     if (consoleElement) return consoleElement;
 
+    // Check if console already exists in DOM to prevent duplicates
+    const existingConsole = document.getElementById('persistent-console') || 
+                           document.getElementById('global-console') ||
+                           document.querySelector('.console-output');
+                           
+    if (existingConsole) {
+      console.log('Console already exists, reusing existing element');
+      consoleElement = existingConsole;
+      messagesContainer = existingConsole.querySelector('.console-messages');
+      return consoleElement;
+    }
+
     // Create main console container
     consoleElement = document.createElement('div');
     consoleElement.id = 'persistent-console';

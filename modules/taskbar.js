@@ -267,23 +267,26 @@ function setupThemeSwitching() {
       }
       
       // Use the theme module if available
-      if (window.PPPageCore && window.PPPageCore.modules.theme) {
-        const themeModule = window.PPPageCore.modules.theme;
-        
-        if (mode === 'dark') {
-          themeModule.setTheme('dark');
-        } else if (mode === 'light') {
-          themeModule.setTheme('light');
-        } else if (mode === 'custom') {
-          // For custom mode, we could show a color picker or use a default
-          themeModule.setTheme('custom', '#2a2a2a');
-        } else if (mode === 'random') {
-          // Generate random dark color for random mode
-          const h = Math.floor(Math.random() * 361);
-          const s = Math.floor(Math.random() * 41) + 30; // 30-70%
-          const l = Math.floor(Math.random() * 31) + 15; // 15-45%
-          const randomColor = `hsl(${h},${s}%,${l}%)`;
-          themeModule.setTheme('custom', randomColor);
+      if (window.ppPage) {
+        const themeModule = window.ppPage.getModule('theme');
+        if (themeModule) {
+          if (mode === 'dark') {
+            themeModule.setTheme('dark');
+          } else if (mode === 'light') {
+            themeModule.setTheme('light');
+          } else if (mode === 'custom') {
+            // For custom mode, we could show a color picker or use a default
+            themeModule.setTheme('custom', '#2a2a2a');
+          } else if (mode === 'random') {
+            // Generate random dark color for random mode
+            const h = Math.floor(Math.random() * 361);
+            const s = Math.floor(Math.random() * 41) + 30; // 30-70%
+            const l = Math.floor(Math.random() * 31) + 15; // 15-45%
+            const randomColor = `hsl(${h},${s}%,${l}%)`;
+            themeModule.setTheme('custom', randomColor);
+          }
+        } else {
+          console.error('Theme module not available');
         }
       } else {
         // Fallback for basic theme switching without the theme module
@@ -379,10 +382,15 @@ function initializeTaskbarButtons() {
         // Log feature description to console
         logFeature('Latest Post', 'Quick access to the most recently published blog post');
         
-        if (window.PPPageCore && window.PPPageCore.modules.posts) {
-          window.PPPageCore.modules.posts.loadLatestPost();
+        if (window.ppPage) {
+          const postsModule = window.ppPage.getModule('posts');
+          if (postsModule && postsModule.loadLatestPost) {
+            postsModule.loadLatestPost();
+          } else {
+            console.error('Posts module or loadLatestPost method not available');
+          }
         } else {
-          console.error('Posts module not available');
+          console.error('PPPage core not available');
         }
       });
       console.log('✅ Star button connected');
@@ -398,10 +406,15 @@ function initializeTaskbarButtons() {
         // Log feature description to console
         logFeature('Random Post', 'Navigate to a randomly selected blog post for discovery');
         
-        if (window.PPPageCore && window.PPPageCore.modules.posts) {
-          window.PPPageCore.modules.posts.loadRandomPost();
+        if (window.ppPage) {
+          const postsModule = window.ppPage.getModule('posts');
+          if (postsModule && postsModule.loadRandomPost) {
+            postsModule.loadRandomPost();
+          } else {
+            console.error('Posts module or loadRandomPost method not available');
+          }
         } else {
-          console.error('Posts module not available');
+          console.error('PPPage core not available');
         }
       });
       console.log('✅ Random post button connected');
@@ -417,10 +430,15 @@ function initializeTaskbarButtons() {
         // Log feature description to console
         logFeature('Most Recent', 'Load the chronologically newest blog post');
         
-        if (window.PPPageCore && window.PPPageCore.modules.posts) {
-          window.PPPageCore.modules.posts.loadMostRecentPost();
+        if (window.ppPage) {
+          const postsModule = window.ppPage.getModule('posts');
+          if (postsModule && postsModule.loadMostRecentPost) {
+            postsModule.loadMostRecentPost();
+          } else {
+            console.error('Posts module or loadMostRecentPost method not available');
+          }
         } else {
-          console.error('Posts module not available');
+          console.error('PPPage core not available');
         }
       });
       console.log('✅ Most recent button connected');
@@ -432,10 +450,15 @@ function initializeTaskbarButtons() {
       allPostsButton.addEventListener('click', (e) => {
         e.preventDefault();
         console.log('All posts menu clicked');
-        if (window.PPPageCore && window.PPPageCore.modules.navigation) {
-          window.PPPageCore.modules.navigation.showAllPostsMenu();
+        if (window.ppPage) {
+          const navigationModule = window.ppPage.getModule('navigation');
+          if (navigationModule && navigationModule.showAllPostsMenu) {
+            navigationModule.showAllPostsMenu();
+          } else {
+            console.error('Navigation module or showAllPostsMenu method not available');
+          }
         } else {
-          console.error('Navigation module not available');
+          console.error('PPPage core not available');
         }
       });
       console.log('✅ All posts menu connected');
