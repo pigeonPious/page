@@ -205,17 +205,46 @@ const editor = {
 
   // Initialize editor
   init() {
-    console.log('Initializing editor...');
-    this.setupEventListeners();
-    // this.setupMenus(); // Disabled - using shared taskbar menu system
-    this.setupModalManagement();
-    this.setupImageMagazine();
-    this.checkGitHubConfig();
+    console.log('🚀 Initializing editor...');
     
-    // Check if we're editing an existing post
-    this.checkForPostEditing();
+    try {
+      this.setupEventListeners();
+      console.log('✅ Event listeners setup complete');
+    } catch (error) {
+      console.error('❌ Error setting up event listeners:', error);
+    }
     
-    console.log('Simple Editor initialized');
+    try {
+      // this.setupMenus(); // Disabled - using shared taskbar menu system
+      this.setupModalManagement();
+      console.log('✅ Modal management setup complete');
+    } catch (error) {
+      console.error('❌ Error setting up modal management:', error);
+    }
+    
+    try {
+      this.setupImageMagazine();
+      console.log('✅ Image magazine setup complete');
+    } catch (error) {
+      console.error('❌ Error setting up image magazine:', error);
+    }
+    
+    try {
+      this.checkGitHubConfig();
+      console.log('✅ GitHub config check complete');
+    } catch (error) {
+      console.error('❌ Error checking GitHub config:', error);
+    }
+    
+    try {
+      // Check if we're editing an existing post
+      this.checkForPostEditing();
+      console.log('✅ Post editing check complete');
+    } catch (error) {
+      console.error('❌ Error checking for post editing:', error);
+    }
+    
+    console.log('🎉 Simple Editor initialized');
     
     // Update the global function now that editor is ready
     window.makeNoteFromTaskbar = () => this.makeNote();
@@ -223,37 +252,78 @@ const editor = {
 
   // Event listeners
   setupEventListeners() {
+    console.log('Setting up editor event listeners...');
+    
     // Keywords button
-    document.getElementById('keywords-btn').addEventListener('mousedown', (e) => {
-      e.preventDefault(); // Prevent text deselection
-    });
-    document.getElementById('keywords-btn').addEventListener('click', (e) => this.showKeywordsInput(e));
+    const keywordsBtn = document.getElementById('keywords-btn');
+    if (keywordsBtn) {
+      keywordsBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent text deselection
+      });
+      keywordsBtn.addEventListener('click', (e) => {
+        console.log('Keywords button clicked');
+        this.showKeywordsInput(e);
+      });
+      console.log('✓ Keywords button listeners added');
+    } else {
+      console.error('✗ Keywords button not found');
+    }
     
     // Export button
-    document.getElementById('export-btn').addEventListener('mousedown', (e) => {
-      e.preventDefault(); // Prevent text deselection
-    });
-    document.getElementById('export-btn').addEventListener('click', () => this.exportPost());
+    const exportBtn = document.getElementById('export-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent text deselection
+      });
+      exportBtn.addEventListener('click', () => {
+        console.log('Export button clicked');
+        this.exportPost();
+      });
+      console.log('✓ Export button listeners added');
+    } else {
+      console.error('✗ Export button not found');
+    }
     
     // Images button
-    document.getElementById('images-btn').addEventListener('mousedown', (e) => {
-      e.preventDefault(); // Prevent text deselection
-    });
-    document.getElementById('images-btn').addEventListener('click', () => this.toggleImageMagazine());
+    const imagesBtn = document.getElementById('images-btn');
+    if (imagesBtn) {
+      imagesBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent text deselection
+      });
+      imagesBtn.addEventListener('click', () => {
+        console.log('Images button clicked');
+        this.toggleImageMagazine();
+      });
+      console.log('✓ Images button listeners added');
+    } else {
+      console.error('✗ Images button not found');
+    }
     
     // Publish button
-    document.getElementById('publish-btn').addEventListener('mousedown', (e) => {
-      e.preventDefault(); // Prevent text deselection
-    });
-    document.getElementById('publish-btn').addEventListener('click', (e) => {
-      console.log('Publish button clicked');
-      this.publishPost();
-    });
+    const publishBtn = document.getElementById('publish-btn');
+    if (publishBtn) {
+      publishBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent text deselection
+      });
+      publishBtn.addEventListener('click', (e) => {
+        console.log('Publish button clicked');
+        this.publishPost();
+      });
+      console.log('✓ Publish button listeners added');
+    } else {
+      console.error('✗ Publish button not found');
+    }
     
     // Keywords modal save button
     const saveKeywordsBtn = document.getElementById('save-keywords-btn');
     if (saveKeywordsBtn) {
-      saveKeywordsBtn.addEventListener('click', () => this.saveKeywords());
+      saveKeywordsBtn.addEventListener('click', () => {
+        console.log('Save keywords button clicked');
+        this.saveKeywords();
+      });
+      console.log('✓ Save keywords button listener added');
+    } else {
+      console.error('✗ Save keywords button not found');
     }
 
     // Keyboard shortcuts
@@ -270,6 +340,8 @@ const editor = {
 
     // Image magazine event listeners
     this.setupImageEventListeners();
+    
+    console.log('✅ All event listeners setup complete');
   },
 
   // Menu system
