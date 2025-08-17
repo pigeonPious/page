@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Verification Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #005a9e;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .test-pass {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .test-fail {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .console-log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #navigation-test iframe {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Final Verification Test</h1>
+    <p>Testing all the fixes applied to the editor and navigation system.</p>
+
+    <div class="test-section">
+        <h2>1. Script Loading & Global Functions</h2>
+        <button class="test-button" onclick="testScriptLoading()">Test Script Loading</button>
+        <div id="script-test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Navigation Menu Test</h2>
+        <button class="test-button" onclick="testNavigation()">Test Navigation on Editor Page</button>
+        <div id="navigation-test">
+            <iframe src="editor.html" id="editor-frame" style="display: none;"></iframe>
+        </div>
+        <div id="navigation-test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Console Output System</h2>
+        <button class="test-button" onclick="testConsoleSystem()">Test Console Output</button>
+        <div id="console-test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Editor Button Functionality</h2>
+        <button class="test-button" onclick="testEditorButtons()">Test Editor Buttons</button>
+        <div id="button-test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <div id="console-output" class="console-log"></div>
+        <button class="test-button" onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="console-output.js"></script>
+    <script>
+        let consoleOutput = document.getElementById('console-output');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            consoleOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            console.log(message);
+        }
+
+        function clearConsole() {
+            consoleOutput.textContent = '';
+        }
+
+        function testScriptLoading() {
+            log('Testing script loading...');
+            
+            // Test if script.js loaded
+            if (typeof loadPostsWithKeywords === 'function') {
+                log('✅ loadPostsWithKeywords function found', 'success');
+            } else {
+                log('❌ loadPostsWithKeywords function not found', 'error');
+            }
+            
+            // Test if global function is available
+            if (typeof window.loadPostsWithKeywords === 'function') {
+                log('✅ Global window.loadPostsWithKeywords available', 'success');
+            } else {
+                log('❌ Global window.loadPostsWithKeywords not available', 'error');
+            }
+            
+            // Test console-output.js
+            if (typeof showConsoleMessage === 'function') {
+                log('✅ Console output system loaded', 'success');
+            } else {
+                log('❌ Console output system not loaded', 'error');
+            }
+            
+            document.getElementById('script-test-results').innerHTML = '<div class="test-pass">Script loading test completed - check console output for details</div>';
+        }
+
+        function testNavigation() {
+            log('Testing navigation menu...');
+            
+            const iframe = document.getElementById('editor-frame');
+            iframe.style.display = 'block';
+            
+            iframe.onload = function() {
+                try {
+                    const iframeWindow = iframe.contentWindow;
+                    const iframeDocument = iframe.contentDocument;
+                    
+                    log('Editor page loaded in iframe');
+                    
+                    // Check if navigation elements exist
+                    const postsMenu = iframeDocument.querySelector('[data-menu="posts"]');
+                    const devlogMenu = iframeDocument.querySelector('[data-menu="devlog"]');
+                    
+                    if (postsMenu && devlogMenu) {
+                        log('✅ Navigation menu elements found', 'success');
+                        
+                        // Test if global function is available in iframe
+                        if (typeof iframeWindow.loadPostsWithKeywords === 'function') {
+                            log('✅ Navigation function available in editor page', 'success');
+                            document.getElementById('navigation-test-results').innerHTML = '<div class="test-pass">Navigation test PASSED</div>';
+                        } else {
+                            log('❌ Navigation function not available in editor page', 'error');
+                            document.getElementById('navigation-test-results').innerHTML = '<div class="test-fail">Navigation test FAILED - function not available</div>';
+                        }
+                    } else {
+                        log('❌ Navigation menu elements not found', 'error');
+                        document.getElementById('navigation-test-results').innerHTML = '<div class="test-fail">Navigation test FAILED - elements not found</div>';
+                    }
+                } catch (error) {
+                    log(`❌ Error testing navigation: ${error.message}`, 'error');
+                    document.getElementById('navigation-test-results').innerHTML = '<div class="test-fail">Navigation test FAILED - ' + error.message + '</div>';
+                }
+            };
+        }
+
+        function testConsoleSystem() {
+            log('Testing console output system...');
+            
+            try {
+                if (typeof showConsoleMessage === 'function') {
+                    showConsoleMessage('Test message', 'info');
+                    log('✅ Console message displayed successfully', 'success');
+                    
+                    setTimeout(() => {
+                        showConsoleMessage('Test error message', 'error');
+                        log('✅ Console error message displayed successfully', 'success');
+                        
+                        setTimeout(() => {
+                            showConsoleMessage('Test success message', 'success');
+                            log('✅ Console success message displayed successfully', 'success');
+                            document.getElementById('console-test-results').innerHTML = '<div class="test-pass">Console system test PASSED</div>';
+                        }, 1000);
+                    }, 1000);
+                } else {
+                    log('❌ showConsoleMessage function not available', 'error');
+                    document.getElementById('console-test-results').innerHTML = '<div class="test-fail">Console system test FAILED</div>';
+                }
+            } catch (error) {
+                log(`❌ Error testing console system: ${error.message}`, 'error');
+                document.getElementById('console-test-results').innerHTML = '<div class="test-fail">Console system test FAILED - ' + error.message + '</div>';
+            }
+        }
+
+        function testEditorButtons() {
+            log('Testing editor button functionality...');
+            
+            // Open editor page in new window to test buttons
+            const editorWindow = window.open('editor.html', 'editorTest', 'width=800,height=600');
+            
+            editorWindow.onload = function() {
+                setTimeout(() => {
+                    try {
+                        const editorDoc = editorWindow.document;
+                        
+                        // Check if buttons exist
+                        const flagsBtn = editorDoc.getElementById('keywords-btn');
+                        const exportBtn = editorDoc.getElementById('export-btn');
+                        const imagesBtn = editorDoc.getElementById('images-btn');
+                        const publishBtn = editorDoc.getElementById('publish-btn');
+                        
+                        let buttonCount = 0;
+                        let workingButtons = 0;
+                        
+                        if (flagsBtn) {
+                            buttonCount++;
+                            log('✅ FLAGS button found');
+                            // Test click event
+                            try {
+                                flagsBtn.click();
+                                workingButtons++;
+                                log('✅ FLAGS button clickable');
+                            } catch (e) {
+                                log(`❌ FLAGS button click error: ${e.message}`, 'error');
+                            }
+                        } else {
+                            log('❌ FLAGS button not found', 'error');
+                        }
+                        
+                        if (exportBtn) {
+                            buttonCount++;
+                            log('✅ EXPORT button found');
+                            try {
+                                exportBtn.click();
+                                workingButtons++;
+                                log('✅ EXPORT button clickable');
+                            } catch (e) {
+                                log(`❌ EXPORT button click error: ${e.message}`, 'error');
+                            }
+                        } else {
+                            log('❌ EXPORT button not found', 'error');
+                        }
+                        
+                        if (imagesBtn) {
+                            buttonCount++;
+                            log('✅ IMAGES button found');
+                            try {
+                                imagesBtn.click();
+                                workingButtons++;
+                                log('✅ IMAGES button clickable');
+                            } catch (e) {
+                                log(`❌ IMAGES button click error: ${e.message}`, 'error');
+                            }
+                        } else {
+                            log('❌ IMAGES button not found', 'error');
+                        }
+                        
+                        if (publishBtn) {
+                            buttonCount++;
+                            log('✅ PUBLISH button found');
+                            try {
+                                publishBtn.click();
+                                workingButtons++;
+                                log('✅ PUBLISH button clickable');
+                            } catch (e) {
+                                log(`❌ PUBLISH button click error: ${e.message}`, 'error');
+                            }
+                        } else {
+                            log('❌ PUBLISH button not found', 'error');
+                        }
+                        
+                        const testResult = workingButtons === buttonCount && buttonCount === 4;
+                        
+                        if (testResult) {
+                            log(`✅ All ${workingButtons}/${buttonCount} editor buttons working`, 'success');
+                            document.getElementById('button-test-results').innerHTML = '<div class="test-pass">Editor buttons test PASSED</div>';
+                        } else {
+                            log(`❌ Only ${workingButtons}/${buttonCount} editor buttons working`, 'error');
+                            document.getElementById('button-test-results').innerHTML = '<div class="test-fail">Editor buttons test FAILED</div>';
+                        }
+                        
+                        // Close test window
+                        setTimeout(() => editorWindow.close(), 2000);
+                        
+                    } catch (error) {
+                        log(`❌ Error testing editor buttons: ${error.message}`, 'error');
+                        document.getElementById('button-test-results').innerHTML = '<div class="test-fail">Editor buttons test FAILED - ' + error.message + '</div>';
+                        editorWindow.close();
+                    }
+                }, 2000); // Wait for editor to fully initialize
+            };
+        }
+
+        // Initialize console output system
+        window.addEventListener('load', () => {
+            log('Final verification test page loaded');
+            initializeConsoleOutput();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Taskbar Button Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .test-container { display: grid; grid-template-columns: 1fr 300px; gap: 20px; height: 90vh; }
+        .main-frame { border: 1px solid #ccc; border-radius: 5px; }
+        .console-area { 
+            background: #1e1e1e; 
+            color: #fff; 
+            padding: 10px; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        .console-area h3 { color: #4CAF50; margin-top: 0; }
+        .log-entry { margin: 2px 0; padding: 2px 5px; border-radius: 2px; }
+        .log-info { color: #81C784; }
+        .log-success { background: #2E7D32; color: white; }
+        .log-error { background: #C62828; color: white; }
+        .log-warning { background: #F57F17; color: white; }
+        .instructions { 
+            background: #e3f2fd; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-bottom: 20px;
+        }
+        button { margin: 5px; padding: 8px 12px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔴 Live Taskbar Button Test</h1>
+    
+    <div class="instructions">
+        <strong>Instructions:</strong>
+        <ol>
+            <li>The main page is loaded in the frame on the left</li>
+            <li>Click the taskbar buttons: <strong>*</strong> (star), <strong>Most Recent</strong>, <strong>Random Post</strong>, <strong>All Posts &gt;</strong></li>
+            <li>Watch the console on the right for real-time feedback</li>
+            <li>Posts should load in the main frame when buttons work correctly</li>
+        </ol>
+        <button onclick="clearConsole()">Clear Console</button>
+        <button onclick="refreshFrame()">Refresh Frame</button>
+    </div>
+    
+    <div class="test-container">
+        <iframe src="index.html" class="main-frame" id="main-frame"></iframe>
+        
+        <div class="console-area" id="console">
+            <h3>📊 Real-time Console</h3>
+            <div id="console-output"></div>
+        </div>
+    </div>
+    
+    <script>
+        let logCount = 0;
+        
+        function logToConsole(message, type = 'info') {
+            logCount++;
+            const output = document.getElementById('console-output');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<strong>${logCount}.</strong> [${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(entry);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearConsole() {
+            document.getElementById('console-output').innerHTML = '';
+            logCount = 0;
+            logToConsole('Console cleared', 'info');
+        }
+        
+        function refreshFrame() {
+            const frame = document.getElementById('main-frame');
+            frame.src = frame.src;
+            logToConsole('Frame refreshed', 'info');
+        }
+        
+        function monitorFrame() {
+            const frame = document.getElementById('main-frame');
+            
+            frame.onload = () => {
+                logToConsole('Main page loaded', 'success');
+                
+                setTimeout(() => {
+                    try {
+                        const frameWindow = frame.contentWindow;
+                        const frameDoc = frame.contentDocument;
+                        
+                        // Check if modules are available
+                        if (frameWindow.PPPageCore) {
+                            logToConsole('✅ PPPageCore detected', 'success');
+                            
+                            if (frameWindow.PPPageCore.modules) {
+                                logToConsole('✅ Modules object available', 'success');
+                                
+                                if (frameWindow.PPPageCore.modules.posts) {
+                                    logToConsole('✅ Posts module loaded', 'success');
+                                } else {
+                                    logToConsole('❌ Posts module not found', 'error');
+                                }
+                                
+                                if (frameWindow.PPPageCore.modules.navigation) {
+                                    logToConsole('✅ Navigation module loaded', 'success');
+                                } else {
+                                    logToConsole('❌ Navigation module not found', 'error');
+                                }
+                            } else {
+                                logToConsole('❌ Modules object not available', 'error');
+                            }
+                        } else {
+                            logToConsole('❌ PPPageCore not detected', 'error');
+                        }
+                        
+                        // Check taskbar buttons
+                        const buttons = [
+                            { id: 'star-button', name: 'Star (*)' },
+                            { id: 'most-recent-post', name: 'Most Recent' },
+                            { id: 'random-post', name: 'Random Post' },
+                            { id: 'all-posts-menu', name: 'All Posts' }
+                        ];
+                        
+                        buttons.forEach(({ id, name }) => {
+                            const btn = frameDoc.getElementById(id);
+                            if (btn) {
+                                logToConsole(`✅ ${name} button found`, 'success');
+                                
+                                // Add click monitoring
+                                btn.addEventListener('click', () => {
+                                    logToConsole(`🔘 ${name} button clicked!`, 'warning');
+                                });
+                            } else {
+                                logToConsole(`❌ ${name} button not found`, 'error');
+                            }
+                        });
+                        
+                        // Override console.log in frame to capture module logs
+                        const originalLog = frameWindow.console.log;
+                        frameWindow.console.log = function(...args) {
+                            originalLog.apply(frameWindow.console, args);
+                            logToConsole(`📝 ${args.join(' ')}`, 'info');
+                        };
+                        
+                        const originalError = frameWindow.console.error;
+                        frameWindow.console.error = function(...args) {
+                            originalError.apply(frameWindow.console, args);
+                            logToConsole(`❌ ${args.join(' ')}`, 'error');
+                        };
+                        
+                    } catch (error) {
+                        logToConsole(`Error monitoring frame: ${error.message}`, 'error');
+                    }
+                }, 2000);
+            };
+        }
+        
+        // Initialize
+        window.onload = () => {
+            logToConsole('Live test initialized', 'success');
+            logToConsole('Loading main page...', 'info');
+            monitorFrame();
+        };
+    </script>
+</body>
+</html>
