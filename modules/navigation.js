@@ -93,8 +93,8 @@ const NavigationModule = () => ({
       postEntry.textContent = post.title;
       postEntry.tabIndex = 0;
       postEntry.setAttribute('role', 'menuitem');
-      // Use direct reference to this.navigateToPost to avoid singleton confusion
-      postEntry.addEventListener('click', () => {
+      // Use ppPage.utils.addEvent to ensure correct context
+      ppPage.utils.addEvent(postEntry, 'click', () => {
         this.navigateToPost(post.slug);
       });
       submenu.appendChild(postEntry);
@@ -250,9 +250,7 @@ const NavigationModule = () => ({
   }
 });
 
-const NavigationModuleInstance = NavigationModule();
-
 // Export the module factory
 if (typeof window !== 'undefined') {
-  window.NavigationModule = () => NavigationModuleInstance;
+  window.NavigationModule = () => NavigationModule(); // Always return a new instance for proper lifecycle
 }
