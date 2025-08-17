@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigation Fix Test</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Taskbar will be loaded by shared-taskbar.js -->
+
+<div class="frame">
+  <main class="center-content">
+    <div id="post-content">
+      <h1>Navigation Fix Test</h1>
+      <p>Testing if the navigation menu works correctly with submenus...</p>
+      
+      <div style="margin: 20px 0; padding: 15px; border: 2px solid var(--border); border-radius: 4px;">
+        <h3>Test Instructions:</h3>
+        <ol>
+          <li>Click on "Navigation" in the menu bar above</li>
+          <li>You should see: Blog, About, Contact, Most Recent, Random Post</li>
+          <li>You should see: "All Posts >" and "Devlog >" with arrows indicating submenus</li>
+          <li>Hover over "All Posts >" - a submenu should appear with all posts</li>
+          <li>Hover over "Devlog >" - a submenu should appear organized by project</li>
+        </ol>
+        
+        <h3>What Should NOT Happen:</h3>
+        <ul>
+          <li>❌ Individual posts should NOT appear directly in the Navigation dropdown</li>
+          <li>❌ Posts should only appear in the "All Posts >" and "Devlog >" submenus</li>
+        </ul>
+      </div>
+      
+      <div id="test-results" style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 4px;">
+        <h3>Automatic Test Results:</h3>
+        <div id="test-output">Loading tests...</div>
+      </div>
+      
+      <div style="margin-top: 20px;">
+        <button onclick="manualTest()">Run Manual Test</button>
+        <button onclick="checkNavigationStructure()">Check Navigation Structure</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="shared-taskbar.js"></script>
+<script src="script.js"></script>
+
+<script>
+let testResults = [];
+
+function addTestResult(test, passed, details = '') {
+  testResults.push({ test, passed, details });
+  updateTestDisplay();
+}
+
+function updateTestDisplay() {
+  const output = document.getElementById('test-output');
+  const results = testResults.map(result => {
+    const icon = result.passed ? '✅' : '❌';
+    const details = result.details ? ` (${result.details})` : '';
+    return `<div>${icon} ${result.test}${details}</div>`;
+  }).join('');
+  
+  output.innerHTML = results;
+}
+
+function manualTest() {
+  testResults = [];
+  addTestResult('Manual test started', true);
+  
+  // Check if navigation dropdown exists
+  const navDropdown = document.getElementById('navigation-dropdown');
+  if (navDropdown) {
+    addTestResult('Navigation dropdown found', true);
+    
+    // Check for submenu elements
+    const allPostsMenu = document.getElementById('all-posts-menu');
+    const devlogMenu = document.getElementById('devlog-menu');
+    
+    addTestResult('All Posts submenu exists', !!allPostsMenu, allPostsMenu ? 'Found' : 'Missing');
+    addTestResult('Devlog submenu exists', !!devlogMenu, devlogMenu ? 'Found' : 'Missing');
+    
+    // Check if submenu elements have the submenu class or child elements
+    if (allPostsMenu) {
+      const hasSubmenu = allPostsMenu.querySelector('.menu-submenu');
+      addTestResult('All Posts has submenu content', !!hasSubmenu, hasSubmenu ? `${hasSubmenu.children.length} items` : 'No submenu');
+    }
+    
+    if (devlogMenu) {
+      const hasSubmenu = devlogMenu.querySelector('.menu-submenu');
+      addTestResult('Devlog has submenu content', !!hasSubmenu, hasSubmenu ? `${hasSubmenu.children.length} items` : 'No submenu');
+    }
+    
+    // Check that posts are NOT directly in navigation dropdown
+    const directPostLinks = Array.from(navDropdown.children).filter(child => {
+      return child.tagName === 'A' && child.textContent && 
+             !['Blog', 'About', 'Contact', 'Most Recent', 'Random Post'].includes(child.textContent.trim());
+    });
+    
+    addTestResult('No direct post links in navigation', directPostLinks.length === 0, 
+                  directPostLinks.length > 0 ? `Found ${directPostLinks.length} direct post links` : 'Clean navigation');
+    
+  } else {
+    addTestResult('Navigation dropdown found', false, 'Missing navigation-dropdown element');
+  }
+}
+
+function checkNavigationStructure() {
+  console.log('=== Navigation Structure Debug ===');
+  
+  const navDropdown = document.getElementById('navigation-dropdown');
+  if (navDropdown) {
+    console.log('Navigation dropdown children:');
+    Array.from(navDropdown.children).forEach((child, index) => {
+      console.log(`  ${index + 1}. ${child.tagName} - "${child.textContent.trim()}" - ID: ${child.id || 'no-id'} - Classes: ${child.className}`);
+      
+      // Check for submenus
+      const submenu = child.querySelector('.menu-submenu');
+      if (submenu) {
+        console.log(`    → Has submenu with ${submenu.children.length} items`);
+      }
+    });
+  } else {
+    console.log('❌ Navigation dropdown not found');
+  }
+  
+  // Check if posts are loaded
+  if (window.allPosts) {
+    console.log(`Posts loaded: ${window.allPosts.length} posts found`);
+  } else {
+    console.log('❌ No posts loaded (window.allPosts is undefined)');
+  }
+  
+  // Check if loadPostsWithKeywords function exists
+  if (typeof window.loadPostsWithKeywords === 'function') {
+    console.log('✅ loadPostsWithKeywords function is available');
+  } else {
+    console.log('❌ loadPostsWithKeywords function is not available');
+  }
+}
+
+// Auto-run test when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait a bit for everything to load
+  setTimeout(() => {
+    addTestResult('Page loaded', true);
+    manualTest();
+  }, 1000);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor Navigation Test</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+
+<!-- This test simulates the editor page to check navigation -->
+
+<!-- Main Editor -->
+<div class="frame">
+  <main class="center-content">
+    <div class="editor-main-column">
+      <div class="editor-header">
+        <input type="text" id="postTitle" class="title-input" placeholder="Test Editor Navigation...">
+      </div>
+      
+      <div class="editor-main">
+        <div id="visualEditor" class="visual-editor" contenteditable="true" 
+             data-placeholder="This is a test page to verify editor navigation is working correctly...">
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <div class="editor-sidebar">
+    <div class="editor-tools-vertical">
+      <div class="tool-button" id="keywords-btn">FLAGS</div>
+      <div class="tool-button" id="images-btn">IMAGES</div>
+      <div class="tool-button" id="export-btn">EXPORT</div>
+      <div class="tool-button" id="publish-btn">PUBLISH</div>
+    </div>
+  </div>
+</div>
+
+<div id="test-results" style="position: fixed; top: 10px; right: 10px; width: 300px; background: var(--bg-secondary); padding: 15px; border-radius: 4px; max-height: 400px; overflow-y: auto; font-size: 12px; z-index: 10000;">
+  <h3 style="margin: 0 0 10px 0;">Navigation Test Results</h3>
+  <div id="test-output">Loading...</div>
+  <button onclick="runDetailedTest()" style="margin-top: 10px; width: 100%;">Re-run Test</button>
+</div>
+
+<script src="shared-taskbar.js"></script>
+<script src="script.js"></script>
+
+<script>
+function logTest(test, passed, details = '') {
+  const output = document.getElementById('test-output');
+  const icon = passed ? '✅' : '❌';
+  const detailsText = details ? ` (${details})` : '';
+  output.innerHTML += `<div style="margin: 2px 0;">${icon} ${test}${detailsText}</div>`;
+}
+
+function clearTest() {
+  document.getElementById('test-output').innerHTML = '';
+}
+
+function runDetailedTest() {
+  clearTest();
+  logTest('Starting navigation test', true);
+  
+  // Check if this page is detected as editor page
+  const isEditorPage = !!document.getElementById('visualEditor');
+  logTest('Page detected as editor page', isEditorPage);
+  
+  // Check taskbar loaded
+  const taskbarLoaded = !!document.getElementById('navigation-dropdown');
+  logTest('Taskbar loaded', taskbarLoaded);
+  
+  if (taskbarLoaded) {
+    const navDropdown = document.getElementById('navigation-dropdown');
+    
+    // Get all direct children of navigation dropdown
+    const directChildren = Array.from(navDropdown.children);
+    logTest('Navigation dropdown has children', directChildren.length > 0, `${directChildren.length} items`);
+    
+    // Check for required navigation items
+    const hasAbout = directChildren.some(child => child.textContent.trim() === 'About');
+    const hasBlog = directChildren.some(child => child.textContent.trim() === 'Blog');
+    const hasMostRecent = directChildren.some(child => child.textContent.trim() === 'Most Recent');
+    const hasRandomPost = directChildren.some(child => child.textContent.trim() === 'Random Post');
+    
+    logTest('Has "About" link', hasAbout);
+    logTest('Has "Blog" link', hasBlog);
+    logTest('Has "Most Recent" button', hasMostRecent);
+    logTest('Has "Random Post" button', hasRandomPost);
+    
+    // Check for submenu items
+    const allPostsMenu = document.getElementById('all-posts-menu');
+    const devlogMenu = document.getElementById('devlog-menu');
+    
+    logTest('Has "All Posts" submenu element', !!allPostsMenu);
+    logTest('Has "Devlog" submenu element', !!devlogMenu);
+    
+    if (allPostsMenu) {
+      const hasArrow = allPostsMenu.textContent.includes('>');
+      const hasSubmenu = allPostsMenu.querySelector('.menu-submenu');
+      logTest('All Posts has ">" arrow', hasArrow);
+      logTest('All Posts has submenu content', !!hasSubmenu);
+      
+      if (hasSubmenu) {
+        logTest('All Posts submenu has items', hasSubmenu.children.length > 0, `${hasSubmenu.children.length} items`);
+      }
+    }
+    
+    if (devlogMenu) {
+      const hasArrow = devlogMenu.textContent.includes('>');
+      const hasSubmenu = devlogMenu.querySelector('.menu-submenu');
+      logTest('Devlog has ">" arrow', hasArrow);
+      logTest('Devlog has submenu content', !!hasSubmenu);
+      
+      if (hasSubmenu) {
+        logTest('Devlog submenu has items', hasSubmenu.children.length > 0, `${hasSubmenu.children.length} items`);
+      }
+    }
+    
+    // CRITICAL TEST: Check that individual posts are NOT directly in navigation
+    const postLikeItems = directChildren.filter(child => {
+      const text = child.textContent.trim();
+      // Exclude known navigation items
+      const knownItems = ['Blog', 'About', 'Contact', 'Most Recent', 'Random Post', 'All Posts >', 'Devlog >'];
+      return !knownItems.includes(text) && text.length > 0 && !text.includes('---');
+    });
+    
+    const noDirectPosts = postLikeItems.length === 0;
+    logTest('No direct post links in navigation', noDirectPosts, 
+            noDirectPosts ? 'Clean navigation' : `Found ${postLikeItems.length} unexpected items`);
+    
+    if (!noDirectPosts) {
+      logTest('Unexpected items found', false, postLikeItems.map(item => item.textContent.trim()).join(', '));
+    }
+    
+    // Check if posts are loaded globally
+    const postsLoaded = !!(window.allPosts && window.allPosts.length > 0);
+    logTest('Posts loaded globally', postsLoaded, postsLoaded ? `${window.allPosts.length} posts` : 'No posts');
+    
+    // Check if navigation setup function exists
+    const hasSetupFunction = typeof window.loadPostsWithKeywords === 'function';
+    logTest('Navigation setup function available', hasSetupFunction);
+    
+    // Overall assessment
+    const navigationWorking = taskbarLoaded && !!allPostsMenu && !!devlogMenu && noDirectPosts;
+    logTest('OVERALL: Navigation working correctly', navigationWorking, 
+            navigationWorking ? 'All checks passed' : 'Some issues found');
+            
+  } else {
+    logTest('Cannot test navigation', false, 'Taskbar not loaded');
+  }
+}
+
+// Auto-run test when everything is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait for taskbar and scripts to load
+  setTimeout(() => {
+    runDetailedTest();
+  }, 1500);
+});
+
+// Also run test when scripts are loaded
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    clearTest();
+    logTest('Running post-load test', true);
+    runDetailedTest();
+  }, 500);
+});
+</script>
+
+</body>
+</html>
