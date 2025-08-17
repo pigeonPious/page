@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theme Test Final - Build 20250818</title>
+  <link rel="stylesheet" href="style.css?v=20250818">
+  <style>
+    .test-panel {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      width: 350px;
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 15px;
+      z-index: 1000;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .test-status {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 3px;
+    }
+    .pass { background: #d4edda; color: #155724; }
+    .fail { background: #f8d7da; color: #721c24; }
+    .pending { background: #fff3cd; color: #856404; }
+    .test-log {
+      background: #000;
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 10px;
+      height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    button {
+      margin: 2px;
+      padding: 5px 10px;
+      font-size: 11px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-container">
+  <main class="main-column">
+    <header class="post-header">
+      <h1 class="post-title">Theme Options Final Test</h1>
+      <div class="post-date">Build: 20250818</div>
+    </header>
+    
+    <section class="post-content">
+      <p>Testing the View menu Custom and Random theme options.</p>
+      
+      <h3>Instructions:</h3>
+      <ol>
+        <li>Click "View" in the taskbar above</li>
+        <li>Verify "Custom…" and "Random" options are present</li>
+        <li>Test each option</li>
+        <li>Check the test panel for automated results</li>
+      </ol>
+      
+      <h3>Expected Results:</h3>
+      <ul>
+        <li>Custom option should apply a default custom color theme</li>
+        <li>Random option should generate a random color theme</li>
+        <li>Theme changes should persist</li>
+        <li>Body classes should update appropriately</li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<div class="test-panel">
+  <h4>Automated Test Results</h4>
+  <div id="test-results">
+    <div class="test-status pending" id="menu-test">
+      <strong>View Menu:</strong> <span id="menu-status">Testing...</span>
+    </div>
+    <div class="test-status pending" id="custom-test">
+      <strong>Custom Theme:</strong> <span id="custom-status">Testing...</span>
+    </div>
+    <div class="test-status pending" id="random-test">
+      <strong>Random Theme:</strong> <span id="random-status">Testing...</span>
+    </div>
+  </div>
+  
+  <div style="margin-top: 10px;">
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="testCustom()">Test Custom</button>
+    <button onclick="testRandom()">Test Random</button>
+    <button onclick="clearLog()">Clear Log</button>
+  </div>
+  
+  <div class="test-log" id="test-log"></div>
+</div>
+
+<!-- PPPage Modular System -->
+<script src="modules/core.js?v=20250818"></script>
+<script src="modules/posts.js?v=20250818"></script>
+<script src="modules/navigation.js?v=20250818"></script>
+<script src="modules/editor.js?v=20250818"></script>
+<script src="modules/theme.js?v=20250818"></script>
+<script src="modules/taskbar.js?v=20250818"></script>
+<script src="modules/console.js?v=20250818"></script>
+<script src="modules/app.js?v=20250818"></script>
+
+<script>
+let testLog = [];
+
+function log(message) {
+  const timestamp = new Date().toTimeString().split(' ')[0];
+  const logMessage = `${timestamp}: ${message}`;
+  testLog.push(logMessage);
+  
+  const logElement = document.getElementById('test-log');
+  if (logElement) {
+    logElement.innerHTML = testLog.slice(-15).join('\n');
+    logElement.scrollTop = logElement.scrollHeight;
+  }
+  console.log(logMessage);
+}
+
+function updateStatus(testId, status, message) {
+  const element = document.getElementById(testId);
+  const statusSpan = document.getElementById(testId.replace('-test', '-status'));
+  
+  if (element && statusSpan) {
+    element.className = `test-status ${status}`;
+    statusSpan.textContent = message;
+  }
+}
+
+function testViewMenu() {
+  log('=== Testing View Menu ===');
+  
+  const viewMenu = document.querySelector('[data-menu]');
+  if (!viewMenu) {
+    updateStatus('menu-test', 'fail', 'View menu not found');
+    log('❌ View menu not found');
+    return false;
+  }
+  
+  // Check for dropdown
+  const dropdown = viewMenu.closest('.menu-item').querySelector('.menu-dropdown');
+  if (!dropdown) {
+    updateStatus('menu-test', 'fail', 'View dropdown not found');
+    log('❌ View dropdown not found');
+    return false;
+  }
+  
+  // Check for Custom and Random options
+  const customOption = dropdown.querySelector('[data-mode="custom"]');
+  const randomOption = dropdown.querySelector('[data-mode="random"]');
+  
+  if (!customOption) {
+    updateStatus('menu-test', 'fail', 'Custom option missing');
+    log('❌ Custom option not found in View menu');
+    return false;
+  }
+  
+  if (!randomOption) {
+    updateStatus('menu-test', 'fail', 'Random option missing');
+    log('❌ Random option not found in View menu');
+    return false;
+  }
+  
+  updateStatus('menu-test', 'pass', 'Both options present');
+  log('✅ View menu has both Custom and Random options');
+  return true;
+}
+
+function testCustom() {
+  log('=== Testing Custom Theme ===');
+  
+  const customButton = document.querySelector('[data-mode="custom"]');
+  if (!customButton) {
+    updateStatus('custom-test', 'fail', 'Custom button not found');
+    log('❌ Custom theme button not found');
+    return false;
+  }
+  
+  // Record current state
+  const originalBg = document.body.style.getPropertyValue('--bg');
+  const originalClasses = document.body.className;
+  
+  log('Clicking custom theme button...');
+  customButton.click();
+  
+  setTimeout(() => {
+    const hasCustomMode = document.body.classList.contains('custom-mode');
+    const hasCustomBg = document.body.style.getPropertyValue('--bg');
+    
+    if (hasCustomMode || hasCustomBg) {
+      updateStatus('custom-test', 'pass', 'Custom theme applied');
+      log('✅ Custom theme applied successfully');
+      log(`Body classes: ${document.body.className}`);
+      log(`Custom bg: ${hasCustomBg}`);
+    } else {
+      updateStatus('custom-test', 'fail', 'Custom theme not applied');
+      log('❌ Custom theme not applied');
+      log(`Body classes: ${document.body.className}`);
+      log(`Original bg: ${originalBg}, New bg: ${hasCustomBg}`);
+    }
+  }, 500);
+  
+  return true;
+}
+
+function testRandom() {
+  log('=== Testing Random Theme ===');
+  
+  const randomButton = document.querySelector('[data-mode="random"]');
+  if (!randomButton) {
+    updateStatus('random-test', 'fail', 'Random button not found');
+    log('❌ Random theme button not found');
+    return false;
+  }
+  
+  const originalBg = document.body.style.getPropertyValue('--bg');
+  
+  log('Clicking random theme button...');
+  randomButton.click();
+  
+  setTimeout(() => {
+    const newBg = document.body.style.getPropertyValue('--bg');
+    const hasCustomMode = document.body.classList.contains('custom-mode');
+    
+    if (hasCustomMode && newBg && newBg !== originalBg) {
+      updateStatus('random-test', 'pass', 'Random theme generated');
+      log('✅ Random theme generated successfully');
+      log(`New background: ${newBg}`);
+    } else {
+      updateStatus('random-test', 'fail', 'Random theme not generated');
+      log('❌ Random theme not generated');
+      log(`Original: ${originalBg}, New: ${newBg}`);
+      log(`Has custom mode: ${hasCustomMode}`);
+    }
+  }, 500);
+  
+  return true;
+}
+
+function runAllTests() {
+  log('=== Starting Comprehensive Theme Tests ===');
+  
+  setTimeout(() => testViewMenu(), 100);
+  setTimeout(() => testCustom(), 1000);
+  setTimeout(() => testRandom(), 2500);
+}
+
+function clearLog() {
+  testLog = [];
+  document.getElementById('test-log').innerHTML = '';
+}
+
+// Auto-run tests when page loads
+setTimeout(() => {
+  log('Auto-running theme tests...');
+  runAllTests();
+}, 2000);
+
+// Monitor for errors
+window.addEventListener('error', (e) => {
+  log(`ERROR: ${e.message}`);
+});
+</script>
+
+</body>
+</html>

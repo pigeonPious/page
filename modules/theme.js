@@ -172,7 +172,6 @@ const ThemeModule = () => ({
       b: parseInt(match[3])
     };
   },
-  },
 
   toggleSidebar() {
     const sidebar = ppPage.utils.getElement('#sidebar-posts');

@@ -44,7 +44,7 @@ function generateBuildWord() {
   ];
   
   // Use build date as seed for consistent word per build
-  const buildDate = '20250824'; // This should be updated with each build
+  const buildDate = '20250818'; // This should be updated with each build
   let seed = 0;
   for (let i = 0; i < buildDate.length; i++) {
     seed += buildDate.charCodeAt(i);
@@ -82,23 +82,6 @@ function getSharedTaskbarHTML() {
   `;
 }
 
-function loadSharedTaskbar() {
-  try {
-    console.log('🔧 loadSharedTaskbar() called');
-    
-    const taskbarHTML = getSharedTaskbarHTML();
-    console.log('✅ Generated taskbar HTML, length:', taskbarHTML.length);
-    
-    // Find the existing menu bar and replace it
-    const existingMenuBar = document.querySelector('.menu-bar');
-    if (existingMenuBar) {
-      console.log('🔄 Replacing existing menu bar');
-      existingMenuBar.outerHTML = taskbarHTML;
-    } else {
-      console.log('➕ Inserting new menu bar at beginning of body');
-      document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
-    }
-    
 function loadSharedTaskbar() {
   try {
     console.log('🔧 loadSharedTaskbar() called');
@@ -157,6 +140,8 @@ function loadSharedTaskbar() {
 
 function initializeTaskbarContent() {
   try {
+    console.log('🔧 Initializing taskbar content...');
+    
     // Show/hide editor-specific items based on page
     const isEditorPage = document.getElementById('postTitle') !== null;
     const editorOnlyItems = document.querySelectorAll('.editor-only');
@@ -169,17 +154,41 @@ function initializeTaskbarContent() {
       }
     });
     
-    // Initialize menu functionality immediately
-    const menuInitialized = initializeMenuDropdowns();
-    if (!menuInitialized) {
-      console.error('Menu dropdown initialization failed, retrying...');
-      setTimeout(() => initializeMenuDropdowns(), 200);
-    }
+    // Robust menu initialization with multiple attempts
+    let menuInitialized = false;
+    let attempts = 0;
+    const maxAttempts = 3;
     
-    // Initialize module-dependent functionality
-    setTimeout(() => {
-      initializeMenuSystem();
-    }, 100);
+    const tryInitializeMenus = () => {
+      attempts++;
+      console.log(`Menu initialization attempt ${attempts}/${maxAttempts}`);
+      
+      const menuItems = document.querySelectorAll('.menu-item');
+      if (menuItems.length > 0) {
+        const success = initializeMenuDropdowns();
+        if (success) {
+          menuInitialized = true;
+          console.log('✅ Menu initialization successful');
+          
+          // Initialize module-dependent functionality
+          setTimeout(() => {
+            initializeMenuSystem();
+          }, 100);
+          
+          return;
+        }
+      }
+      
+      if (attempts < maxAttempts) {
+        console.log(`Menu initialization failed, retrying in ${200 * attempts}ms...`);
+        setTimeout(tryInitializeMenus, 200 * attempts);
+      } else {
+        console.error('❌ Menu initialization failed after maximum attempts');
+      }
+    };
+    
+    // Start menu initialization
+    tryInitializeMenus();
     
     // Initialize theme module's view menu if available
     setTimeout(() => {
@@ -195,11 +204,10 @@ function initializeTaskbarContent() {
       if (typeof setupViewMenu === 'function') {
         setupViewMenu();
       }
-    }, 200);
+    }, 300);
     
     // Add simple editor specific functionality
     if (isEditorPage && typeof editor !== 'undefined') {
-      // Replace the main site's "New" functionality with simple editor new document
       const newPostLink = document.getElementById('new-post');
       if (newPostLink) {
         newPostLink.onclick = (e) => {
@@ -231,6 +239,16 @@ function initializeTaskbarContent() {
     
   } catch (error) {
     console.error('Error initializing taskbar content:', error);
+    
+    // Emergency fallback - try again after delay
+    setTimeout(() => {
+      console.log('Attempting emergency taskbar recovery...');
+      try {
+        initializeMenuDropdowns();
+      } catch (fallbackError) {
+        console.error('Emergency taskbar recovery failed:', fallbackError);
+      }
+    }, 1000);
   }
 }
 
@@ -318,14 +336,46 @@ function initializeMenuSystem() {
 function initializeMenuDropdowns() {
   console.log('Setting up menu dropdown functionality...');
   
-  // Menu dropdown functionality
+  // Clear any existing listeners first to prevent conflicts
+  const existingItems = document.querySelectorAll('.menu-item');
+  existingItems.forEach(item => {
+    // Remove all existing event listeners by cloning and replacing
+    const newItem = item.cloneNode(true);
+    item.parentNode.replaceChild(newItem, item);
+  });
+  
+  // Now get fresh references after cleanup
   const menuItems = document.querySelectorAll('.menu-item');
-  console.log(`Found ${menuItems.length} menu items`);
+  console.log(`Found ${menuItems.length} menu items (after cleanup)`);
   
   if (menuItems.length === 0) {
     console.error('No menu items found! Taskbar may not be loaded yet.');
     return false;
   }
+  
+  // Create a centralized menu state manager
+  const menuState = {
+    openMenu: null,
+    
+    closeAll() {
+      menuItems.forEach(item => {
+        item.classList.remove('open');
+      });
+      this.openMenu = null;
+    },
+    
+    toggle(menuItem) {
+      if (this.openMenu === menuItem) {
+        // Close current menu
+        this.closeAll();
+      } else {
+        // Close all and open this one
+        this.closeAll();
+        menuItem.classList.add('open');
+        this.openMenu = menuItem;
+      }
+    }
+  };
   
   menuItems.forEach((item, index) => {
     const label = item.querySelector('.label');
@@ -335,28 +385,28 @@ function initializeMenuDropdowns() {
       const labelText = label.textContent.trim();
       console.log(`Setting up menu: "${labelText}"`);
       
-      // Prevent text deselection on mousedown
-      label.addEventListener('mousedown', (e) => {
-        e.preventDefault(); // This prevents text deselection
-      });
-      
-      label.addEventListener('click', (e) => {
+      // Single, clean event listener with proper event handling
+      const clickHandler = (e) => {
+        e.preventDefault();
         e.stopPropagation();
         
         console.log(`Menu "${labelText}" clicked`);
+        menuState.toggle(item);
         
-        // Close all other dropdowns
-        menuItems.forEach(otherItem => {
-          if (otherItem !== item) {
-            otherItem.classList.remove('open');
-          }
-        });
-        
-        // Toggle current dropdown
-        const wasOpen = item.classList.contains('open');
-        item.classList.toggle('open');
-        console.log(`Menu "${labelText}" is now: ${item.classList.contains('open') ? 'OPEN' : 'CLOSED'}`);
+        const isOpen = item.classList.contains('open');
+        console.log(`Menu "${labelText}" is now: ${isOpen ? 'OPEN' : 'CLOSED'}`);
+      };
+      
+      // Attach both mousedown (for text selection prevention) and click
+      label.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent text deselection
       });
+      
+      label.addEventListener('click', clickHandler);
+      
+      // Store reference for debugging
+      label._taskbarClickHandler = clickHandler;
+      
     } else {
       console.warn(`Menu item ${index} missing label or dropdown:`, {
         hasLabel: !!label,
@@ -374,46 +424,25 @@ function initializeMenuDropdowns() {
     });
   });
   
-  // Close dropdowns when clicking outside
-  document.addEventListener('click', () => {
-    menuItems.forEach(item => {
-      item.classList.remove('open');
-    });
-  });
+  // Global click handler to close menus (with proper event handling)
+  const globalClickHandler = (e) => {
+    // Check if click is outside all menu items
+    if (!e.target.closest('.menu-item')) {
+      menuState.closeAll();
+    }
+  };
+  
+  // Remove any existing global handlers to prevent duplicates
+  document.removeEventListener('click', globalClickHandler);
+  document.addEventListener('click', globalClickHandler);
   
   // Setup theme switching for View menu
   setupThemeSwitching();
   
-  console.log('✅ Menu dropdown functionality initialized');
+  console.log('✅ Menu dropdown functionality initialized with state management');
   return true;
 }
 
-function setupThemeSwitching() {
-  console.log('Setting up theme switching...');
-  
-  // Handle theme mode buttons (Dark, Light, Custom, Random)
-  const themeButtons = document.querySelectorAll('[data-mode]');
-  console.log(`Found ${themeButtons.length} theme buttons`);
-  
-  themeButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const mode = button.getAttribute('data-mode');
-      console.log(`Theme button clicked: ${mode}`);
-      
-      // Log feature description to console
-      const descriptions = {
-        'dark': 'Switch to dark theme for comfortable night reading',
-        'light': 'Switch to light theme for daytime browsing',
-        'custom': 'Apply a custom color scheme for personalization',
-        'random': 'Generate a random color theme for visual variety'
-      };
-      if (descriptions[mode]) {
-        logFeature('Theme Switch', descriptions[mode]);
-      }
-      
 function setupThemeSwitching() {
   console.log('Setting up theme switching...');
   
@@ -547,54 +576,6 @@ function applyFallbackTheme(mode) {
   } catch (error) {
     console.error('Error applying fallback theme:', error);
   }
-}
-    });
-  });
-  
-  // Setup console toggle button
-  const consoleToggleButton = document.getElementById('toggle-console');
-  if (consoleToggleButton) {
-    // Function to update button text based on console visibility
-    const updateConsoleButtonText = () => {
-      if (window.ppPage && window.ppPage.getModule) {
-        const consoleModule = window.ppPage.getModule('console');
-        if (consoleModule && consoleModule.isConsoleVisible) {
-          const isVisible = consoleModule.isConsoleVisible();
-          consoleToggleButton.textContent = isVisible ? 'Hide Console' : 'Show Console';
-        }
-      }
-    };
-    
-    // Set initial text
-    updateConsoleButtonText();
-    
-    consoleToggleButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Log feature description to console
-      logFeature('Console Toggle', 'Show/hide the debug console output window');
-      
-      // Toggle console visibility
-      if (window.ppPage && window.ppPage.getModule) {
-        const consoleModule = window.ppPage.getModule('console');
-        if (consoleModule) {
-          // Check current visibility and toggle
-          if (consoleModule.isConsoleVisible()) {
-            consoleModule.hide();
-          } else {
-            consoleModule.show();
-          }
-          
-          // Update button text after toggling
-          setTimeout(updateConsoleButtonText, 50);
-        }
-      }
-    });
-    console.log('✅ Console toggle button setup complete');
-  }
-  
-  console.log('✅ Theme switching setup complete');
 }
 
 function initializeTaskbarButtons() {
@@ -821,42 +802,64 @@ window.ensureTaskbar = function() {
   }
 };
 
+// Module factory for the modular system
+const TaskbarModule = () => ({
+  async init() {
+    console.log('🔧 TaskbarModule.init() called from factory');
+    try {
+      // Check if taskbar already exists
+      const existingTaskbar = document.querySelector('.menu-bar');
+      if (existingTaskbar) {
+        console.log('Taskbar already exists, reinitializing...');
+        initializeTaskbarContent();
+      } else {
+        loadSharedTaskbar();
+      }
+      console.log('✅ TaskbarModule.init() completed successfully');
+    } catch (error) {
+      console.error('❌ TaskbarModule.init() failed:', error);
+      // Retry once
+      setTimeout(() => {
+        try {
+          loadSharedTaskbar();
+        } catch (retryError) {
+          console.error('❌ TaskbarModule.init() retry failed:', retryError);
+        }
+      }, 500);
+    }
+  },
+  
+  load: loadSharedTaskbar,
+  initialize: initializeMenuSystem,
+  ensureLoaded: function() {
+    const taskbarExists = document.querySelector('.menu-bar');
+    if (!taskbarExists) {
+      this.init();
+    }
+    return taskbarExists;
+  }
+});
+
 // Export for modular system with enhanced error handling
 if (typeof window !== 'undefined') {
-  window.TaskbarModule = {
+  // Export both the factory and the legacy object for compatibility
+  window.TaskbarModule = TaskbarModule;
+  
+  // Legacy object for direct access
+  window.TaskbarModuleLegacy = {
     async init() {
-      console.log('🔧 TaskbarModule.init() called');
-      try {
-        // Check if taskbar already exists
-        const existingTaskbar = document.querySelector('.menu-bar');
-        if (existingTaskbar) {
-          console.log('Taskbar already exists, reinitializing...');
-          initializeTaskbarContent();
-        } else {
-          loadSharedTaskbar();
-        }
-        console.log('✅ TaskbarModule.init() completed successfully');
-      } catch (error) {
-        console.error('❌ TaskbarModule.init() failed:', error);
-        // Retry once
-        setTimeout(() => {
-          try {
-            loadSharedTaskbar();
-          } catch (retryError) {
-            console.error('❌ TaskbarModule.init() retry failed:', retryError);
-          }
-        }, 500);
-      }
+      const instance = TaskbarModule();
+      return await instance.init();
     },
     load: loadSharedTaskbar,
     initialize: initializeMenuSystem,
     ensureLoaded: function() {
       const taskbarExists = document.querySelector('.menu-bar');
       if (!taskbarExists) {
-        this.init();
+        loadSharedTaskbar();
       }
       return taskbarExists;
     }
   };
-  console.log('✅ TaskbarModule exported to window');
+  console.log('✅ TaskbarModule factory exported to window');
 }

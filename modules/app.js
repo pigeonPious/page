@@ -51,25 +51,32 @@
       { name: 'theme', factory: window.ThemeModule },
       { name: 'taskbar', factory: () => {
         console.log('🔧 Creating taskbar module instance...');
-        if (window.TaskbarModule) {
-          // Return a proper module instance that wraps TaskbarModule
+        if (typeof window.TaskbarModule === 'function') {
+          // TaskbarModule is now a factory function
+          return window.TaskbarModule();
+        } else if (window.TaskbarModuleLegacy) {
+          // Fallback to legacy object wrapper
           return {
             async init() {
-              console.log('🔧 Taskbar module init() called');
-              if (typeof window.TaskbarModule.init === 'function') {
-                await window.TaskbarModule.init();
+              console.log('🔧 Taskbar module init() called via legacy');
+              if (typeof window.TaskbarModuleLegacy.init === 'function') {
+                await window.TaskbarModuleLegacy.init();
               } else {
-                console.error('TaskbarModule.init() not available');
+                console.error('TaskbarModuleLegacy.init() not available');
               }
             },
-            load: window.TaskbarModule.load,
-            initialize: window.TaskbarModule.initialize
+            load: window.TaskbarModuleLegacy.load,
+            initialize: window.TaskbarModuleLegacy.initialize
           };
         } else {
-          console.error('TaskbarModule not found, creating fallback');
+          console.error('Neither TaskbarModule factory nor legacy object found, creating fallback');
           return { 
             init: () => {
               console.error('Taskbar module init called but TaskbarModule not available');
+              // Try global function as last resort
+              if (typeof window.ensureTaskbar === 'function') {
+                window.ensureTaskbar();
+              }
             }
           };
         }
