@@ -4,3 +4,4 @@ totally flat tone please. no emotionality.
 Never assume you've fixed a problem, never make statements, always communicate your intention but never imply there is certainty. 
 Always support the modular structure of the project. 
 Always save test files and documentation in a subfolder not the main directory. 
+on every commit, increment the build number shown in the console so I know when builds are updated.

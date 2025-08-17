@@ -83,8 +83,10 @@ function loadSharedTaskbar() {
       }
     });
     
-    // Initialize menu functionality after loading
-    initializeMenuSystem();
+    // Wait a moment for DOM to update, then initialize menu functionality
+    setTimeout(() => {
+      initializeMenuSystem();
+    }, 50);
     
     // Initialize theme module's view menu if available
     if (window.PPPageCore && window.PPPageCore.modules.theme) {
@@ -134,6 +136,16 @@ function loadSharedTaskbar() {
 
 function initializeMenuSystem() {
   try {
+    console.log('Initializing menu system...');
+    
+    // Verify taskbar elements exist first
+    const menuBar = document.querySelector('.menu-bar');
+    if (!menuBar) {
+      console.error('Menu bar not found, retrying in 100ms...');
+      setTimeout(initializeMenuSystem, 100);
+      return;
+    }
+    
     // Initialize basic menu dropdown functionality first
     initializeMenuDropdowns();
     
@@ -161,6 +173,11 @@ function initializeMenuDropdowns() {
   // Menu dropdown functionality
   const menuItems = document.querySelectorAll('.menu-item');
   console.log(`Found ${menuItems.length} menu items`);
+  
+  if (menuItems.length === 0) {
+    console.error('No menu items found! Taskbar may not be loaded yet.');
+    return false;
+  }
   
   menuItems.forEach((item, index) => {
     const label = item.querySelector('.label');
@@ -192,6 +209,12 @@ function initializeMenuDropdowns() {
         item.classList.toggle('open');
         console.log(`Menu "${labelText}" is now: ${item.classList.contains('open') ? 'OPEN' : 'CLOSED'}`);
       });
+    } else {
+      console.warn(`Menu item ${index} missing label or dropdown:`, {
+        hasLabel: !!label,
+        hasDropdown: !!dropdown,
+        item: item
+      });
     }
   });
   
@@ -214,6 +237,7 @@ function initializeMenuDropdowns() {
   setupThemeSwitching();
   
   console.log('✅ Menu dropdown functionality initialized');
+  return true;
 }
 
 function setupThemeSwitching() {
