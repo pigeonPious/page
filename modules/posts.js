@@ -35,6 +35,9 @@ const PostsModule = () => ({
       
       ppPage.log(`Loaded ${posts.length} posts successfully`);
       
+      // Dispatch posts-loaded event for dependent modules
+      document.dispatchEvent(new Event('posts-loaded'));
+
       // Auto-load first post if on main page
       if (this.shouldAutoLoadPost()) {
         await this.loadPost(posts[0].slug);

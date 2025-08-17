@@ -8,12 +8,19 @@ const NavigationModule = () => ({
   
   async init() {
     ppPage.log('Initializing Navigation module...');
-    
-    // Wait for posts to be loaded
+    // Wait for posts to be loaded before populating menus
     const postsModule = ppPage.getModule('posts');
     if (postsModule) {
-      this.posts = postsModule.getAllPosts();
-      this.setupNavigationMenus();
+      // If posts are not loaded, wait for posts-loaded event
+      if (!postsModule.posts || postsModule.posts.length === 0) {
+        document.addEventListener('posts-loaded', () => {
+          this.posts = postsModule.getAllPosts();
+          this.setupNavigationMenus();
+        }, { once: true });
+      } else {
+        this.posts = postsModule.getAllPosts();
+        this.setupNavigationMenus();
+      }
     }
   },
 
