@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module Loading Diagnostic</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .status { padding: 10px; margin: 5px 0; border-radius: 3px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .pending { background: #fff3cd; color: #856404; }
+        .log { background: #f8f9fa; padding: 10px; height: 300px; overflow-y: auto; border: 1px solid #dee2e6; }
+    </style>
+</head>
+<body>
+    <h1>Module Loading Diagnostic</h1>
+    <div id="diagnostics">
+        <div class="status pending" id="core-status">Core Module: Loading...</div>
+        <div class="status pending" id="taskbar-status">Taskbar Module: Loading...</div>
+        <div class="status pending" id="app-status">App Module: Loading...</div>
+        <div class="status pending" id="pppage-status">PPPage Instance: Loading...</div>
+    </div>
+    
+    <h2>Console Log:</h2>
+    <div class="log" id="console-log"></div>
+    
+    <button onclick="runDiagnostic()">Run Diagnostic</button>
+    <button onclick="clearLog()">Clear Log</button>
+
+    <!-- Load modules one by one to see where it fails -->
+    <script>
+        let logEntries = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            const entry = `[${timestamp}] ${message}`;
+            logEntries.push(entry);
+            
+            const logEl = document.getElementById('console-log');
+            logEl.innerHTML = logEntries.join('\n');
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            console.log(entry);
+        }
+        
+        function updateStatus(id, status, message) {
+            const el = document.getElementById(id);
+            el.className = `status ${status}`;
+            el.textContent = message;
+        }
+        
+        function runDiagnostic() {
+            log('=== Starting Module Diagnostic ===');
+            
+            // Check core module
+            setTimeout(() => {
+                if (typeof window.ppPage !== 'undefined') {
+                    updateStatus('core-status', 'pass', 'Core Module: ✅ Loaded');
+                    log('✅ PPPage core found');
+                } else {
+                    updateStatus('core-status', 'fail', 'Core Module: ❌ Missing');
+                    log('❌ PPPage core not found');
+                }
+            }, 500);
+            
+            // Check taskbar module
+            setTimeout(() => {
+                if (typeof window.TaskbarModule !== 'undefined') {
+                    updateStatus('taskbar-status', 'pass', 'Taskbar Module: ✅ Loaded');
+                    log('✅ TaskbarModule found');
+                } else {
+                    updateStatus('taskbar-status', 'fail', 'Taskbar Module: ❌ Missing');
+                    log('❌ TaskbarModule not found');
+                }
+            }, 1000);
+            
+            // Check app initialization
+            setTimeout(() => {
+                if (window.ppPage && window.ppPage.getModule) {
+                    const taskbarMod = window.ppPage.getModule('taskbar');
+                    if (taskbarMod) {
+                        updateStatus('app-status', 'pass', 'App Module: ✅ Taskbar Registered');
+                        log('✅ Taskbar module registered in ppPage');
+                    } else {
+                        updateStatus('app-status', 'fail', 'App Module: ❌ Taskbar Not Registered');
+                        log('❌ Taskbar module not registered in ppPage');
+                    }
+                } else {
+                    updateStatus('app-status', 'fail', 'App Module: ❌ PPPage Not Ready');
+                    log('❌ PPPage not ready for module registration');
+                }
+            }, 2000);
+            
+            // Check ppPage instance
+            setTimeout(() => {
+                if (window.ppPage && window.ppPage.initialized) {
+                    updateStatus('pppage-status', 'pass', 'PPPage Instance: ✅ Initialized');
+                    log('✅ PPPage fully initialized');
+                } else if (window.ppPage) {
+                    updateStatus('pppage-status', 'pending', 'PPPage Instance: ⏳ Not Initialized');
+                    log('⏳ PPPage exists but not initialized');
+                } else {
+                    updateStatus('pppage-status', 'fail', 'PPPage Instance: ❌ Missing');
+                    log('❌ PPPage instance missing');
+                }
+            }, 2500);
+        }
+        
+        function clearLog() {
+            logEntries = [];
+            document.getElementById('console-log').innerHTML = '';
+        }
+        
+        // Override console to capture all messages
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            const entry = `[${timestamp}] ${args.join(' ')}`;
+            logEntries.push(entry);
+            
+            const logEl = document.getElementById('console-log');
+            if (logEl) {
+                logEl.innerHTML = logEntries.slice(-50).join('\n');
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+        };
+        
+        log('Diagnostic page loaded, loading modules...');
+    </script>
+
+    <!-- Load modules in order -->
+    <script src="modules/core.js?v=20250824"></script>
+    <script src="modules/posts.js?v=20250824"></script>
+    <script src="modules/navigation.js?v=20250824"></script>
+    <script src="modules/editor.js?v=20250824"></script>
+    <script src="modules/theme.js?v=20250824"></script>
+    <script src="modules/taskbar.js?v=20250824"></script>
+    <script src="modules/console.js?v=20250824"></script>
+    <script src="modules/app.js?v=20250824"></script>
+
+    <script>
+        // Auto-run diagnostic after modules load
+        setTimeout(() => {
+            log('Auto-running diagnostic...');
+            runDiagnostic();
+        }, 3000);
+    </script>
+</body>
+</html>
