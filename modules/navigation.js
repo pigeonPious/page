@@ -94,13 +94,17 @@ const NavigationModule = () => ({
       postEntry.tabIndex = 0;
       postEntry.setAttribute('role', 'menuitem');
       // Use ppPage.utils.addEvent to ensure correct context
-      ppPage.utils.addEvent(postEntry, 'click', () => {
-        this.navigateToPost(post.slug);
+      ppPage.utils.addEvent(postEntry, 'click', async () => {
+        await this.navigateToPost(post.slug);
       });
       submenu.appendChild(postEntry);
     });
     
     menu.appendChild(submenu);
+    // Ensure submenu is visible on hover
+    menu.onmouseenter = () => { submenu.style.display = 'block'; };
+    menu.onmouseleave = () => { submenu.style.display = 'none'; };
+    submenu.style.display = 'none';
   },
 
   setupDevlogMenu() {
