@@ -205,7 +205,7 @@ const editor = {
 
   // Initialize editor
   init() {
-    showConsoleMessage('Initializing editor...', 'loading');
+    console.log('Initializing editor...');
     this.setupEventListeners();
     // this.setupMenus(); // Disabled - using shared taskbar menu system
     this.setupModalManagement();
@@ -216,7 +216,6 @@ const editor = {
     this.checkForPostEditing();
     
     console.log('Simple Editor initialized');
-    showConsoleMessage('Editor ready', 'success', 3000);
     
     // Update the global function now that editor is ready
     window.makeNoteFromTaskbar = () => this.makeNote();
@@ -248,7 +247,6 @@ const editor = {
     });
     document.getElementById('publish-btn').addEventListener('click', (e) => {
       console.log('Publish button clicked');
-      showConsoleMessage('Publish button clicked', 'info', 2000);
       this.publishPost();
     });
     
@@ -736,20 +734,17 @@ const editor = {
 
   async publishPost() {
     console.log('publishPost() called!');
-    showConsoleMessage('Starting post publication...', 'loading');
     
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('visualEditor').innerHTML.trim();
     
     if (!title) {
       this.showMessage('Please enter a title for your post.');
-      showConsoleMessage('Error: Post title is required', 'error', 3000);
       return;
     }
     
     if (!content) {
       this.showMessage('Please write some content for your post.');
-      showConsoleMessage('Error: Post content is required', 'error', 3000);
       return;
     }
 
@@ -757,11 +752,8 @@ const editor = {
     const config = this.getGitHubConfig();
     if (!config || !config.token || !config.repo) {
       this.showMessage('Please set up GitHub configuration first. Go to Connect > Setup GitHub.', 'Setup Required');
-      showConsoleMessage('Error: GitHub not configured', 'error', 5000);
       return;
     }
-
-    showConsoleMessage('GitHub configuration found, preparing to publish...', 'info');
 
     // Show box style 1 input for commit message
     this.showBoxInput('publishInputBox', async (commitMessage) => {

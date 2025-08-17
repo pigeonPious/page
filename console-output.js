@@ -115,8 +115,9 @@ function initializeConsoleOutput() {
 function showConsoleMessage(message, type = 'info', duration = 0) {
   const consoleElement = document.getElementById('global-console');
   if (!consoleElement) {
-    initializeConsoleOutput();
-    return showConsoleMessage(message, type, duration);
+    // Console not ready yet, just log to browser console
+    console.log(`Console: [${type.toUpperCase()}] ${message}`);
+    return;
   }
   
   const iconElement = consoleElement.querySelector('.console-icon');
@@ -227,9 +228,20 @@ function initializeTooltips() {
   setTimeout(checkTaskbar, 500);
 }
 
-// Convenience functions
-window.showConsoleMessage = showConsoleMessage;
-window.hideConsoleMessage = hideConsoleMessage;
+// Convenience functions - safe versions
+window.showConsoleMessage = function(message, type = 'info', duration = 0) {
+  if (typeof showConsoleMessage === 'function') {
+    showConsoleMessage(message, type, duration);
+  } else {
+    console.log(`Console: [${type.toUpperCase()}] ${message}`);
+  }
+};
+
+window.hideConsoleMessage = function() {
+  if (typeof hideConsoleMessage === 'function') {
+    hideConsoleMessage();
+  }
+};
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
