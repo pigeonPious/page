@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Module Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f0f0f0; }
+        .step { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .pending { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>Simple Module Test</h1>
+    <div id="results">
+        <div class="step pending" id="step1">Step 1: Loading Core...</div>
+        <div class="step pending" id="step2">Step 2: Loading Taskbar...</div>
+        <div class="step pending" id="step3">Step 3: Running App...</div>
+        <div class="step pending" id="step4">Step 4: Checking Taskbar...</div>
+    </div>
+
+    <script>
+        function updateStep(stepId, status, message) {
+            const el = document.getElementById(stepId);
+            el.className = `step ${status}`;
+            el.textContent = message;
+        }
+
+        console.log('Starting simple test...');
+    </script>
+
+    <!-- Core Module -->
+    <script src="modules/core.js?v=20250824"></script>
+    <script>
+        setTimeout(() => {
+            if (typeof window.ppPage !== 'undefined') {
+                updateStep('step1', 'pass', 'Step 1: ✅ Core Loaded');
+                console.log('✅ Core loaded');
+            } else {
+                updateStep('step1', 'fail', 'Step 1: ❌ Core Failed');
+                console.log('❌ Core failed');
+            }
+        }, 100);
+    </script>
+
+    <!-- Taskbar Module -->
+    <script src="modules/taskbar.js?v=20250824"></script>
+    <script>
+        setTimeout(() => {
+            if (typeof window.TaskbarModule !== 'undefined') {
+                updateStep('step2', 'pass', 'Step 2: ✅ Taskbar Loaded');
+                console.log('✅ Taskbar loaded');
+                
+                // Try to initialize taskbar directly
+                try {
+                    window.TaskbarModule.init();
+                    console.log('✅ Taskbar init called');
+                } catch (error) {
+                    console.log('❌ Taskbar init failed:', error);
+                }
+            } else {
+                updateStep('step2', 'fail', 'Step 2: ❌ Taskbar Failed');
+                console.log('❌ Taskbar failed');
+            }
+        }, 200);
+    </script>
+
+    <!-- Other required modules -->
+    <script src="modules/posts.js?v=20250824"></script>
+    <script src="modules/navigation.js?v=20250824"></script>
+    <script src="modules/editor.js?v=20250824"></script>
+    <script src="modules/theme.js?v=20250824"></script>
+    <script src="modules/console.js?v=20250824"></script>
+
+    <!-- App Module -->
+    <script src="modules/app.js?v=20250824"></script>
+    <script>
+        setTimeout(() => {
+            if (window.ppPage && window.ppPage.getModule) {
+                updateStep('step3', 'pass', 'Step 3: ✅ App Running');
+                console.log('✅ App running');
+            } else {
+                updateStep('step3', 'fail', 'Step 3: ❌ App Failed');
+                console.log('❌ App failed');
+            }
+        }, 2000);
+
+        setTimeout(() => {
+            const taskbar = document.querySelector('.menu-bar');
+            if (taskbar) {
+                updateStep('step4', 'pass', 'Step 4: ✅ Taskbar Visible');
+                console.log('✅ Taskbar visible');
+            } else {
+                updateStep('step4', 'fail', 'Step 4: ❌ Taskbar Missing');
+                console.log('❌ Taskbar missing');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

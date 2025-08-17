@@ -44,7 +44,7 @@ function generateBuildWord() {
   ];
   
   // Use build date as seed for consistent word per build
-  const buildDate = '20250822'; // This should be updated with each build
+  const buildDate = '20250824'; // This should be updated with each build
   let seed = 0;
   for (let i = 0; i < buildDate.length; i++) {
     seed += buildDate.charCodeAt(i);
@@ -99,10 +99,64 @@ function loadSharedTaskbar() {
       document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
     }
     
-    // Verify insertion
-    const menuBarAfterInsert = document.querySelector('.menu-bar');
-    console.log('✅ Menu bar after insertion:', !!menuBarAfterInsert);
+function loadSharedTaskbar() {
+  try {
+    console.log('🔧 loadSharedTaskbar() called');
     
+    const taskbarHTML = getSharedTaskbarHTML();
+    console.log('✅ Generated taskbar HTML, length:', taskbarHTML.length);
+    
+    // Find the existing menu bar and replace it
+    const existingMenuBar = document.querySelector('.menu-bar');
+    if (existingMenuBar) {
+      console.log('🔄 Replacing existing menu bar');
+      existingMenuBar.outerHTML = taskbarHTML;
+    } else {
+      console.log('➕ Inserting new menu bar at beginning of body');
+      document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
+    }
+
+    // Verify insertion with retry logic
+    let retryCount = 0;
+    const maxRetries = 5;
+    const verifyAndInitialize = () => {
+      const menuBarAfterInsert = document.querySelector('.menu-bar');
+      console.log('✅ Menu bar after insertion:', !!menuBarAfterInsert);
+      
+      if (!menuBarAfterInsert && retryCount < maxRetries) {
+        console.log(`Retry ${retryCount + 1}/${maxRetries}: Menu bar not found, retrying insertion...`);
+        document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
+        retryCount++;
+        setTimeout(verifyAndInitialize, 100);
+        return;
+      }
+      
+      if (!menuBarAfterInsert) {
+        console.error('Failed to insert menu bar after maximum retries');
+        return;
+      }
+      
+      // Continue with initialization
+      initializeTaskbarContent();
+    };
+    
+    verifyAndInitialize();
+
+  } catch (error) {
+    console.error('Error loading shared taskbar:', error);
+    // Retry once after a delay
+    setTimeout(() => {
+      try {
+        loadSharedTaskbar();
+      } catch (retryError) {
+        console.error('Retry failed:', retryError);
+      }
+    }, 1000);
+  }
+}
+
+function initializeTaskbarContent() {
+  try {
     // Show/hide editor-specific items based on page
     const isEditorPage = document.getElementById('postTitle') !== null;
     const editorOnlyItems = document.querySelectorAll('.editor-only');
@@ -115,24 +169,33 @@ function loadSharedTaskbar() {
       }
     });
     
-    // Wait a moment for DOM to update, then initialize menu functionality
+    // Initialize menu functionality immediately
+    const menuInitialized = initializeMenuDropdowns();
+    if (!menuInitialized) {
+      console.error('Menu dropdown initialization failed, retrying...');
+      setTimeout(() => initializeMenuDropdowns(), 200);
+    }
+    
+    // Initialize module-dependent functionality
     setTimeout(() => {
       initializeMenuSystem();
-    }, 50);
+    }, 100);
     
     // Initialize theme module's view menu if available
-    if (window.ppPage) {
-      const themeModule = window.ppPage.getModule('theme');
-      if (themeModule && themeModule.setupViewMenu) {
-        console.log('Setting up theme module view menu...');
-        themeModule.setupViewMenu();
+    setTimeout(() => {
+      if (window.ppPage) {
+        const themeModule = window.ppPage.getModule('theme');
+        if (themeModule && themeModule.setupViewMenu) {
+          console.log('Setting up theme module view menu...');
+          themeModule.setupViewMenu();
+        }
       }
-    }
-    
-    // Fallback: Initialize View menu if the setupViewMenu function exists globally
-    if (typeof setupViewMenu === 'function') {
-      setupViewMenu();
-    }
+      
+      // Fallback: Initialize View menu if the setupViewMenu function exists globally
+      if (typeof setupViewMenu === 'function') {
+        setupViewMenu();
+      }
+    }, 200);
     
     // Add simple editor specific functionality
     if (isEditorPage && typeof editor !== 'undefined') {
@@ -163,9 +226,11 @@ function loadSharedTaskbar() {
 
     // Check authentication status and show/hide admin features
     checkAuthStatusForTaskbar();
-
+    
+    console.log('✅ Taskbar content initialization completed');
+    
   } catch (error) {
-    console.error('Error loading shared taskbar:', error);
+    console.error('Error initializing taskbar content:', error);
   }
 }
 
@@ -349,59 +414,140 @@ function setupThemeSwitching() {
         logFeature('Theme Switch', descriptions[mode]);
       }
       
-      // Use the theme module if available
+function setupThemeSwitching() {
+  console.log('Setting up theme switching...');
+  
+  // Handle theme mode buttons (Dark, Light, Custom, Random)
+  const themeButtons = document.querySelectorAll('[data-mode]');
+  console.log(`Found ${themeButtons.length} theme buttons`);
+  
+  themeButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const mode = button.getAttribute('data-mode');
+      console.log(`Theme button clicked: ${mode}`);
+      
+      // Log feature description to console
+      const descriptions = {
+        'dark': 'Switch to dark theme for comfortable night reading',
+        'light': 'Switch to light theme for daytime browsing',
+        'custom': 'Apply a custom color scheme for personalization',
+        'random': 'Generate a random color theme for visual variety'
+      };
+      if (descriptions[mode]) {
+        logFeature('Theme Switch', descriptions[mode]);
+      }
+      
+      // Try to use the theme module first
+      let themeHandled = false;
       if (window.ppPage) {
         const themeModule = window.ppPage.getModule('theme');
-        if (themeModule) {
-          if (mode === 'dark') {
-            themeModule.setTheme('dark');
-          } else if (mode === 'light') {
-            themeModule.setTheme('light');
-          } else if (mode === 'custom') {
-            // For custom mode, we could show a color picker or use a default
-            themeModule.setTheme('custom', '#2a2a2a');
-          } else if (mode === 'random') {
-            // Generate random dark color for random mode
-            const h = Math.floor(Math.random() * 361);
-            const s = Math.floor(Math.random() * 41) + 30; // 30-70%
-            const l = Math.floor(Math.random() * 31) + 15; // 15-45%
-            const randomColor = `hsl(${h},${s}%,${l}%)`;
-            themeModule.setTheme('custom', randomColor);
+        if (themeModule && typeof themeModule.setTheme === 'function') {
+          console.log('Using theme module for theme switching');
+          try {
+            if (mode === 'custom') {
+              themeModule.setTheme('custom', '#2a2a2a');
+            } else if (mode === 'random') {
+              themeModule.setTheme('random');
+            } else {
+              themeModule.setTheme(mode);
+            }
+            themeHandled = true;
+          } catch (error) {
+            console.error('Theme module error:', error);
           }
-        } else {
-          console.error('Theme module not available');
-        }
-      } else {
-        // Fallback for basic theme switching without the theme module
-        console.log('Using fallback theme switching');
-        
-        if (mode === 'dark') {
-          document.body.classList.add('dark-mode');
-          document.body.classList.remove('custom-mode');
-          localStorage.setItem('ppPage_theme', 'dark');
-        } else if (mode === 'light') {
-          document.body.classList.remove('dark-mode', 'custom-mode');
-          localStorage.setItem('ppPage_theme', 'light');
-        } else if (mode === 'custom' || mode === 'random') {
-          // Generate a custom color
-          const h = mode === 'random' ? Math.floor(Math.random() * 361) : 210;
-          const s = mode === 'random' ? Math.floor(Math.random() * 41) + 30 : 20;
-          const l = mode === 'random' ? Math.floor(Math.random() * 31) + 15 : 25;
-          const color = `hsl(${h},${s}%,${l}%)`;
-          
-          document.body.classList.remove('dark-mode');
-          document.body.classList.add('custom-mode');
-          document.body.style.setProperty('--bg', color);
-          document.body.style.setProperty('--menu-bg', color);
-          
-          // Adjust text color based on lightness
-          const textColor = l < 50 ? '#ffffff' : '#232323';
-          document.body.style.setProperty('--fg', textColor);
-          document.body.style.setProperty('--menu-fg', textColor);
-          
-          localStorage.setItem('ppPage_theme', 'custom');
         }
       }
+      
+      // Fallback theme switching if module not available
+      if (!themeHandled) {
+        console.log('Using fallback theme switching');
+        applyFallbackTheme(mode);
+      }
+    });
+  });
+  
+  // Setup console toggle button
+  const consoleToggleButton = document.getElementById('toggle-console');
+  if (consoleToggleButton) {
+    // Function to update button text based on console visibility
+    const updateConsoleButtonText = () => {
+      if (window.ppPage && window.ppPage.getModule) {
+        const consoleModule = window.ppPage.getModule('console');
+        if (consoleModule && consoleModule.isConsoleVisible) {
+          const isVisible = consoleModule.isConsoleVisible();
+          consoleToggleButton.textContent = isVisible ? 'Hide Console' : 'Show Console';
+        }
+      }
+    };
+    
+    // Set initial text
+    updateConsoleButtonText();
+    
+    consoleToggleButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Log feature description to console
+      logFeature('Console Toggle', 'Show/hide the debug console output window');
+      
+      // Toggle console visibility
+      if (window.ppPage && window.ppPage.getModule) {
+        const consoleModule = window.ppPage.getModule('console');
+        if (consoleModule) {
+          // Check current visibility and toggle
+          if (consoleModule.isConsoleVisible()) {
+            consoleModule.hide();
+          } else {
+            consoleModule.show();
+          }
+          
+          // Update button text after toggling
+          setTimeout(updateConsoleButtonText, 50);
+        }
+      }
+    });
+    console.log('✅ Console toggle button setup complete');
+  }
+  
+  console.log('✅ Theme switching setup complete');
+}
+
+function applyFallbackTheme(mode) {
+  try {
+    if (mode === 'dark') {
+      document.body.classList.add('dark-mode');
+      document.body.classList.remove('custom-mode');
+      localStorage.setItem('ppPage_theme', 'dark');
+    } else if (mode === 'light') {
+      document.body.classList.remove('dark-mode', 'custom-mode');
+      localStorage.setItem('ppPage_theme', 'light');
+    } else if (mode === 'custom' || mode === 'random') {
+      // Generate a custom color
+      const h = mode === 'random' ? Math.floor(Math.random() * 361) : 210;
+      const s = mode === 'random' ? Math.floor(Math.random() * 41) + 30 : 20;
+      const l = mode === 'random' ? Math.floor(Math.random() * 31) + 15 : 25;
+      const color = `hsl(${h},${s}%,${l}%)`;
+      
+      document.body.classList.remove('dark-mode');
+      document.body.classList.add('custom-mode');
+      document.body.style.setProperty('--bg', color);
+      document.body.style.setProperty('--menu-bg', color);
+      
+      // Adjust text color based on lightness
+      const textColor = l < 50 ? '#ffffff' : '#232323';
+      document.body.style.setProperty('--fg', textColor);
+      document.body.style.setProperty('--menu-fg', textColor);
+      
+      localStorage.setItem('ppPage_theme', 'custom');
+      console.log(`Applied fallback ${mode} theme with color: ${color}`);
+    }
+  } catch (error) {
+    console.error('Error applying fallback theme:', error);
+  }
+}
     });
   });
   
@@ -637,6 +783,13 @@ if (document.readyState === 'loading') {
       if (!window.ppPage || !window.ppPage.getModule) {
         console.log('PPPage system not detected, using standalone taskbar initialization');
         loadSharedTaskbar();
+      } else {
+        // Even if ppPage exists, ensure taskbar is loaded
+        const taskbarExists = document.querySelector('.menu-bar');
+        if (!taskbarExists) {
+          console.log('PPPage detected but taskbar missing, force loading...');
+          loadSharedTaskbar();
+        }
       }
     }, 100);
   });
@@ -646,24 +799,64 @@ if (document.readyState === 'loading') {
     if (!window.ppPage || !window.ppPage.getModule) {
       console.log('PPPage system not detected, using standalone taskbar initialization');
       loadSharedTaskbar();
+    } else {
+      // Even if ppPage exists, ensure taskbar is loaded
+      const taskbarExists = document.querySelector('.menu-bar');
+      if (!taskbarExists) {
+        console.log('PPPage detected but taskbar missing, force loading...');
+        loadSharedTaskbar();
+      }
     }
   }, 100);
 }
 
-// Export for modular system
+// Global function to ensure taskbar is always available
+window.ensureTaskbar = function() {
+  const taskbarExists = document.querySelector('.menu-bar');
+  if (!taskbarExists) {
+    console.log('Taskbar not found, force loading...');
+    loadSharedTaskbar();
+  } else {
+    console.log('Taskbar already exists');
+  }
+};
+
+// Export for modular system with enhanced error handling
 if (typeof window !== 'undefined') {
   window.TaskbarModule = {
     async init() {
       console.log('🔧 TaskbarModule.init() called');
       try {
-        loadSharedTaskbar();
+        // Check if taskbar already exists
+        const existingTaskbar = document.querySelector('.menu-bar');
+        if (existingTaskbar) {
+          console.log('Taskbar already exists, reinitializing...');
+          initializeTaskbarContent();
+        } else {
+          loadSharedTaskbar();
+        }
         console.log('✅ TaskbarModule.init() completed successfully');
       } catch (error) {
         console.error('❌ TaskbarModule.init() failed:', error);
+        // Retry once
+        setTimeout(() => {
+          try {
+            loadSharedTaskbar();
+          } catch (retryError) {
+            console.error('❌ TaskbarModule.init() retry failed:', retryError);
+          }
+        }, 500);
       }
     },
     load: loadSharedTaskbar,
-    initialize: initializeMenuSystem
+    initialize: initializeMenuSystem,
+    ensureLoaded: function() {
+      const taskbarExists = document.querySelector('.menu-bar');
+      if (!taskbarExists) {
+        this.init();
+      }
+      return taskbarExists;
+    }
   };
   console.log('✅ TaskbarModule exported to window');
 }

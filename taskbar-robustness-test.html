@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taskbar Robustness Test</title>
+  <link rel="stylesheet" href="style.css?v=20250822">
+  <style>
+    .test-status {
+      padding: 20px;
+      margin: 20px;
+      background: #f0f0f0;
+      border-radius: 5px;
+    }
+    .pass { background: #d4edda; color: #155724; }
+    .fail { background: #f8d7da; color: #721c24; }
+    .pending { background: #fff3cd; color: #856404; }
+    .test-button {
+      margin: 5px;
+      padding: 10px 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .test-button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+<!-- Taskbar will be loaded by modular system -->
+
+<div class="page-container">
+  <main class="main-column">
+    <header class="post-header">
+      <h1 class="post-title">Taskbar Robustness Test</h1>
+      <div class="post-date">Build: 20250822</div>
+    </header>
+    
+    <section class="post-content">
+      <div id="test-results">
+        <div class="test-status pending" id="taskbar-load-test">
+          <strong>Taskbar Load Test:</strong> <span id="taskbar-load-status">Pending...</span>
+        </div>
+        
+        <div class="test-status pending" id="menu-click-test">
+          <strong>Menu Click Test:</strong> <span id="menu-click-status">Pending...</span>
+        </div>
+        
+        <div class="test-status pending" id="theme-test">
+          <strong>Theme System Test:</strong> <span id="theme-status">Pending...</span>
+        </div>
+        
+        <div class="test-status pending" id="reload-test">
+          <strong>Reload Resilience Test:</strong> <span id="reload-status">Click buttons below to test</span>
+        </div>
+      </div>
+      
+      <div style="margin: 20px;">
+        <h3>Manual Tests:</h3>
+        <button class="test-button" onclick="testTaskbarFunctionality()">Test Taskbar Functions</button>
+        <button class="test-button" onclick="testThemeOptions()">Test Theme Options</button>
+        <button class="test-button" onclick="reloadAndTest()">Reload & Test</button>
+        <button class="test-button" onclick="forceReinitialize()">Force Reinitialize</button>
+      </div>
+      
+      <div style="margin: 20px;">
+        <h3>Console Output:</h3>
+        <div id="test-console" style="background: #000; color: #0f0; padding: 10px; font-family: monospace; height: 200px; overflow-y: auto;"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- PPPage Modular System -->
+<script src="modules/core.js?v=20250822"></script>
+<script src="modules/posts.js?v=20250822"></script>
+<script src="modules/navigation.js?v=20250822"></script>
+<script src="modules/editor.js?v=20250822"></script>
+<script src="modules/theme.js?v=20250822"></script>
+<script src="modules/taskbar.js?v=20250822"></script>
+<script src="modules/console.js?v=20250822"></script>
+<script src="modules/app.js?v=20250822"></script>
+
+<script>
+// Test console output
+function logToTestConsole(message) {
+  const testConsole = document.getElementById('test-console');
+  if (testConsole) {
+    testConsole.innerHTML += new Date().toTimeString().split(' ')[0] + ': ' + message + '\n';
+    testConsole.scrollTop = testConsole.scrollHeight;
+  }
+}
+
+// Override console.log to capture output
+const originalLog = console.log;
+console.log = function(...args) {
+  originalLog.apply(console, args);
+  logToTestConsole(args.join(' '));
+};
+
+// Test functions
+function testTaskbarFunctionality() {
+  logToTestConsole('=== Testing Taskbar Functionality ===');
+  
+  // Check if taskbar exists
+  const menuBar = document.querySelector('.menu-bar');
+  if (!menuBar) {
+    updateTestStatus('taskbar-load-test', 'fail', 'Taskbar not found');
+    return;
+  }
+  updateTestStatus('taskbar-load-test', 'pass', 'Taskbar loaded successfully');
+  
+  // Test menu clicks
+  const viewLabel = document.querySelector('[data-menu]');
+  if (viewLabel && viewLabel.textContent.includes('View')) {
+    logToTestConsole('Found View menu, testing click...');
+    viewLabel.click();
+    setTimeout(() => {
+      const viewMenu = viewLabel.closest('.menu-item');
+      if (viewMenu && viewMenu.classList.contains('open')) {
+        updateTestStatus('menu-click-test', 'pass', 'Menu opens correctly');
+      } else {
+        updateTestStatus('menu-click-test', 'fail', 'Menu does not open');
+      }
+    }, 100);
+  }
+}
+
+function testThemeOptions() {
+  logToTestConsole('=== Testing Theme Options ===');
+  
+  // Test custom theme
+  const customButton = document.querySelector('[data-mode="custom"]');
+  if (customButton) {
+    logToTestConsole('Testing custom theme...');
+    customButton.click();
+    setTimeout(() => {
+      const hasCustomMode = document.body.classList.contains('custom-mode') || 
+                           document.body.style.getPropertyValue('--bg');
+      if (hasCustomMode) {
+        updateTestStatus('theme-test', 'pass', 'Custom theme works');
+      } else {
+        updateTestStatus('theme-test', 'fail', 'Custom theme not applied');
+      }
+    }, 500);
+  } else {
+    updateTestStatus('theme-test', 'fail', 'Custom theme button not found');
+  }
+  
+  // Test random theme
+  setTimeout(() => {
+    const randomButton = document.querySelector('[data-mode="random"]');
+    if (randomButton) {
+      logToTestConsole('Testing random theme...');
+      randomButton.click();
+    }
+  }, 1000);
+}
+
+function reloadAndTest() {
+  logToTestConsole('Reloading page...');
+  window.location.reload();
+}
+
+function forceReinitialize() {
+  logToTestConsole('=== Force Reinitializing Taskbar ===');
+  
+  if (window.TaskbarModule && window.TaskbarModule.init) {
+    window.TaskbarModule.init();
+    logToTestConsole('TaskbarModule.init() called');
+  }
+  
+  if (window.ppPage) {
+    const taskbarModule = window.ppPage.getModule('taskbar');
+    if (taskbarModule && taskbarModule.init) {
+      taskbarModule.init();
+      logToTestConsole('taskbar module init() called');
+    }
+  }
+  
+  setTimeout(testTaskbarFunctionality, 500);
+}
+
+function updateTestStatus(testId, status, message) {
+  const testElement = document.getElementById(testId);
+  const statusElement = document.getElementById(testId.replace('-test', '-status'));
+  
+  if (testElement && statusElement) {
+    testElement.className = `test-status ${status}`;
+    statusElement.textContent = message;
+  }
+}
+
+// Auto-run tests when page loads
+setTimeout(() => {
+  logToTestConsole('=== Auto-running tests ===');
+  testTaskbarFunctionality();
+}, 2000);
+</script>
+</body>
+</html>

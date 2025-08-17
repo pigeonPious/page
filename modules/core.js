@@ -127,7 +127,13 @@ class PPPageCore {
 // Create global instance
 window.ppPage = new PPPageCore();
 
+// Enable debug mode for troubleshooting
+window.ppPage.debug = true;
+
 // Export for module use
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = PPPageCore;
 }
+
+// Ensure ppPage is available immediately
+console.log('✅ PPPage Core loaded and available globally');
