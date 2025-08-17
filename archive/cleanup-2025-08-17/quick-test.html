@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Button Click Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .status { margin: 5px 0; padding: 5px; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 8px 12px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>ppPage Button Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>Quick Tests</h2>
+        <button onclick="testEditorButtons()">Test Editor Buttons</button>
+        <button onclick="testTaskbar()">Test Taskbar</button>
+        <button onclick="testPostsLoading()">Test Posts Loading</button>
+        <div id="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Direct Editor Test</h2>
+        <p>Click to open editor in new tab and test manually:</p>
+        <button onclick="window.open('editor.html', '_blank')">Open Editor</button>
+        <button onclick="window.open('index.html', '_blank')">Open Main Page</button>
+    </div>
+    
+    <script>
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        function testEditorButtons() {
+            log('Testing editor buttons...', 'info');
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = 'editor.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        const doc = iframe.contentDocument;
+                        const win = iframe.contentWindow;
+                        
+                        // Check if modules loaded
+                        if (win.EditorModule) {
+                            log('✅ EditorModule loaded', 'success');
+                        } else {
+                            log('❌ EditorModule not found', 'error');
+                        }
+                        
+                        // Check if global editor instance exists
+                        if (win.editorInstance || win.editor) {
+                            log('✅ Global editor instance available', 'success');
+                        } else {
+                            log('❌ Global editor instance not found', 'error');
+                        }
+                        
+                        // Test each button
+                        const buttons = [
+                            { id: 'keywords-btn', name: 'FLAGS' },
+                            { id: 'images-btn', name: 'IMAGES' },
+                            { id: 'export-btn', name: 'EXPORT' },
+                            { id: 'publish-btn', name: 'PUBLISH' }
+                        ];
+                        
+                        buttons.forEach(({ id, name }) => {
+                            const btn = doc.getElementById(id);
+                            if (btn) {
+                                log(`✅ ${name} button found`, 'success');
+                                
+                                // Test click event
+                                try {
+                                    // Create a mock click event
+                                    const event = new doc.defaultView.Event('click', {
+                                        bubbles: true,
+                                        cancelable: true
+                                    });
+                                    btn.dispatchEvent(event);
+                                    log(`✅ ${name} button click event fired`, 'success');
+                                } catch (e) {
+                                    log(`⚠️ ${name} button click test skipped: ${e.message}`, 'info');
+                                }
+                            } else {
+                                log(`❌ ${name} button (${id}) not found`, 'error');
+                            }
+                        });
+                        
+                    } catch (error) {
+                        log(`❌ Test error: ${error.message}`, 'error');
+                    }
+                    
+                    document.body.removeChild(iframe);
+                }, 2000);
+            };
+        }
+        
+        function testTaskbar() {
+            log('Testing taskbar...', 'info');
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = 'editor.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        const doc = iframe.contentDocument;
+                        
+                        const menuBar = doc.querySelector('.menu-bar');
+                        if (menuBar) {
+                            log('✅ Menu bar found', 'success');
+                            
+                            const menuBarInner = doc.querySelector('.menu-bar-inner');
+                            if (menuBarInner) {
+                                log('✅ Horizontal taskbar layout confirmed', 'success');
+                            } else {
+                                log('❌ Horizontal taskbar layout not found', 'error');
+                            }
+                            
+                            const starButton = doc.getElementById('star-button');
+                            if (starButton) {
+                                log('✅ Star button found', 'success');
+                            } else {
+                                log('❌ Star button not found', 'error');
+                            }
+                        } else {
+                            log('❌ Menu bar not found', 'error');
+                        }
+                        
+                    } catch (error) {
+                        log(`❌ Taskbar test error: ${error.message}`, 'error');
+                    }
+                    
+                    document.body.removeChild(iframe);
+                }, 2000);
+            };
+        }
+        
+        function testPostsLoading() {
+            log('Testing posts loading...', 'info');
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = 'index.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        const doc = iframe.contentDocument;
+                        const win = iframe.contentWindow;
+                        
+                        // Check if posts module loaded
+                        if (win.PPPageCore && win.PPPageCore.modules && win.PPPageCore.modules.posts) {
+                            log('✅ Posts module loaded', 'success');
+                        } else {
+                            log('❌ Posts module not found', 'error');
+                        }
+                        
+                        // Check if posts container exists
+                        const postsContainer = doc.querySelector('#posts-container, #post-content, .post');
+                        if (postsContainer) {
+                            log('✅ Posts container found', 'success');
+                        } else {
+                            log('❌ Posts container not found', 'error');
+                        }
+                        
+                    } catch (error) {
+                        log(`❌ Posts test error: ${error.message}`, 'error');
+                    }
+                    
+                    document.body.removeChild(iframe);
+                }, 3000);
+            };
+        }
+        
+        // Auto-initialize
+        window.onload = () => {
+            log('Test system ready', 'info');
+        };
+    </script>
+</body>
+</html>
