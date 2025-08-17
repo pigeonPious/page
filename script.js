@@ -1316,6 +1316,8 @@ function setupDevlogSubmenu(posts) {
 // Update the main loading function to use keywords
 async function loadPostsWithKeywords() {
   console.log('Starting loadPostsWithKeywords...');
+  showConsoleMessage('Loading posts...', 'loading');
+  
   try {
     const timestamp = new Date().getTime();
     const url = `posts/index.json?t=${timestamp}`;
@@ -1332,6 +1334,7 @@ async function loadPostsWithKeywords() {
     
     if (!posts || posts.length === 0) {
       console.warn('No posts found in index.json');
+      showConsoleMessage('No posts found', 'warning', 3000);
       return;
     }
     
@@ -1343,6 +1346,7 @@ async function loadPostsWithKeywords() {
     
     // Set up navigation menus
     setupNavigationMenus(posts);
+    showConsoleMessage(`Loaded ${posts.length} posts with navigation menus`, 'success', 3000);
     
     // Load the first post if available
     if (posts.length > 0 && document.getElementById('post-content')) {

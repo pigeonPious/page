@@ -205,6 +205,7 @@ const editor = {
 
   // Initialize editor
   init() {
+    showConsoleMessage('Initializing editor...', 'loading');
     this.setupEventListeners();
     // this.setupMenus(); // Disabled - using shared taskbar menu system
     this.setupModalManagement();
@@ -215,6 +216,7 @@ const editor = {
     this.checkForPostEditing();
     
     console.log('Simple Editor initialized');
+    showConsoleMessage('Editor ready', 'success', 3000);
     
     // Update the global function now that editor is ready
     window.makeNoteFromTaskbar = () => this.makeNote();
@@ -244,7 +246,11 @@ const editor = {
     document.getElementById('publish-btn').addEventListener('mousedown', (e) => {
       e.preventDefault(); // Prevent text deselection
     });
-    document.getElementById('publish-btn').addEventListener('click', () => this.publishPost());
+    document.getElementById('publish-btn').addEventListener('click', (e) => {
+      console.log('Publish button clicked');
+      showConsoleMessage('Publish button clicked', 'info', 2000);
+      this.publishPost();
+    });
     
     // Keywords modal save button
     const saveKeywordsBtn = document.getElementById('save-keywords-btn');
@@ -366,11 +372,13 @@ const editor = {
 
   showKeywordsInput(clickEvent = null) {
     const options = clickEvent ? { anchorToClick: true, clickEvent } : {};
+    showConsoleMessage('Setting post keywords...', 'info');
     this.showBoxInput('keywordsInputBox', (keywords) => {
       if (keywords.trim()) {
         this.currentKeywords = keywords.trim();
         document.getElementById('current-keywords').textContent = this.currentKeywords;
         console.log('Keywords updated:', this.currentKeywords);
+        showConsoleMessage(`Keywords updated: ${this.currentKeywords}`, 'success', 3000);
       }
     }, this.currentKeywords || 'general', options);
   },
@@ -521,15 +529,18 @@ const editor = {
 
   // Export functionality
   exportPost() {
+    showConsoleMessage('Preparing post export...', 'loading');
     const title = document.getElementById('postTitle').value.trim();
     if (!title) {
       this.showMessage('Please enter a title for your post.');
+      showConsoleMessage('Error: Title required for export', 'error', 3000);
       return;
     }
 
     const rawContent = document.getElementById('visualEditor').innerHTML;
     if (!rawContent.trim()) {
       this.showMessage('Please write some content for your post.');
+      showConsoleMessage('Error: Content required for export', 'error', 3000);
       return;
     }
 
@@ -539,6 +550,7 @@ const editor = {
     // Generate default filename
     const defaultFilename = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
     
+    showConsoleMessage('Enter filename for export...', 'info');
     // Show box style 1 input for filename
     this.showBoxInput('exportInputBox', (filename) => {
       const finalFilename = filename || defaultFilename;
@@ -565,6 +577,7 @@ const editor = {
       URL.revokeObjectURL(url);
       
       this.showMessage(`Exported: ${finalFilename}.json`);
+      showConsoleMessage(`Post exported successfully: ${finalFilename}.json`, 'success', 5000);
     }, defaultFilename);
   },
 
@@ -723,17 +736,20 @@ const editor = {
 
   async publishPost() {
     console.log('publishPost() called!');
+    showConsoleMessage('Starting post publication...', 'loading');
     
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('visualEditor').innerHTML.trim();
     
     if (!title) {
       this.showMessage('Please enter a title for your post.');
+      showConsoleMessage('Error: Post title is required', 'error', 3000);
       return;
     }
     
     if (!content) {
       this.showMessage('Please write some content for your post.');
+      showConsoleMessage('Error: Post content is required', 'error', 3000);
       return;
     }
 
@@ -741,8 +757,11 @@ const editor = {
     const config = this.getGitHubConfig();
     if (!config || !config.token || !config.repo) {
       this.showMessage('Please set up GitHub configuration first. Go to Connect > Setup GitHub.', 'Setup Required');
+      showConsoleMessage('Error: GitHub not configured', 'error', 5000);
       return;
     }
+
+    showConsoleMessage('GitHub configuration found, preparing to publish...', 'info');
 
     // Show box style 1 input for commit message
     this.showBoxInput('publishInputBox', async (commitMessage) => {
@@ -766,6 +785,7 @@ const editor = {
       };
 
       console.log('Publishing to GitHub:', postData);
+      showConsoleMessage('Publishing to GitHub...', 'loading');
 
       try {
         // Save post to GitHub with custom commit message
@@ -776,6 +796,7 @@ const editor = {
           ? `Post "${title}" updated successfully!`
           : 'Post published successfully to GitHub!';
         this.showMessage(successMessage, '🎉 Success');
+        showConsoleMessage(successMessage, 'success', 5000);
         
         // Clear editor and editing state
         document.getElementById('postTitle').value = '';
@@ -792,6 +813,7 @@ const editor = {
       } catch (error) {
         console.error('Error publishing post:', error);
         this.showMessage(error.message || 'Failed to publish post to GitHub.', '❌ Error');
+        showConsoleMessage(`Publish failed: ${error.message || 'Unknown error'}`, 'error', 5000);
       }
     }, defaultMessage);
   },
@@ -1792,6 +1814,7 @@ const localEditor = editor;
 </script>
 
 <!-- Load shared scripts after the main editor is defined -->
+<script src="console-output.js"></script>
 <script src="shared-taskbar.js"></script>
 <script src="script.js"></script>
 

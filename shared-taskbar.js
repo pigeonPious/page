@@ -82,6 +82,7 @@ function loadSharedTaskbar() {
         newPostLink.onclick = (e) => {
           e.preventDefault();
           editor.newDocument();
+          showConsoleMessage('Created new document');
         };
         newPostLink.removeAttribute('href');
       }
@@ -99,6 +100,39 @@ function loadSharedTaskbar() {
 
     // Check authentication status and show/hide admin features
     checkAuthStatusForTaskbar();
+
+    // Add Edit Post button event listener
+    const editPostButton = document.getElementById('edit-post-button');
+    if (editPostButton) {
+      editPostButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleEditPost();
+      });
+    }
+
+    // CRITICAL FIX: Ensure navigation menus are set up on ALL pages
+    setTimeout(async () => {
+      if (typeof window.loadPostsWithKeywords === 'function') {
+        console.log('Setting up navigation menus...');
+        await window.loadPostsWithKeywords();
+        showConsoleMessage('Navigation menus loaded');
+      } else if (typeof loadPostsWithKeywords === 'function') {
+        console.log('Setting up navigation menus (fallback)...');
+        await loadPostsWithKeywords();
+        showConsoleMessage('Navigation menus loaded');
+      } else {
+        console.warn('Navigation setup function not available');
+        showConsoleMessage('Navigation setup unavailable', 'warning');
+      }
+    }, 300);
+    
+  } catch (error) {
+    console.warn('Could not load shared taskbar:', error);
+    showConsoleMessage('Taskbar loading failed', 'error');
+    // Fallback: keep existing taskbar if loading fails
+  }
+}
 
     // Add Edit Post button event listener
     const editPostButton = document.getElementById('edit-post-button');

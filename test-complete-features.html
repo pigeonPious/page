@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Features Test</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Taskbar will be loaded by shared-taskbar.js -->
+
+<div class="frame">
+  <main class="center-content">
+    <div id="post-content">
+      <h1>🎉 Complete Features Test</h1>
+      <p>Testing all the new features and fixes:</p>
+      
+      <div style="margin: 20px 0; padding: 15px; border: 2px solid var(--border); border-radius: 4px;">
+        <h3>✅ Features to Test:</h3>
+        <ol>
+          <li><strong>Console Output System</strong> - Look at the bottom of the window for status messages</li>
+          <li><strong>Navigation Menu Fix</strong> - Click "Navigation" → should show "All Posts >" and "Devlog >" submenus</li>
+          <li><strong>Tooltips</strong> - Hover over navigation items to see descriptions in console</li>
+          <li><strong>Shared Taskbar</strong> - Navigation should be identical to main page</li>
+          <li><strong>Error Messages</strong> - Console shows helpful feedback</li>
+        </ol>
+        
+        <h3>🎯 Test Actions:</h3>
+        <ul>
+          <li>Hover over the star (*) button → console should show tooltip</li>
+          <li>Click "Navigation" → should see proper submenus</li>
+          <li>Hover over "File", "Edit", "View" → console shows descriptions</li>
+          <li>Check that individual posts don't appear directly in Navigation dropdown</li>
+        </ul>
+      </div>
+      
+      <div id="console-test-area" style="margin: 20px 0; padding: 15px; background: var(--bg-secondary); border-radius: 4px;">
+        <h3>Console System Tests:</h3>
+        <button onclick="testConsoleMessages()">Test Console Messages</button>
+        <button onclick="testConsoleTypes()">Test Message Types</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        
+        <div style="margin-top: 10px;">
+          <p><strong>Instructions:</strong> Watch the console output at the bottom of the window when clicking buttons.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="console-output.js"></script>
+<script src="shared-taskbar.js"></script>
+<script src="script.js"></script>
+
+<script>
+function testConsoleMessages() {
+  showConsoleMessage('Testing console system...', 'info', 2000);
+  
+  setTimeout(() => {
+    showConsoleMessage('This is a test message that demonstrates the console output system working correctly.', 'info');
+  }, 2500);
+}
+
+function testConsoleTypes() {
+  let delay = 0;
+  
+  ['info', 'success', 'warning', 'error', 'loading'].forEach(type => {
+    setTimeout(() => {
+      showConsoleMessage(`This is a ${type} message`, type, 2000);
+    }, delay);
+    delay += 2500;
+  });
+}
+
+function clearConsole() {
+  hideConsoleMessage();
+}
+
+// Test navigation on load
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    showConsoleMessage('Features test page loaded - try hovering over navigation items!', 'success', 5000);
+  }, 1000);
+});
+</script>
+
+</body>
+</html>
