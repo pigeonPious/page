@@ -24,6 +24,10 @@ const NavigationModule = () => ({
     this.setupAllPostsMenu();
     this.setupDevlogMenu();
     this.setupPostDropdown();
+    // Ensure dropdowns are initialized after menu population
+    if (typeof initializeMenuDropdowns === 'function') {
+      initializeMenuDropdowns();
+    }
   },
 
   setupStarButton() {
