@@ -86,12 +86,10 @@ const NavigationModule = () => ({
       postEntry.textContent = post.title;
       postEntry.tabIndex = 0;
       postEntry.setAttribute('role', 'menuitem');
-      // Use function expression to capture correct slug
-      postEntry.addEventListener('click', (function(slug) {
-        return function() {
-          NavigationModuleInstance.navigateToPost(slug);
-        };
-      })(post.slug));
+      // Use direct reference to this.navigateToPost to avoid singleton confusion
+      postEntry.addEventListener('click', () => {
+        this.navigateToPost(post.slug);
+      });
       submenu.appendChild(postEntry);
     });
     
