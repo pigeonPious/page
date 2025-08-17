@@ -47,6 +47,99 @@ const ThemeModule = () => ({
         ppPage.utils.addEvent(element, 'click', handler);
       }
     });
+
+    // Custom theme menu logic
+    const customButton = document.querySelector('.menu-entry[data-mode="custom"]');
+    if (customButton) {
+      customButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.showCustomColorMenu(customButton);
+      });
+    }
+  },
+
+  showCustomColorMenu(anchor) {
+    // Remove any existing menu
+    let existingMenu = document.getElementById('customColorMenu');
+    if (existingMenu) existingMenu.remove();
+
+    // Create menu
+    const menu = document.createElement('div');
+    menu.id = 'customColorMenu';
+    menu.innerHTML = `
+      <div class="slider-group"><label>H</label><input type="range" min="0" max="360" value="210" id="hueSlider"><span id="hueVal">210</span></div>
+      <div class="slider-group"><label>S</label><input type="range" min="0" max="100" value="20" id="satSlider"><span id="satVal">20</span></div>
+      <div class="slider-group"><label>L</label><input type="range" min="0" max="100" value="25" id="lightSlider"><span id="lightVal">25</span></div>
+      <span class="color-preview" id="colorPreview"></span>
+      <button class="close-btn" type="button">Close</button>
+    `;
+    document.body.appendChild(menu);
+
+    // Position below anchor
+    const rect = anchor.getBoundingClientRect();
+    menu.style.position = 'absolute';
+    menu.style.left = rect.left + 'px';
+    menu.style.top = (rect.bottom + window.scrollY) + 'px';
+    menu.style.zIndex = 2001;
+    menu.style.display = 'block';
+
+    // Load last custom color or default
+    let h = 210, s = 20, l = 25;
+    const last = localStorage.getItem('customBg');
+    if (last && last.startsWith('hsl')) {
+      const m = last.match(/hsl\((\d+),\s*(\d+)%?,\s*(\d+)%?\)/);
+      if (m) { h = +m[1]; s = +m[2]; l = +m[3]; }
+    }
+    menu.querySelector('#hueSlider').value = h;
+    menu.querySelector('#satSlider').value = s;
+    menu.querySelector('#lightSlider').value = l;
+
+    // Update preview and theme
+    const hueSlider = menu.querySelector('#hueSlider');
+    const satSlider = menu.querySelector('#satSlider');
+    const lightSlider = menu.querySelector('#lightSlider');
+    const hueVal = menu.querySelector('#hueVal');
+    const satVal = menu.querySelector('#satVal');
+    const lightVal = menu.querySelector('#lightVal');
+    const colorPreview = menu.querySelector('#colorPreview');
+    const closeBtn = menu.querySelector('.close-btn');
+
+    function hslString() {
+      return `hsl(${hueSlider.value},${satSlider.value}%,${lightSlider.value}%)`;
+    }
+    function updateCustomColor() {
+      hueVal.textContent = hueSlider.value;
+      satVal.textContent = satSlider.value;
+      lightVal.textContent = lightSlider.value;
+      const hsl = hslString();
+      colorPreview.style.background = hsl;
+      localStorage.setItem('customBg', hsl);
+      // Set theme and update contrast
+      anchor.classList.add('selected');
+      setTimeout(() => anchor.classList.remove('selected'), 200);
+      window.ppPage.getModule('theme').setTheme('custom', hsl);
+    }
+    [hueSlider, satSlider, lightSlider].forEach(slider => {
+      slider.oninput = updateCustomColor;
+    });
+    updateCustomColor();
+
+    closeBtn.onclick = () => {
+      menu.remove();
+      document.removeEventListener('mousedown', outsideClickHandler);
+    };
+
+    // Close menu if clicking outside
+    function outsideClickHandler(e) {
+      if (!menu.contains(e.target) && e.target !== anchor) {
+        menu.remove();
+        document.removeEventListener('mousedown', outsideClickHandler);
+      }
+    }
+    setTimeout(() => {
+      document.addEventListener('mousedown', outsideClickHandler);
+    }, 0);
   },
 
   setTheme(mode, customBg = null) {
@@ -54,6 +147,19 @@ const ThemeModule = () => ({
     
     // Remove existing theme classes
     document.body.classList.remove('light-mode', 'dark-mode', 'auto-mode', 'custom-mode');
+    
+    // Clear custom theme variables if not custom/random
+    if (mode !== 'custom' && mode !== 'random') {
+      document.body.style.removeProperty('--bg');
+      document.body.style.removeProperty('--menu-bg');
+      document.body.style.removeProperty('--fg');
+      document.body.style.removeProperty('--menu-fg');
+      document.documentElement.style.removeProperty('--bg');
+      document.documentElement.style.removeProperty('--menu-bg');
+      document.documentElement.style.removeProperty('--fg');
+      document.documentElement.style.removeProperty('--menu-fg');
+      localStorage.removeItem('customBg');
+    }
     
     // Apply new theme
     if (mode === 'auto') {
