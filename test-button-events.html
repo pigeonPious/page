@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Button Events</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="editor.css">
+  <style>
+    .debug-panel { 
+      position: fixed; 
+      top: 10px; 
+      right: 10px; 
+      background: white; 
+      padding: 15px; 
+      border: 2px solid #333; 
+      border-radius: 5px;
+      max-width: 300px; 
+      font-family: monospace; 
+      font-size: 12px;
+      z-index: 9999;
+    }
+    .debug-button { 
+      background: #007cba; 
+      color: white; 
+      border: none; 
+      padding: 5px 10px; 
+      margin: 2px; 
+      border-radius: 3px; 
+      cursor: pointer;
+    }
+    .success { color: green; }
+    .error { color: red; }
+    .warning { color: orange; }
+  </style>
+</head>
+<body>
+
+<div class="frame">
+  <main class="center-content">
+    <div class="editor-main-column">
+      <div class="editor-header">
+        <input type="text" id="postTitle" class="title-input" placeholder="Test Title">
+      </div>
+      
+      <div class="editor-main">
+        <div id="visualEditor" class="visual-editor" contenteditable="true">Test content for button testing</div>
+      </div>
+    </div>
+  </main>
+  
+  <div class="editor-sidebar">
+    <div class="editor-tools-vertical">
+      <div class="tool-button" id="keywords-btn">FLAGS</div>
+      <div class="tool-button" id="images-btn">IMAGES</div>
+      <div class="tool-button" id="export-btn">EXPORT</div>
+      <div class="tool-button" id="publish-btn">PUBLISH</div>
+    </div>
+  </div>
+</div>
+
+<div class="debug-panel">
+  <h4>Button Event Test</h4>
+  <div id="debug-log"></div>
+  <button class="debug-button" onclick="testAllButtons()">Test All</button>
+  <button class="debug-button" onclick="checkEventListeners()">Check Events</button>
+  <button class="debug-button" onclick="clearLog()">Clear</button>
+</div>
+
+<script>
+let logDiv;
+
+function log(message, type = 'info') {
+  if (!logDiv) logDiv = document.getElementById('debug-log');
+  const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
+  logDiv.innerHTML += `<div class="${className}">${new Date().toLocaleTimeString()}: ${message}</div>`;
+  logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+function clearLog() {
+  if (!logDiv) logDiv = document.getElementById('debug-log');
+  logDiv.innerHTML = '';
+}
+
+function testAllButtons() {
+  log('Starting button tests...', 'info');
+  
+  const buttons = ['keywords-btn', 'images-btn', 'export-btn', 'publish-btn'];
+  
+  buttons.forEach(buttonId => {
+    const button = document.getElementById(buttonId);
+    if (button) {
+      log(`✓ Found button: ${buttonId}`, 'success');
+      
+      // Test if click works
+      try {
+        button.click();
+        log(`✓ Click triggered on: ${buttonId}`, 'success');
+      } catch (error) {
+        log(`✗ Click failed on ${buttonId}: ${error.message}`, 'error');
+      }
+    } else {
+      log(`✗ Button not found: ${buttonId}`, 'error');
+    }
+  });
+}
+
+function checkEventListeners() {
+  log('Checking event listeners...', 'info');
+  
+  const buttons = ['keywords-btn', 'images-btn', 'export-btn', 'publish-btn'];
+  
+  buttons.forEach(buttonId => {
+    const button = document.getElementById(buttonId);
+    if (button) {
+      // Check if the button has event listeners
+      const listeners = getEventListeners ? getEventListeners(button) : 'Cannot check (DevTools required)';
+      log(`Button ${buttonId} listeners: ${typeof listeners === 'object' ? Object.keys(listeners).join(', ') : listeners}`, 'info');
+    }
+  });
+  
+  log(`Editor object exists: ${typeof editor !== 'undefined'}`, typeof editor !== 'undefined' ? 'success' : 'error');
+  log(`Editor.init called: ${typeof editor !== 'undefined' && editor.setupEventListeners}`, typeof editor !== 'undefined' && editor.setupEventListeners ? 'success' : 'error');
+}
+
+// Simple test editor
+const editor = {
+  currentKeywords: 'general',
+  
+  init() {
+    log('Editor initializing...', 'info');
+    this.setupEventListeners();
+    log('Editor initialized!', 'success');
+  },
+  
+  setupEventListeners() {
+    log('Setting up event listeners...', 'info');
+    
+    // Keywords button
+    const keywordsBtn = document.getElementById('keywords-btn');
+    if (keywordsBtn) {
+      keywordsBtn.addEventListener('click', (e) => {
+        log('Keywords button clicked!', 'success');
+        this.showKeywordsInput(e);
+      });
+      log('✓ Keywords button listener added', 'success');
+    } else {
+      log('✗ Keywords button not found', 'error');
+    }
+    
+    // Export button
+    const exportBtn = document.getElementById('export-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        log('Export button clicked!', 'success');
+        this.exportPost();
+      });
+      log('✓ Export button listener added', 'success');
+    } else {
+      log('✗ Export button not found', 'error');
+    }
+    
+    // Images button
+    const imagesBtn = document.getElementById('images-btn');
+    if (imagesBtn) {
+      imagesBtn.addEventListener('click', () => {
+        log('Images button clicked!', 'success');
+        this.toggleImageMagazine();
+      });
+      log('✓ Images button listener added', 'success');
+    } else {
+      log('✗ Images button not found', 'error');
+    }
+    
+    // Publish button
+    const publishBtn = document.getElementById('publish-btn');
+    if (publishBtn) {
+      publishBtn.addEventListener('click', () => {
+        log('Publish button clicked!', 'success');
+        this.publishPost();
+      });
+      log('✓ Publish button listener added', 'success');
+    } else {
+      log('✗ Publish button not found', 'error');
+    }
+    
+    log('Event listeners setup complete', 'success');
+  },
+  
+  showKeywordsInput(e) {
+    log('showKeywordsInput called', 'success');
+  },
+  
+  exportPost() {
+    log('exportPost called', 'success');
+  },
+  
+  toggleImageMagazine() {
+    log('toggleImageMagazine called', 'success');
+  },
+  
+  publishPost() {
+    log('publishPost called', 'success');
+  }
+};
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  log('DOM loaded, initializing editor...', 'info');
+  editor.init();
+});
+</script>
+
+</body>
+</html>
