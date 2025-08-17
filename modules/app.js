@@ -24,6 +24,7 @@
       { name: 'navigation', factory: NavigationModule },
       { name: 'editor', factory: EditorModule },
       { name: 'theme', factory: ThemeModule },
+      { name: 'taskbar', factory: () => window.TaskbarModule || { init: () => {} } },
       { name: 'console', factory: ConsoleModule }
     ];
 

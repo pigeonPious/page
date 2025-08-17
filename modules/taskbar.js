@@ -441,16 +441,34 @@ function checkAuthStatusForTaskbar() {
   }
 }
 
-// Initialize when DOM is ready
+// Initialize when DOM is ready, but only if ppPage system isn't available
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadSharedTaskbar);
+  document.addEventListener('DOMContentLoaded', () => {
+    // Wait a moment to see if ppPage system will handle initialization
+    setTimeout(() => {
+      if (!window.ppPage || !window.ppPage.getModule) {
+        console.log('PPPage system not detected, using standalone taskbar initialization');
+        loadSharedTaskbar();
+      }
+    }, 100);
+  });
 } else {
-  loadSharedTaskbar();
+  // DOM already ready
+  setTimeout(() => {
+    if (!window.ppPage || !window.ppPage.getModule) {
+      console.log('PPPage system not detected, using standalone taskbar initialization');
+      loadSharedTaskbar();
+    }
+  }, 100);
 }
 
 // Export for modular system
 if (typeof window !== 'undefined') {
   window.TaskbarModule = {
+    async init() {
+      console.log('Initializing Taskbar module...');
+      loadSharedTaskbar();
+    },
     load: loadSharedTaskbar,
     initialize: initializeMenuSystem
   };

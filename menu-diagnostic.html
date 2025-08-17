@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔍 Taskbar Menu Dropdown Diagnostic</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { margin: 0; padding: 20px; font-family: monospace; }
+    .diagnostic-panel { 
+      background: #f5f5f5; 
+      border: 1px solid #ccc; 
+      padding: 15px; 
+      margin: 20px 0; 
+      border-radius: 4px; 
+    }
+    .test-result { 
+      margin: 5px 0; 
+      padding: 5px; 
+      border-radius: 3px; 
+    }
+    .pass { background: #d4edda; color: #155724; }
+    .fail { background: #f8d7da; color: #721c24; }
+    .info { background: #d1ecf1; color: #0c5460; }
+    .warning { background: #fff3cd; color: #856404; }
+    .debug-info { 
+      background: #e2e3e5; 
+      color: #383d41; 
+      font-size: 12px; 
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    button { 
+      margin: 5px; 
+      padding: 8px 12px; 
+      background: #007cba; 
+      color: white; 
+      border: none; 
+      border-radius: 3px; 
+      cursor: pointer; 
+    }
+    button:hover { background: #005580; }
+  </style>
+</head>
+<body>
+
+<h1>🔍 Taskbar Menu Dropdown Diagnostic</h1>
+
+<div class="diagnostic-panel">
+  <h3>Menu Structure Analysis</h3>
+  <button onclick="analyzeMenuStructure()">Analyze Menu Structure</button>
+  <button onclick="testMenuClicks()">Test Menu Clicks</button>
+  <button onclick="checkEventListeners()">Check Event Listeners</button>
+  <button onclick="forceTriggerMenu()">Force Trigger Menu</button>
+  <button onclick="clearResults()">Clear Results</button>
+  
+  <div id="results"></div>
+</div>
+
+<div class="diagnostic-panel">
+  <h3>Live Menu Testing</h3>
+  <p>Try clicking the menu items below:</p>
+  <p><strong>Expected:</strong> Dropdown should appear when clicking File, Edit, Navigation, View, or Connect</p>
+  <p><strong>Issue:</strong> If dropdown doesn't appear, we'll diagnose why</p>
+</div>
+
+<!-- PPPage Modular System will load the taskbar -->
+<script src="modules/core.js?v=20250817"></script>
+<script src="modules/posts.js?v=20250817"></script>
+<script src="modules/navigation.js?v=20250817"></script>
+<script src="modules/editor.js?v=20250817"></script>
+<script src="modules/theme.js?v=20250817"></script>
+<script src="modules/taskbar.js?v=20250817"></script>
+<script src="modules/console.js?v=20250817"></script>
+<script src="modules/app.js?v=20250817"></script>
+
+<script>
+let diagnosticResults = [];
+
+function log(message, type = 'info') {
+  const timestamp = new Date().toLocaleTimeString();
+  const result = `[${timestamp}] ${message}`;
+  diagnosticResults.push({message: result, type});
+  updateDisplay();
+}
+
+function updateDisplay() {
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = diagnosticResults.map(result => 
+    `<div class="test-result ${result.type}">${result.message}</div>`
+  ).join('');
+}
+
+function analyzeMenuStructure() {
+  log('🔍 Analyzing menu structure...', 'info');
+  
+  const menuBar = document.querySelector('.menu-bar');
+  if (!menuBar) {
+    log('❌ No .menu-bar element found', 'fail');
+    return;
+  }
+  log('✅ Found .menu-bar element', 'pass');
+  
+  const menuItems = document.querySelectorAll('.menu-item');
+  log(`Found ${menuItems.length} menu items`, 'info');
+  
+  menuItems.forEach((item, index) => {
+    const label = item.querySelector('.label');
+    const dropdown = item.querySelector('.menu-dropdown');
+    const labelText = label ? label.textContent.trim() : 'No label';
+    
+    log(`Menu ${index + 1}: "${labelText}"`, 'info');
+    log(`  - Has label: ${!!label}`, label ? 'pass' : 'fail');
+    log(`  - Has dropdown: ${!!dropdown}`, dropdown ? 'pass' : 'fail');
+    log(`  - data-menu attribute: ${label?.hasAttribute('data-menu')}`, label?.hasAttribute('data-menu') ? 'pass' : 'fail');
+    
+    if (dropdown) {
+      const entries = dropdown.querySelectorAll('.menu-entry');
+      log(`  - Dropdown entries: ${entries.length}`, 'info');
+      
+      // Check CSS display
+      const computedStyle = window.getComputedStyle(dropdown);
+      log(`  - CSS display: ${computedStyle.display}`, 'info');
+      log(`  - CSS visibility: ${computedStyle.visibility}`, 'info');
+    }
+  });
+}
+
+function testMenuClicks() {
+  log('🖱️ Testing menu click functionality...', 'info');
+  
+  const menuItems = document.querySelectorAll('.menu-item');
+  
+  menuItems.forEach((item, index) => {
+    const label = item.querySelector('.label');
+    if (label) {
+      const labelText = label.textContent.trim();
+      log(`Testing click on "${labelText}"...`, 'info');
+      
+      // Add a temporary event listener to detect clicks
+      const testClickHandler = (e) => {
+        log(`✅ Click detected on "${labelText}"`, 'pass');
+        label.removeEventListener('click', testClickHandler);
+      };
+      label.addEventListener('click', testClickHandler);
+      
+      // Programmatically click
+      try {
+        label.click();
+        
+        // Check if menu opened
+        setTimeout(() => {
+          const isOpen = item.classList.contains('open');
+          log(`Menu "${labelText}" open state: ${isOpen}`, isOpen ? 'pass' : 'fail');
+        }, 100);
+        
+      } catch (error) {
+        log(`❌ Error clicking "${labelText}": ${error.message}`, 'fail');
+      }
+    }
+  });
+}
+
+function checkEventListeners() {
+  log('👂 Checking event listeners...', 'info');
+  
+  const menuItems = document.querySelectorAll('.menu-item');
+  
+  menuItems.forEach((item, index) => {
+    const label = item.querySelector('.label');
+    if (label) {
+      const labelText = label.textContent.trim();
+      
+      // Check if listeners are attached (basic check)
+      const hasClickHandler = label.onclick !== null;
+      const hasEventListeners = label._eventHandlers || label.listeners;
+      
+      log(`"${labelText}" onclick: ${hasClickHandler}`, hasClickHandler ? 'pass' : 'warning');
+      
+      // Try to get event listeners (this may not work in all browsers)
+      if (typeof getEventListeners === 'function') {
+        try {
+          const listeners = getEventListeners(label);
+          log(`"${labelText}" event listeners: ${JSON.stringify(Object.keys(listeners))}`, 'info');
+        } catch (e) {
+          log(`"${labelText}" event listeners: Cannot check (dev tools required)`, 'warning');
+        }
+      } else {
+        log(`Event listener inspection not available (need Chrome DevTools)`, 'warning');
+      }
+    }
+  });
+}
+
+function forceTriggerMenu() {
+  log('🔧 Force triggering first menu...', 'info');
+  
+  const firstMenuItem = document.querySelector('.menu-item');
+  if (firstMenuItem) {
+    const label = firstMenuItem.querySelector('.label');
+    const labelText = label ? label.textContent.trim() : 'Unknown';
+    
+    log(`Force opening "${labelText}" menu...`, 'info');
+    
+    // Force add the 'open' class
+    firstMenuItem.classList.add('open');
+    
+    setTimeout(() => {
+      const isOpen = firstMenuItem.classList.contains('open');
+      log(`Force open result: ${isOpen}`, isOpen ? 'pass' : 'fail');
+      
+      if (isOpen) {
+        log('Menu can be opened with direct class manipulation', 'pass');
+        
+        // Check if it's visible
+        const dropdown = firstMenuItem.querySelector('.menu-dropdown');
+        if (dropdown) {
+          const computedStyle = window.getComputedStyle(dropdown);
+          const isVisible = computedStyle.display !== 'none';
+          log(`Dropdown visible after force open: ${isVisible}`, isVisible ? 'pass' : 'fail');
+        }
+        
+        // Close it after a moment
+        setTimeout(() => {
+          firstMenuItem.classList.remove('open');
+          log('Force closed menu', 'info');
+        }, 2000);
+      }
+    }, 100);
+  } else {
+    log('❌ No menu items found to force trigger', 'fail');
+  }
+}
+
+function clearResults() {
+  diagnosticResults = [];
+  updateDisplay();
+}
+
+// Auto-run basic analysis when page loads
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    log('🚀 Taskbar diagnostic tool loaded', 'info');
+    log('💡 Click buttons above to diagnose menu issues', 'info');
+    
+    // Auto-analyze structure
+    setTimeout(analyzeMenuStructure, 1000);
+  }, 500);
+});
+
+// Monitor for taskbar loading
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (mutation.type === 'childList') {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE && 
+            (node.classList?.contains('menu-bar') || node.querySelector?.('.menu-bar'))) {
+          log('📥 Taskbar loaded via MutationObserver', 'pass');
+          setTimeout(analyzeMenuStructure, 500);
+        }
+      });
+    }
+  });
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Log console messages from modules
+const originalConsoleLog = console.log;
+console.log = function(...args) {
+  const message = args.join(' ');
+  if (message.includes('menu') || message.includes('dropdown') || message.includes('taskbar')) {
+    log(`🔧 Module log: ${message}`, 'info');
+  }
+  originalConsoleLog.apply(console, args);
+};
+</script>
+
+</body>
+</html>
