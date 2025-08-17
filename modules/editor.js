@@ -20,10 +20,17 @@ const EditorModule = () => ({
     window.editorInstance = this;
     window.editor = this; // Also create 'editor' alias for compatibility
     
-    // Small delay to ensure DOM is ready
+    // Wait for DOM to be fully ready
+    if (document.readyState === 'loading') {
+      await new Promise(resolve => {
+        document.addEventListener('DOMContentLoaded', resolve);
+      });
+    }
+    
+    // Additional delay to ensure all elements are rendered
     setTimeout(() => {
       this.setupEditorButtons();
-    }, 100);
+    }, 500);
   },
 
   setupEditorButtons() {
