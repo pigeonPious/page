@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250920';
+    const buildDate = '20250921';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1227,27 +1227,80 @@ class SimpleBlog {
       align-items: center;
       background: #333;
       color: #fff;
+      cursor: move;
+      user-select: none;
     `;
     
+    // Make header draggable
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    
+    header.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = parseInt(magazine.style.left) || 0;
+      startTop = parseInt(magazine.style.top) || 0;
+      header.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      magazine.style.left = (startLeft + deltaX) + 'px';
+      magazine.style.top = (startTop + deltaY) + 'px';
+      magazine.style.transform = 'none'; // Remove center transform when dragging
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        header.style.cursor = 'move';
+      }
+    });
+    
     const importBtn = document.createElement('div');
-    importBtn.textContent = 'Import';
+    importBtn.textContent = '📁 Import';
     importBtn.style.cssText = `
       font-weight: bold;
       color: #fff;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12px;
+      padding: 4px 8px;
+      background: #555;
+      border-radius: 3px;
+      transition: background 0.2s;
+      z-index: 10001;
+      position: relative;
+      border: 1px solid #666;
     `;
     importBtn.addEventListener('click', () => this.importImages());
+    importBtn.addEventListener('mouseenter', () => { importBtn.style.background = '#666'; });
+    importBtn.addEventListener('mouseleave', () => { importBtn.style.background = '#555'; });
     
     const closeBtn = document.createElement('div');
-    closeBtn.textContent = '×';
+    closeBtn.textContent = '✕';
     closeBtn.style.cssText = `
       color: #fff;
       cursor: pointer;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
-      padding: 0 4px;
+      padding: 4px 8px;
+      background: #555;
+      border-radius: 3px;
+      transition: background 0.2s;
+      z-index: 10001;
+      position: relative;
+      border: 1px solid #666;
+      min-width: 20px;
+      text-align: center;
     `;
+    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.background = '#666'; });
+    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.background = '#555'; });
     closeBtn.addEventListener('click', () => {
       magazine.style.display = 'none';
       magazine.classList.add('hidden');
