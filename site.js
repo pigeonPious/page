@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250918';
+    const buildDate = '20250919';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1178,8 +1178,8 @@ class SimpleBlog {
     magazine.style.left = '50%';
     magazine.style.transform = 'translate(-50%, -50%)';
     magazine.style.zIndex = '10000';
-    magazine.style.backgroundColor = 'red'; // Emergency visibility test
-    magazine.style.border = '5px solid blue'; // Emergency visibility test
+    magazine.style.backgroundColor = '#2a2a2a'; // Dark background
+    magazine.style.border = '1px solid #444'; // Subtle border
     magazine.style.width = '400px'; // Force width
     magazine.style.height = '500px'; // Force height
     magazine.style.minWidth = '400px'; // Force min width
@@ -1188,26 +1188,7 @@ class SimpleBlog {
     console.log('🔍 Magazine inline styles applied');
     console.log('🔍 Magazine computed position:', magazine.getBoundingClientRect());
     
-    // Emergency test - create a simple visible div
-    const testDiv = document.createElement('div');
-    testDiv.style.cssText = `
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      width: 200px;
-      height: 100px;
-      background: lime;
-      border: 3px solid black;
-      z-index: 99999;
-      color: black;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
-    testDiv.textContent = 'TEST DIV - CAN YOU SEE THIS?';
-    document.body.appendChild(testDiv);
-    console.log('🔍 Emergency test div added:', testDiv);
+
     
     // Load images from assets folder
     console.log('🔍 Loading images...');
@@ -1240,18 +1221,19 @@ class SimpleBlog {
     const header = document.createElement('div');
     header.style.cssText = `
       padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid #444;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--menu-bg);
+      background: #333;
+      color: #fff;
     `;
     
     const importBtn = document.createElement('div');
     importBtn.textContent = 'Import';
     importBtn.style.cssText = `
       font-weight: bold;
-      color: var(--menu-fg);
+      color: #fff;
       cursor: pointer;
       font-size: 13px;
     `;
@@ -1260,7 +1242,7 @@ class SimpleBlog {
     const closeBtn = document.createElement('div');
     closeBtn.textContent = '×';
     closeBtn.style.cssText = `
-      color: var(--menu-fg);
+      color: #fff;
       cursor: pointer;
       font-size: 18px;
       font-weight: bold;
