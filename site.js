@@ -143,16 +143,20 @@ class SimpleBlog {
     console.log('🔧 Stored build counter:', storedBuildCounter);
     console.log('🔧 Comparison result:', storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter);
     
-    if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
-      console.log(`🔧 Build word: Using stored build word: ${storedBuildWord}`);
-      return storedBuildWord;
-    }
-    
-    // Clear cache if this is a new build
+    // Clear cache if this is a new build OR if stored counter doesn't match current
     if (storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter) {
       console.log('🧹 NEW BUILD DETECTED! Clearing cache...');
       console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
       this.clearBuildCache();
+      
+      // After clearing cache, we need to generate a new build word
+      console.log('🧹 Cache cleared, generating new build word...');
+    }
+    
+    // Only use stored build word if counters match
+    if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
+      console.log(`🔧 Build word: Using stored build word: ${storedBuildWord}`);
+      return storedBuildWord;
     }
     
     // Generate a new build word only if none exists or if it's a new build
@@ -164,7 +168,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -242,6 +246,43 @@ class SimpleBlog {
     
     console.log('🧹 localStorage after clearing:', Object.keys(localStorage));
     console.log('✅ Build cache cleared - MAXIMUM TROUBLESHOOTING COMPLETE');
+  }
+
+  async validateGitHubToken() {
+    try {
+      const githubConfig = localStorage.getItem('githubConfig');
+      if (!githubConfig) {
+        alert('No GitHub config found in localStorage');
+        return;
+      }
+      
+      const config = JSON.parse(githubConfig);
+      const token = config.token;
+      
+      if (!token) {
+        alert('No GitHub token found in config');
+        return;
+      }
+      
+      console.log('🔐 Testing GitHub token...');
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${token}`,
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        alert(`GitHub token is valid! Logged in as: ${userData.login}`);
+        console.log('✅ GitHub token valid:', userData);
+      } else {
+        alert(`GitHub token is invalid! Status: ${response.status}`);
+        console.log('❌ GitHub token invalid:', response.status, response.statusText);
+      }
+    } catch (error) {
+      alert(`Error testing GitHub token: ${error.message}`);
+      console.error('❌ Error testing GitHub token:', error);
+    }
   }
 
   setupBuildWordAutoRefresh() {
@@ -459,6 +500,11 @@ class SimpleBlog {
       alert('localStorage contents logged to console!');
     });
     
+    this.addClickHandler('#test-github-token', () => {
+      console.log('🔐 Test GitHub token button clicked');
+      this.validateGitHubToken();
+    });
+    
     console.log('✅ Button events setup complete');
   }
 
@@ -572,10 +618,10 @@ class SimpleBlog {
       let allPosts = [];
       
       try {
-        // First try to get the directory listing from GitHub API
+        // First try to get the directory listing from GitHub API (public access)
         const timestamp = Date.now();
         const githubDirUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts?t=${timestamp}`;
-        console.log('🔍 All Posts submenu: Scanning posts directory from GitHub API:', githubDirUrl);
+        console.log('🔍 All Posts submenu: Scanning posts directory from GitHub API (public):', githubDirUrl);
         
         const githubResponse = await fetch(githubDirUrl);
         console.log('🔍 All Posts submenu: GitHub API response status:', githubResponse.status, githubResponse.statusText);
@@ -611,6 +657,8 @@ class SimpleBlog {
                 
                 allPosts.push(post);
                 console.log('✅ All Posts submenu: Loaded post from file:', post);
+              } else {
+                console.log(`⚠️ All Posts submenu: Could not load ${jsonFile.name}: ${fileResponse.status}`);
               }
             } catch (fileError) {
               console.warn(`⚠️ All Posts submenu: Could not load ${jsonFile.name}:`, fileError);
@@ -619,6 +667,10 @@ class SimpleBlog {
           
           console.log('✅ All Posts submenu: Loaded from GitHub API directory scan:', allPosts.length, allPosts);
           
+        } else if (githubResponse.status === 403) {
+          console.log('⚠️ All Posts submenu: GitHub API 403 Forbidden - might be rate limited, trying local...');
+          // Fallback: try to scan local posts directory
+          await this.scanLocalPostsDirectory(allPosts);
         } else {
           console.log('⚠️ All Posts submenu: GitHub API directory scan failed, trying local...');
           // Fallback: try to scan local posts directory
@@ -902,10 +954,10 @@ class SimpleBlog {
       let allPosts = [];
       
       try {
-        // First try to get the directory listing from GitHub API
+        // First try to get the directory listing from GitHub API (public access)
         const timestamp = Date.now();
         const githubDirUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts?t=${timestamp}`;
-        console.log('🔍 Main loadPosts: Scanning posts directory from GitHub API:', githubDirUrl);
+        console.log('🔍 Main loadPosts: Scanning posts directory from GitHub API (public):', githubDirUrl);
         
         const githubResponse = await fetch(githubDirUrl);
         console.log('🔍 Main loadPosts: GitHub API response status:', githubResponse.status, githubResponse.statusText);
@@ -941,6 +993,8 @@ class SimpleBlog {
                 
                 allPosts.push(post);
                 console.log('✅ Main loadPosts: Loaded post from file:', post);
+              } else {
+                console.log(`⚠️ Main loadPosts: Could not load ${jsonFile.name}: ${fileResponse.status}`);
               }
             } catch (fileError) {
               console.warn(`⚠️ Main loadPosts: Could not load ${jsonFile.name}:`, fileError);
@@ -949,6 +1003,10 @@ class SimpleBlog {
           
           console.log('✅ Main loadPosts: Loaded from GitHub API directory scan:', allPosts.length, allPosts);
           
+        } else if (githubResponse.status === 403) {
+          console.log('⚠️ Main loadPosts: GitHub API 403 Forbidden - might be rate limited, trying local...');
+          // Fallback: try to scan local posts directory
+          await this.scanLocalPostsDirectory(allPosts);
         } else {
           console.log('⚠️ Main loadPosts: GitHub API directory scan failed, trying local...');
           // Fallback: try to scan local posts directory
@@ -1063,10 +1121,10 @@ class SimpleBlog {
       let post = null;
       
       try {
-        // Add cache-busting parameter
+        // Try GitHub API first (public access, no authentication required)
         const timestamp = Date.now();
         const githubUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json?t=${timestamp}`;
-        console.log('🔍 loadPost: Fetching from GitHub API:', githubUrl);
+        console.log('🔍 loadPost: Fetching from GitHub API (public):', githubUrl);
         
         const githubResponse = await fetch(githubUrl);
         console.log('🔍 loadPost: GitHub API response status:', githubResponse.status, githubResponse.statusText);
@@ -1080,19 +1138,31 @@ class SimpleBlog {
           
           post = JSON.parse(content);
           console.log('✅ Post loaded from GitHub API:', post.title);
+        } else if (githubResponse.status === 403) {
+          console.log('⚠️ loadPost: GitHub API 403 Forbidden - this might be a rate limit issue, trying local...');
+        } else if (githubResponse.status === 404) {
+          console.log('⚠️ loadPost: Post not found on GitHub (404), trying local...');
         } else {
           console.log('⚠️ loadPost: GitHub API failed with status:', githubResponse.status);
         }
       } catch (githubError) {
         console.log('⚠️ GitHub API failed, trying local...');
+        console.log('🔍 GitHub error details:', githubError);
+      }
+      
+      // Try local posts if GitHub failed or returned error
+      if (!post) {
         try {
+          console.log('🔍 loadPost: Trying local post file...');
           const localResponse = await fetch(`posts/${slug}.json`);
           if (localResponse.ok) {
             post = await localResponse.json();
             console.log('✅ Post loaded from local:', post.title);
+          } else {
+            console.log('⚠️ loadPost: Local post file not found:', localResponse.status);
           }
         } catch (localError) {
-          console.warn('❌ Both GitHub API and local failed:', localError);
+          console.warn('❌ Local post loading failed:', localError);
         }
       }
       
