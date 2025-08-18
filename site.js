@@ -127,7 +127,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit'
     ];
     
     // Get current date and time for dynamic build word
@@ -595,31 +595,59 @@ class SimpleBlog {
 
   async loadPosts() {
     try {
-      // Load posts from the posts directory
-      const response = await fetch('posts/index.json');
-      if (response.ok) {
-        const data = await response.json();
-        // Handle both array format and object with posts property
-        const allPosts = Array.isArray(data) ? data : (data.posts || []);
-        
-        // Filter to only include posts that actually exist as files
-        this.posts = await this.filterAvailablePosts(allPosts);
-        console.log(`✅ Loaded ${this.posts.length} available posts:`, this.posts.map(p => p.title));
-        
-        // Auto-load the most recent post if we have posts
-        if (this.posts.length > 0) {
-          const mostRecent = this.posts[0];
-          if (mostRecent && mostRecent.slug) {
-            console.log('🔄 Auto-loading most recent post:', mostRecent.title || 'Untitled');
-            await this.loadPost(mostRecent.slug);
-          } else {
-            console.warn('⚠️ Most recent post missing slug, showing default content');
-            this.displayDefaultContent();
-          }
+      // Try to load posts from GitHub API first, fallback to local if needed
+      let allPosts = [];
+      
+      try {
+        // Try to get posts from GitHub API
+        const githubResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
+        if (githubResponse.ok) {
+          const githubData = await githubResponse.json();
+          const content = atob(githubData.content); // Decode base64 content
+          const data = JSON.parse(content);
+          allPosts = Array.isArray(data) ? data : (data.posts || []);
+          console.log('✅ Loaded posts from GitHub API:', allPosts.length);
         } else {
-          console.log('⚠️ No posts found, showing default content');
+          console.log('⚠️ Could not load from GitHub, trying local...');
+          // Fallback to local posts
+          const localResponse = await fetch('posts/index.json');
+          if (localResponse.ok) {
+            const data = await localResponse.json();
+            allPosts = Array.isArray(data) ? data : (data.posts || []);
+            console.log('✅ Loaded posts from local:', allPosts.length);
+          }
+        }
+      } catch (githubError) {
+        console.log('⚠️ GitHub API failed, trying local posts...');
+        try {
+          const localResponse = await fetch('posts/index.json');
+          if (localResponse.ok) {
+            const data = await localResponse.json();
+            allPosts = Array.isArray(data) ? data : (data.posts || []);
+            console.log('✅ Loaded posts from local fallback:', allPosts.length);
+          }
+        } catch (localError) {
+          console.warn('❌ Both GitHub API and local posts failed:', localError);
+        }
+      }
+      
+      // Filter to only include posts that actually exist
+      this.posts = await this.filterAvailablePosts(allPosts);
+      console.log(`✅ Filtered to ${this.posts.length} available posts:`, this.posts.map(p => p.title));
+      
+      // Auto-load the most recent post if we have posts
+      if (this.posts.length > 0) {
+        const mostRecent = this.posts[0];
+        if (mostRecent && mostRecent.slug) {
+          console.log('🔄 Auto-loading most recent post:', mostRecent.title || 'Untitled');
+          await this.loadPost(mostRecent.slug);
+        } else {
+          console.warn('⚠️ Most recent post missing slug, showing default content');
           this.displayDefaultContent();
         }
+      } else {
+        console.log('⚠️ No posts found, showing default content');
+        this.displayDefaultContent();
       }
     } catch (error) {
       console.warn('Could not load posts:', error);
@@ -643,9 +671,27 @@ class SimpleBlog {
       }
       
       try {
-        // Check if the post file actually exists
-        const response = await fetch(`posts/${post.slug}.json`);
-        if (response.ok) {
+        // Try GitHub API first, then local fallback
+        let postExists = false;
+        
+        try {
+          const githubResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${post.slug}.json`);
+          if (githubResponse.ok) {
+            postExists = true;
+          }
+        } catch (githubError) {
+          // Try local fallback
+          try {
+            const localResponse = await fetch(`posts/${post.slug}.json`);
+            if (localResponse.ok) {
+              postExists = true;
+            }
+          } catch (localError) {
+            // Both failed
+          }
+        }
+        
+        if (postExists) {
           availablePosts.push(post);
         } else {
           console.warn(`⚠️ Post file not found: ${post.slug}.json`);
@@ -662,15 +708,38 @@ class SimpleBlog {
   async loadPost(slug) {
     try {
       console.log(`📖 Loading post: ${slug}`);
-      const response = await fetch(`posts/${slug}.json`);
-      if (response.ok) {
-        const post = await response.json();
+      
+      // Try GitHub API first, then local fallback
+      let post = null;
+      
+      try {
+        const githubResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`);
+        if (githubResponse.ok) {
+          const githubData = await githubResponse.json();
+          const content = atob(githubData.content); // Decode base64 content
+          post = JSON.parse(content);
+          console.log('✅ Post loaded from GitHub API:', post.title);
+        }
+      } catch (githubError) {
+        console.log('⚠️ GitHub API failed, trying local...');
+        try {
+          const localResponse = await fetch(`posts/${slug}.json`);
+          if (localResponse.ok) {
+            post = await localResponse.json();
+            console.log('✅ Post loaded from local:', post.title);
+          }
+        } catch (localError) {
+          console.warn('❌ Both GitHub API and local failed:', localError);
+        }
+      }
+      
+      if (post) {
         this.displayPost(post);
         this.currentPost = post;
         console.log(`✅ Post loaded successfully: ${post.title}`);
         return post;
       } else {
-        console.error(`❌ Failed to load post ${slug}: ${response.status} ${response.statusText}`);
+        console.error(`❌ Failed to load post ${slug}: Post not found`);
         this.displayDefaultContent();
       }
     } catch (error) {
@@ -1965,7 +2034,7 @@ class SimpleBlog {
       // Get GitHub token from localStorage
       const githubToken = localStorage.getItem('github_token');
       if (!githubToken) {
-        alert('GitHub token not found. Please authenticate again.');
+        this.showMenuStyle1Message('GitHub token not found. Please authenticate again.', 'error');
         this.showGitHubLogin();
         return;
       }
@@ -1993,19 +2062,21 @@ class SimpleBlog {
         // Update posts index
         await this.updatePostsIndex(postData);
         
-        alert(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`);
+        this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`, 'success');
         
-        // Redirect to the published post
-        window.location.href = `index.html?post=${postData.slug}`;
+        // Redirect to the published post after a short delay
+        setTimeout(() => {
+          window.location.href = `index.html?post=${postData.slug}`;
+        }, 3000);
       } else {
         const error = await response.json();
         console.error('❌ Failed to publish post:', error);
-        alert(`❌ Failed to publish post: ${error.message || 'Unknown error'}`);
+        this.showMenuStyle1Message(`❌ Failed to publish post: ${error.message || 'Unknown error'}`, 'error');
       }
       
     } catch (error) {
       console.error('❌ Error publishing post:', error);
-      alert('Error publishing post. Please check your connection and try again.');
+      this.showMenuStyle1Message('Error publishing post. Please check your connection and try again.', 'error');
     }
   }
 
@@ -2547,6 +2618,64 @@ class SimpleBlog {
     if (tooltip) {
       tooltip.style.display = 'none';
     }
+  }
+
+  showMenuStyle1Message(message, type = 'info') {
+    // Remove any existing message
+    const existingMessage = document.getElementById('menuStyle1Message');
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+
+    // Create message container in menu style 1
+    const messageContainer = document.createElement('div');
+    messageContainer.id = 'menuStyle1Message';
+    messageContainer.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--fg);
+      z-index: 10000;
+      max-width: 400px;
+      text-align: center;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.4;
+    `;
+
+    // Add type-specific styling
+    if (type === 'success') {
+      messageContainer.style.borderColor = 'var(--success-color, #28a745)';
+      messageContainer.style.color = 'var(--success-color, #28a745)';
+    } else if (type === 'error') {
+      messageContainer.style.borderColor = 'var(--danger-color, #dc3545)';
+      messageContainer.style.color = 'var(--danger-color, #dc3545)';
+    }
+
+    messageContainer.textContent = message;
+    document.body.appendChild(messageContainer);
+
+    // Auto-remove after 5 seconds for success, 8 seconds for errors
+    const autoRemoveDelay = type === 'success' ? 5000 : 8000;
+    setTimeout(() => {
+      if (messageContainer.parentNode) {
+        messageContainer.remove();
+      }
+    }, autoRemoveDelay);
+
+    // Click to dismiss
+    messageContainer.addEventListener('click', () => {
+      messageContainer.remove();
+    });
+
+    // Add cursor pointer to indicate it's clickable
+    messageContainer.style.cursor = 'pointer';
   }
 
   // Utility methods
