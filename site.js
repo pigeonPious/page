@@ -29,6 +29,9 @@ class SimpleBlog {
     this.setTheme(this.theme);
     console.log('✅ Theme set');
     
+    // Load saved post flags
+    this.loadSavedFlags();
+    
     // Check authentication status
     this.checkAndUpdateAuthStatus();
     
@@ -117,7 +120,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250908';
+    const buildDate = '20250909';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -152,12 +155,6 @@ class SimpleBlog {
       // Don't close menus when clicking on theme buttons
       if (e.target.closest('[data-mode]')) {
         console.log('🎨 Theme button clicked, not closing menus');
-        return;
-      }
-      
-      // Don't close if clicking in taskbar (to preserve text selection)
-      if (e.target.closest('.menu-bar') || e.target.closest('.taskbar-status')) {
-        console.log('📋 Taskbar clicked, preserving text selection');
         return;
       }
       
@@ -1438,29 +1435,43 @@ class SimpleBlog {
         slug: title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
         title: title,
         date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
-        keywords: 'general',
+        keywords: this.currentPostFlags || 'general',
         content: content
       };
       
       console.log('📝 Post data prepared:', postData);
       
-      // Publish to GitHub using the save-post function
-      const response = await fetch('/.netlify/functions/save-post', {
-        method: 'POST',
+      // Get GitHub token from localStorage
+      const githubToken = localStorage.getItem('github_token');
+      if (!githubToken) {
+        alert('GitHub token not found. Please authenticate again.');
+        this.showGitHubLogin();
+        return;
+      }
+      
+      // Create post file content
+      const postContent = JSON.stringify(postData, null, 2);
+      
+      // Publish directly to GitHub using GitHub API
+      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/page/posts/${postData.slug}.json`, {
+        method: 'PUT',
         headers: {
+          'Authorization': `token ${githubToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: postData.title,
-          content: postData.content,
-          slug: postData.slug,
-          category: 'general'
+          message: commitMessage,
+          content: btoa(postContent), // Base64 encode content
+          branch: 'main'
         })
       });
       
       if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Post published successfully:', result);
+        console.log('✅ Post published successfully to GitHub');
+        
+        // Update posts index
+        await this.updatePostsIndex(postData);
+        
         alert(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`);
         
         // Redirect to the published post
@@ -1468,7 +1479,7 @@ class SimpleBlog {
       } else {
         const error = await response.json();
         console.error('❌ Failed to publish post:', error);
-        alert(`❌ Failed to publish post: ${error.error || 'Unknown error'}`);
+        alert(`❌ Failed to publish post: ${error.message || 'Unknown error'}`);
       }
       
     } catch (error) {
@@ -1477,12 +1488,70 @@ class SimpleBlog {
     }
   }
 
+  async updatePostsIndex(postData) {
+    try {
+      const githubToken = localStorage.getItem('github_token');
+      if (!githubToken) return;
+      
+      // Get current index
+      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/page/posts/index.json', {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+        }
+      });
+      
+      if (indexResponse.ok) {
+        const indexData = await indexResponse.json();
+        const currentIndex = JSON.parse(atob(indexData.content));
+        
+        // Add new post
+        currentIndex.unshift({
+          slug: postData.slug,
+          title: postData.title,
+          date: postData.date,
+          keywords: postData.keywords
+        });
+        
+        // Update index file
+        await fetch(`https://api.github.com/repos/pigeonPious/page/contents/page/posts/index.json`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: `Add post: ${postData.title}`,
+            content: btoa(JSON.stringify(currentIndex, null, 2)),
+            sha: indexData.sha,
+            branch: 'main'
+          })
+        });
+        
+        console.log('✅ Posts index updated');
+      }
+    } catch (error) {
+      console.error('❌ Error updating posts index:', error);
+    }
+  }
+
   async checkAuthentication() {
     try {
-      const response = await fetch('/.netlify/functions/auth-check');
+      const githubToken = localStorage.getItem('github_token');
+      if (!githubToken) {
+        return false;
+      }
+      
+      // Verify token by making a test API call
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+        }
+      });
+      
       if (response.ok) {
-        const result = await response.json();
-        return result.authenticated;
+        const userData = await response.json();
+        // Check if user is the admin (pigeonPious)
+        return userData.login === 'pigeonPious';
       }
     } catch (error) {
       console.error('❌ Error checking authentication:', error);
@@ -1491,9 +1560,9 @@ class SimpleBlog {
   }
 
   showGitHubLogin() {
-    console.log('🔐 Showing GitHub login...');
+    console.log('🔐 Showing GitHub token input...');
     
-    // Create login modal
+    // Create login modal in menu style 1
     const modal = document.createElement('div');
     modal.id = 'githubLoginModal';
     modal.style.cssText = `
@@ -1519,8 +1588,22 @@ class SimpleBlog {
     `;
     
     content.innerHTML = `
-      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub Authentication Required</h3>
-      <p style="color: var(--menu-fg); margin-bottom: 20px;">You need to authenticate with GitHub to publish posts.</p>
+      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub Personal Access Token</h3>
+      <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
+      <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 15px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--fg);
+        font-family: monospace;
+      ">
+      <div style="margin-bottom: 15px;">
+        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 12px;">
+          Create token at github.com/settings/tokens (needs repo scope)
+        </a>
+      </div>
       <button id="githubLoginBtn" style="
         background: #24292e;
         color: white;
@@ -1529,29 +1612,39 @@ class SimpleBlog {
         border-radius: 4px;
         cursor: pointer;
         font-size: 14px;
-      ">Login with GitHub</button>
-      <div style="margin-top: 15px;">
-        <button id="closeLoginModal" style="
-          background: transparent;
-          color: var(--menu-fg);
-          border: 1px solid var(--border);
-          padding: 8px 16px;
-          border-radius: 4px;
-          cursor: pointer;
-        ">Cancel</button>
-      </div>
+        margin-right: 10px;
+      ">Authenticate</button>
+      <button id="closeLoginModal" style="
+        background: transparent;
+        color: var(--menu-fg);
+        border: 1px solid var(--border);
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      ">Cancel</button>
     `;
     
     modal.appendChild(content);
     document.body.appendChild(modal);
     
+    // Focus on input
+    const tokenInput = document.getElementById('githubTokenInput');
+    tokenInput.focus();
+    
     // Add event listeners
     document.getElementById('githubLoginBtn').addEventListener('click', () => {
-      this.initiateGitHubLogin();
+      this.authenticateWithToken();
     });
     
     document.getElementById('closeLoginModal').addEventListener('click', () => {
       document.body.removeChild(modal);
+    });
+    
+    // Handle Enter key
+    tokenInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.authenticateWithToken();
+      }
     });
     
     // Close on outside click
@@ -1562,53 +1655,62 @@ class SimpleBlog {
     });
   }
 
-  initiateGitHubLogin() {
-    console.log('🔐 Initiating GitHub OAuth...');
+  async authenticateWithToken() {
+    const tokenInput = document.getElementById('githubTokenInput');
+    const token = tokenInput.value.trim();
     
-    // Show loading state
-    const loginBtn = document.getElementById('githubLoginBtn');
-    if (loginBtn) {
-      loginBtn.textContent = 'Connecting...';
-      loginBtn.disabled = true;
+    if (!token) {
+      alert('Please enter a GitHub token.');
+      return;
     }
     
-    // Get GitHub client ID
-    fetch('/.netlify/functions/get-github-client-id')
-      .then(response => {
-        console.log('🔐 GitHub client ID response status:', response.status);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log('🔐 GitHub client ID response data:', data);
-        if (data.clientId) {
-          // Redirect to GitHub OAuth
-          const redirectUri = `${window.location.origin}/.netlify/functions/auth-callback`;
-          const state = Math.random().toString(36).substring(7);
-          
-          // Store state for verification
-          sessionStorage.setItem('github_oauth_state', state);
-          
-          const authUrl = `https://github.com/login/oauth/authorize?client_id=${data.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=repo`;
-          console.log('🔐 Redirecting to GitHub OAuth:', authUrl);
-          window.location.href = authUrl;
-        } else {
-          console.error('❌ No GitHub client ID in response:', data);
-          alert('GitHub OAuth not configured. Please contact the administrator.');
-        }
-      })
-      .catch(error => {
-        console.error('❌ Error getting GitHub client ID:', error);
-        alert(`Error connecting to GitHub: ${error.message}\n\nPlease check your Netlify function configuration.`);
-        
-        // Reset button state
-        if (loginBtn) {
-          loginBtn.textContent = 'Login with GitHub';
-          loginBtn.disabled = false;
+    try {
+      // Test the token
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${token}`,
         }
       });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // Check if user is the admin
+        if (userData.login === 'pigeonPious') {
+          // Store token
+          localStorage.setItem('github_token', token);
+          console.log('✅ GitHub authentication successful');
+          
+          // Update UI
+          this.updateAuthStatus(true);
+          
+          // Close modal
+          const modal = document.getElementById('githubLoginModal');
+          if (modal) {
+            document.body.removeChild(modal);
+          }
+          
+          alert('✅ GitHub authentication successful! You can now publish posts.');
+        } else {
+          alert('❌ Access denied. Only pigeonPious can authenticate as admin.');
+        }
+      } else {
+        alert('❌ Invalid GitHub token. Please check your token and try again.');
+      }
+    } catch (error) {
+      console.error('❌ Authentication error:', error);
+      alert('❌ Authentication failed. Please check your connection and try again.');
+    }
+  }
+
+  // OAuth method removed - using direct token authentication instead
+
+  loadSavedFlags() {
+    const savedFlags = localStorage.getItem('current_post_flags');
+    if (savedFlags) {
+      this.currentPostFlags = savedFlags;
+      console.log('🏷️ Loaded saved flags:', savedFlags);
+    }
   }
 
   async checkAndUpdateAuthStatus() {
@@ -1683,16 +1785,16 @@ class SimpleBlog {
       top = btnRect.top - 55; // Show above button instead
     }
     
-    // Create menu style 2 input (single line, no UI)
+    // Create menu style 1 input (as requested for all future popups)
     const inputBox = document.createElement('div');
-    inputBox.className = 'menu-style-2-input';
+    inputBox.className = 'menu-style-1-input';
     inputBox.style.cssText = `
       position: fixed;
       top: ${top}px;
       left: ${left}px;
       background: var(--menu-bg);
       border: 1px solid var(--border);
-      padding: 6px 10px;
+      padding: 8px 12px;
       z-index: 1000;
       min-width: 350px;
     `;
@@ -1709,6 +1811,11 @@ class SimpleBlog {
       outline: none;
       font-family: inherit;
     `;
+    
+    // Set current flags if they exist
+    if (this.currentPostFlags) {
+      input.value = this.currentPostFlags;
+    }
     
     inputBox.appendChild(input);
     document.body.appendChild(inputBox);
@@ -1755,13 +1862,10 @@ class SimpleBlog {
     
     console.log('📋 Parsed flags:', { all: flagArray, devlog: devlogFlags });
     
-    // Show confirmation
-    alert(`Post flags set!\n\nTitle: ${postTitle}\nFlags: ${flags}\n\nDevlog flags: ${devlogFlags.length > 0 ? devlogFlags.join(', ') : 'None'}\n\nThese flags will be used for navigation and categorization.`);
+    // Store in localStorage for persistence
+    localStorage.setItem('current_post_flags', flags);
     
-    // In a real implementation, this would:
-    // 1. Save flags to the post data
-    // 2. Update navigation menus
-    // 3. Handle devlog submenus (e.g., devlog:hablet → Hablet submenu)
+    console.log('✅ Post flags saved:', flags);
   }
 
   toggleConsole() {
