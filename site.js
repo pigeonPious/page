@@ -119,6 +119,15 @@ class SimpleBlog {
   }
 
     generateBuildWord() {
+    // Check if we already have a build word stored
+    let storedBuildWord = localStorage.getItem('currentBuildWord');
+    
+    if (storedBuildWord) {
+      console.log(`🔧 Build word: Using stored build word: ${storedBuildWord}`);
+      return storedBuildWord;
+    }
+    
+    // Generate a new build word only if none exists
     const words = [
       'alpha', 'beta', 'gamma', 'delta', 'echo', 'foxtrot', 'golf', 'hotel',
       'india', 'juliet', 'kilo', 'lima', 'mike', 'november', 'oscar', 'papa',
@@ -127,7 +136,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -138,9 +147,14 @@ class SimpleBlog {
     const calculatedIndex = seed % words.length;
     const word = words[calculatedIndex];
     
-    console.log(`🔧 Build word: ${word}-${buildCounter} (seed: ${seed}, index: ${calculatedIndex})`);
+    const newBuildWord = `${word}-${buildCounter}`;
     
-    return `${word}-${buildCounter}`;
+    // Store the build word so it doesn't change on reloads
+    localStorage.setItem('currentBuildWord', newBuildWord);
+    
+    console.log(`🔧 Build word: Generated new build word: ${newBuildWord} (seed: ${seed}, index: ${calculatedIndex})`);
+    
+    return newBuildWord;
   }
 
   incrementBuildWord() {
@@ -148,6 +162,9 @@ class SimpleBlog {
     const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
     const newCounter = currentCounter + 1;
     localStorage.setItem('buildCounter', newCounter.toString());
+    
+    // Clear the stored build word so a new one will be generated
+    localStorage.removeItem('currentBuildWord');
     
     // Update the display
     const buildIndicator = document.getElementById('build-indicator');
@@ -732,62 +749,104 @@ class SimpleBlog {
 
   async loadPosts() {
     try {
-      // Try to load posts from GitHub API first, fallback to local if needed
+      // Scan the actual posts directory to get all JSON files
       let allPosts = [];
       
       try {
-        // Try to get posts from GitHub API
-        const githubResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
+        // First try to get the directory listing from GitHub API
+        const timestamp = Date.now();
+        const githubDirUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts?t=${timestamp}`;
+        console.log('🔍 Main loadPosts: Scanning posts directory from GitHub API:', githubDirUrl);
+        
+        const githubResponse = await fetch(githubDirUrl);
+        console.log('🔍 Main loadPosts: GitHub API response status:', githubResponse.status, githubResponse.statusText);
+        
         if (githubResponse.ok) {
-          const githubData = await githubResponse.json();
-          const content = atob(githubData.content); // Decode base64 content
-          const data = JSON.parse(content);
-          allPosts = Array.isArray(data) ? data : (data.posts || []);
-          console.log('✅ Loaded posts from GitHub API:', allPosts.length);
+          const directoryContents = await githubResponse.json();
+          console.log('🔍 Main loadPosts: Directory contents:', directoryContents);
+          
+          // Filter for JSON files only
+          const jsonFiles = directoryContents.filter(item => 
+            item.type === 'file' && item.name.endsWith('.json') && item.name !== 'index.json'
+          );
+          
+          console.log('🔍 Main loadPosts: Found JSON files:', jsonFiles);
+          
+          // For each JSON file, try to get its content to extract title
+          for (const jsonFile of jsonFiles) {
+            try {
+              const fileResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${jsonFile.name}?t=${timestamp}`);
+              if (fileResponse.ok) {
+                const fileData = await fileResponse.json();
+                const content = atob(fileData.content);
+                const postData = JSON.parse(content);
+                
+                // Create post entry with slug from filename
+                const slug = jsonFile.name.replace('.json', '');
+                const post = {
+                  slug: slug,
+                  title: postData.title || slug,
+                  date: postData.date || 'Unknown date',
+                  keywords: postData.keywords || 'general'
+                };
+                
+                allPosts.push(post);
+                console.log('✅ Main loadPosts: Loaded post from file:', post);
+              }
+            } catch (fileError) {
+              console.warn(`⚠️ Main loadPosts: Could not load ${jsonFile.name}:`, fileError);
+            }
+          }
+          
+          console.log('✅ Main loadPosts: Loaded from GitHub API directory scan:', allPosts.length, allPosts);
+          
         } else {
-          console.log('⚠️ Could not load from GitHub, trying local...');
-          // Fallback to local posts
-          const localResponse = await fetch('posts/index.json');
-          if (localResponse.ok) {
-            const data = await localResponse.json();
-            allPosts = Array.isArray(data) ? data : (data.posts || []);
-            console.log('✅ Loaded posts from local:', allPosts.length);
-          }
+          console.log('⚠️ Main loadPosts: GitHub API directory scan failed, trying local...');
+          // Fallback: try to scan local posts directory
+          await this.scanLocalPostsDirectory(allPosts);
         }
-      } catch (githubError) {
-        console.log('⚠️ GitHub API failed, trying local posts...');
+      } catch (error) {
+        console.error('❌ Main loadPosts: Error scanning GitHub directory:', error);
+        console.log('⚠️ Main loadPosts: GitHub API failed, trying local directory scan...');
+        // Fallback: scan local posts directory
+        await this.scanLocalPostsDirectory(allPosts);
+      }
+      
+      // If we still have no posts, try to load from index.json as last resort
+      if (allPosts.length === 0) {
+        console.log('⚠️ Main loadPosts: No posts found from directory scan, trying index.json...');
         try {
-          const localResponse = await fetch('posts/index.json');
-          if (localResponse.ok) {
-            const data = await localResponse.json();
+          const indexResponse = await fetch('posts/index.json');
+          if (indexResponse.ok) {
+            const data = await indexResponse.json();
             allPosts = Array.isArray(data) ? data : (data.posts || []);
-            console.log('✅ Loaded posts from local fallback:', allPosts.length);
+            console.log('✅ Main loadPosts: Loaded from index.json:', allPosts.length);
           }
-        } catch (localError) {
-          console.warn('❌ Both GitHub API and local posts failed:', localError);
+        } catch (indexError) {
+          console.warn('❌ Main loadPosts: index.json also failed:', indexError);
         }
       }
       
-      // Filter to only include posts that actually exist
-      this.posts = await this.filterAvailablePosts(allPosts);
-      console.log(`✅ Filtered to ${this.posts.length} available posts:`, this.posts.map(p => p.title));
+      // Store the posts and filter to only include posts that actually exist
+      this.posts = allPosts;
+      console.log(`✅ Main loadPosts: Total posts found: ${this.posts.length}`, this.posts.map(p => p.title));
       
       // Auto-load the most recent post if we have posts
       if (this.posts.length > 0) {
         const mostRecent = this.posts[0];
         if (mostRecent && mostRecent.slug) {
-          console.log('🔄 Auto-loading most recent post:', mostRecent.title || 'Untitled');
+          console.log('🔄 Main loadPosts: Auto-loading most recent post:', mostRecent.title || 'Untitled');
           await this.loadPost(mostRecent.slug);
         } else {
-          console.warn('⚠️ Most recent post missing slug, showing default content');
+          console.warn('⚠️ Main loadPosts: Most recent post missing slug, showing default content');
           this.displayDefaultContent();
         }
       } else {
-        console.log('⚠️ No posts found, showing default content');
+        console.log('⚠️ Main loadPosts: No posts found, showing default content');
         this.displayDefaultContent();
       }
     } catch (error) {
-      console.warn('Could not load posts:', error);
+      console.warn('❌ Main loadPosts: Could not load posts:', error);
       this.posts = [];
       this.displayDefaultContent();
     }
