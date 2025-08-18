@@ -127,7 +127,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse'
     ];
     
     // Get current date and time for dynamic build word
@@ -445,7 +445,7 @@ class SimpleBlog {
     console.log('✅ Submenus setup complete');
   }
 
-  showAllPostsSubmenu(menuElement) {
+  async showAllPostsSubmenu(menuElement) {
     // Create submenu for all posts
     const submenu = document.createElement('div');
     submenu.className = 'submenu';
@@ -455,40 +455,17 @@ class SimpleBlog {
       top: 0;
       background: var(--menu-bg, #333);
       border: 1px solid var(--menu-border, #555);
-      border-radius: 4px;
       padding: 5px 0;
       min-width: 150px;
       z-index: 1000;
     `;
     
-    // Add post entries
-    this.posts.forEach(post => {
-      if (!post || !post.slug) {
-        console.warn('⚠️ Skipping invalid post:', post);
-        return;
-      }
-      
-      const entry = document.createElement('div');
-      entry.className = 'menu-entry';
-      entry.textContent = post.title || 'Untitled';
-      entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
-      
-      entry.addEventListener('click', () => {
-        console.log('📖 Post selected:', post.title || 'Untitled');
-        this.loadPost(post.slug);
-        this.closeAllMenus();
-      });
-      
-      entry.addEventListener('mouseenter', () => {
-        entry.style.background = 'var(--menu-hover-bg, #555)';
-      });
-      
-      entry.addEventListener('mouseleave', () => {
-        entry.style.background = 'transparent';
-      });
-      
-      submenu.appendChild(entry);
-    });
+    // Show loading indicator
+    const loadingEntry = document.createElement('div');
+    loadingEntry.className = 'menu-entry';
+    loadingEntry.textContent = 'Loading posts...';
+    loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+    submenu.appendChild(loadingEntry);
     
     // Remove existing submenu
     const existingSubmenu = menuElement.querySelector('.submenu');
@@ -498,6 +475,84 @@ class SimpleBlog {
     
     // Add new submenu
     menuElement.appendChild(submenu);
+    
+    try {
+      // Fetch latest posts from GitHub API
+      let allPosts = [];
+      
+      try {
+        const githubResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
+        if (githubResponse.ok) {
+          const githubData = await githubResponse.json();
+          const content = atob(githubData.content); // Decode base64 content
+          const data = JSON.parse(content);
+          allPosts = Array.isArray(data) ? data : (data.posts || []);
+          console.log('✅ All Posts submenu: Loaded from GitHub API:', allPosts.length);
+        } else {
+          console.log('⚠️ All Posts submenu: GitHub API failed, trying local...');
+          // Fallback to local posts
+          const localResponse = await fetch('posts/index.json');
+          if (localResponse.ok) {
+            const data = await localResponse.json();
+            allPosts = Array.isArray(data) ? data : (data.posts || []);
+            console.log('✅ All Posts submenu: Loaded from local:', allPosts.length);
+          }
+        }
+      } catch (error) {
+        console.log('⚠️ All Posts submenu: Both GitHub API and local failed, using cached posts');
+        allPosts = this.posts; // Use cached posts as last resort
+      }
+      
+      // Clear loading indicator
+      submenu.innerHTML = '';
+      
+      // Add post entries
+      if (allPosts.length > 0) {
+        allPosts.forEach(post => {
+          if (!post || !post.slug) {
+            console.warn('⚠️ Skipping invalid post:', post);
+            return;
+          }
+          
+          const entry = document.createElement('div');
+          entry.className = 'menu-entry';
+          entry.textContent = post.title || 'Untitled';
+          entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
+          
+          entry.addEventListener('click', () => {
+            console.log('📖 Post selected:', post.title || 'Untitled');
+            this.loadPost(post.slug);
+            this.closeAllMenus();
+          });
+          
+          entry.addEventListener('mouseenter', () => {
+            entry.style.background = 'var(--menu-hover-bg, #555)';
+          });
+          
+          entry.addEventListener('mouseleave', () => {
+            entry.style.background = 'transparent';
+          });
+          
+          submenu.appendChild(entry);
+        });
+      } else {
+        const noPostsEntry = document.createElement('div');
+        noPostsEntry.className = 'menu-entry';
+        noPostsEntry.textContent = 'No posts found';
+        noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+        submenu.appendChild(noPostsEntry);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error loading posts for submenu:', error);
+      // Show error message
+      submenu.innerHTML = '';
+      const errorEntry = document.createElement('div');
+      errorEntry.className = 'menu-entry';
+      errorEntry.textContent = 'Error loading posts';
+      errorEntry.style.cssText = 'padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;';
+      submenu.appendChild(errorEntry);
+    }
     
     // Remove submenu on mouse leave (ALL POSTS SUBMENU)
     const allPostsMouseLeaveHandler = () => {
