@@ -111,7 +111,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250902';
+    const buildDate = '20250903';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -846,7 +846,7 @@ class SimpleBlog {
       container.appendChild(slider);
       container.appendChild(valueDisplay);
       
-      return { slider, onChange };
+      return { slider, onChange, container };
     };
 
     // Hue slider
