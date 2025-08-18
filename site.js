@@ -5,6 +5,7 @@
 
 class SimpleBlog {
   constructor() {
+    console.log('🚀 SimpleBlog constructor called');
     this.currentPost = null;
     this.posts = [];
     // Load theme from localStorage or default to dark
@@ -15,7 +16,9 @@ class SimpleBlog {
     this.allPostsMouseEnterHandler = null;
     this.devlogMouseEnterHandler = null;
     
+    console.log('🔍 About to call init()...');
     this.init();
+    console.log('🔍 init() called');
   }
 
   init() {
@@ -123,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250915';
+    const buildDate = '20250916';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -138,14 +141,21 @@ class SimpleBlog {
   }
 
   bindEvents() {
+    console.log('🔧 bindEvents() called');
+    
     // Menu system
+    console.log('🔍 Setting up menu system...');
     this.setupMenuSystem();
     
     // Button events
+    console.log('🔍 Setting up button events...');
     this.setupButtonEvents();
     
     // Global events
+    console.log('🔍 Setting up global events...');
     this.setupGlobalEvents();
+    
+    console.log('✅ bindEvents() completed');
   }
 
   setupMenuSystem() {
