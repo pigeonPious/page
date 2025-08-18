@@ -106,7 +106,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250828';
+    const buildDate = '20250829';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -229,9 +229,12 @@ class SimpleBlog {
     });
 
     // Theme buttons
+    console.log('🔧 Setting up theme buttons...');
     this.addClickHandler('[data-mode]', (e) => {
       const mode = e.target.dataset.mode;
       console.log('🎨 Theme button clicked:', mode);
+      console.log('🎯 Target element:', e.target);
+      console.log('🎯 Dataset:', e.target.dataset);
       this.setTheme(mode);
     });
 
@@ -250,9 +253,14 @@ class SimpleBlog {
   }
 
   addClickHandler(selector, handler) {
-    const element = document.querySelector(selector);
-    if (element) {
-      element.addEventListener('click', handler);
+    const elements = document.querySelectorAll(selector);
+    if (elements.length > 0) {
+      elements.forEach(element => {
+        element.addEventListener('click', handler);
+        console.log(`✅ Click handler attached to:`, element.textContent || element.id || selector);
+      });
+    } else {
+      console.warn(`⚠️ No elements found for selector: ${selector}`);
     }
   }
 
