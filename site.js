@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250916';
+    const buildDate = '20250917';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1180,7 +1180,7 @@ class SimpleBlog {
   createImageMagazine() {
     const magazine = document.createElement('div');
     magazine.id = 'imageMagazine';
-    magazine.className = 'image-magazine';
+    magazine.className = 'image-magazine-only';
     magazine.style.cssText = `
       position: fixed;
       top: 50%;

@@ -587,6 +587,23 @@ body.custom-mode .box-style-1.message-box {
 }
 
 /* Image Magazine Styles */
+.image-magazine-only {
+  position: fixed;
+  width: 400px;
+  height: 500px;
+  max-width: 90vw;
+  max-height: 90vh;
+  z-index: 10000;
+  background: var(--menu-bg) !important;
+  color: var(--menu-fg) !important;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .box-style-1.image-magazine {
   position: fixed;
   width: 114px;
