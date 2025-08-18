@@ -111,7 +111,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250904';
+    const buildDate = '20250905';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -233,6 +233,27 @@ class SimpleBlog {
     this.addClickHandler('#make-note-button', () => {
       console.log('📌 Make note button clicked');
       this.makeNote();
+    });
+
+    // Editor-specific buttons
+    this.addClickHandler('#export-btn', () => {
+      console.log('📤 Export button clicked');
+      this.exportPost();
+    });
+
+    this.addClickHandler('#images-btn', () => {
+      console.log('🖼️ Images button clicked');
+      this.showImagesModal();
+    });
+
+    this.addClickHandler('#publish-btn', () => {
+      console.log('📢 Publish button clicked');
+      this.showPublishModal();
+    });
+
+    this.addClickHandler('#flags-btn', () => {
+      console.log('🏷️ Flags button clicked');
+      this.showFlagsModal();
     });
 
     // Console toggle
@@ -796,8 +817,8 @@ class SimpleBlog {
       left: 0;
       background: var(--menu-bg);
       border: 1px solid var(--border);
-      padding: 8px;
-      min-width: 200px;
+      padding: 6px;
+      min-width: 180px;
       z-index: 1000;
     `;
 
@@ -806,47 +827,41 @@ class SimpleBlog {
     let currentS = 25;
     let currentL = 25;
 
-    // Create color preview (smaller, inline)
+    // Create color preview (compact)
     const preview = document.createElement('div');
     preview.style.cssText = `
-      width: 40px;
-      height: 20px;
+      width: 30px;
+      height: 15px;
       border: 1px solid var(--border);
       background: hsl(${currentH}, ${currentS}%, ${currentL}%);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       display: inline-block;
       vertical-align: middle;
     `;
 
-    // Create sliders in menu style 1
+    // Create sliders in menu style 1 (compact)
     const createSlider = (label, min, max, value, onChange) => {
       const container = document.createElement('div');
-      container.style.cssText = 'margin-bottom: 8px;';
+      container.style.cssText = 'margin-bottom: 6px;';
       
       const labelEl = document.createElement('div');
       labelEl.textContent = label;
-      labelEl.style.cssText = 'color: var(--menu-fg); font-size: 11px; margin-bottom: 3px;';
+      labelEl.style.cssText = 'color: var(--menu-fg); font-size: 10px; margin-bottom: 2px;';
       
       const slider = document.createElement('input');
       slider.type = 'range';
       slider.min = min;
       slider.max = max;
       slider.value = value;
-      slider.style.cssText = 'width: 100%; height: 4px; margin: 0;';
-      
-      const valueDisplay = document.createElement('span');
-      valueDisplay.textContent = value;
-      valueDisplay.style.cssText = 'color: var(--menu-fg); font-size: 10px; font-family: monospace; margin-left: 8px;';
+      slider.style.cssText = 'width: 100%; height: 3px; margin: 0;';
       
       slider.addEventListener('input', (e) => {
         const newValue = parseInt(e.target.value);
-        valueDisplay.textContent = newValue;
         onChange(newValue);
       });
       
       container.appendChild(labelEl);
       container.appendChild(slider);
-      container.appendChild(valueDisplay);
       
       return { slider, onChange, container };
     };
@@ -935,7 +950,104 @@ class SimpleBlog {
   }
 
   makeNote() {
-    console.log('Make note functionality - implement as needed');
+    console.log('📝 Creating note...');
+    // Get current post content
+    const postTitle = document.getElementById('postTitle')?.value || 'Untitled Note';
+    const postContent = document.getElementById('postContent')?.value || '';
+    
+    if (postContent.trim()) {
+      // Create note with timestamp
+      const timestamp = new Date().toISOString();
+      const note = `# ${postTitle}\n\n${postContent}\n\n---\n*Note created: ${timestamp}*`;
+      
+      // Save to localStorage for now (could be enhanced with proper storage)
+      const notes = JSON.parse(localStorage.getItem('ppPage_notes') || '[]');
+      notes.push({ title: postTitle, content: postContent, timestamp });
+      localStorage.setItem('ppPage_notes', JSON.stringify(notes));
+      
+      console.log('✅ Note saved:', note);
+      alert('Note saved successfully!');
+    } else {
+      alert('Please add some content to create a note.');
+    }
+  }
+
+  exportPost() {
+    console.log('📤 Exporting post...');
+    const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
+    const postContent = document.getElementById('postContent')?.value || '';
+    
+    if (postContent.trim()) {
+      // Create HTML export
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${postTitle}</title>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    .content { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>${postTitle}</h1>
+  <div class="content">${postContent.replace(/\n/g, '<br>')}</div>
+</body>
+</html>`;
+      
+      // Create and download file
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${postTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      console.log('✅ Post exported as HTML');
+    } else {
+      alert('Please add some content to export.');
+    }
+  }
+
+  showImagesModal() {
+    console.log('🖼️ Showing images modal...');
+    const modal = document.getElementById('imagesModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      console.log('✅ Images modal shown');
+    } else {
+      console.log('⚠️ Images modal not found');
+      alert('Images functionality not available in this editor.');
+    }
+  }
+
+  showPublishModal() {
+    console.log('📢 Showing publish modal...');
+    const modal = document.getElementById('publishInputBox');
+    if (modal) {
+      modal.classList.remove('hidden');
+      console.log('✅ Publish modal shown');
+    } else {
+      console.log('⚠️ Publish modal not found');
+      alert('Publishing functionality not available in this editor.');
+    }
+  }
+
+  showFlagsModal() {
+    console.log('🏷️ Showing flags modal...');
+    const modal = document.getElementById('flagsModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      console.log('✅ Flags modal shown');
+    } else {
+      console.log('⚠️ Flags modal not found');
+      alert('Flags functionality not available in this editor.');
+    }
   }
 
   toggleConsole() {
