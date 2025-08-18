@@ -104,7 +104,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250826';
+    const buildDate = '20250827';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -432,12 +432,23 @@ class SimpleBlog {
       const response = await fetch('posts/index.json');
       if (response.ok) {
         const data = await response.json();
-        this.posts = data.posts || [];
-        console.log(`✅ Loaded ${this.posts.length} posts`);
+        // Handle both array format and object with posts property
+        this.posts = Array.isArray(data) ? data : (data.posts || []);
+        console.log(`✅ Loaded ${this.posts.length} posts:`, this.posts.map(p => p.title));
+        
+        // Auto-load the most recent post if we have posts
+        if (this.posts.length > 0) {
+          console.log('🔄 Auto-loading most recent post:', this.posts[0].title);
+          await this.loadPost(this.posts[0].slug);
+        } else {
+          console.log('⚠️ No posts found, showing default content');
+          this.displayDefaultContent();
+        }
       }
     } catch (error) {
       console.warn('Could not load posts:', error);
       this.posts = [];
+      this.displayDefaultContent();
     }
   }
 
@@ -463,6 +474,20 @@ class SimpleBlog {
     if (titleElement) titleElement.textContent = post.title || 'Untitled';
     if (dateElement) dateElement.textContent = post.date || '';
     if (contentElement) contentElement.innerHTML = post.content || '';
+    
+    console.log('✅ Post displayed:', post.title);
+  }
+
+  displayDefaultContent() {
+    const titleElement = document.getElementById('post-title');
+    const dateElement = document.getElementById('post-date');
+    const contentElement = document.getElementById('post-content');
+
+    if (titleElement) titleElement.textContent = '# Blog';
+    if (dateElement) dateElement.textContent = '';
+    if (contentElement) contentElement.innerHTML = '<p>Welcome to the blog! Posts will appear here once loaded.</p>';
+    
+    console.log('✅ Default content displayed');
   }
 
   loadMostRecentPost() {
