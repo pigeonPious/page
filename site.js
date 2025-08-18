@@ -10,6 +10,11 @@ class SimpleBlog {
     // Load theme from localStorage or default to dark
     this.theme = localStorage.getItem('ppPage_theme') || 'dark';
     console.log('🎨 Theme loaded from localStorage:', this.theme);
+    
+    // Initialize handler references to prevent memory leaks
+    this.allPostsMouseEnterHandler = null;
+    this.devlogMouseEnterHandler = null;
+    
     this.init();
   }
 
@@ -106,7 +111,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250829';
+    const buildDate = '20250830';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -136,8 +141,8 @@ class SimpleBlog {
   setupMenuSystem() {
     console.log('🔧 Setting up menu system...');
     
-    // Menu toggle
-    document.addEventListener('click', (e) => {
+    // Menu toggle - store reference for cleanup
+    this.globalClickHandler = (e) => {
       const menuItem = e.target.closest('.menu-item');
       if (menuItem) {
         console.log('📋 Menu item clicked:', menuItem.querySelector('.label')?.textContent);
@@ -145,15 +150,17 @@ class SimpleBlog {
       } else {
         this.closeAllMenus();
       }
-    });
+    };
+    document.addEventListener('click', this.globalClickHandler);
 
-    // Close on escape
-    document.addEventListener('keydown', (e) => {
+    // Close on escape - store reference for cleanup
+    this.globalKeyHandler = (e) => {
       if (e.key === 'Escape') {
         console.log('⌨️ Escape key pressed - closing menus');
         this.closeAllMenus();
       }
-    });
+    };
+    document.addEventListener('keydown', this.globalKeyHandler);
     
     console.log('✅ Menu system setup complete');
   }
@@ -288,19 +295,31 @@ class SimpleBlog {
     // All posts submenu
     const allPostsMenu = document.getElementById('all-posts-menu');
     if (allPostsMenu) {
-      allPostsMenu.addEventListener('mouseenter', () => {
+      // Remove existing listeners to prevent duplication
+      allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
+      this.allPostsMouseEnterHandler = () => {
         console.log('📚 All posts submenu hovered');
         this.showAllPostsSubmenu(allPostsMenu);
-      });
+      };
+      allPostsMenu.addEventListener('mouseenter', this.allPostsMouseEnterHandler);
+      console.log('✅ All posts submenu handler attached');
+    } else {
+      console.warn('⚠️ All posts menu element not found');
     }
 
     // Devlog submenu
     const devlogMenu = document.getElementById('devlog-menu');
     if (devlogMenu) {
-      devlogMenu.addEventListener('mouseenter', () => {
+      // Remove existing listeners to prevent duplication
+      devlogMenu.removeEventListener('mouseenter', this.devlogMouseEnterHandler);
+      this.devlogMouseEnterHandler = () => {
         console.log('📝 Devlog submenu hovered');
         this.showDevlogSubmenu(devlogMenu);
-      });
+      };
+      devlogMenu.addEventListener('mouseenter', this.devlogMouseEnterHandler);
+      console.log('✅ Devlog submenu handler attached');
+    } else {
+      console.warn('⚠️ Devlog menu element not found');
     }
     
     console.log('✅ Submenus setup complete');
@@ -324,13 +343,18 @@ class SimpleBlog {
     
     // Add post entries
     this.posts.forEach(post => {
+      if (!post || !post.slug) {
+        console.warn('⚠️ Skipping invalid post:', post);
+        return;
+      }
+      
       const entry = document.createElement('div');
       entry.className = 'menu-entry';
       entry.textContent = post.title || 'Untitled';
       entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
       
       entry.addEventListener('click', () => {
-        console.log('📖 Post selected:', post.title);
+        console.log('📖 Post selected:', post.title || 'Untitled');
         this.loadPost(post.slug);
         this.closeAllMenus();
       });
@@ -355,14 +379,18 @@ class SimpleBlog {
     // Add new submenu
     menuElement.appendChild(submenu);
     
-    // Remove submenu on mouse leave
-    menuElement.addEventListener('mouseleave', () => {
+    // Remove submenu on mouse leave (ALL POSTS SUBMENU)
+    const allPostsMouseLeaveHandler = () => {
       setTimeout(() => {
         if (submenu.parentNode) {
           submenu.remove();
         }
       }, 100);
-    });
+    };
+    
+    // Remove any existing listener to prevent duplication
+    menuElement.removeEventListener('mouseleave', allPostsMouseLeaveHandler);
+    menuElement.addEventListener('mouseleave', allPostsMouseLeaveHandler);
   }
 
   showDevlogSubmenu(menuElement) {
@@ -388,13 +416,18 @@ class SimpleBlog {
     
     if (devlogPosts.length > 0) {
       devlogPosts.forEach(post => {
+        if (!post || !post.slug) {
+          console.warn('⚠️ Skipping invalid devlog post:', post);
+          return;
+        }
+        
         const entry = document.createElement('div');
         entry.className = 'menu-entry';
-        entry.textContent = post.title;
+        entry.textContent = post.title || 'Untitled';
         entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
         
         entry.addEventListener('click', () => {
-          console.log('📝 Devlog selected:', post.title);
+          console.log('📝 Devlog selected:', post.title || 'Untitled');
           this.loadPost(post.slug);
           this.closeAllMenus();
         });
@@ -426,14 +459,18 @@ class SimpleBlog {
     // Add new submenu
     menuElement.appendChild(submenu);
     
-    // Remove submenu on mouse leave
-    menuElement.addEventListener('mouseleave', () => {
+    // Remove submenu on mouse leave (DEVLOG SUBMENU)
+    const devlogMouseLeaveHandler = () => {
       setTimeout(() => {
         if (submenu.parentNode) {
           submenu.remove();
         }
       }, 100);
-    });
+    };
+    
+    // Remove any existing listener to prevent duplication
+    menuElement.removeEventListener('mouseleave', devlogMouseLeaveHandler);
+    menuElement.addEventListener('mouseleave', devlogMouseLeaveHandler);
   }
 
   async loadPosts() {
@@ -451,8 +488,14 @@ class SimpleBlog {
         
         // Auto-load the most recent post if we have posts
         if (this.posts.length > 0) {
-          console.log('🔄 Auto-loading most recent post:', this.posts[0].title);
-          await this.loadPost(this.posts[0].slug);
+          const mostRecent = this.posts[0];
+          if (mostRecent && mostRecent.slug) {
+            console.log('🔄 Auto-loading most recent post:', mostRecent.title || 'Untitled');
+            await this.loadPost(mostRecent.slug);
+          } else {
+            console.warn('⚠️ Most recent post missing slug, showing default content');
+            this.displayDefaultContent();
+          }
         } else {
           console.log('⚠️ No posts found, showing default content');
           this.displayDefaultContent();
@@ -466,9 +509,19 @@ class SimpleBlog {
   }
 
   async filterAvailablePosts(posts) {
+    if (!Array.isArray(posts)) {
+      console.warn('⚠️ filterAvailablePosts: posts is not an array:', posts);
+      return [];
+    }
+    
     const availablePosts = [];
     
     for (const post of posts) {
+      if (!post || !post.slug) {
+        console.warn('⚠️ Skipping invalid post in filter:', post);
+        continue;
+      }
+      
       try {
         // Check if the post file actually exists
         const response = await fetch(`posts/${post.slug}.json`);
@@ -482,20 +535,27 @@ class SimpleBlog {
       }
     }
     
+    console.log(`✅ Filtered ${posts.length} posts down to ${availablePosts.length} available`);
     return availablePosts;
   }
 
   async loadPost(slug) {
     try {
+      console.log(`📖 Loading post: ${slug}`);
       const response = await fetch(`posts/${slug}.json`);
       if (response.ok) {
         const post = await response.json();
         this.displayPost(post);
         this.currentPost = post;
+        console.log(`✅ Post loaded successfully: ${post.title}`);
         return post;
+      } else {
+        console.error(`❌ Failed to load post ${slug}: ${response.status} ${response.statusText}`);
+        this.displayDefaultContent();
       }
     } catch (error) {
-      console.error('Error loading post:', error);
+      console.error(`❌ Error loading post ${slug}:`, error);
+      this.displayDefaultContent();
     }
   }
 
@@ -526,7 +586,15 @@ class SimpleBlog {
   loadMostRecentPost() {
     if (this.posts.length > 0) {
       const mostRecent = this.posts[0];
-      this.loadPost(mostRecent.slug);
+      if (mostRecent && mostRecent.slug) {
+        this.loadPost(mostRecent.slug);
+      } else {
+        console.warn('⚠️ Most recent post missing slug');
+        this.displayDefaultContent();
+      }
+    } else {
+      console.log('⚠️ No posts available');
+      this.displayDefaultContent();
     }
   }
 
@@ -534,7 +602,15 @@ class SimpleBlog {
     if (this.posts.length > 0) {
       const randomIndex = Math.floor(Math.random() * this.posts.length);
       const randomPost = this.posts[randomIndex];
-      this.loadPost(randomPost.slug);
+      if (randomPost && randomPost.slug) {
+        this.loadPost(randomPost.slug);
+      } else {
+        console.warn('⚠️ Random post missing slug');
+        this.displayDefaultContent();
+      }
+    } else {
+      console.log('⚠️ No posts available');
+      this.displayDefaultContent();
     }
   }
 
@@ -614,6 +690,28 @@ class SimpleBlog {
 
   warn(message) {
     this.log(message, 'warn');
+  }
+
+  // Cleanup method to prevent memory leaks
+  destroy() {
+    console.log('🧹 Cleaning up SimpleBlog...');
+    
+    // Remove event listeners
+    const allPostsMenu = document.getElementById('all-posts-menu');
+    if (allPostsMenu && this.allPostsMouseEnterHandler) {
+      allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
+    }
+    
+    const devlogMenu = document.getElementById('devlog-menu');
+    if (devlogMenu && this.devlogMouseEnterHandler) {
+      devlogMenu.removeEventListener('mouseenter', this.devlogMouseEnterHandler);
+    }
+    
+    // Remove global event listeners
+    document.removeEventListener('click', this.globalClickHandler);
+    document.removeEventListener('keydown', this.globalKeyHandler);
+    
+    console.log('✅ Cleanup complete');
   }
 }
 
