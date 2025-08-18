@@ -143,6 +143,12 @@ class SimpleBlog {
     
     // Menu toggle - store reference for cleanup
     this.globalClickHandler = (e) => {
+      // Don't close menus when clicking on theme buttons
+      if (e.target.closest('[data-mode]')) {
+        console.log('🎨 Theme button clicked, not closing menus');
+        return;
+      }
+      
       const menuItem = e.target.closest('.menu-item');
       if (menuItem) {
         console.log('📋 Menu item clicked:', menuItem.querySelector('.label')?.textContent);
@@ -242,6 +248,13 @@ class SimpleBlog {
       console.log('🎨 Theme button clicked:', mode);
       console.log('🎯 Target element:', e.target);
       console.log('🎯 Dataset:', e.target.dataset);
+      console.log('🎯 Element text:', e.target.textContent);
+      console.log('🎯 Element classes:', e.target.className);
+      
+      if (mode === 'custom') {
+        console.log('🎨 Custom theme button clicked - calling setTheme...');
+      }
+      
       this.setTheme(mode);
     });
 
@@ -640,11 +653,16 @@ class SimpleBlog {
       
       // Open HSL color picker instead of setting hardcoded colors
       console.log('🎨 Custom theme selected, calling openHSLColorPicker...');
+      console.log('🎨 this object:', this);
+      console.log('🎨 this.openHSLColorPicker:', this.openHSLColorPicker);
+      console.log('🎨 typeof this.openHSLColorPicker:', typeof this.openHSLColorPicker);
+      
       try {
         this.openHSLColorPicker();
         console.log('✅ HSL color picker opened successfully');
       } catch (error) {
         console.error('❌ Error opening HSL color picker:', error);
+        console.error('❌ Error stack:', error.stack);
       }
     } else if (mode === 'random') {
       // Generate random theme
@@ -754,6 +772,9 @@ class SimpleBlog {
 
   openHSLColorPicker() {
     console.log('🔧 openHSLColorPicker function called');
+    console.log('🔧 Function execution started');
+    console.log('🔧 Document body:', document.body);
+    console.log('🔧 Current theme:', this.theme);
     
     // Remove existing color picker
     const existingPicker = document.getElementById('hsl-color-picker');
