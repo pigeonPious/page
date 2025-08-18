@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250927';
+    const buildDate = '20250928';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1323,9 +1323,16 @@ class SimpleBlog {
     // Insert drag handle at the top of the header
     header.insertBefore(dragHandle, header.firstChild);
     
-    // Make header draggable
+    // Make header draggable with improved event handling
     let isDragging = false;
     let startX, startY, startLeft, startTop;
+    
+    // Prevent text selection during drag
+    const preventSelection = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    };
     
     header.addEventListener('mousedown', (e) => {
       console.log('🖱️ Mouse down on header - starting drag');
@@ -1340,11 +1347,24 @@ class SimpleBlog {
       startTop = currentTop;
       
       header.style.cursor = 'grabbing';
+      
+      // Prevent text selection and other default behaviors
       e.preventDefault();
+      e.stopPropagation();
+      
+      // Prevent text selection during drag
+      document.addEventListener('selectstart', preventSelection);
+      document.addEventListener('dragstart', preventSelection);
+      
+      return false;
     });
     
     document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
+      
+      // Prevent text selection during drag
+      e.preventDefault();
+      e.stopPropagation();
       
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
@@ -1360,17 +1380,24 @@ class SimpleBlog {
       console.log('🖱️ Dragging magazine to:', { x: newLeft, y: newTop });
     });
     
-    document.addEventListener('mouseup', () => {
+    document.addEventListener('mouseup', (e) => {
       if (isDragging) {
         console.log('🖱️ Mouse up - stopping drag');
         isDragging = false;
         header.style.cursor = 'move';
+        
+        // Remove text selection prevention
+        document.removeEventListener('selectstart', preventSelection);
+        document.removeEventListener('dragstart', preventSelection);
       }
     });
     
-    // Set initial cursor style
+    // Set initial cursor style and prevent text selection
     header.style.cursor = 'move';
     header.style.userSelect = 'none';
+    header.style.webkitUserSelect = 'none';
+    header.style.mozUserSelect = 'none';
+    header.style.msUserSelect = 'none';
     
     console.log('✅ Magazine drag functionality setup complete');
     console.log('🔍 Click and drag the header (including double lines) to move the magazine');
