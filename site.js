@@ -146,7 +146,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -1219,26 +1219,32 @@ class SimpleBlog {
       existingPicker.remove();
     }
 
-    // Find the View menu dropdown to position the HSL picker
+    // Find the View menu to position the HSL picker relative to it
     const viewMenu = document.querySelector('[data-menu="view"]');
     if (!viewMenu) {
       console.error('❌ View menu not found');
       return;
     }
 
-    // Create HSL color picker in menu style 1
+    // Close the View menu properly before opening the HSL picker
+    this.closeAllMenus();
+    
+    // Get the position of the View menu for proper positioning
+    const viewMenuRect = viewMenu.getBoundingClientRect();
+
+    // Create HSL color picker as a separate overlay (not inside the View menu)
     const picker = document.createElement('div');
     picker.id = 'hsl-color-picker';
-    picker.className = 'menu-dropdown';
     picker.style.cssText = `
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
+      position: fixed;
+      top: ${viewMenuRect.bottom + 4}px;
+      left: ${viewMenuRect.left}px;
       background: var(--menu-bg);
       border: 1px solid var(--border);
       padding: 6px;
       min-width: 180px;
-      z-index: 1000;
+      z-index: 10000;
+      border-radius: 0;
     `;
 
     // Current HSL values (default to current theme background)
@@ -1315,21 +1321,29 @@ class SimpleBlog {
     picker.appendChild(satSlider.container);
     picker.appendChild(lightSlider.container);
 
-    // Add to View menu
-    viewMenu.appendChild(picker);
+    // Add to document body (not inside the View menu)
+    document.body.appendChild(picker);
 
-    // Close when clicking outside
+    // Close when clicking outside (but not when clicking on sliders)
     const outsideClickHandler = (e) => {
-      if (!picker.contains(e.target) && !viewMenu.contains(e.target)) {
-        picker.remove();
-        document.removeEventListener('click', outsideClickHandler);
+      // Don't close if clicking on the picker itself or its contents
+      if (picker.contains(e.target)) {
+        return;
       }
+      
+      // Don't close if clicking on the View menu (to allow normal menu interaction)
+      if (viewMenu.contains(e.target)) {
+        return;
+      }
+      
+      // Close if clicking anywhere else
+      picker.remove();
+      document.removeEventListener('click', outsideClickHandler);
+      console.log('🔧 HSL color picker closed by outside click');
     };
     
-    // Delay adding the click handler to avoid immediate closure
-    setTimeout(() => {
-      document.addEventListener('click', outsideClickHandler);
-    }, 100);
+    // Add the click handler immediately
+    document.addEventListener('click', outsideClickHandler);
 
     console.log('✅ HSL color picker opened in menu style 1');
   }
