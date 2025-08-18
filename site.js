@@ -121,13 +121,23 @@ class SimpleBlog {
     generateBuildWord() {
     // Check if we already have a build word stored
     let storedBuildWord = localStorage.getItem('currentBuildWord');
+    let storedBuildCounter = localStorage.getItem('buildCounter');
     
-    if (storedBuildWord) {
+    // Check if build counter has changed (indicating a new build)
+    const currentBuildCounter = parseInt(localStorage.getItem('buildCounter') || '1');
+    
+    if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
       console.log(`🔧 Build word: Using stored build word: ${storedBuildWord}`);
       return storedBuildWord;
     }
     
-    // Generate a new build word only if none exists
+    // Clear cache if this is a new build
+    if (storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter) {
+      console.log('🧹 New build detected, clearing cache...');
+      this.clearBuildCache();
+    }
+    
+    // Generate a new build word only if none exists or if it's a new build
     const words = [
       'alpha', 'beta', 'gamma', 'delta', 'echo', 'foxtrot', 'golf', 'hotel',
       'india', 'juliet', 'kilo', 'lima', 'mike', 'november', 'oscar', 'papa',
@@ -136,7 +146,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -174,6 +184,33 @@ class SimpleBlog {
     }
     
     console.log(`🔧 Build counter incremented from ${currentCounter} to ${newCounter}`);
+  }
+
+  clearBuildCache() {
+    console.log('🧹 Clearing build cache...');
+    
+    // Clear stored build word
+    localStorage.removeItem('currentBuildWord');
+    
+    // Clear any other cached data that should be refreshed on new builds
+    localStorage.removeItem('posts');
+    localStorage.removeItem('currentPost');
+    
+    // Clear any other build-related cache items
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('cache') || key.includes('temp') || key.includes('build'))) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      console.log(`🧹 Cleared cache item: ${key}`);
+    });
+    
+    console.log('✅ Build cache cleared');
   }
 
   setupBuildWordAutoRefresh() {
@@ -561,10 +598,25 @@ class SimpleBlog {
           entry.textContent = post.title || 'Untitled';
           entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
           
-          entry.addEventListener('click', () => {
-            console.log('📖 Post selected:', post.title || 'Untitled');
-            this.loadPost(post.slug);
+          entry.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('📖 Post selected:', post.title || 'Untitled', 'slug:', post.slug);
+            console.log('🔍 About to call loadPost with slug:', post.slug);
+            
+            // Close menus first
             this.closeAllMenus();
+            
+            // Then load the post
+            try {
+              this.loadPost(post.slug).then(() => {
+                console.log('✅ Post loaded successfully:', post.slug);
+              }).catch(error => {
+                console.error('❌ Error loading post:', error);
+              });
+            } catch (error) {
+              console.error('❌ Error calling loadPost:', error);
+            }
           });
           
           entry.addEventListener('mouseenter', () => {
@@ -909,12 +961,25 @@ class SimpleBlog {
       let post = null;
       
       try {
-        const githubResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`);
+        // Add cache-busting parameter
+        const timestamp = Date.now();
+        const githubUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json?t=${timestamp}`;
+        console.log('🔍 loadPost: Fetching from GitHub API:', githubUrl);
+        
+        const githubResponse = await fetch(githubUrl);
+        console.log('🔍 loadPost: GitHub API response status:', githubResponse.status, githubResponse.statusText);
+        
         if (githubResponse.ok) {
           const githubData = await githubResponse.json();
+          console.log('🔍 loadPost: GitHub API response data:', githubData);
+          
           const content = atob(githubData.content); // Decode base64 content
+          console.log('🔍 loadPost: Decoded content:', content);
+          
           post = JSON.parse(content);
           console.log('✅ Post loaded from GitHub API:', post.title);
+        } else {
+          console.log('⚠️ loadPost: GitHub API failed with status:', githubResponse.status);
         }
       } catch (githubError) {
         console.log('⚠️ GitHub API failed, trying local...');
