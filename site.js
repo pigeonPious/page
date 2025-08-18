@@ -14,9 +14,13 @@ class SimpleBlog {
   init() {
     console.log('🚀 Initializing SimpleBlog...');
     this.createTaskbar();
+    console.log('✅ Taskbar created');
     this.bindEvents();
+    console.log('✅ Events bound');
     this.loadPosts();
+    console.log('✅ Posts loaded');
     this.setTheme(this.theme);
+    console.log('✅ Theme set');
     console.log('✅ SimpleBlog initialized successfully');
   }
 
@@ -121,10 +125,13 @@ class SimpleBlog {
   }
 
   setupMenuSystem() {
+    console.log('🔧 Setting up menu system...');
+    
     // Menu toggle
     document.addEventListener('click', (e) => {
       const menuItem = e.target.closest('.menu-item');
       if (menuItem) {
+        console.log('📋 Menu item clicked:', menuItem.querySelector('.label')?.textContent);
         this.toggleMenu(menuItem);
       } else {
         this.closeAllMenus();
@@ -134,9 +141,12 @@ class SimpleBlog {
     // Close on escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        console.log('⌨️ Escape key pressed - closing menus');
         this.closeAllMenus();
       }
     });
+    
+    console.log('✅ Menu system setup complete');
   }
 
   toggleMenu(menuItem) {
@@ -159,41 +169,52 @@ class SimpleBlog {
   }
 
   setupButtonEvents() {
+    console.log('🔧 Setting up button events...');
+    
     // Star button (home)
     this.addClickHandler('#star-button', () => {
+      console.log('⭐ Star button clicked - going home');
       window.location.href = 'index.html';
     });
 
     // New post button
     this.addClickHandler('#new-post', (e) => {
+      console.log('📝 New post button clicked');
       e.preventDefault();
       window.location.href = 'editor.html';
     });
 
     // Make note button
     this.addClickHandler('#make-note-button', () => {
+      console.log('📌 Make note button clicked');
       this.makeNote();
     });
 
     // Console toggle
     this.addClickHandler('#toggle-console', () => {
+      console.log('🖥️ Console toggle clicked');
       this.toggleConsole();
     });
 
     // Theme buttons
     this.addClickHandler('[data-mode]', (e) => {
       const mode = e.target.dataset.mode;
+      console.log('🎨 Theme button clicked:', mode);
       this.setTheme(mode);
     });
 
     // Navigation buttons
     this.addClickHandler('#most-recent-post', () => {
+      console.log('🕒 Most recent post clicked');
       this.loadMostRecentPost();
     });
 
     this.addClickHandler('#random-post', () => {
+      console.log('🎲 Random post clicked');
       this.loadRandomPost();
     });
+    
+    console.log('✅ Button events setup complete');
   }
 
   addClickHandler(selector, handler) {
