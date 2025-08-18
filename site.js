@@ -123,7 +123,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250914';
+    const buildDate = '20250915';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -254,7 +254,9 @@ class SimpleBlog {
 
     this.addClickHandler('#images-btn', () => {
       console.log('🖼️ Images button clicked');
+      console.log('🔍 About to call showImagesModal...');
       this.showImagesModal();
+      console.log('🔍 showImagesModal called');
     });
 
     this.addClickHandler('#publish-btn', () => {
@@ -1143,15 +1145,23 @@ class SimpleBlog {
     
     // Create image magazine if it doesn't exist
     let magazine = document.getElementById('imageMagazine');
+    console.log('🔍 Existing magazine found:', !!magazine);
+    
     if (!magazine) {
+      console.log('🔍 Creating new magazine...');
       magazine = this.createImageMagazine();
+      console.log('🔍 Magazine created:', magazine);
     }
     
     // Show magazine explicitly
+    console.log('🔍 Setting display to flex...');
     magazine.style.display = 'flex';
     magazine.classList.remove('hidden');
+    console.log('🔍 Magazine display style:', magazine.style.display);
+    console.log('🔍 Magazine classes:', magazine.className);
     
     // Load images from assets folder
+    console.log('🔍 Loading images...');
     this.loadImagesToMagazine();
     
     console.log('✅ Image magazine opened');
@@ -1170,10 +1180,11 @@ class SimpleBlog {
       height: 500px;
       background: var(--menu-bg);
       border: 1px solid var(--border);
-      z-index: 1000;
+      z-index: 10000;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
     `;
     
     // Header with import button
@@ -1234,6 +1245,10 @@ class SimpleBlog {
     // Start hidden
     magazine.style.display = 'none';
     magazine.classList.add('hidden');
+    
+    console.log('🔍 Magazine added to DOM:', magazine);
+    console.log('🔍 Magazine parent:', magazine.parentNode);
+    console.log('🔍 Magazine computed styles:', window.getComputedStyle(magazine));
     
     return magazine;
   }
