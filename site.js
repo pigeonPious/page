@@ -111,7 +111,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250903';
+    const buildDate = '20250904';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -772,69 +772,71 @@ class SimpleBlog {
 
   openHSLColorPicker() {
     console.log('🔧 openHSLColorPicker function called');
-    console.log('🔧 Function execution started');
-    console.log('🔧 Document body:', document.body);
-    console.log('🔧 Current theme:', this.theme);
     
     // Remove existing color picker
     const existingPicker = document.getElementById('hsl-color-picker');
     if (existingPicker) {
       existingPicker.remove();
-      console.log('🗑️ Removed existing color picker');
     }
 
-    // Create HSL color picker
+    // Find the View menu dropdown to position the HSL picker
+    const viewMenu = document.querySelector('[data-menu="view"]');
+    if (!viewMenu) {
+      console.error('❌ View menu not found');
+      return;
+    }
+
+    // Create HSL color picker in menu style 1
     const picker = document.createElement('div');
     picker.id = 'hsl-color-picker';
+    picker.className = 'menu-dropdown';
     picker.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--menu-bg, #333);
-      border: 2px solid var(--border, #555);
-      border-radius: 8px;
-      padding: 20px;
-      z-index: 10000;
-      min-width: 300px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      background: var(--menu-bg);
+      border: 1px solid var(--border);
+      padding: 8px;
+      min-width: 200px;
+      z-index: 1000;
     `;
 
-    // Current HSL values (default to a nice blue-gray)
+    // Current HSL values (default to current theme background)
     let currentH = 210;
     let currentS = 25;
     let currentL = 25;
 
-    // Create color preview
+    // Create color preview (smaller, inline)
     const preview = document.createElement('div');
     preview.style.cssText = `
-      width: 100px;
-      height: 100px;
-      border-radius: 8px;
-      margin: 0 auto 20px;
-      border: 2px solid var(--border, #555);
+      width: 40px;
+      height: 20px;
+      border: 1px solid var(--border);
       background: hsl(${currentH}, ${currentS}%, ${currentL}%);
+      margin-bottom: 8px;
+      display: inline-block;
+      vertical-align: middle;
     `;
 
-    // Create sliders
+    // Create sliders in menu style 1
     const createSlider = (label, min, max, value, onChange) => {
       const container = document.createElement('div');
-      container.style.cssText = 'margin-bottom: 15px;';
+      container.style.cssText = 'margin-bottom: 8px;';
       
-      const labelEl = document.createElement('label');
+      const labelEl = document.createElement('div');
       labelEl.textContent = label;
-      labelEl.style.cssText = 'display: block; margin-bottom: 5px; color: var(--fg, #fff); font-size: 14px;';
+      labelEl.style.cssText = 'color: var(--menu-fg); font-size: 11px; margin-bottom: 3px;';
       
       const slider = document.createElement('input');
       slider.type = 'range';
       slider.min = min;
       slider.max = max;
       slider.value = value;
-      slider.style.cssText = 'width: 100%; margin-bottom: 5px;';
+      slider.style.cssText = 'width: 100%; height: 4px; margin: 0;';
       
       const valueDisplay = document.createElement('span');
       valueDisplay.textContent = value;
-      valueDisplay.style.cssText = 'color: var(--fg, #fff); font-size: 12px; font-family: monospace;';
+      valueDisplay.style.cssText = 'color: var(--menu-fg); font-size: 10px; font-family: monospace; margin-left: 8px;';
       
       slider.addEventListener('input', (e) => {
         const newValue = parseInt(e.target.value);
@@ -850,117 +852,52 @@ class SimpleBlog {
     };
 
     // Hue slider
-    const hueSlider = createSlider('Hue (0-360)', 0, 360, currentH, (value) => {
+    const hueSlider = createSlider('Hue', 0, 360, currentH, (value) => {
       currentH = value;
       preview.style.background = `hsl(${currentH}, ${currentS}%, ${currentL}%)`;
+      // Auto-apply theme as slider moves
+      this.applyCustomTheme(currentH, currentS, currentL);
     });
 
     // Saturation slider
-    const satSlider = createSlider('Saturation (0-100)', 0, 100, currentS, (value) => {
+    const satSlider = createSlider('Saturation', 0, 100, currentS, (value) => {
       currentS = value;
       preview.style.background = `hsl(${currentH}, ${currentS}%, ${currentL}%)`;
+      // Auto-apply theme as slider moves
+      this.applyCustomTheme(currentH, currentS, currentL);
     });
 
     // Lightness slider
-    const lightSlider = createSlider('Lightness (0-100)', 0, 100, currentL, (value) => {
+    const lightSlider = createSlider('Lightness', 0, 100, currentL, (value) => {
       currentL = value;
       preview.style.background = `hsl(${currentH}, ${currentS}%, ${currentL}%)`;
-    });
-
-    // Apply button
-    const applyBtn = document.createElement('button');
-    applyBtn.textContent = 'Apply Theme';
-    applyBtn.style.cssText = `
-      background: var(--accent, #3a7bd5);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-right: 10px;
-      font-size: 14px;
-    `;
-
-    applyBtn.addEventListener('click', () => {
+      // Auto-apply theme as slider moves
       this.applyCustomTheme(currentH, currentS, currentL);
-      picker.remove();
-    });
-
-    // Cancel button
-    const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.cssText = `
-      background: var(--muted, #666);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-    `;
-
-    cancelBtn.addEventListener('click', () => {
-      picker.remove();
-      // Revert to previous theme
-      const previousTheme = localStorage.getItem('ppPage_theme') || 'dark';
-      this.setTheme(previousTheme);
-    });
-
-    // Close button
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '×';
-    closeBtn.style.cssText = `
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      background: none;
-      border: none;
-      color: var(--fg, #fff);
-      font-size: 20px;
-      cursor: pointer;
-      padding: 0;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
-
-    closeBtn.addEventListener('click', () => {
-      picker.remove();
-      // Revert to previous theme
-      const previousTheme = localStorage.getItem('ppPage_theme') || 'dark';
-      this.setTheme(previousTheme);
     });
 
     // Add elements to picker
-    picker.appendChild(closeBtn);
     picker.appendChild(preview);
     picker.appendChild(hueSlider.container);
     picker.appendChild(satSlider.container);
     picker.appendChild(lightSlider.container);
-    
-    const buttonContainer = document.createElement('div');
-    buttonContainer.style.cssText = 'text-align: center; margin-top: 20px;';
-    buttonContainer.appendChild(applyBtn);
-    buttonContainer.appendChild(cancelBtn);
-    picker.appendChild(buttonContainer);
 
-    // Add to page
-    document.body.appendChild(picker);
-    console.log('✅ Color picker added to DOM');
+    // Add to View menu
+    viewMenu.appendChild(picker);
 
-    // Close on escape key
-    const escapeHandler = (e) => {
-      if (e.key === 'Escape') {
+    // Close when clicking outside
+    const outsideClickHandler = (e) => {
+      if (!picker.contains(e.target) && !viewMenu.contains(e.target)) {
         picker.remove();
-        document.removeEventListener('keydown', escapeHandler);
-        // Revert to previous theme
-        const previousTheme = localStorage.getItem('ppPage_theme') || 'dark';
-        this.setTheme(previousTheme);
+        document.removeEventListener('click', outsideClickHandler);
       }
     };
-    document.addEventListener('keydown', escapeHandler);
+    
+    // Delay adding the click handler to avoid immediate closure
+    setTimeout(() => {
+      document.addEventListener('click', outsideClickHandler);
+    }, 100);
+
+    console.log('✅ HSL color picker opened in menu style 1');
   }
 
   applyCustomTheme(h, s, l) {
