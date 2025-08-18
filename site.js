@@ -120,7 +120,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250909';
+    const buildDate = '20250910';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -985,13 +985,16 @@ class SimpleBlog {
     
     const selectedText = selection.toString().trim();
     
+    // Store the selection range to preserve it
+    const range = selection.getRangeAt(0).cloneRange();
+    
     // Create menu style 1 input box
     const inputBox = document.createElement('div');
     inputBox.className = 'menu-style-1-input';
     inputBox.style.cssText = `
       position: absolute;
-      top: ${selection.getRangeAt(0).getBoundingClientRect().bottom + 5}px;
-      left: ${selection.getRangeAt(0).getBoundingClientRect().left}px;
+      top: ${range.getBoundingClientRect().bottom + 5}px;
+      left: ${range.getBoundingClientRect().left}px;
       background: var(--menu-bg);
       border: 1px solid var(--border);
       padding: 4px 6px;
@@ -1021,7 +1024,7 @@ class SimpleBlog {
       if (e.key === 'Enter') {
         const noteText = input.value.trim();
         if (noteText) {
-          this.createHoverNote(selectedText, noteText, selection);
+          this.createHoverNote(selectedText, noteText, range);
         }
         this.removeInputBox(inputBox);
       } else if (e.key === 'Escape') {
@@ -1045,15 +1048,14 @@ class SimpleBlog {
     }, 100);
   }
 
-  createHoverNote(selectedText, noteText, selection) {
+  createHoverNote(selectedText, noteText, range) {
     // Create span with hover note data
     const span = document.createElement('span');
     span.className = 'note-link';
     span.setAttribute('data-note', noteText);
     span.textContent = selectedText;
     
-    // Replace selected text with span
-    const range = selection.getRangeAt(0);
+    // Replace selected text with span using the preserved range
     range.deleteContents();
     range.insertNode(span);
     
