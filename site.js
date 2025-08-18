@@ -111,7 +111,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250830';
+    const buildDate = '20250831';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -622,6 +622,13 @@ class SimpleBlog {
     document.body.classList.remove('dark-mode', 'light-mode', 'custom-mode');
     console.log('🧹 Removed existing theme classes');
     
+    // Clear any inline styles from previous custom/random themes
+    const cssVars = ['--bg', '--fg', '--menu-bg', '--menu-fg', '--sidebar-bg', '--sidebar-fg', '--border', '--muted', '--link', '--success-color', '--success-hover-color', '--danger-color', '--danger-hover-color', '--btn-text-color'];
+    cssVars.forEach(varName => {
+      document.body.style.removeProperty(varName);
+    });
+    console.log('🧹 Cleared all inline CSS variables');
+    
     if (mode === 'dark') {
       document.body.classList.add('dark-mode');
       console.log('🌙 Added dark-mode class');
@@ -630,9 +637,21 @@ class SimpleBlog {
       console.log('☀️ Added light-mode class');
     } else if (mode === 'custom') {
       document.body.classList.add('custom-mode');
-      // Apply custom colors
+      // Apply custom colors and update all related CSS variables
       document.body.style.setProperty('--bg', '#2a2a2a');
       document.body.style.setProperty('--fg', '#ffffff');
+      document.body.style.setProperty('--menu-bg', '#2a2a2a');
+      document.body.style.setProperty('--menu-fg', '#ffffff');
+      document.body.style.setProperty('--sidebar-bg', '#1e1e1e');
+      document.body.style.setProperty('--sidebar-fg', '#ffffff');
+      document.body.style.setProperty('--border', '#444444');
+      document.body.style.setProperty('--muted', '#888888');
+      document.body.style.setProperty('--link', '#ffffff');
+      document.body.style.setProperty('--success-color', '#28a745');
+      document.body.style.setProperty('--success-hover-color', '#218838');
+      document.body.style.setProperty('--danger-color', '#dc3545');
+      document.body.style.setProperty('--danger-hover-color', '#c82333');
+      document.body.style.setProperty('--btn-text-color', '#ffffff');
       console.log('🎨 Added custom-mode class with custom colors');
     } else if (mode === 'random') {
       // Generate random theme
@@ -641,9 +660,31 @@ class SimpleBlog {
       const l = Math.floor(Math.random() * 31) + 15;
       const color = `hsl(${h},${s}%,${l}%)`;
       
+      // Calculate complementary colors for the random theme
+      const bgColor = color;
+      const fgColor = l < 50 ? '#ffffff' : '#232323';
+      const menuBg = color;
+      const menuFg = l < 50 ? '#ffffff' : '#232323';
+      const sidebarBg = `hsl(${h},${s}%,${Math.max(0, l - 20)}%)`;
+      const sidebarFg = l < 50 ? '#ffffff' : '#232323';
+      const borderColor = `hsl(${h},${s}%,${Math.max(0, l - 10)}%)`;
+      const mutedColor = l < 50 ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)';
+      
       document.body.classList.add('custom-mode');
-      document.body.style.setProperty('--bg', color);
-      document.body.style.setProperty('--fg', l < 50 ? '#ffffff' : '#232323');
+      document.body.style.setProperty('--bg', bgColor);
+      document.body.style.setProperty('--fg', fgColor);
+      document.body.style.setProperty('--menu-bg', menuBg);
+      document.body.style.setProperty('--menu-fg', menuFg);
+      document.body.style.setProperty('--sidebar-bg', sidebarBg);
+      document.body.style.setProperty('--sidebar-fg', sidebarFg);
+      document.body.style.setProperty('--border', borderColor);
+      document.body.style.setProperty('--muted', mutedColor);
+      document.body.style.setProperty('--link', fgColor);
+      document.body.style.setProperty('--success-color', '#28a745');
+      document.body.style.setProperty('--success-hover-color', '#218838');
+      document.body.style.setProperty('--danger-color', '#dc3545');
+      document.body.style.setProperty('--danger-hover-color', '#c82333');
+      document.body.style.setProperty('--btn-text-color', fgColor);
       console.log('🎲 Added random theme:', color);
     }
     
