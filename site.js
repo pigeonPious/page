@@ -111,7 +111,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250905';
+    const buildDate = '20250906';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -602,6 +602,9 @@ class SimpleBlog {
     if (dateElement) dateElement.textContent = post.date || '';
     if (contentElement) contentElement.innerHTML = post.content || '';
     
+    // Setup hover notes for the displayed post
+    this.setupHoverNotes();
+    
     console.log('✅ Post displayed:', post.title);
   }
 
@@ -950,108 +953,631 @@ class SimpleBlog {
   }
 
   makeNote() {
-    console.log('📝 Creating note...');
-    // Get current post content
-    const postTitle = document.getElementById('postTitle')?.value || 'Untitled Note';
-    const postContent = document.getElementById('postContent')?.value || '';
+    console.log('📝 Creating hover note...');
     
-    if (postContent.trim()) {
-      // Create note with timestamp
-      const timestamp = new Date().toISOString();
-      const note = `# ${postTitle}\n\n${postContent}\n\n---\n*Note created: ${timestamp}*`;
-      
-      // Save to localStorage for now (could be enhanced with proper storage)
-      const notes = JSON.parse(localStorage.getItem('ppPage_notes') || '[]');
-      notes.push({ title: postTitle, content: postContent, timestamp });
-      localStorage.setItem('ppPage_notes', JSON.stringify(notes));
-      
-      console.log('✅ Note saved:', note);
-      alert('Note saved successfully!');
-    } else {
-      alert('Please add some content to create a note.');
+    // Get selected text from visual editor
+    const visualEditor = document.getElementById('visualEditor');
+    if (!visualEditor) {
+      console.log('⚠️ Visual editor not found');
+      return;
+    }
+    
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') {
+      alert('Please select some text to create a hover note.');
+      return;
+    }
+    
+    const selectedText = selection.toString().trim();
+    
+    // Create menu style 1 input box
+    const inputBox = document.createElement('div');
+    inputBox.className = 'menu-style-1-input';
+    inputBox.style.cssText = `
+      position: absolute;
+      top: ${selection.getRangeAt(0).getBoundingClientRect().bottom + 5}px;
+      left: ${selection.getRangeAt(0).getBoundingClientRect().left}px;
+      background: var(--menu-bg);
+      border: 1px solid var(--border);
+      padding: 4px 6px;
+      z-index: 1000;
+      min-width: 200px;
+    `;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Enter hover note...';
+    input.style.cssText = `
+      background: transparent;
+      border: none;
+      color: var(--menu-fg);
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+    `;
+    
+    inputBox.appendChild(input);
+    document.body.appendChild(inputBox);
+    input.focus();
+    
+    // Handle input events
+    const handleInput = (e) => {
+      if (e.key === 'Enter') {
+        const noteText = input.value.trim();
+        if (noteText) {
+          this.createHoverNote(selectedText, noteText, selection);
+        }
+        this.removeInputBox(inputBox);
+      } else if (e.key === 'Escape') {
+        this.removeInputBox(inputBox);
+      }
+    };
+    
+    input.addEventListener('keydown', handleInput);
+    
+    // Close on outside click
+    const outsideClick = (e) => {
+      if (!inputBox.contains(e.target)) {
+        this.removeInputBox(inputBox);
+        document.removeEventListener('click', outsideClick);
+      }
+    };
+    
+    // Delay to prevent immediate closure
+    setTimeout(() => {
+      document.addEventListener('click', outsideClick);
+    }, 100);
+  }
+
+  createHoverNote(selectedText, noteText, selection) {
+    // Create span with hover note data
+    const span = document.createElement('span');
+    span.className = 'note-link';
+    span.setAttribute('data-note', noteText);
+    span.textContent = selectedText;
+    
+    // Replace selected text with span
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(span);
+    
+    console.log('✅ Hover note created:', { text: selectedText, note: noteText });
+  }
+
+  removeInputBox(inputBox) {
+    if (inputBox && inputBox.parentNode) {
+      inputBox.parentNode.removeChild(inputBox);
     }
   }
 
   exportPost() {
-    console.log('📤 Exporting post...');
+    console.log('📤 Exporting post as JSON...');
     const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
-    const postContent = document.getElementById('postContent')?.value || '';
+    const postContent = document.getElementById('visualEditor')?.innerHTML || '';
     
     if (postContent.trim()) {
-      // Create HTML export
-      const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>${postTitle}</title>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
-    h1 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-    .content { margin-top: 20px; }
-  </style>
-</head>
-<body>
-  <h1>${postTitle}</h1>
-  <div class="content">${postContent.replace(/\n/g, '<br>')}</div>
-</body>
-</html>`;
+      // Create post JSON structure
+      const postData = {
+        slug: postTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
+        title: postTitle,
+        date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
+        keywords: 'general',
+        content: postContent
+      };
       
-      // Create and download file
-      const blob = new Blob([htmlContent], { type: 'text/html' });
+      // Create and download JSON file
+      const jsonContent = JSON.stringify(postData, null, 2);
+      const blob = new Blob([jsonContent], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${postTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
+      a.download = `${postTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      console.log('✅ Post exported as HTML');
+      console.log('✅ Post exported as JSON:', postData);
     } else {
       alert('Please add some content to export.');
     }
   }
 
   showImagesModal() {
-    console.log('🖼️ Showing images modal...');
-    const modal = document.getElementById('imagesModal');
-    if (modal) {
-      modal.classList.remove('hidden');
-      console.log('✅ Images modal shown');
-    } else {
-      console.log('⚠️ Images modal not found');
-      alert('Images functionality not available in this editor.');
+    console.log('🖼️ Opening image magazine...');
+    
+    // Create image magazine if it doesn't exist
+    let magazine = document.getElementById('imageMagazine');
+    if (!magazine) {
+      magazine = this.createImageMagazine();
     }
+    
+    // Show magazine
+    magazine.classList.remove('hidden');
+    
+    // Load images from assets folder
+    this.loadImagesToMagazine();
+    
+    console.log('✅ Image magazine opened');
+  }
+
+  createImageMagazine() {
+    const magazine = document.createElement('div');
+    magazine.id = 'imageMagazine';
+    magazine.className = 'image-magazine';
+    magazine.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      height: 500px;
+      background: var(--menu-bg);
+      border: 1px solid var(--border);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    `;
+    
+    // Header with import button
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--menu-bg);
+    `;
+    
+    const importBtn = document.createElement('div');
+    importBtn.textContent = 'Import';
+    importBtn.style.cssText = `
+      font-weight: bold;
+      color: var(--menu-fg);
+      cursor: pointer;
+      font-size: 13px;
+    `;
+    importBtn.addEventListener('click', () => this.importImages());
+    
+    const closeBtn = document.createElement('div');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = `
+      color: var(--menu-fg);
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 0 4px;
+    `;
+    closeBtn.addEventListener('click', () => magazine.classList.add('hidden'));
+    
+    header.appendChild(importBtn);
+    header.appendChild(closeBtn);
+    
+    // Content area
+    const content = document.createElement('div');
+    content.id = 'imageGallery';
+    content.style.cssText = `
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      align-content: start;
+    `;
+    
+    magazine.appendChild(header);
+    magazine.appendChild(content);
+    document.body.appendChild(magazine);
+    
+    return magazine;
+  }
+
+  loadImagesToMagazine() {
+    const gallery = document.getElementById('imageGallery');
+    if (!gallery) return;
+    
+    // Clear existing content
+    gallery.innerHTML = '';
+    
+    // List of images from assets folder
+    const images = [
+      '1755369444055-piousPigeon_logo_pp.png',
+      '1755383754213-piousPigeon_logo_pp-export.png',
+      '1755383767144-piousPigeon_logo_pp.png',
+      '1755383787427-pp-banner-export.png',
+      'sample.gif'
+    ];
+    
+    if (images.length === 0) {
+      const noImages = document.createElement('div');
+      noImages.style.cssText = `
+        grid-column: 1 / -1;
+        text-align: center;
+        color: var(--muted);
+        padding: 40px 20px;
+        font-size: 13px;
+      `;
+      noImages.innerHTML = `
+        <p>No images found in assets folder</p>
+        <p><small>Click Import to add images</small></p>
+      `;
+      gallery.appendChild(noImages);
+      return;
+    }
+    
+    // Create image items
+    images.forEach(filename => {
+      const item = document.createElement('div');
+      item.className = 'image-item';
+      item.style.cssText = `
+        width: 100%;
+        height: 100px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s;
+        background: var(--bg);
+        position: relative;
+      `;
+      
+      const img = document.createElement('img');
+      img.src = `assets/${filename}`;
+      img.style.cssText = `
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      `;
+      
+      const name = document.createElement('div');
+      name.textContent = filename;
+      name.style.cssText = `
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-size: 11px;
+        padding: 2px 4px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      `;
+      
+      item.appendChild(img);
+      item.appendChild(name);
+      
+      // Double click to insert image
+      item.addEventListener('dblclick', () => this.insertImageToPost(filename));
+      
+      // Hover effects
+      item.addEventListener('mouseenter', () => {
+        item.style.transform = 'scale(1.05)';
+      });
+      
+      item.addEventListener('mouseleave', () => {
+        item.style.transform = 'scale(1)';
+      });
+      
+      gallery.appendChild(item);
+    });
+  }
+
+  insertImageToPost(filename) {
+    console.log('🖼️ Inserting image:', filename);
+    
+    const visualEditor = document.getElementById('visualEditor');
+    if (!visualEditor) {
+      console.log('⚠️ Visual editor not found');
+      return;
+    }
+    
+    // Create image element
+    const img = document.createElement('img');
+    img.src = `assets/${filename}`;
+    img.style.cssText = `
+      max-width: 150px;
+      height: auto;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin: 8px 0;
+      cursor: pointer;
+    `;
+    
+    // Insert at cursor position or append
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.insertNode(img);
+      range.collapse(false);
+    } else {
+      visualEditor.appendChild(img);
+    }
+    
+    console.log('✅ Image inserted:', filename);
+  }
+
+  importImages() {
+    console.log('📁 Importing images...');
+    
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.style.display = 'none';
+    
+    input.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+        console.log(`📁 Processing ${files.length} image(s)...`);
+        
+        // For now, just show what would be imported
+        // In a real implementation, this would upload to GitHub
+        files.forEach(file => {
+          console.log(`📁 Would import: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
+        });
+        
+        alert(`Would import ${files.length} image(s) to assets folder.\n\nIn a real implementation, this would upload to your GitHub repository.`);
+      }
+      
+      // Cleanup
+      document.body.removeChild(input);
+    });
+    
+    document.body.appendChild(input);
+    input.click();
   }
 
   showPublishModal() {
-    console.log('📢 Showing publish modal...');
-    const modal = document.getElementById('publishInputBox');
-    if (modal) {
-      modal.classList.remove('hidden');
-      console.log('✅ Publish modal shown');
-    } else {
-      console.log('⚠️ Publish modal not found');
-      alert('Publishing functionality not available in this editor.');
+    console.log('📢 Publishing post to GitHub...');
+    
+    const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
+    const postContent = document.getElementById('visualEditor')?.innerHTML || '';
+    
+    if (!postTitle.trim() || !postContent.trim()) {
+      alert('Please add a title and content to publish.');
+      return;
+    }
+    
+    // Create menu style 1 input for commit message
+    const inputBox = document.createElement('div');
+    inputBox.className = 'menu-style-1-input';
+    inputBox.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--menu-bg);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      z-index: 1000;
+      min-width: 300px;
+    `;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Commit message (optional)...';
+    input.style.cssText = `
+      background: transparent;
+      border: none;
+      color: var(--menu-fg);
+      font-size: 13px;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+    `;
+    
+    inputBox.appendChild(input);
+    document.body.appendChild(inputBox);
+    input.focus();
+    
+    // Handle input events
+    const handleInput = (e) => {
+      if (e.key === 'Enter') {
+        const commitMessage = input.value.trim() || `Publish: ${postTitle}`;
+        this.publishPostToGitHub(postTitle, postContent, commitMessage);
+        this.removeInputBox(inputBox);
+      } else if (e.key === 'Escape') {
+        this.removeInputBox(inputBox);
+      }
+    };
+    
+    input.addEventListener('keydown', handleInput);
+    
+    // Close on outside click
+    const outsideClick = (e) => {
+      if (!inputBox.contains(e.target)) {
+        this.removeInputBox(inputBox);
+        document.removeEventListener('click', outsideClick);
+      }
+    };
+    
+    setTimeout(() => {
+      document.addEventListener('click', outsideClick);
+    }, 100);
+  }
+
+  async publishPostToGitHub(title, content, commitMessage) {
+    console.log('🚀 Publishing to GitHub:', { title, commitMessage });
+    
+    try {
+      // Create post data
+      const postData = {
+        slug: title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
+        title: title,
+        date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
+        keywords: 'general',
+        content: content
+      };
+      
+      // For now, show what would be published
+      // In a real implementation, this would use GitHub API
+      console.log('📝 Post data prepared:', postData);
+      console.log('📤 Would publish to GitHub with commit:', commitMessage);
+      
+      alert(`Post ready to publish!\n\nTitle: ${title}\nSlug: ${postData.slug}\nCommit: ${commitMessage}\n\nIn a real implementation, this would publish to your GitHub repository in the posts/ folder.`);
+      
+    } catch (error) {
+      console.error('❌ Error publishing post:', error);
+      alert('Error preparing post for publication. Please try again.');
     }
   }
 
   showFlagsModal() {
-    console.log('🏷️ Showing flags modal...');
-    const modal = document.getElementById('flagsModal');
-    if (modal) {
-      modal.classList.remove('hidden');
-      console.log('✅ Flags modal shown');
-    } else {
-      console.log('⚠️ Flags modal not found');
-      alert('Flags functionality not available in this editor.');
-    }
+    console.log('🏷️ Setting post flags/keywords...');
+    
+    // Create menu style 2 input (single line, no UI)
+    const inputBox = document.createElement('div');
+    inputBox.className = 'menu-style-2-input';
+    inputBox.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--menu-bg);
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      z-index: 1000;
+      min-width: 350px;
+    `;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'e.g. devlog:ProjectName, programming, design';
+    input.style.cssText = `
+      background: transparent;
+      border: none;
+      color: var(--menu-fg);
+      font-size: 13px;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+    `;
+    
+    inputBox.appendChild(input);
+    document.body.appendChild(inputBox);
+    input.focus();
+    
+    // Handle input events
+    const handleInput = (e) => {
+      if (e.key === 'Enter') {
+        const flags = input.value.trim();
+        if (flags) {
+          this.setPostFlags(flags);
+        }
+        this.removeInputBox(inputBox);
+      } else if (e.key === 'Escape') {
+        this.removeInputBox(inputBox);
+      }
+    };
+    
+    input.addEventListener('keydown', handleInput);
+    
+    // Close on outside click
+    const outsideClick = (e) => {
+      if (!inputBox.contains(e.target)) {
+        this.removeInputBox(inputBox);
+        document.removeEventListener('click', outsideClick);
+      }
+    };
+    
+    setTimeout(() => {
+      document.addEventListener('click', outsideClick);
+    }, 100);
+  }
+
+  setPostFlags(flags) {
+    console.log('🏷️ Setting post flags:', flags);
+    
+    // Store flags for the current post
+    // In a real implementation, this would be saved with the post
+    const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
+    
+    // Parse flags for navigation menu
+    const flagArray = flags.split(',').map(f => f.trim());
+    const devlogFlags = flagArray.filter(f => f.startsWith('devlog:'));
+    
+    console.log('📋 Parsed flags:', { all: flagArray, devlog: devlogFlags });
+    
+    // Show confirmation
+    alert(`Post flags set!\n\nTitle: ${postTitle}\nFlags: ${flags}\n\nDevlog flags: ${devlogFlags.length > 0 ? devlogFlags.join(', ') : 'None'}\n\nThese flags will be used for navigation and categorization.`);
+    
+    // In a real implementation, this would:
+    // 1. Save flags to the post data
+    // 2. Update navigation menus
+    // 3. Handle devlog submenus (e.g., devlog:hablet → Hablet submenu)
   }
 
   toggleConsole() {
     console.log('Console toggle - implement as needed');
+  }
+
+  setupHoverNotes() {
+    console.log('📝 Setting up hover notes...');
+    
+    // Find all note-link elements
+    const noteLinks = document.querySelectorAll('.note-link');
+    
+    noteLinks.forEach(link => {
+      // Remove existing listeners to prevent duplication
+      link.removeEventListener('mouseenter', this.showHoverNote);
+      link.removeEventListener('mouseleave', this.hideHoverNote);
+      
+      // Add hover event listeners
+      link.addEventListener('mouseenter', (e) => this.showHoverNote(e));
+      link.addEventListener('mouseleave', () => this.hideHoverNote());
+    });
+    
+    console.log(`✅ Hover notes setup for ${noteLinks.length} elements`);
+  }
+
+  showHoverNote(event) {
+    const link = event.target;
+    const noteText = link.getAttribute('data-note');
+    
+    if (!noteText) return;
+    
+    // Create or update hover note tooltip
+    let tooltip = document.getElementById('hoverNote');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = 'hoverNote';
+      tooltip.style.cssText = `
+        position: fixed;
+        z-index: 1000;
+        pointer-events: none;
+        background: var(--menu-bg);
+        border: 1px solid var(--border);
+        padding: 6px 8px;
+        min-width: 140px;
+        max-width: 260px;
+        font-size: 12px;
+        color: var(--menu-fg);
+        display: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      `;
+      document.body.appendChild(tooltip);
+    }
+    
+    // Position tooltip near mouse
+    const rect = link.getBoundingClientRect();
+    tooltip.style.left = (event.clientX + 10) + 'px';
+    tooltip.style.top = (event.clientY - 30) + 'px';
+    tooltip.textContent = noteText;
+    tooltip.style.display = 'block';
+  }
+
+  hideHoverNote() {
+    const tooltip = document.getElementById('hoverNote');
+    if (tooltip) {
+      tooltip.style.display = 'none';
+    }
   }
 
   // Utility methods
