@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250924';
+    const buildDate = '20250925';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1153,23 +1153,6 @@ class SimpleBlog {
   showImagesModal() {
     console.log('🖼️ Opening image magazine...');
     
-    // Create image magazine if it doesn't exist
-    let magazine = document.getElementById('imageMagazine');
-    console.log('🔍 Existing magazine found:', !!magazine);
-    
-    if (!magazine) {
-      console.log('🔍 Creating new magazine...');
-      magazine = this.createImageMagazine();
-      console.log('🔍 Magazine created:', magazine);
-    }
-    
-    // Show magazine explicitly
-    console.log('🔍 Setting display to flex...');
-    magazine.style.display = 'flex';
-    magazine.classList.remove('hidden');
-    console.log('🔍 Magazine display style:', magazine.style.display);
-    console.log('🔍 Magazine classes:', magazine.className);
-    
     // Get the button position for initial placement
     const imagesBtn = document.getElementById('images-btn');
     let initialX = '50%';
@@ -1182,7 +1165,23 @@ class SimpleBlog {
       console.log('🔍 Button position:', { left: btnRect.left, top: btnRect.top });
     }
     
-    // Force visibility with inline styles
+    // Use the existing image magazine from HTML
+    const magazine = document.getElementById('imageMagazine');
+    console.log('🔍 Existing magazine found:', !!magazine);
+    
+    if (!magazine) {
+      console.log('⚠️ No existing magazine found - this should not happen');
+      return;
+    }
+    
+    // Show magazine explicitly
+    console.log('🔍 Setting display to block...');
+    magazine.style.display = 'block';
+    magazine.classList.remove('hidden');
+    console.log('🔍 Magazine display style:', magazine.style.display);
+    console.log('🔍 Magazine classes:', magazine.className);
+    
+    // Position the magazine
     magazine.style.visibility = 'visible';
     magazine.style.opacity = '1';
     magazine.style.position = 'fixed';
@@ -1190,23 +1189,93 @@ class SimpleBlog {
     magazine.style.left = initialX;
     magazine.style.transform = 'translate(-50%, -50%)';
     magazine.style.zIndex = '10000';
-    magazine.style.backgroundColor = '#2a2a2a'; // Dark background
-    magazine.style.border = '1px solid #444'; // Subtle border
     magazine.style.width = '100px'; // Reduced width by 75%
     magazine.style.height = '500px'; // Keep height
     magazine.style.minWidth = '100px'; // Force min width
     magazine.style.minHeight = '500px'; // Force min height
     
+    console.log('🔍 Magazine positioned at:', { x: initialX, y: initialY });
     console.log('🔍 Magazine inline styles applied');
     console.log('🔍 Magazine computed position:', magazine.getBoundingClientRect());
     
-
+    // Setup the existing buttons
+    this.setupImageMagazineButtons();
     
     // Load images from assets folder
     console.log('🔍 Loading images...');
     this.loadImagesToMagazine();
     
     console.log('✅ Image magazine opened');
+  }
+
+  setupImageMagazineButtons() {
+    console.log('🔧 Setting up existing image magazine buttons...');
+    
+    // Get the existing buttons from HTML
+    const importBtn = document.getElementById('import-image-btn');
+    const closeBtn = document.getElementById('close-magazine-btn');
+    
+    console.log('🔍 Found import button:', !!importBtn);
+    console.log('🔍 Found close button:', !!closeBtn);
+    
+    if (!importBtn || !closeBtn) {
+      console.log('⚠️ Buttons not found - cannot setup functionality');
+      return;
+    }
+    
+    // Remove any existing event listeners
+    importBtn.replaceWith(importBtn.cloneNode(true));
+    closeBtn.replaceWith(closeBtn.cloneNode(true));
+    
+    // Get fresh references after cloning
+    const newImportBtn = document.getElementById('import-image-btn');
+    const newCloseBtn = document.getElementById('close-magazine-btn');
+    
+    // Setup import button
+    newImportBtn.addEventListener('click', (e) => {
+      console.log('📁 Import button CLICKED!');
+      e.stopPropagation();
+      e.preventDefault();
+      this.importImages();
+    });
+    
+    // Setup close button
+    newCloseBtn.addEventListener('click', (e) => {
+      console.log('🔴 Close button CLICKED!');
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const magazine = document.getElementById('imageMagazine');
+      if (magazine) {
+        magazine.style.display = 'none';
+        magazine.classList.add('hidden');
+        console.log('✅ Magazine closed via close button');
+      }
+    });
+    
+    // Emergency visual styling to make buttons obvious
+    newImportBtn.style.cssText = `
+      background: yellow !important;
+      color: black !important;
+      border: 3px solid red !important;
+      font-weight: bold !important;
+      font-size: 16px !important;
+      padding: 8px 12px !important;
+      cursor: pointer !important;
+    `;
+    
+    newCloseBtn.style.cssText = `
+      background: cyan !important;
+      color: black !important;
+      border: 3px solid blue !important;
+      font-weight: bold !important;
+      font-size: 16px !important;
+      padding: 8px 12px !important;
+      cursor: pointer !important;
+    `;
+    
+    console.log('✅ Image magazine buttons setup complete');
+    console.log('🔍 Buttons should now be BRIGHT and obvious!');
   }
 
   createImageMagazine() {
