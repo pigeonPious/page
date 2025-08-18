@@ -120,7 +120,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250910';
+    const buildDate = '20250911';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -241,7 +241,8 @@ class SimpleBlog {
     // Make note button
     this.addClickHandler('#make-note-button', () => {
       console.log('📌 Make note button clicked');
-      this.makeNote();
+      // Capture selection immediately before any menu interactions
+      this.captureSelectionAndMakeNote();
     });
 
     // Editor-specific buttons
@@ -967,8 +968,8 @@ class SimpleBlog {
     console.log('🎨 Custom theme applied:', { h, s, l, bgColor, fgColor });
   }
 
-  makeNote() {
-    console.log('📝 Creating hover note...');
+  captureSelectionAndMakeNote() {
+    console.log('📝 Capturing selection and creating hover note...');
     
     // Get selected text from visual editor
     const visualEditor = document.getElementById('visualEditor');
@@ -987,6 +988,27 @@ class SimpleBlog {
     
     // Store the selection range to preserve it
     const range = selection.getRangeAt(0).cloneRange();
+    
+    // Store the captured data for later use
+    this.capturedNoteData = {
+      selectedText: selectedText,
+      range: range,
+      timestamp: Date.now()
+    };
+    
+    console.log('✅ Selection captured:', { text: selectedText, timestamp: this.capturedNoteData.timestamp });
+    
+    // Now open the note input
+    this.openNoteInput();
+  }
+
+  openNoteInput() {
+    if (!this.capturedNoteData) {
+      console.log('⚠️ No captured selection data');
+      return;
+    }
+    
+    const { selectedText, range } = this.capturedNoteData;
     
     // Create menu style 1 input box
     const inputBox = document.createElement('div');
@@ -1027,8 +1049,12 @@ class SimpleBlog {
           this.createHoverNote(selectedText, noteText, range);
         }
         this.removeInputBox(inputBox);
+        // Clear captured data
+        this.capturedNoteData = null;
       } else if (e.key === 'Escape') {
         this.removeInputBox(inputBox);
+        // Clear captured data
+        this.capturedNoteData = null;
       }
     };
     
@@ -1039,6 +1065,8 @@ class SimpleBlog {
       if (!inputBox.contains(e.target)) {
         this.removeInputBox(inputBox);
         document.removeEventListener('click', outsideClick);
+        // Clear captured data
+        this.capturedNoteData = null;
       }
     };
     
@@ -1046,6 +1074,11 @@ class SimpleBlog {
     setTimeout(() => {
       document.addEventListener('click', outsideClick);
     }, 100);
+  }
+
+  makeNote() {
+    // Legacy method - now calls the new workflow
+    this.captureSelectionAndMakeNote();
   }
 
   createHoverNote(selectedText, noteText, range) {
