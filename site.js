@@ -102,6 +102,15 @@ class SimpleBlog {
             </div>
           </div>
           
+          <div class="menu-item" data-menu="debug">
+            <div class="label">Debug</div>
+            <div class="menu-dropdown">
+              <div class="menu-entry" id="test-cache-clear">Test Cache Clear</div>
+              <div class="menu-entry" id="test-build-increment">Test Build Increment</div>
+              <div class="menu-entry" id="show-localstorage">Show localStorage</div>
+            </div>
+          </div>
+          
           <div class="taskbar-status editor-only">
             <span id="github-status">not connected</span>
           </div>
@@ -119,12 +128,20 @@ class SimpleBlog {
   }
 
     generateBuildWord() {
+    console.log('🔧 generateBuildWord called - MAXIMUM TROUBLESHOOTING MODE');
+    
     // Check if we already have a build word stored
     let storedBuildWord = localStorage.getItem('currentBuildWord');
     let storedBuildCounter = localStorage.getItem('buildCounter');
     
+    console.log('🔧 Stored values:', { storedBuildWord, storedBuildCounter });
+    
     // Check if build counter has changed (indicating a new build)
     const currentBuildCounter = parseInt(localStorage.getItem('buildCounter') || '1');
+    
+    console.log('🔧 Current build counter:', currentBuildCounter);
+    console.log('🔧 Stored build counter:', storedBuildCounter);
+    console.log('🔧 Comparison result:', storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter);
     
     if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
       console.log(`🔧 Build word: Using stored build word: ${storedBuildWord}`);
@@ -133,7 +150,8 @@ class SimpleBlog {
     
     // Clear cache if this is a new build
     if (storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter) {
-      console.log('🧹 New build detected, clearing cache...');
+      console.log('🧹 NEW BUILD DETECTED! Clearing cache...');
+      console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
       this.clearBuildCache();
     }
     
@@ -146,7 +164,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -163,6 +181,7 @@ class SimpleBlog {
     localStorage.setItem('currentBuildWord', newBuildWord);
     
     console.log(`🔧 Build word: Generated new build word: ${newBuildWord} (seed: ${seed}, index: ${calculatedIndex})`);
+    console.log(`🔧 Stored in localStorage:`, { currentBuildWord: newBuildWord, buildCounter });
     
     return newBuildWord;
   }
@@ -187,14 +206,22 @@ class SimpleBlog {
   }
 
   clearBuildCache() {
-    console.log('🧹 Clearing build cache...');
+    console.log('🧹 MAXIMUM TROUBLESHOOTING: clearBuildCache called!');
+    console.log('🧹 localStorage before clearing:', Object.keys(localStorage));
     
     // Clear stored build word
+    const oldBuildWord = localStorage.getItem('currentBuildWord');
     localStorage.removeItem('currentBuildWord');
+    console.log('🧹 Cleared currentBuildWord:', oldBuildWord);
     
     // Clear any other cached data that should be refreshed on new builds
+    const oldPosts = localStorage.getItem('posts');
     localStorage.removeItem('posts');
+    console.log('🧹 Cleared posts:', oldPosts);
+    
+    const oldCurrentPost = localStorage.getItem('currentPost');
     localStorage.removeItem('currentPost');
+    console.log('🧹 Cleared currentPost:', oldCurrentPost);
     
     // Clear any other build-related cache items
     const keysToRemove = [];
@@ -205,12 +232,16 @@ class SimpleBlog {
       }
     }
     
+    console.log('🧹 Found keys to remove:', keysToRemove);
+    
     keysToRemove.forEach(key => {
+      const oldValue = localStorage.getItem(key);
       localStorage.removeItem(key);
-      console.log(`🧹 Cleared cache item: ${key}`);
+      console.log(`🧹 Cleared cache item: ${key} = ${oldValue}`);
     });
     
-    console.log('✅ Build cache cleared');
+    console.log('🧹 localStorage after clearing:', Object.keys(localStorage));
+    console.log('✅ Build cache cleared - MAXIMUM TROUBLESHOOTING COMPLETE');
   }
 
   setupBuildWordAutoRefresh() {
@@ -404,6 +435,30 @@ class SimpleBlog {
       this.incrementBuildWord();
     });
     
+    // Debug button handlers
+    this.addClickHandler('#test-cache-clear', () => {
+      console.log('🧹 Test cache clear button clicked');
+      this.clearBuildCache();
+      alert('Cache cleared! Check console for details.');
+    });
+    
+    this.addClickHandler('#test-build-increment', () => {
+      console.log('🔧 Test build increment button clicked');
+      this.incrementBuildWord();
+      alert('Build incremented! Check console for details.');
+    });
+    
+    this.addClickHandler('#show-localstorage', () => {
+      console.log('📋 Show localStorage button clicked');
+      const storage = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        storage[key] = localStorage.getItem(key);
+      }
+      console.log('📋 localStorage contents:', storage);
+      alert('localStorage contents logged to console!');
+    });
+    
     console.log('✅ Button events setup complete');
   }
 
@@ -587,48 +642,90 @@ class SimpleBlog {
       
       // Add post entries
       if (allPosts.length > 0) {
-        allPosts.forEach(post => {
+        console.log('🔍 MAXIMUM TROUBLESHOOTING: Creating post entries for', allPosts.length, 'posts');
+        console.log('🔍 Posts data:', allPosts);
+        
+        allPosts.forEach((post, index) => {
+          console.log(`🔍 Processing post ${index}:`, post);
+          
           if (!post || !post.slug) {
             console.warn('⚠️ Skipping invalid post:', post);
             return;
           }
+          
+          console.log(`🔍 Creating entry for post: ${post.title} (${post.slug})`);
           
           const entry = document.createElement('div');
           entry.className = 'menu-entry';
           entry.textContent = post.title || 'Untitled';
           entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
           
+          // Add unique ID for debugging
+          entry.id = `post-entry-${post.slug}`;
+          console.log(`🔍 Created entry element:`, entry);
+          
+          // Add visual debugging - make entries more obvious
+          entry.style.border = '2px solid red';
+          entry.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+          entry.title = `Click to load: ${post.title} (${post.slug})`;
+          
           entry.addEventListener('click', (e) => {
+            console.log('🔍 MAXIMUM TROUBLESHOOTING: CLICK EVENT FIRED!');
+            console.log('🔍 Event details:', e);
+            console.log('🔍 Target element:', e.target);
+            console.log('🔍 Post data:', post);
+            
             e.preventDefault();
             e.stopPropagation();
             console.log('📖 Post selected:', post.title || 'Untitled', 'slug:', post.slug);
             console.log('🔍 About to call loadPost with slug:', post.slug);
+            console.log('🔍 this object:', this);
+            console.log('🔍 this.loadPost function:', this.loadPost);
+            console.log('🔍 typeof this.loadPost:', typeof this.loadPost);
             
             // Close menus first
+            console.log('🔍 Closing all menus...');
             this.closeAllMenus();
+            console.log('🔍 Menus closed');
             
             // Then load the post
             try {
-              this.loadPost(post.slug).then(() => {
-                console.log('✅ Post loaded successfully:', post.slug);
-              }).catch(error => {
-                console.error('❌ Error loading post:', error);
-              });
+              console.log('🔍 Calling loadPost...');
+              const loadPromise = this.loadPost(post.slug);
+              console.log('🔍 loadPost returned promise:', loadPromise);
+              
+              if (loadPromise && typeof loadPromise.then === 'function') {
+                loadPromise.then(() => {
+                  console.log('✅ Post loaded successfully:', post.slug);
+                }).catch(error => {
+                  console.error('❌ Error loading post:', error);
+                });
+              } else {
+                console.error('❌ loadPost did not return a promise:', loadPromise);
+              }
             } catch (error) {
               console.error('❌ Error calling loadPost:', error);
+              console.error('❌ Error stack:', error.stack);
             }
           });
           
           entry.addEventListener('mouseenter', () => {
+            console.log(`🔍 Mouse enter on post entry: ${post.title}`);
             entry.style.background = 'var(--menu-hover-bg, #555)';
           });
           
           entry.addEventListener('mouseleave', () => {
+            console.log(`🔍 Mouse leave on post entry: ${post.title}`);
             entry.style.background = 'transparent';
           });
           
+          console.log(`🔍 Appending entry to submenu:`, entry);
           submenu.appendChild(entry);
+          console.log(`🔍 Entry appended successfully`);
         });
+        
+        console.log('🔍 MAXIMUM TROUBLESHOOTING: All post entries created and added to submenu');
+        console.log('🔍 Final submenu children count:', submenu.children.length);
       } else {
         const noPostsEntry = document.createElement('div');
         noPostsEntry.className = 'menu-entry';
@@ -954,6 +1051,11 @@ class SimpleBlog {
   }
 
   async loadPost(slug) {
+    console.log(`🔍 MAXIMUM TROUBLESHOOTING: loadPost called with slug: ${slug}`);
+    console.log(`🔍 this object in loadPost:`, this);
+    console.log(`🔍 this.displayPost function:`, this.displayPost);
+    console.log(`🔍 this.displayDefaultContent function:`, this.displayDefaultContent);
+    
     try {
       console.log(`📖 Loading post: ${slug}`);
       
@@ -1010,18 +1112,44 @@ class SimpleBlog {
   }
 
   displayPost(post) {
+    console.log('🔍 MAXIMUM TROUBLESHOOTING: displayPost called with:', post);
+    
     const titleElement = document.getElementById('post-title');
     const dateElement = document.getElementById('post-date');
     const contentElement = document.getElementById('post-content');
 
-    if (titleElement) titleElement.textContent = post.title || 'Untitled';
-    if (dateElement) dateElement.textContent = post.date || '';
-    if (contentElement) contentElement.innerHTML = post.content || '';
+    console.log('🔍 DOM elements found:', { 
+      titleElement: !!titleElement, 
+      dateElement: !!dateElement, 
+      contentElement: !!contentElement 
+    });
+
+    if (titleElement) {
+      titleElement.textContent = post.title || 'Untitled';
+      console.log('🔍 Set title to:', post.title || 'Untitled');
+    } else {
+      console.error('❌ titleElement not found!');
+    }
+    
+    if (dateElement) {
+      dateElement.textContent = post.date || '';
+      console.log('🔍 Set date to:', post.date || '');
+    } else {
+      console.error('❌ dateElement not found!');
+    }
+    
+    if (contentElement) {
+      contentElement.innerHTML = post.content || '';
+      console.log('🔍 Set content to:', post.content ? post.content.substring(0, 100) + '...' : '');
+    } else {
+      console.error('❌ contentElement not found!');
+    }
     
     // Setup hover notes for the displayed post
+    console.log('🔍 Setting up hover notes...');
     this.setupHoverNotes();
     
-    console.log('✅ Post displayed:', post.title);
+    console.log('✅ Post displayed successfully:', post.title);
   }
 
   displayDefaultContent() {
