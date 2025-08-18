@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250917';
+    const buildDate = '20250918';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1170,6 +1170,45 @@ class SimpleBlog {
     console.log('🔍 Magazine display style:', magazine.style.display);
     console.log('🔍 Magazine classes:', magazine.className);
     
+    // Force visibility with inline styles
+    magazine.style.visibility = 'visible';
+    magazine.style.opacity = '1';
+    magazine.style.position = 'fixed';
+    magazine.style.top = '50%';
+    magazine.style.left = '50%';
+    magazine.style.transform = 'translate(-50%, -50%)';
+    magazine.style.zIndex = '10000';
+    magazine.style.backgroundColor = 'red'; // Emergency visibility test
+    magazine.style.border = '5px solid blue'; // Emergency visibility test
+    magazine.style.width = '400px'; // Force width
+    magazine.style.height = '500px'; // Force height
+    magazine.style.minWidth = '400px'; // Force min width
+    magazine.style.minHeight = '500px'; // Force min height
+    
+    console.log('🔍 Magazine inline styles applied');
+    console.log('🔍 Magazine computed position:', magazine.getBoundingClientRect());
+    
+    // Emergency test - create a simple visible div
+    const testDiv = document.createElement('div');
+    testDiv.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 200px;
+      height: 100px;
+      background: lime;
+      border: 3px solid black;
+      z-index: 99999;
+      color: black;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    testDiv.textContent = 'TEST DIV - CAN YOU SEE THIS?';
+    document.body.appendChild(testDiv);
+    console.log('🔍 Emergency test div added:', testDiv);
+    
     // Load images from assets folder
     console.log('🔍 Loading images...');
     this.loadImagesToMagazine();
@@ -1250,15 +1289,23 @@ class SimpleBlog {
     
     magazine.appendChild(header);
     magazine.appendChild(content);
+    
+    console.log('🔍 About to append magazine to document.body...');
+    console.log('🔍 document.body exists:', !!document.body);
+    console.log('🔍 document.body children count:', document.body.children.length);
+    
     document.body.appendChild(magazine);
+    
+    console.log('🔍 Magazine added to DOM:', magazine);
+    console.log('🔍 Magazine parent:', magazine.parentNode);
+    console.log('🔍 Magazine parent is body:', magazine.parentNode === document.body);
+    console.log('🔍 Magazine computed styles:', window.getComputedStyle(magazine));
+    console.log('🔍 Magazine offsetParent:', magazine.offsetParent);
+    console.log('🔍 Magazine offsetWidth/Height:', magazine.offsetWidth, magazine.offsetHeight);
     
     // Start hidden
     magazine.style.display = 'none';
     magazine.classList.add('hidden');
-    
-    console.log('🔍 Magazine added to DOM:', magazine);
-    console.log('🔍 Magazine parent:', magazine.parentNode);
-    console.log('🔍 Magazine computed styles:', window.getComputedStyle(magazine));
     
     return magazine;
   }
