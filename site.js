@@ -28,6 +28,10 @@ class SimpleBlog {
     console.log('✅ Posts loaded');
     this.setTheme(this.theme);
     console.log('✅ Theme set');
+    
+    // Check authentication status
+    this.checkAndUpdateAuthStatus();
+    
     console.log('✅ SimpleBlog initialized successfully');
   }
 
@@ -111,7 +115,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250906';
+    const buildDate = '20250907';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -146,6 +150,12 @@ class SimpleBlog {
       // Don't close menus when clicking on theme buttons
       if (e.target.closest('[data-mode]')) {
         console.log('🎨 Theme button clicked, not closing menus');
+        return;
+      }
+      
+      // Don't close if clicking in taskbar (to preserve text selection)
+      if (e.target.closest('.menu-bar') || e.target.closest('.taskbar-status')) {
+        console.log('📋 Taskbar clicked, preserving text selection');
         return;
       }
       
@@ -251,7 +261,7 @@ class SimpleBlog {
       this.showPublishModal();
     });
 
-    this.addClickHandler('#flags-btn', () => {
+    this.addClickHandler('#keywords-btn', () => {
       console.log('🏷️ Flags button clicked');
       this.showFlagsModal();
     });
@@ -1407,6 +1417,14 @@ class SimpleBlog {
     console.log('🚀 Publishing to GitHub:', { title, commitMessage });
     
     try {
+      // Check if user is authenticated
+      const isAuthenticated = await this.checkAuthentication();
+      if (!isAuthenticated) {
+        console.log('🔐 User not authenticated, redirecting to login');
+        this.showGitHubLogin();
+        return;
+      }
+      
       // Create post data
       const postData = {
         slug: title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
@@ -1416,16 +1434,189 @@ class SimpleBlog {
         content: content
       };
       
-      // For now, show what would be published
-      // In a real implementation, this would use GitHub API
       console.log('📝 Post data prepared:', postData);
-      console.log('📤 Would publish to GitHub with commit:', commitMessage);
       
-      alert(`Post ready to publish!\n\nTitle: ${title}\nSlug: ${postData.slug}\nCommit: ${commitMessage}\n\nIn a real implementation, this would publish to your GitHub repository in the posts/ folder.`);
+      // Publish to GitHub using the save-post function
+      const response = await fetch('/.netlify/functions/save-post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: postData.title,
+          content: postData.content,
+          slug: postData.slug,
+          category: 'general'
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Post published successfully:', result);
+        alert(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`);
+        
+        // Redirect to the published post
+        window.location.href = `index.html?post=${postData.slug}`;
+      } else {
+        const error = await response.json();
+        console.error('❌ Failed to publish post:', error);
+        alert(`❌ Failed to publish post: ${error.error || 'Unknown error'}`);
+      }
       
     } catch (error) {
       console.error('❌ Error publishing post:', error);
-      alert('Error preparing post for publication. Please try again.');
+      alert('Error publishing post. Please check your connection and try again.');
+    }
+  }
+
+  async checkAuthentication() {
+    try {
+      const response = await fetch('/.netlify/functions/auth-check');
+      if (response.ok) {
+        const result = await response.json();
+        return result.authenticated;
+      }
+    } catch (error) {
+      console.error('❌ Error checking authentication:', error);
+    }
+    return false;
+  }
+
+  showGitHubLogin() {
+    console.log('🔐 Showing GitHub login...');
+    
+    // Create login modal
+    const modal = document.createElement('div');
+    modal.id = 'githubLoginModal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: var(--menu-bg);
+      border: 1px solid var(--border);
+      padding: 20px;
+      max-width: 400px;
+      text-align: center;
+    `;
+    
+    content.innerHTML = `
+      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub Authentication Required</h3>
+      <p style="color: var(--menu-fg); margin-bottom: 20px;">You need to authenticate with GitHub to publish posts.</p>
+      <button id="githubLoginBtn" style="
+        background: #24292e;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      ">Login with GitHub</button>
+      <div style="margin-top: 15px;">
+        <button id="closeLoginModal" style="
+          background: transparent;
+          color: var(--menu-fg);
+          border: 1px solid var(--border);
+          padding: 8px 16px;
+          border-radius: 4px;
+          cursor: pointer;
+        ">Cancel</button>
+      </div>
+    `;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    document.getElementById('githubLoginBtn').addEventListener('click', () => {
+      this.initiateGitHubLogin();
+    });
+    
+    document.getElementById('closeLoginModal').addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  initiateGitHubLogin() {
+    console.log('🔐 Initiating GitHub OAuth...');
+    
+    // Get GitHub client ID
+    fetch('/.netlify/functions/get-github-client-id')
+      .then(response => response.json())
+      .then(data => {
+        if (data.clientId) {
+          // Redirect to GitHub OAuth
+          const redirectUri = `${window.location.origin}/.netlify/functions/auth-callback`;
+          const state = Math.random().toString(36).substring(7);
+          
+          // Store state for verification
+          sessionStorage.setItem('github_oauth_state', state);
+          
+          const authUrl = `https://github.com/login/oauth/authorize?client_id=${data.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=repo`;
+          window.location.href = authUrl;
+        } else {
+          alert('GitHub OAuth not configured. Please contact the administrator.');
+        }
+      })
+      .catch(error => {
+        console.error('❌ Error getting GitHub client ID:', error);
+        alert('Error connecting to GitHub. Please try again.');
+      });
+  }
+
+  async checkAndUpdateAuthStatus() {
+    try {
+      const isAuthenticated = await this.checkAuthentication();
+      this.updateAuthStatus(isAuthenticated);
+      
+      // Check if we're returning from OAuth callback
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('auth') === 'success') {
+        console.log('🔐 OAuth callback successful');
+        this.updateAuthStatus(true);
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (error) {
+      console.error('❌ Error checking auth status:', error);
+      this.updateAuthStatus(false);
+    }
+  }
+
+  updateAuthStatus(isAuthenticated) {
+    const githubStatus = document.getElementById('github-status');
+    if (githubStatus) {
+      if (isAuthenticated) {
+        githubStatus.textContent = 'connected';
+        githubStatus.style.color = '#28a745';
+      } else {
+        githubStatus.textContent = 'not connected';
+        githubStatus.style.color = '#dc3545';
+      }
+    }
+    
+    // Update publish button availability
+    const publishBtn = document.getElementById('publish-btn');
+    if (publishBtn) {
+      publishBtn.style.opacity = isAuthenticated ? '1' : '0.5';
+      publishBtn.title = isAuthenticated ? 'Publish post to GitHub' : 'GitHub authentication required';
     }
   }
 
