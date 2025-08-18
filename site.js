@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250922';
+    const buildDate = '20250923';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1170,12 +1170,24 @@ class SimpleBlog {
     console.log('🔍 Magazine display style:', magazine.style.display);
     console.log('🔍 Magazine classes:', magazine.className);
     
+    // Get the button position for initial placement
+    const imagesBtn = document.getElementById('images-btn');
+    let initialX = '50%';
+    let initialY = '50%';
+    
+    if (imagesBtn) {
+      const btnRect = imagesBtn.getBoundingClientRect();
+      initialX = (btnRect.left + btnRect.width / 2) + 'px';
+      initialY = (btnRect.top + btnRect.height / 2) + 'px';
+      console.log('🔍 Button position:', { left: btnRect.left, top: btnRect.top });
+    }
+    
     // Force visibility with inline styles
     magazine.style.visibility = 'visible';
     magazine.style.opacity = '1';
     magazine.style.position = 'fixed';
-    magazine.style.top = '50%';
-    magazine.style.left = '50%';
+    magazine.style.top = initialY;
+    magazine.style.left = initialX;
     magazine.style.transform = 'translate(-50%, -50%)';
     magazine.style.zIndex = '10000';
     magazine.style.backgroundColor = '#2a2a2a'; // Dark background
@@ -1278,7 +1290,12 @@ class SimpleBlog {
       position: relative;
       border: 1px solid #666;
     `;
-    importBtn.addEventListener('click', () => this.importImages());
+    importBtn.addEventListener('click', (e) => {
+      console.log('📁 Import button clicked!');
+      e.stopPropagation();
+      e.preventDefault();
+      this.importImages();
+    });
     importBtn.addEventListener('mouseenter', () => { importBtn.style.background = '#666'; });
     importBtn.addEventListener('mouseleave', () => { importBtn.style.background = '#555'; });
     
@@ -1308,13 +1325,26 @@ class SimpleBlog {
       console.log('🔴 Close button clicked!');
       e.stopPropagation(); // Prevent event bubbling
       e.preventDefault(); // Prevent any default button behavior
-      magazine.style.display = 'none';
-      magazine.classList.add('hidden');
-      console.log('✅ Magazine closed');
+      
+      // Force close the magazine
+      const magazineToClose = document.getElementById('imageMagazine');
+      if (magazineToClose) {
+        magazineToClose.style.display = 'none';
+        magazineToClose.classList.add('hidden');
+        console.log('✅ Magazine closed via close button');
+      } else {
+        console.log('⚠️ Magazine not found for closing');
+      }
     });
     
     header.appendChild(importBtn);
     header.appendChild(closeBtn);
+    
+    // Emergency button test
+    console.log('🔍 Import button created:', importBtn);
+    console.log('🔍 Close button created:', closeBtn);
+    console.log('🔍 Import button text:', importBtn.textContent);
+    console.log('🔍 Close button text:', closeBtn.textContent);
     
     // Content area
     const content = document.createElement('div');
@@ -1470,13 +1500,7 @@ class SimpleBlog {
       console.log('✅ Image inserted at end of post');
     }
     
-    // Close the magazine after inserting
-    const magazine = document.getElementById('imageMagazine');
-    if (magazine) {
-      magazine.style.display = 'none';
-      magazine.classList.add('hidden');
-      console.log('✅ Magazine closed after image insertion');
-    }
+
     
     console.log('✅ Image inserted:', filename);
   }
