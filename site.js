@@ -118,7 +118,7 @@ class SimpleBlog {
     console.log('✅ Taskbar created');
   }
 
-  generateBuildWord() {
+    generateBuildWord() {
     const words = [
       'alpha', 'beta', 'gamma', 'delta', 'echo', 'foxtrot', 'golf', 'hotel',
       'india', 'juliet', 'kilo', 'lima', 'mike', 'november', 'oscar', 'papa',
@@ -127,39 +127,25 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum'
     ];
     
-    // Get current date and time for dynamic build word
-    const now = new Date();
-    const buildDate = now.getFullYear().toString() + 
-                     String(now.getMonth() + 1).padStart(2, '0') + 
-                     String(now.getDate()).padStart(2, '0') +
-                     String(now.getHours()).padStart(2, '0') +
-                     String(now.getMinutes()).padStart(2, '0');
+    // Get build counter from localStorage - this should only change on actual builds
+    const buildCounter = parseInt(localStorage.getItem('buildCounter') || '1');
     
-    // Get build counter from localStorage or start at 1
-    const buildCounter = parseInt(localStorage.getItem('buildCounter') || '0') + 1;
-    localStorage.setItem('buildCounter', buildCounter.toString());
-    
-    // Combine date and counter for unique seed
-    let seed = 0;
-    for (let i = 0; i < buildDate.length; i++) {
-      seed += buildDate.charCodeAt(i);
-    }
-    seed += buildCounter; // Add counter to make each build unique
-    
+    // Use a fixed seed based on the build counter to ensure consistent word selection
+    const seed = buildCounter;
     const calculatedIndex = seed % words.length;
     const word = words[calculatedIndex];
     
-    console.log(`🔧 Build word calculation: date=${buildDate}, counter=${buildCounter}, seed=${seed}, calculated=${calculatedIndex}, word=${word}`);
+    console.log(`🔧 Build word: ${word}-${buildCounter} (seed: ${seed}, index: ${calculatedIndex})`);
     
     return `${word}-${buildCounter}`;
   }
 
   incrementBuildWord() {
-    // Increment the build counter
-    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '0');
+    // Increment the build counter (should only be called on actual builds)
+    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
     const newCounter = currentCounter + 1;
     localStorage.setItem('buildCounter', newCounter.toString());
     
@@ -169,18 +155,14 @@ class SimpleBlog {
       buildIndicator.textContent = this.generateBuildWord();
       console.log(`🔧 Build word incremented to: ${buildIndicator.textContent}`);
     }
+    
+    console.log(`🔧 Build counter incremented from ${currentCounter} to ${newCounter}`);
   }
 
   setupBuildWordAutoRefresh() {
-    // Update build word every minute to show current time
-    setInterval(() => {
-      const buildIndicator = document.getElementById('build-indicator');
-      if (buildIndicator) {
-        buildIndicator.textContent = this.generateBuildWord();
-      }
-    }, 60000); // 60000ms = 1 minute
-    
-    console.log('🔧 Build word auto-refresh setup - will update every minute');
+    // Build word is now static and only changes on actual builds
+    // No auto-refresh needed
+    console.log('🔧 Build word is static - no auto-refresh needed');
   }
 
   bindEvents() {
@@ -481,13 +463,26 @@ class SimpleBlog {
       let allPosts = [];
       
       try {
-        const githubResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
+        // Add cache-busting parameter to prevent browser caching
+        const timestamp = Date.now();
+        const githubUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
+        console.log('🔍 All Posts submenu: Fetching from GitHub API:', githubUrl);
+        
+        const githubResponse = await fetch(githubUrl);
+        console.log('🔍 All Posts submenu: GitHub API response status:', githubResponse.status, githubResponse.statusText);
+        
         if (githubResponse.ok) {
           const githubData = await githubResponse.json();
+          console.log('🔍 All Posts submenu: GitHub API response data:', githubData);
+          
           const content = atob(githubData.content); // Decode base64 content
+          console.log('🔍 All Posts submenu: Decoded content:', content);
+          
           const data = JSON.parse(content);
+          console.log('🔍 All Posts submenu: Parsed data:', data);
+          
           allPosts = Array.isArray(data) ? data : (data.posts || []);
-          console.log('✅ All Posts submenu: Loaded from GitHub API:', allPosts.length);
+          console.log('✅ All Posts submenu: Loaded from GitHub API:', allPosts.length, allPosts);
         } else {
           console.log('⚠️ All Posts submenu: GitHub API failed, trying local...');
           // Fallback to local posts
@@ -499,8 +494,10 @@ class SimpleBlog {
           }
         }
       } catch (error) {
+        console.error('❌ All Posts submenu: Error fetching posts:', error);
         console.log('⚠️ All Posts submenu: Both GitHub API and local failed, using cached posts');
         allPosts = this.posts; // Use cached posts as last resort
+        console.log('🔍 All Posts submenu: Using cached posts:', allPosts);
       }
       
       // Clear loading indicator
