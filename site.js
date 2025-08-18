@@ -123,7 +123,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250913';
+    const buildDate = '20250914';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1147,7 +1147,8 @@ class SimpleBlog {
       magazine = this.createImageMagazine();
     }
     
-    // Show magazine
+    // Show magazine explicitly
+    magazine.style.display = 'flex';
     magazine.classList.remove('hidden');
     
     // Load images from assets folder
@@ -1205,7 +1206,10 @@ class SimpleBlog {
       font-weight: bold;
       padding: 0 4px;
     `;
-    closeBtn.addEventListener('click', () => magazine.classList.add('hidden'));
+    closeBtn.addEventListener('click', () => {
+      magazine.style.display = 'none';
+      magazine.classList.add('hidden');
+    });
     
     header.appendChild(importBtn);
     header.appendChild(closeBtn);
@@ -1226,6 +1230,10 @@ class SimpleBlog {
     magazine.appendChild(header);
     magazine.appendChild(content);
     document.body.appendChild(magazine);
+    
+    // Start hidden
+    magazine.style.display = 'none';
+    magazine.classList.add('hidden');
     
     return magazine;
   }
@@ -2038,16 +2046,20 @@ class SimpleBlog {
         background: var(--menu-bg);
         border: 1px solid var(--border);
         padding: 4px 6px;
-        min-width: 140px;
-        max-width: 260px;
         font-size: 11px;
         color: var(--menu-fg);
         display: none;
         font-family: inherit;
         line-height: 1.3;
+        white-space: pre-wrap;
+        word-wrap: break-word;
       `;
       document.body.appendChild(tooltip);
     }
+    
+    // Calculate width based on text length
+    const textWidth = Math.min(noteText.length * 6, 100); // 6px per character, max 100px
+    tooltip.style.width = `${textWidth}px`;
     
     // Position tooltip near mouse
     tooltip.style.left = (event.clientX + 10) + 'px';
