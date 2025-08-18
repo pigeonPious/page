@@ -104,7 +104,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250824';
+    const buildDate = '20250825';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -160,18 +160,40 @@ class SimpleBlog {
     const dropdown = menuItem.querySelector('.menu-dropdown');
     const isOpen = dropdown.classList.contains('open');
     
+    console.log('🔧 Toggle menu:', {
+      menuLabel: menuItem.querySelector('.label')?.textContent,
+      hasDropdown: !!dropdown,
+      isOpen: isOpen,
+      dropdownElement: dropdown
+    });
+    
     // Close all other menus
     this.closeAllMenus();
     
     // Toggle current menu
     if (!isOpen) {
       dropdown.classList.add('open');
+      console.log('✅ Menu opened, added "open" class');
+    } else {
+      console.log('✅ Menu was already open, now closed');
     }
+    
+    // Debug: check if class was added
+    setTimeout(() => {
+      const isNowOpen = dropdown.classList.contains('open');
+      console.log('🔍 After toggle - has "open" class:', isNowOpen);
+      console.log('🔍 Dropdown display style:', dropdown.style.display);
+      console.log('🔍 Computed display:', window.getComputedStyle(dropdown).display);
+    }, 100);
   }
 
   closeAllMenus() {
-    document.querySelectorAll('.menu-dropdown.open').forEach(dropdown => {
+    const openMenus = document.querySelectorAll('.menu-dropdown.open');
+    console.log('🔧 Closing all menus, found:', openMenus.length, 'open menus');
+    
+    openMenus.forEach(dropdown => {
       dropdown.classList.remove('open');
+      console.log('✅ Removed "open" class from dropdown');
     });
   }
 
