@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Taskbar Debug Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .debug-info { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    .error { background: #ffebee; color: #c62828; }
+    .success { background: #e8f5e8; color: #2e7d32; }
+  </style>
+</head>
+<body>
+  <h1>Taskbar Debug Test</h1>
+  
+  <div class="debug-info">
+    <h3>Module Status:</h3>
+    <div id="module-status">Checking...</div>
+  </div>
+  
+  <div class="debug-info">
+    <h3>Taskbar Status:</h3>
+    <div id="taskbar-status">Checking...</div>
+  </div>
+  
+  <div class="debug-info">
+    <h3>Console Output:</h3>
+    <div id="console-output">Loading...</div>
+  </div>
+
+  <!-- Development Configuration -->
+  <script src="dev-config.js?v=20250822"></script>
+
+  <!-- PPPage Modular System -->
+  <script src="modules/core.js?v=20250822"></script>
+  <script src="modules/taskbar.js?v=20250822"></script>
+  <script src="modules/app.js?v=20250822"></script>
+  
+  <script>
+    // Debug script
+    console.log('🔍 Debug script loaded');
+    
+    function updateStatus() {
+      // Check module status
+      const moduleStatus = document.getElementById('module-status');
+      if (window.ppPage) {
+        moduleStatus.innerHTML = '<span class="success">✅ PPPage Core loaded</span>';
+      } else {
+        moduleStatus.innerHTML = '<span class="error">❌ PPPage Core missing</span>';
+      }
+      
+      // Check taskbar status
+      const taskbarStatus = document.getElementById('taskbar-status');
+      const taskbar = document.querySelector('.menu-bar');
+      if (taskbar) {
+        taskbarStatus.innerHTML = '<span class="success">✅ Taskbar found in DOM</span>';
+      } else {
+        taskbarStatus.innerHTML = '<span class="error">❌ Taskbar missing from DOM</span>';
+      }
+      
+      // Check console output
+      const consoleOutput = document.getElementById('console-output');
+      consoleOutput.innerHTML = 'Check browser console for detailed logs';
+    }
+    
+    // Update status after a delay
+    setTimeout(updateStatus, 1000);
+    setTimeout(updateStatus, 3000);
+    
+    // Listen for errors
+    window.addEventListener('error', (e) => {
+      console.error('Global error:', e.error);
+      updateStatus();
+    });
+  </script>
+</body>
+</html>

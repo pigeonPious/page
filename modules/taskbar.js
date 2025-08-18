@@ -20,11 +20,7 @@ class TaskbarModule {
     console.log('🔧 Initializing TaskbarModule...');
     
     try {
-      // Wait for core to be ready
-      if (window.ppPage) {
-        await window.ppPage.waitForModule('core');
-      }
-      
+      // Simple initialization - don't wait for complex dependencies
       this.render();
       this.bindEvents();
       this.initializeMenuSystem();
@@ -32,13 +28,13 @@ class TaskbarModule {
       this.initialized = true;
       console.log('✅ TaskbarModule initialized successfully');
       
-      // Emit ready event
+      // Emit ready event if ppPage is available
       if (window.ppPage) {
         window.ppPage.emit('taskbarReady');
       }
     } catch (error) {
       console.error('❌ TaskbarModule initialization failed:', error);
-      throw error;
+      // Don't throw - just log the error and continue
     }
   }
 
@@ -377,3 +373,41 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { TaskbarModule, TaskbarModuleClass };
 }
+
+// Emergency fallback - ensure taskbar loads even if modules fail
+(function() {
+  console.log('🔧 Emergency taskbar fallback loading...');
+  
+  // Wait for DOM to be ready
+  function ensureTaskbar() {
+    const taskbarExists = document.querySelector('.menu-bar');
+    if (!taskbarExists) {
+      console.log('🆘 No taskbar found, creating emergency taskbar...');
+      try {
+        const emergencyTaskbar = new TaskbarModule();
+        emergencyTaskbar.render();
+        emergencyTaskbar.bindEvents();
+        emergencyTaskbar.initializeMenuSystem();
+        console.log('✅ Emergency taskbar created successfully');
+      } catch (error) {
+        console.error('❌ Emergency taskbar creation failed:', error);
+      }
+    } else {
+      console.log('✅ Taskbar already exists');
+    }
+  }
+  
+  // Try multiple times to ensure taskbar loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureTaskbar);
+  } else {
+    // DOM already ready, check immediately
+    ensureTaskbar();
+  }
+  
+  // Multiple backup attempts
+  setTimeout(ensureTaskbar, 100);
+  setTimeout(ensureTaskbar, 500);
+  setTimeout(ensureTaskbar, 1000);
+  setTimeout(ensureTaskbar, 2000);
+})();
