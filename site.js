@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250919';
+    const buildDate = '20250920';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1180,9 +1180,9 @@ class SimpleBlog {
     magazine.style.zIndex = '10000';
     magazine.style.backgroundColor = '#2a2a2a'; // Dark background
     magazine.style.border = '1px solid #444'; // Subtle border
-    magazine.style.width = '400px'; // Force width
-    magazine.style.height = '500px'; // Force height
-    magazine.style.minWidth = '400px'; // Force min width
+    magazine.style.width = '100px'; // Reduced width by 75%
+    magazine.style.height = '500px'; // Keep height
+    magazine.style.minWidth = '100px'; // Force min width
     magazine.style.minHeight = '500px'; // Force min height
     
     console.log('🔍 Magazine inline styles applied');
@@ -1262,10 +1262,10 @@ class SimpleBlog {
     content.style.cssText = `
       flex: 1;
       overflow-y: auto;
-      padding: 12px;
+      padding: 8px;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      grid-template-columns: 1fr;
+      gap: 6px;
       align-content: start;
     `;
     
@@ -1313,12 +1313,12 @@ class SimpleBlog {
       noImages.style.cssText = `
         grid-column: 1 / -1;
         text-align: center;
-        color: var(--muted);
-        padding: 40px 20px;
-        font-size: 13px;
+        color: #888;
+        padding: 20px 10px;
+        font-size: 12px;
       `;
       noImages.innerHTML = `
-        <p>No images found in assets folder</p>
+        <p>No images found</p>
         <p><small>Click Import to add images</small></p>
       `;
       gallery.appendChild(noImages);
@@ -1330,14 +1330,15 @@ class SimpleBlog {
       const item = document.createElement('div');
       item.className = 'image-item';
       item.style.cssText = `
-        width: 100%;
-        height: 100px;
-        border: 1px solid var(--border);
+        width: 84px;
+        height: 84px;
+        border: 1px solid #444;
         overflow: hidden;
         cursor: pointer;
         transition: transform 0.2s;
-        background: var(--bg);
+        background: #2a2a2a;
         position: relative;
+        margin: 0 auto;
       `;
       
       const img = document.createElement('img');
@@ -1349,24 +1350,7 @@ class SimpleBlog {
         display: block;
       `;
       
-      const name = document.createElement('div');
-      name.textContent = filename;
-      name.style.cssText = `
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        font-size: 11px;
-        padding: 2px 4px;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-      `;
-      
       item.appendChild(img);
-      item.appendChild(name);
       
       // Double click to insert image
       item.addEventListener('dblclick', () => this.insertImageToPost(filename));
