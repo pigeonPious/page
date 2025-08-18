@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250925';
+    const buildDate = '20250926';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1201,6 +1201,9 @@ class SimpleBlog {
     // Setup the existing buttons
     this.setupImageMagazineButtons();
     
+    // Setup drag functionality for the magazine
+    this.setupMagazineDrag();
+    
     // Load images from assets folder
     console.log('🔍 Loading images...');
     this.loadImagesToMagazine();
@@ -1253,29 +1256,105 @@ class SimpleBlog {
       }
     });
     
-    // Emergency visual styling to make buttons obvious
+    // Normal button styling
     newImportBtn.style.cssText = `
-      background: yellow !important;
-      color: black !important;
-      border: 3px solid red !important;
-      font-weight: bold !important;
-      font-size: 16px !important;
-      padding: 8px 12px !important;
-      cursor: pointer !important;
+      background: #555;
+      color: #fff;
+      border: 1px solid #666;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background 0.2s;
     `;
     
     newCloseBtn.style.cssText = `
-      background: cyan !important;
-      color: black !important;
-      border: 3px solid blue !important;
-      font-weight: bold !important;
-      font-size: 16px !important;
-      padding: 8px 12px !important;
-      cursor: pointer !important;
+      background: #555;
+      color: #fff;
+      border: 1px solid #666;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background 0.2s;
+      min-width: 20px;
+      text-align: center;
     `;
     
+    // Add hover effects
+    newImportBtn.addEventListener('mouseenter', () => { newImportBtn.style.background = '#666'; });
+    newImportBtn.addEventListener('mouseleave', () => { newImportBtn.style.background = '#555'; });
+    newCloseBtn.addEventListener('mouseenter', () => { newCloseBtn.style.background = '#666'; });
+    newCloseBtn.addEventListener('mouseleave', () => { newCloseBtn.style.background = '#555'; });
+    
     console.log('✅ Image magazine buttons setup complete');
-    console.log('🔍 Buttons should now be BRIGHT and obvious!');
+    console.log('🔍 Buttons now have normal styling and hover effects');
+  }
+
+  setupMagazineDrag() {
+    console.log('🔧 Setting up magazine drag functionality...');
+    
+    const magazine = document.getElementById('imageMagazine');
+    const header = magazine.querySelector('.image-magazine-header');
+    
+    if (!header) {
+      console.log('⚠️ Magazine header not found for drag setup');
+      return;
+    }
+    
+    // Make header draggable
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    
+    header.addEventListener('mousedown', (e) => {
+      console.log('🖱️ Mouse down on header - starting drag');
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      
+      // Get current position
+      const currentLeft = parseInt(magazine.style.left) || 0;
+      const currentTop = parseInt(magazine.style.top) || 0;
+      startLeft = currentLeft;
+      startTop = currentTop;
+      
+      header.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      // Update magazine position
+      const newLeft = startLeft + deltaX;
+      const newTop = startTop + deltaY;
+      
+      magazine.style.left = newLeft + 'px';
+      magazine.style.top = newTop + 'px';
+      magazine.style.transform = 'none'; // Remove center transform when dragging
+      
+      console.log('🖱️ Dragging magazine to:', { x: newLeft, y: newTop });
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        console.log('🖱️ Mouse up - stopping drag');
+        isDragging = false;
+        header.style.cursor = 'move';
+      }
+    });
+    
+    // Set initial cursor style
+    header.style.cursor = 'move';
+    header.style.userSelect = 'none';
+    
+    console.log('✅ Magazine drag functionality setup complete');
+    console.log('🔍 Click and drag the header to move the magazine');
   }
 
   createImageMagazine() {
