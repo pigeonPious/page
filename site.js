@@ -127,7 +127,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -459,45 +459,73 @@ class SimpleBlog {
     menuElement.appendChild(submenu);
     
     try {
-      // Fetch latest posts from GitHub API
+      // Scan the actual posts directory to get all JSON files
       let allPosts = [];
       
       try {
-        // Add cache-busting parameter to prevent browser caching
+        // First try to get the directory listing from GitHub API
         const timestamp = Date.now();
-        const githubUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
-        console.log('🔍 All Posts submenu: Fetching from GitHub API:', githubUrl);
+        const githubDirUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts?t=${timestamp}`;
+        console.log('🔍 All Posts submenu: Scanning posts directory from GitHub API:', githubDirUrl);
         
-        const githubResponse = await fetch(githubUrl);
+        const githubResponse = await fetch(githubDirUrl);
         console.log('🔍 All Posts submenu: GitHub API response status:', githubResponse.status, githubResponse.statusText);
         
         if (githubResponse.ok) {
-          const githubData = await githubResponse.json();
-          console.log('🔍 All Posts submenu: GitHub API response data:', githubData);
+          const directoryContents = await githubResponse.json();
+          console.log('🔍 All Posts submenu: Directory contents:', directoryContents);
           
-          const content = atob(githubData.content); // Decode base64 content
-          console.log('🔍 All Posts submenu: Decoded content:', content);
+          // Filter for JSON files only
+          const jsonFiles = directoryContents.filter(item => 
+            item.type === 'file' && item.name.endsWith('.json') && item.name !== 'index.json'
+          );
           
-          const data = JSON.parse(content);
-          console.log('🔍 All Posts submenu: Parsed data:', data);
+          console.log('🔍 All Posts submenu: Found JSON files:', jsonFiles);
           
-          allPosts = Array.isArray(data) ? data : (data.posts || []);
-          console.log('✅ All Posts submenu: Loaded from GitHub API:', allPosts.length, allPosts);
-        } else {
-          console.log('⚠️ All Posts submenu: GitHub API failed, trying local...');
-          // Fallback to local posts
-          const localResponse = await fetch('posts/index.json');
-          if (localResponse.ok) {
-            const data = await localResponse.json();
-            allPosts = Array.isArray(data) ? data : (data.posts || []);
-            console.log('✅ All Posts submenu: Loaded from local:', allPosts.length);
+          // For each JSON file, try to get its content to extract title
+          for (const jsonFile of jsonFiles) {
+            try {
+              const fileResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${jsonFile.name}?t=${timestamp}`);
+              if (fileResponse.ok) {
+                const fileData = await fileResponse.json();
+                const content = atob(fileData.content);
+                const postData = JSON.parse(content);
+                
+                // Create post entry with slug from filename
+                const slug = jsonFile.name.replace('.json', '');
+                const post = {
+                  slug: slug,
+                  title: postData.title || slug,
+                  date: postData.date || 'Unknown date',
+                  keywords: postData.keywords || 'general'
+                };
+                
+                allPosts.push(post);
+                console.log('✅ All Posts submenu: Loaded post from file:', post);
+              }
+            } catch (fileError) {
+              console.warn(`⚠️ All Posts submenu: Could not load ${jsonFile.name}:`, fileError);
+            }
           }
+          
+          console.log('✅ All Posts submenu: Loaded from GitHub API directory scan:', allPosts.length, allPosts);
+          
+        } else {
+          console.log('⚠️ All Posts submenu: GitHub API directory scan failed, trying local...');
+          // Fallback: try to scan local posts directory
+          await this.scanLocalPostsDirectory(allPosts);
         }
       } catch (error) {
-        console.error('❌ All Posts submenu: Error fetching posts:', error);
-        console.log('⚠️ All Posts submenu: Both GitHub API and local failed, using cached posts');
-        allPosts = this.posts; // Use cached posts as last resort
-        console.log('🔍 All Posts submenu: Using cached posts:', allPosts);
+        console.error('❌ All Posts submenu: Error scanning GitHub directory:', error);
+        console.log('⚠️ All Posts submenu: GitHub API failed, trying local directory scan...');
+        // Fallback: scan local posts directory
+        await this.scanLocalPostsDirectory(allPosts);
+      }
+      
+      // If we still have no posts, use cached posts as last resort
+      if (allPosts.length === 0) {
+        console.log('⚠️ All Posts submenu: No posts found from directory scan, using cached posts');
+        allPosts = this.posts;
       }
       
       // Clear loading indicator
@@ -563,6 +591,63 @@ class SimpleBlog {
     // Remove any existing listener to prevent duplication
     menuElement.removeEventListener('mouseleave', allPostsMouseLeaveHandler);
     menuElement.addEventListener('mouseleave', allPostsMouseLeaveHandler);
+  }
+
+  async scanLocalPostsDirectory(allPosts) {
+    try {
+      console.log('🔍 All Posts submenu: Scanning local posts directory...');
+      
+      // Try to get a list of local posts by checking common post files
+      // Since we can't directly list directory contents in the browser,
+      // we'll try to load posts we know about and also check for any index.json
+      
+      // First try to load local index.json if it exists
+      try {
+        const localIndexResponse = await fetch('posts/index.json');
+        if (localIndexResponse.ok) {
+          const localIndexData = await localIndexResponse.json();
+          const localPosts = Array.isArray(localIndexData) ? localIndexData : (localIndexData.posts || []);
+          console.log('🔍 All Posts submenu: Found local index.json with posts:', localPosts.length);
+          
+          // Add these posts to our list
+          for (const post of localPosts) {
+            if (post && post.slug && !allPosts.find(p => p.slug === post.slug)) {
+              allPosts.push(post);
+            }
+          }
+        }
+      } catch (localIndexError) {
+        console.log('🔍 All Posts submenu: No local index.json found');
+      }
+      
+      // Try to load some common post files directly
+      const commonSlugs = ['welcome', 'first-post', 'test-post', 'hello-world'];
+      for (const slug of commonSlugs) {
+        try {
+          const postResponse = await fetch(`posts/${slug}.json`);
+          if (postResponse.ok) {
+            const postData = await postResponse.json();
+            if (!allPosts.find(p => p.slug === slug)) {
+              const post = {
+                slug: slug,
+                title: postData.title || slug,
+                date: postData.date || 'Unknown date',
+                keywords: postData.keywords || 'general'
+              };
+              allPosts.push(post);
+              console.log('✅ All Posts submenu: Loaded local post:', post);
+            }
+          }
+        } catch (postError) {
+          // Post file doesn't exist, continue
+        }
+      }
+      
+      console.log('🔍 All Posts submenu: Local directory scan complete, total posts:', allPosts.length);
+      
+    } catch (error) {
+      console.error('❌ All Posts submenu: Error scanning local directory:', error);
+    }
   }
 
   showDevlogSubmenu(menuElement) {
