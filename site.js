@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250928';
+    const buildDate = '20250929';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1304,10 +1304,10 @@ class SimpleBlog {
       return;
     }
     
-    // Add double spacer line at the top as visual drag handle
+    // Add triple spacer line at the top as visual drag handle
     const dragHandle = document.createElement('div');
     dragHandle.style.cssText = `
-      height: 8px;
+      height: 12px;
       background: repeating-linear-gradient(
         to bottom,
         #444 0px,
