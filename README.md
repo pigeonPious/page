@@ -1,15 +1,38 @@
-# Simple Blog
+# PPPage - Modular Blog System
 
-A clean blogging system with built-in editor.
+A clean, modular blogging system with built-in editor and authentication.
 
-## Files
+## Core Structure
 
-- `index.html` - Blog homepage
-- `editor.html` - Main editor
-- `simple-editor.html` - Alternative editor
-- `auth.js` - Authentication
-- `drafts.js` - Draft management
+- `index.html` - Main blog homepage
+- `editor.html` - Content editor interface
+- `style.css` - Main stylesheet
+- `editor.css` - Editor-specific styles
+
+## Key Directories
+
+- `modules/` - Core modular JavaScript system
+- `functions/` - Netlify serverless functions
+- `posts/` - Blog post content
+- `data/` - Configuration and data files
+- `assets/` - Images and media files
+- `page/` - Additional page content
+
+## Features
+
+- Modular architecture for maintainability
+- Built-in content editor
+- GitHub OAuth authentication
+- Responsive design
+- Theme system
+- Taskbar navigation
 
 ## Usage
 
-Open `index.html` for blog reading, `editor.html` for content creation.
+1. Open `index.html` to view the blog
+2. Use `editor.html` to create and edit content
+3. Authentication handled via GitHub OAuth
+
+## Deployment
+
+Configured for Netlify deployment with serverless functions support.

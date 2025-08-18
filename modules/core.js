@@ -8,6 +8,11 @@ class PPPageCore {
     this.modules = new Map();
     this.initialized = false;
     this.debug = false;
+    this.eventBus = new EventTarget();
+    this.config = {
+      moduleTimeout: 5000,
+      retryAttempts: 3
+    };
   }
 
   log(message, type = 'info') {
@@ -16,16 +21,46 @@ class PPPageCore {
     }
   }
 
+  // Enhanced event system for module communication
+  emit(eventName, data) {
+    this.eventBus.dispatchEvent(new CustomEvent(eventName, { detail: data }));
+  }
+
+  on(eventName, handler) {
+    this.eventBus.addEventListener(eventName, handler);
+  }
+
+  off(eventName, handler) {
+    this.eventBus.removeEventListener(eventName, handler);
+  }
+
   async registerModule(name, moduleFactory) {
     try {
+      this.log(`Registering module '${name}'...`);
+      
+      // Check if module already exists
+      if (this.modules.has(name)) {
+        this.log(`Module '${name}' already registered, replacing...`);
+      }
+
       const module = await moduleFactory();
+      
+      // Validate module structure
+      if (!module || typeof module !== 'object') {
+        throw new Error(`Module '${name}' factory returned invalid module`);
+      }
+
       this.modules.set(name, module);
       this.log(`Module '${name}' registered successfully`);
       
+      // Initialize module if it has init method
       if (module.init && typeof module.init === 'function') {
         await module.init();
         this.log(`Module '${name}' initialized`);
       }
+      
+      // Emit module registered event
+      this.emit('moduleRegistered', { name, module });
       
       return module;
     } catch (error) {
@@ -42,6 +77,34 @@ class PPPageCore {
     return this.modules.has(name);
   }
 
+  // Get all registered modules
+  getAllModules() {
+    return Array.from(this.modules.entries());
+  }
+
+  // Wait for a specific module to be available
+  async waitForModule(name, timeout = this.config.moduleTimeout) {
+    if (this.hasModule(name)) {
+      return this.getModule(name);
+    }
+
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Timeout waiting for module '${name}'`));
+      }, timeout);
+
+      const handler = (event) => {
+        if (event.detail.name === name) {
+          clearTimeout(timeoutId);
+          this.off('moduleRegistered', handler);
+          resolve(event.detail.module);
+        }
+      };
+
+      this.on('moduleRegistered', handler);
+    });
+  }
+
   async init() {
     if (this.initialized) return;
     
@@ -55,6 +118,7 @@ class PPPageCore {
     }
     
     this.initialized = true;
+    this.emit('coreInitialized');
     this.log('PPPage Core initialized successfully');
   }
 
@@ -99,41 +163,55 @@ class PPPageCore {
     // Generate cache-busting URLs
     cacheBustUrl: (url) => {
       const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}t=${Date.now()}`;
+      return `${url}${separator}v=${Date.now()}`;
     },
 
-    // Slug generation
-    generateSlug: (text) => {
-      return text
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
+    // Debounce function calls
+    debounce: (func, wait) => {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
     },
 
-    // Date formatting
-    formatDate: (dateStr) => {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+    // Throttle function calls
+    throttle: (func, limit) => {
+      let inThrottle;
+      return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+          func.apply(context, args);
+          inThrottle = true;
+          setTimeout(() => inThrottle = false, limit);
+        }
+      };
     }
+  };
+
+  // Cleanup method
+  destroy() {
+    this.modules.clear();
+    this.initialized = false;
+    this.log('PPPage Core destroyed');
   }
 }
 
-// Create global instance
-window.ppPage = new PPPageCore();
+// Create and export the core instance
+const ppPage = new PPPageCore();
 
-// Enable debug mode for troubleshooting
-window.ppPage.debug = true;
-
-// Export for module use
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PPPageCore;
+// Export to window for global access
+if (typeof window !== 'undefined') {
+  window.ppPage = ppPage;
+  window.PPPageCore = PPPageCore;
 }
 
-// Ensure ppPage is available immediately
-console.log('✅ PPPage Core loaded and available globally');
+// Export for ES modules
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { PPPageCore, ppPage };
+}

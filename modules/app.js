@@ -1,186 +1,174 @@
 /**
  * PPPage Application Initializer
- * Loads and initializes all modules in the correct order
+ * Clean, event-driven module initialization system
  */
 
-(async function initializePPPage() {
-  'use strict';
-  
-  console.log('🔧 App.js loaded, checking for ppPage...');
-  
-  // Wait for core to be available with retry logic
-  let retryCount = 0;
-  const maxRetries = 50; // 5 seconds max
-  
-  while (typeof window.ppPage === 'undefined' && retryCount < maxRetries) {
-    console.log(`Waiting for ppPage core... (${retryCount + 1}/${maxRetries})`);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    retryCount++;
+class PPPageApp {
+  constructor() {
+    this.initialized = false;
+    this.modules = new Map();
+    this.initPromise = null;
   }
-  
-  if (typeof window.ppPage === 'undefined') {
-    console.error('❌ PPPage Core not found after waiting! Make sure core.js is loaded first.');
-    return;
-  }
-  
-  console.log('✅ PPPage Core found, starting initialization...');
 
-  try {
-    // Initialize core
-    await window.ppPage.init();
+  async init() {
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this._init();
+    return this.initPromise;
+  }
+
+  async _init() {
+    if (this.initialized) return;
     
-    window.ppPage.log('Starting application initialization...');
+    console.log('🚀 Starting PPPage Application...');
     
-    // Wait for all module factories to be available
-    const moduleFactories = ['PostsModule', 'NavigationModule', 'EditorModule', 'ThemeModule', 'TaskbarModule', 'ConsoleModule'];
-    console.log('🔧 Checking for module factories...');
+    try {
+      // Wait for core to be available
+      await this.waitForCore();
+      
+      // Initialize core
+      await window.ppPage.init();
+      
+      // Register all modules in dependency order
+      await this.registerModules();
+      
+      // Setup global error handling
+      this.setupErrorHandling();
+      
+      this.initialized = true;
+      console.log('✅ PPPage Application initialized successfully');
+      
+      // Emit app ready event
+      window.ppPage.emit('appReady');
+      
+    } catch (error) {
+      console.error('❌ PPPage Application initialization failed:', error);
+      throw error;
+    }
+  }
+
+  async waitForCore() {
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max
     
-    for (const factoryName of moduleFactories) {
-      if (typeof window[factoryName] === 'undefined') {
-        console.warn(`⚠️ Module factory ${factoryName} not found`);
-      } else {
-        console.log(`✅ Found ${factoryName}`);
-      }
+    while (typeof window.ppPage === 'undefined' && attempts < maxAttempts) {
+      console.log(`Waiting for PPPage Core... (${attempts + 1}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
     }
     
-    // Register all modules in dependency order
-    const modules = [
+    if (typeof window.ppPage === 'undefined') {
+      throw new Error('PPPage Core not found after waiting! Make sure core.js is loaded first.');
+    }
+    
+    console.log('✅ PPPage Core found');
+  }
+
+  async registerModules() {
+    const moduleFactories = [
       { name: 'posts', factory: window.PostsModule },
       { name: 'navigation', factory: window.NavigationModule },
       { name: 'editor', factory: window.EditorModule },
       { name: 'theme', factory: window.ThemeModule },
-      { name: 'taskbar', factory: () => {
-        console.log('🔧 Creating taskbar module instance...');
-        if (typeof window.TaskbarModule === 'function') {
-          // TaskbarModule is now a factory function
-          return window.TaskbarModule();
-        } else if (window.TaskbarModuleLegacy) {
-          // Fallback to legacy object wrapper
-          return {
-            async init() {
-              console.log('🔧 Taskbar module init() called via legacy');
-              if (typeof window.TaskbarModuleLegacy.init === 'function') {
-                await window.TaskbarModuleLegacy.init();
-              } else {
-                console.error('TaskbarModuleLegacy.init() not available');
-              }
-            },
-            load: window.TaskbarModuleLegacy.load,
-            initialize: window.TaskbarModuleLegacy.initialize
-          };
-        } else {
-          console.error('Neither TaskbarModule factory nor legacy object found, creating fallback');
-          return { 
-            init: () => {
-              console.error('Taskbar module init called but TaskbarModule not available');
-              // Try global function as last resort
-              if (typeof window.ensureTaskbar === 'function') {
-                window.ensureTaskbar();
-              }
-            }
-          };
-        }
-      }},
+      { name: 'taskbar', factory: window.TaskbarModule },
       { name: 'console', factory: window.ConsoleModule }
     ];
 
-    // Register modules
-    for (const { name, factory } of modules) {
-      if (typeof factory === 'function') {
-        console.log(`🔧 Registering module: ${name}`);
-        await window.ppPage.registerModule(name, factory);
-        console.log(`✅ Module registered: ${name}`);
-      } else {
-        window.ppPage.log(`Module factory for '${name}' not found`, 'error');
-      }
-    }
-
-    // Setup global error handling
-    window.addEventListener('error', (event) => {
-      window.ppPage.log(`Global error: ${event.error?.message || event.message}`, 'error');
-    });
-
-    // Setup unhandled promise rejection handling
-    window.addEventListener('unhandledrejection', (event) => {
-      window.ppPage.log(`Unhandled promise rejection: ${event.reason}`, 'error');
-    });
-
-    window.ppPage.log('Application initialized successfully');
-
-    // Initialize taskbar buttons now that all modules are loaded
-    if (window.TaskbarModule && typeof window.TaskbarModule.initialize === 'function') {
-      window.ppPage.log('Initializing taskbar button connections...');
-      window.TaskbarModule.initialize();
-    }
+    console.log('🔧 Registering modules...');
     
-    // Ensure taskbar is loaded and functional - force initialization if needed
-    setTimeout(() => {
-      const menuBar = document.querySelector('.menu-bar');
-      if (!menuBar && window.TaskbarModule) {
-        window.ppPage.log('Taskbar not found, forcing initialization...');
-        window.TaskbarModule.init();
-      } else if (menuBar) {
-        // Even if taskbar exists, ensure it's fully functional
-        const viewMenu = menuBar.querySelector('[data-menu]');
-        if (viewMenu) {
-          // Test if click events are working
-          const testClick = new Event('click', { bubbles: true });
-          viewMenu.dispatchEvent(testClick);
-          
-          // Check if menu opened
-          setTimeout(() => {
-            const menuItem = viewMenu.closest('.menu-item');
-            if (menuItem && !menuItem.classList.contains('open')) {
-              window.ppPage.log('Taskbar click events not working, reinitializing...');
-              if (window.TaskbarModule && window.TaskbarModule.init) {
-                window.TaskbarModule.init();
-              }
-            } else {
-              window.ppPage.log('Taskbar functionality verified');
-            }
-          }, 100);
-        }
-      }
-    }, 1000);
-
-    // Add periodic taskbar health check
-    setInterval(() => {
-      const menuBar = document.querySelector('.menu-bar');
-      if (!menuBar && window.TaskbarModule) {
-        window.ppPage.log('Taskbar disappeared, reinitializing...');
-        window.TaskbarModule.init();
-      }
-    }, 10000); // Check every 10 seconds
-
-    // Expose some global functions for backward compatibility
-    window.loadPost = async function(slug) {
-      const postsModule = window.ppPage.getModule('posts');
-      if (postsModule) {
-        return await postsModule.loadPost(slug);
-      }
-    };
-
-    window.loadPostsWithKeywords = async function() {
-      const postsModule = window.ppPage.getModule('posts');
-      if (postsModule) {
-        return await postsModule.loadPosts();
-      }
-    };
-
-    // Trigger any URL-based navigation
-    if (window.location.hash && window.location.hash.length > 1) {
-      const slug = window.location.hash.substring(1);
-      const postsModule = window.ppPage.getModule('posts');
-      if (postsModule) {
+    for (const { name, factory } of moduleFactories) {
+      if (typeof factory === 'function') {
         try {
-          await postsModule.loadPost(slug);
+          console.log(`🔧 Registering module: ${name}`);
+          const module = await window.ppPage.registerModule(name, factory);
+          this.modules.set(name, module);
+          console.log(`✅ Module registered: ${name}`);
         } catch (error) {
-          window.ppPage.log(`Failed to load post from URL hash: ${error.message}`, 'error');
+          console.error(`❌ Failed to register module ${name}:`, error);
+          // Continue with other modules
         }
+      } else {
+        console.warn(`⚠️ Module factory for '${name}' not found`);
       }
     }
-
-  } catch (error) {
-    console.error('Failed to initialize PPPage application:', error);
   }
-})();
+
+  setupErrorHandling() {
+    // Global error handler
+    window.addEventListener('error', (event) => {
+      const error = event.error || new Error(event.message);
+      console.error('Global error:', error);
+      
+      if (window.ppPage) {
+        window.ppPage.log(`Global error: ${error.message}`, 'error');
+      }
+    });
+
+    // Unhandled promise rejection handler
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      
+      if (window.ppPage) {
+        window.ppPage.log(`Unhandled promise rejection: ${event.reason}`, 'error');
+      }
+    });
+  }
+
+  // Public API methods
+  getModule(name) {
+    return this.modules.get(name) || window.ppPage?.getModule(name);
+  }
+
+  refresh() {
+    console.log('🔄 Refreshing PPPage Application...');
+    this.modules.clear();
+    this.initialized = false;
+    this.initPromise = null;
+    return this.init();
+  }
+
+  destroy() {
+    console.log('🗑️ Destroying PPPage Application...');
+    
+    // Destroy all modules
+    this.modules.forEach(module => {
+      if (module.destroy && typeof module.destroy === 'function') {
+        try {
+          module.destroy();
+        } catch (error) {
+          console.error('Error destroying module:', error);
+        }
+      }
+    });
+    
+    this.modules.clear();
+    this.initialized = false;
+    this.initPromise = null;
+  }
+}
+
+// Create and export the app instance
+const ppPageApp = new PPPageApp();
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    ppPageApp.init().catch(console.error);
+  });
+} else {
+  // DOM already ready
+  ppPageApp.init().catch(console.error);
+}
+
+// Export for global access
+if (typeof window !== 'undefined') {
+  window.ppPageApp = ppPageApp;
+  window.PPPageApp = PPPageApp;
+}
+
+// Export for ES modules
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { PPPageApp, ppPageApp };
+}
