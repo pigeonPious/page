@@ -111,7 +111,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250901';
+    const buildDate = '20250902';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -639,8 +639,13 @@ class SimpleBlog {
       document.body.classList.add('custom-mode');
       
       // Open HSL color picker instead of setting hardcoded colors
-      this.openHSLColorPicker();
-      console.log('🎨 Added custom-mode class, opening HSL picker');
+      console.log('🎨 Custom theme selected, calling openHSLColorPicker...');
+      try {
+        this.openHSLColorPicker();
+        console.log('✅ HSL color picker opened successfully');
+      } catch (error) {
+        console.error('❌ Error opening HSL color picker:', error);
+      }
     } else if (mode === 'random') {
       // Generate random theme
       const h = Math.floor(Math.random() * 361);
@@ -748,10 +753,13 @@ class SimpleBlog {
   }
 
   openHSLColorPicker() {
+    console.log('🔧 openHSLColorPicker function called');
+    
     // Remove existing color picker
     const existingPicker = document.getElementById('hsl-color-picker');
     if (existingPicker) {
       existingPicker.remove();
+      console.log('🗑️ Removed existing color picker');
     }
 
     // Create HSL color picker
@@ -919,6 +927,7 @@ class SimpleBlog {
 
     // Add to page
     document.body.appendChild(picker);
+    console.log('✅ Color picker added to DOM');
 
     // Close on escape key
     const escapeHandler = (e) => {
