@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250921';
+    const buildDate = '20250922';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1282,8 +1282,9 @@ class SimpleBlog {
     importBtn.addEventListener('mouseenter', () => { importBtn.style.background = '#666'; });
     importBtn.addEventListener('mouseleave', () => { importBtn.style.background = '#555'; });
     
-    const closeBtn = document.createElement('div');
+    const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
+    closeBtn.type = 'button';
     closeBtn.style.cssText = `
       color: #fff;
       cursor: pointer;
@@ -1298,12 +1299,18 @@ class SimpleBlog {
       border: 1px solid #666;
       min-width: 20px;
       text-align: center;
+      outline: none;
+      font-family: inherit;
     `;
     closeBtn.addEventListener('mouseenter', () => { closeBtn.style.background = '#666'; });
     closeBtn.addEventListener('mouseleave', () => { closeBtn.style.background = '#555'; });
-    closeBtn.addEventListener('click', () => {
+    closeBtn.addEventListener('click', (e) => {
+      console.log('🔴 Close button clicked!');
+      e.stopPropagation(); // Prevent event bubbling
+      e.preventDefault(); // Prevent any default button behavior
       magazine.style.display = 'none';
       magazine.classList.add('hidden');
+      console.log('✅ Magazine closed');
     });
     
     header.appendChild(importBtn);
@@ -1436,20 +1443,39 @@ class SimpleBlog {
     img.style.cssText = `
       max-width: 150px;
       height: auto;
-      border: 1px solid var(--border);
+      border: 1px solid #444;
       border-radius: 4px;
       margin: 8px 0;
       cursor: pointer;
     `;
     
-    // Insert at cursor position or append
+    // Only insert into the post content area
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
-      range.insertNode(img);
-      range.collapse(false);
+      
+      // Check if selection is within the post content area
+      if (visualEditor.contains(range.commonAncestorContainer) || 
+          visualEditor === range.commonAncestorContainer) {
+        range.insertNode(img);
+        range.collapse(false);
+        console.log('✅ Image inserted at cursor position');
+      } else {
+        console.log('⚠️ Selection not in post content, inserting at end');
+        visualEditor.appendChild(img);
+      }
     } else {
+      // No selection, insert at the end of the post content
       visualEditor.appendChild(img);
+      console.log('✅ Image inserted at end of post');
+    }
+    
+    // Close the magazine after inserting
+    const magazine = document.getElementById('imageMagazine');
+    if (magazine) {
+      magazine.style.display = 'none';
+      magazine.classList.add('hidden');
+      console.log('✅ Magazine closed after image insertion');
     }
     
     console.log('✅ Image inserted:', filename);
