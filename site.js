@@ -123,7 +123,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250912';
+    const buildDate = '20250913';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -338,6 +338,11 @@ class SimpleBlog {
     editorOnlyItems.forEach(item => {
       item.style.display = isEditorPage ? 'block' : 'none';
     });
+    
+    // Setup hover note preview if we're on the editor page
+    if (isEditorPage) {
+      this.setupHoverNotePreview();
+    }
   }
 
   setupSubmenus() {
@@ -1089,6 +1094,9 @@ class SimpleBlog {
     range.insertNode(span);
     
     console.log('✅ Hover note created:', { text: selectedText, note: noteText });
+    
+    // Setup hover preview for the new note
+    this.setupHoverNotePreview();
   }
 
   removeInputBox(inputBox) {
@@ -1772,6 +1780,25 @@ class SimpleBlog {
     console.log('✅ Text selection monitoring active');
   }
 
+  setupHoverNotePreview() {
+    console.log('👁️ Setting up hover note preview in editor...');
+    
+    // Find all note-link elements in the editor
+    const noteLinks = document.querySelectorAll('.note-link');
+    
+    noteLinks.forEach(link => {
+      // Remove existing listeners to prevent duplication
+      link.removeEventListener('mouseenter', this.showHoverNotePreview);
+      link.removeEventListener('mouseleave', this.hideHoverNotePreview);
+      
+      // Add hover event listeners
+      link.addEventListener('mouseenter', (e) => this.showHoverNotePreview(e));
+      link.addEventListener('mouseleave', () => this.hideHoverNotePreview());
+    });
+    
+    console.log(`✅ Hover note preview setup for ${noteLinks.length} elements`);
+  }
+
   async checkAndUpdateAuthStatus() {
     try {
       const isAuthenticated = await this.checkAuthentication();
@@ -1988,6 +2015,49 @@ class SimpleBlog {
 
   hideHoverNote() {
     const tooltip = document.getElementById('hoverNote');
+    if (tooltip) {
+      tooltip.style.display = 'none';
+    }
+  }
+
+  showHoverNotePreview(event) {
+    const link = event.target;
+    const noteText = link.getAttribute('data-note');
+    
+    if (!noteText) return;
+    
+    // Create or update hover note preview tooltip (menu style 2)
+    let tooltip = document.getElementById('hoverNotePreview');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = 'hoverNotePreview';
+      tooltip.style.cssText = `
+        position: fixed;
+        z-index: 1000;
+        pointer-events: none;
+        background: var(--menu-bg);
+        border: 1px solid var(--border);
+        padding: 4px 6px;
+        min-width: 140px;
+        max-width: 260px;
+        font-size: 11px;
+        color: var(--menu-fg);
+        display: none;
+        font-family: inherit;
+        line-height: 1.3;
+      `;
+      document.body.appendChild(tooltip);
+    }
+    
+    // Position tooltip near mouse
+    tooltip.style.left = (event.clientX + 10) + 'px';
+    tooltip.style.top = (event.clientY - 30) + 'px';
+    tooltip.textContent = noteText;
+    tooltip.style.display = 'block';
+  }
+
+  hideHoverNotePreview() {
+    const tooltip = document.getElementById('hoverNotePreview');
     if (tooltip) {
       tooltip.style.display = 'none';
     }
