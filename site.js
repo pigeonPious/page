@@ -32,6 +32,9 @@ class SimpleBlog {
     // Load saved post flags
     this.loadSavedFlags();
     
+    // Setup text selection monitoring
+    this.setupSelectionMonitoring();
+    
     // Check authentication status
     this.checkAndUpdateAuthStatus();
     
@@ -120,20 +123,18 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250911';
+    const buildDate = '20250912';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
     }
     
-    // Ensure we get 'echo' for build 20250823
-    const expectedWord = 'echo';
-    const expectedIndex = words.indexOf(expectedWord);
     const calculatedIndex = seed % words.length;
+    const word = words[calculatedIndex];
     
-    console.log(`🔧 Build word calculation: date=${buildDate}, seed=${seed}, calculated=${calculatedIndex}, expected=${expectedIndex}, word=${words[calculatedIndex]}`);
+    console.log(`🔧 Build word calculation: date=${buildDate}, seed=${seed}, calculated=${calculatedIndex}, word=${word}`);
     
-    return words[calculatedIndex];
+    return word;
   }
 
   bindEvents() {
@@ -969,34 +970,29 @@ class SimpleBlog {
   }
 
   captureSelectionAndMakeNote() {
-    console.log('📝 Capturing selection and creating hover note...');
+    console.log('📝 Using monitored selection to create hover note...');
     
-    // Get selected text from visual editor
-    const visualEditor = document.getElementById('visualEditor');
-    if (!visualEditor) {
-      console.log('⚠️ Visual editor not found');
+    // Check if we have a recent valid selection
+    if (!this.lastValidSelection) {
+      alert('Please select some text first, then click Make Note.');
       return;
     }
     
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') {
-      alert('Please select some text to create a hover note.');
+    // Check if selection is recent (within last 30 seconds)
+    const selectionAge = Date.now() - this.lastValidSelection.timestamp;
+    if (selectionAge > 30000) {
+      alert('Text selection is too old. Please select text again, then click Make Note.');
       return;
     }
     
-    const selectedText = selection.toString().trim();
+    console.log('✅ Using monitored selection:', this.lastValidSelection.text);
     
-    // Store the selection range to preserve it
-    const range = selection.getRangeAt(0).cloneRange();
-    
-    // Store the captured data for later use
+    // Use the monitored selection data
     this.capturedNoteData = {
-      selectedText: selectedText,
-      range: range,
-      timestamp: Date.now()
+      selectedText: this.lastValidSelection.text,
+      range: this.lastValidSelection.range.cloneRange(),
+      timestamp: this.lastValidSelection.timestamp
     };
-    
-    console.log('✅ Selection captured:', { text: selectedText, timestamp: this.capturedNoteData.timestamp });
     
     // Now open the note input
     this.openNoteInput();
@@ -1746,6 +1742,34 @@ class SimpleBlog {
       this.currentPostFlags = savedFlags;
       console.log('🏷️ Loaded saved flags:', savedFlags);
     }
+  }
+
+  setupSelectionMonitoring() {
+    console.log('📝 Setting up text selection monitoring...');
+    
+    // Store the last valid selection
+    this.lastValidSelection = null;
+    
+    // Monitor selection changes
+    document.addEventListener('selectionchange', () => {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const selectedText = selection.toString().trim();
+        
+        // Only store if there's actual selected text
+        if (selectedText && range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+          this.lastValidSelection = {
+            text: selectedText,
+            range: range.cloneRange(),
+            timestamp: Date.now()
+          };
+          console.log('📝 Selection captured:', selectedText);
+        }
+      }
+    });
+    
+    console.log('✅ Text selection monitoring active');
   }
 
   async checkAndUpdateAuthStatus() {
