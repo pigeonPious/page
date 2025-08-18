@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250923';
+    const buildDate = '20250924';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1275,8 +1275,9 @@ class SimpleBlog {
       }
     });
     
-    const importBtn = document.createElement('div');
+    const importBtn = document.createElement('button');
     importBtn.textContent = '📁 Import';
+    importBtn.type = 'button';
     importBtn.style.cssText = `
       font-weight: bold;
       color: #fff;
@@ -1289,15 +1290,40 @@ class SimpleBlog {
       z-index: 10001;
       position: relative;
       border: 1px solid #666;
+      outline: none;
+      font-family: inherit;
     `;
+    
+    // Multiple event listeners for maximum compatibility
     importBtn.addEventListener('click', (e) => {
-      console.log('📁 Import button clicked!');
+      console.log('📁 Import button CLICKED via click event!');
       e.stopPropagation();
       e.preventDefault();
       this.importImages();
     });
-    importBtn.addEventListener('mouseenter', () => { importBtn.style.background = '#666'; });
-    importBtn.addEventListener('mouseleave', () => { importBtn.style.background = '#555'; });
+    
+    importBtn.addEventListener('mousedown', (e) => {
+      console.log('📁 Import button CLICKED via mousedown event!');
+      e.stopPropagation();
+      e.preventDefault();
+      this.importImages();
+    });
+    
+    importBtn.addEventListener('mouseup', (e) => {
+      console.log('📁 Import button CLICKED via mouseup event!');
+      e.stopPropagation();
+      e.preventDefault();
+      this.importImages();
+    });
+    
+    importBtn.addEventListener('mouseenter', () => { 
+      console.log('📁 Import button hover enter');
+      importBtn.style.background = '#666'; 
+    });
+    importBtn.addEventListener('mouseleave', () => { 
+      console.log('📁 Import button hover leave');
+      importBtn.style.background = '#555'; 
+    });
     
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
@@ -1321,8 +1347,9 @@ class SimpleBlog {
     `;
     closeBtn.addEventListener('mouseenter', () => { closeBtn.style.background = '#666'; });
     closeBtn.addEventListener('mouseleave', () => { closeBtn.style.background = '#555'; });
+    // Multiple event listeners for maximum compatibility
     closeBtn.addEventListener('click', (e) => {
-      console.log('🔴 Close button clicked!');
+      console.log('🔴 Close button CLICKED via click event!');
       e.stopPropagation(); // Prevent event bubbling
       e.preventDefault(); // Prevent any default button behavior
       
@@ -1337,6 +1364,32 @@ class SimpleBlog {
       }
     });
     
+    closeBtn.addEventListener('mousedown', (e) => {
+      console.log('🔴 Close button CLICKED via mousedown event!');
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const magazineToClose = document.getElementById('imageMagazine');
+      if (magazineToClose) {
+        magazineToClose.style.display = 'none';
+        magazineToClose.classList.add('hidden');
+        console.log('✅ Magazine closed via close button (mousedown)');
+      }
+    });
+    
+    closeBtn.addEventListener('mouseup', (e) => {
+      console.log('🔴 Close button CLICKED via mouseup event!');
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const magazineToClose = document.getElementById('imageMagazine');
+      if (magazineToClose) {
+        magazineToClose.style.display = 'none';
+        magazineToClose.classList.add('hidden');
+        console.log('✅ Magazine closed via close button (mouseup)');
+      }
+    });
+    
     header.appendChild(importBtn);
     header.appendChild(closeBtn);
     
@@ -1345,6 +1398,40 @@ class SimpleBlog {
     console.log('🔍 Close button created:', closeBtn);
     console.log('🔍 Import button text:', importBtn.textContent);
     console.log('🔍 Close button text:', closeBtn.textContent);
+    console.log('🔍 Import button type:', importBtn.type);
+    console.log('🔍 Close button type:', closeBtn.type);
+    console.log('🔍 Import button tagName:', importBtn.tagName);
+    console.log('🔍 Close button tagName:', closeBtn.tagName);
+    
+    // Test button properties
+    console.log('🔍 Import button disabled:', importBtn.disabled);
+    console.log('🔍 Close button disabled:', closeBtn.disabled);
+    console.log('🔍 Import button style.display:', importBtn.style.display);
+    console.log('🔍 Close button style.display:', closeBtn.style.display);
+    console.log('🔍 Import button style.visibility:', importBtn.style.visibility);
+    console.log('🔍 Close button style.visibility:', importBtn.style.visibility);
+    console.log('🔍 Import button style.pointerEvents:', closeBtn.style.pointerEvents);
+    
+    // Emergency test - add onclick attributes as backup
+    importBtn.setAttribute('onclick', 'alert("Import button clicked via onclick attribute!"); console.log("Import via onclick");');
+    closeBtn.setAttribute('onclick', 'alert("Close button clicked via onclick attribute!"); console.log("Close via onclick");');
+    
+    console.log('🔍 Emergency onclick attributes added to buttons');
+    
+    // Emergency visual test - make buttons very obvious
+    importBtn.style.border = '3px solid red';
+    importBtn.style.background = 'yellow';
+    importBtn.style.color = 'black';
+    importBtn.style.fontSize = '16px';
+    importBtn.style.fontWeight = 'bold';
+    
+    closeBtn.style.border = '3px solid blue';
+    closeBtn.style.background = 'cyan';
+    closeBtn.style.color = 'black';
+    closeBtn.style.fontSize = '16px';
+    closeBtn.style.fontWeight = 'bold';
+    
+    console.log('🔍 Emergency visual styling applied - buttons should be VERY obvious now!');
     
     // Content area
     const content = document.createElement('div');
