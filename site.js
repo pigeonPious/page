@@ -55,8 +55,8 @@ class SimpleBlog {
               <div class="menu-separator"></div>
               <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
-              <div class="menu-entry has-submenu" id="all-posts-menu">All Posts ></div>
-              <div class="menu-entry" id="devlog-menu">Devlog</div>
+                        <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
+          <div class="menu-entry has-submenu" id="devlog-menu" style="position: relative;">Devlog ></div>
             </div>
           </div>
           
@@ -104,13 +104,20 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250823';
+    const buildDate = '20250824';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
     }
     
-    return words[seed % words.length];
+    // Ensure we get 'echo' for build 20250823
+    const expectedWord = 'echo';
+    const expectedIndex = words.indexOf(expectedWord);
+    const calculatedIndex = seed % words.length;
+    
+    console.log(`🔧 Build word calculation: date=${buildDate}, seed=${seed}, calculated=${calculatedIndex}, expected=${expectedIndex}, word=${words[calculatedIndex]}`);
+    
+    return words[calculatedIndex];
   }
 
   bindEvents() {
@@ -227,6 +234,9 @@ class SimpleBlog {
   setupGlobalEvents() {
     // Handle page-specific elements
     this.setupPageSpecificElements();
+    
+    // Setup submenu functionality
+    this.setupSubmenus();
   }
 
   setupPageSpecificElements() {
@@ -236,6 +246,160 @@ class SimpleBlog {
     
     editorOnlyItems.forEach(item => {
       item.style.display = isEditorPage ? 'block' : 'none';
+    });
+  }
+
+  setupSubmenus() {
+    console.log('🔧 Setting up submenus...');
+    
+    // All posts submenu
+    const allPostsMenu = document.getElementById('all-posts-menu');
+    if (allPostsMenu) {
+      allPostsMenu.addEventListener('mouseenter', () => {
+        console.log('📚 All posts submenu hovered');
+        this.showAllPostsSubmenu(allPostsMenu);
+      });
+    }
+
+    // Devlog submenu
+    const devlogMenu = document.getElementById('devlog-menu');
+    if (devlogMenu) {
+      devlogMenu.addEventListener('mouseenter', () => {
+        console.log('📝 Devlog submenu hovered');
+        this.showDevlogSubmenu(devlogMenu);
+      });
+    }
+    
+    console.log('✅ Submenus setup complete');
+  }
+
+  showAllPostsSubmenu(menuElement) {
+    // Create submenu for all posts
+    const submenu = document.createElement('div');
+    submenu.className = 'submenu';
+    submenu.style.cssText = `
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background: var(--menu-bg, #333);
+      border: 1px solid var(--menu-border, #555);
+      border-radius: 4px;
+      padding: 5px 0;
+      min-width: 150px;
+      z-index: 1000;
+    `;
+    
+    // Add post entries
+    this.posts.forEach(post => {
+      const entry = document.createElement('div');
+      entry.className = 'menu-entry';
+      entry.textContent = post.title || 'Untitled';
+      entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
+      
+      entry.addEventListener('click', () => {
+        console.log('📖 Post selected:', post.title);
+        this.loadPost(post.slug);
+        this.closeAllMenus();
+      });
+      
+      entry.addEventListener('mouseenter', () => {
+        entry.style.background = 'var(--menu-hover-bg, #555)';
+      });
+      
+      entry.addEventListener('mouseleave', () => {
+        entry.style.background = 'transparent';
+      });
+      
+      submenu.appendChild(entry);
+    });
+    
+    // Remove existing submenu
+    const existingSubmenu = menuElement.querySelector('.submenu');
+    if (existingSubmenu) {
+      existingSubmenu.remove();
+    }
+    
+    // Add new submenu
+    menuElement.appendChild(submenu);
+    
+    // Remove submenu on mouse leave
+    menuElement.addEventListener('mouseleave', () => {
+      setTimeout(() => {
+        if (submenu.parentNode) {
+          submenu.remove();
+        }
+      }, 100);
+    });
+  }
+
+  showDevlogSubmenu(menuElement) {
+    // Create devlog submenu
+    const submenu = document.createElement('div');
+    submenu.className = 'submenu';
+    submenu.style.cssText = `
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background: var(--menu-bg, #333);
+      border: 1px solid var(--menu-border, #555);
+      border-radius: 4px;
+      padding: 5px 0;
+      min-width: 150px;
+      z-index: 1000;
+    `;
+    
+    // Filter devlog posts
+    const devlogPosts = this.posts.filter(post => 
+      post.title && post.title.toLowerCase().includes('devlog')
+    );
+    
+    if (devlogPosts.length > 0) {
+      devlogPosts.forEach(post => {
+        const entry = document.createElement('div');
+        entry.className = 'menu-entry';
+        entry.textContent = post.title;
+        entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
+        
+        entry.addEventListener('click', () => {
+          console.log('📝 Devlog selected:', post.title);
+          this.loadPost(post.slug);
+          this.closeAllMenus();
+        });
+        
+        entry.addEventListener('mouseenter', () => {
+          entry.style.background = 'var(--menu-hover-bg, #555)';
+        });
+        
+        entry.addEventListener('mouseleave', () => {
+          entry.style.background = 'transparent';
+        });
+        
+        submenu.appendChild(entry);
+      });
+    } else {
+      const entry = document.createElement('div');
+      entry.className = 'menu-entry';
+      entry.textContent = 'No devlog posts found';
+      entry.style.cssText = 'padding: 8px 15px; color: var(--menu-fg, #666); font-style: italic;';
+      submenu.appendChild(entry);
+    }
+    
+    // Remove existing submenu
+    const existingSubmenu = menuElement.querySelector('.submenu');
+    if (existingSubmenu) {
+      existingSubmenu.remove();
+    }
+    
+    // Add new submenu
+    menuElement.appendChild(submenu);
+    
+    // Remove submenu on mouse leave
+    menuElement.addEventListener('mouseleave', () => {
+      setTimeout(() => {
+        if (submenu.parentNode) {
+          submenu.remove();
+        }
+      }, 100);
     });
   }
 
