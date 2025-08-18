@@ -66,8 +66,8 @@ class SimpleBlog {
               <div class="menu-separator"></div>
               <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
-                        <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
-          <div class="menu-entry has-submenu" id="devlog-menu" style="position: relative;">Devlog ></div>
+              <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
+              <div class="menu-entry has-submenu" id="devlog-menu" style="position: relative;">Devlog ></div>
             </div>
           </div>
           
@@ -86,6 +86,8 @@ class SimpleBlog {
           <div class="menu-item" data-menu="connect">
             <div class="label">Connect</div>
             <div class="menu-dropdown">
+              <div class="menu-entry" id="github-connect">Connect to GitHub</div>
+              <div class="menu-separator"></div>
               <div class="menu-entry" id="bluesky-share">Share to Bluesky</div>
               <div class="menu-entry" id="twitter-share">Share to Twitter</div>
             </div>
@@ -115,7 +117,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250907';
+    const buildDate = '20250908';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -270,6 +272,12 @@ class SimpleBlog {
     this.addClickHandler('#toggle-console', () => {
       console.log('🖥️ Console toggle clicked');
       this.toggleConsole();
+    });
+
+    // GitHub connect button
+    this.addClickHandler('#github-connect', () => {
+      console.log('🔐 GitHub connect button clicked');
+      this.showGitHubLogin();
     });
 
     // Theme buttons
@@ -1557,10 +1565,24 @@ class SimpleBlog {
   initiateGitHubLogin() {
     console.log('🔐 Initiating GitHub OAuth...');
     
+    // Show loading state
+    const loginBtn = document.getElementById('githubLoginBtn');
+    if (loginBtn) {
+      loginBtn.textContent = 'Connecting...';
+      loginBtn.disabled = true;
+    }
+    
     // Get GitHub client ID
     fetch('/.netlify/functions/get-github-client-id')
-      .then(response => response.json())
+      .then(response => {
+        console.log('🔐 GitHub client ID response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
       .then(data => {
+        console.log('🔐 GitHub client ID response data:', data);
         if (data.clientId) {
           // Redirect to GitHub OAuth
           const redirectUri = `${window.location.origin}/.netlify/functions/auth-callback`;
@@ -1570,14 +1592,22 @@ class SimpleBlog {
           sessionStorage.setItem('github_oauth_state', state);
           
           const authUrl = `https://github.com/login/oauth/authorize?client_id=${data.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=repo`;
+          console.log('🔐 Redirecting to GitHub OAuth:', authUrl);
           window.location.href = authUrl;
         } else {
+          console.error('❌ No GitHub client ID in response:', data);
           alert('GitHub OAuth not configured. Please contact the administrator.');
         }
       })
       .catch(error => {
         console.error('❌ Error getting GitHub client ID:', error);
-        alert('Error connecting to GitHub. Please try again.');
+        alert(`Error connecting to GitHub: ${error.message}\n\nPlease check your Netlify function configuration.`);
+        
+        // Reset button state
+        if (loginBtn) {
+          loginBtn.textContent = 'Login with GitHub';
+          loginBtn.disabled = false;
+        }
       });
   }
 
@@ -1623,14 +1653,43 @@ class SimpleBlog {
   showFlagsModal() {
     console.log('🏷️ Setting post flags/keywords...');
     
+    // Get the flags button position for anchoring
+    const flagsBtn = document.getElementById('keywords-btn');
+    if (!flagsBtn) {
+      console.log('⚠️ Flags button not found');
+      return;
+    }
+    
+    const btnRect = flagsBtn.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Calculate position - anchor to button, adjust if near window edges
+    let left = btnRect.left;
+    let top = btnRect.bottom + 5;
+    
+    // Adjust horizontal position if too close to right edge
+    if (left + 350 > windowWidth - 20) {
+      left = windowWidth - 370; // 350px width + 20px margin
+    }
+    
+    // Adjust if too close to left edge
+    if (left < 20) {
+      left = 20;
+    }
+    
+    // Adjust vertical position if too close to bottom edge
+    if (top + 50 > windowHeight - 20) {
+      top = btnRect.top - 55; // Show above button instead
+    }
+    
     // Create menu style 2 input (single line, no UI)
     const inputBox = document.createElement('div');
     inputBox.className = 'menu-style-2-input';
     inputBox.style.cssText = `
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      top: ${top}px;
+      left: ${left}px;
       background: var(--menu-bg);
       border: 1px solid var(--border);
       padding: 6px 10px;
