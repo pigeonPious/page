@@ -111,7 +111,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250831';
+    const buildDate = '20250901';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -637,22 +637,10 @@ class SimpleBlog {
       console.log('☀️ Added light-mode class');
     } else if (mode === 'custom') {
       document.body.classList.add('custom-mode');
-      // Apply custom colors and update all related CSS variables
-      document.body.style.setProperty('--bg', '#2a2a2a');
-      document.body.style.setProperty('--fg', '#ffffff');
-      document.body.style.setProperty('--menu-bg', '#2a2a2a');
-      document.body.style.setProperty('--menu-fg', '#ffffff');
-      document.body.style.setProperty('--sidebar-bg', '#1e1e1e');
-      document.body.style.setProperty('--sidebar-fg', '#ffffff');
-      document.body.style.setProperty('--border', '#444444');
-      document.body.style.setProperty('--muted', '#888888');
-      document.body.style.setProperty('--link', '#ffffff');
-      document.body.style.setProperty('--success-color', '#28a745');
-      document.body.style.setProperty('--success-hover-color', '#218838');
-      document.body.style.setProperty('--danger-color', '#dc3545');
-      document.body.style.setProperty('--danger-hover-color', '#c82333');
-      document.body.style.setProperty('--btn-text-color', '#ffffff');
-      console.log('🎨 Added custom-mode class with custom colors');
+      
+      // Open HSL color picker instead of setting hardcoded colors
+      this.openHSLColorPicker();
+      console.log('🎨 Added custom-mode class, opening HSL picker');
     } else if (mode === 'random') {
       // Generate random theme
       const h = Math.floor(Math.random() * 361);
@@ -662,11 +650,11 @@ class SimpleBlog {
       
       // Calculate complementary colors for the random theme
       const bgColor = color;
-      const fgColor = l < 50 ? '#ffffff' : '#232323';
+      const fgColor = l < 50 ? '#ffffff' : '#000000';
       const menuBg = color;
-      const menuFg = l < 50 ? '#ffffff' : '#232323';
+      const menuFg = fgColor;
       const sidebarBg = `hsl(${h},${s}%,${Math.max(0, l - 20)}%)`;
-      const sidebarFg = l < 50 ? '#ffffff' : '#232323';
+      const sidebarFg = fgColor;
       const borderColor = `hsl(${h},${s}%,${Math.max(0, l - 10)}%)`;
       const mutedColor = l < 50 ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)';
       
@@ -709,6 +697,274 @@ class SimpleBlog {
     themeButtons.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.mode === mode);
     });
+  }
+
+  // Calculate text color that contrasts with background
+  getContrastColor(backgroundColor) {
+    // Convert hex to RGB
+    const hex = backgroundColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return black for light backgrounds, white for dark backgrounds
+    return luminance > 0.5 ? '#000000' : '#ffffff';
+  }
+
+  // Convert HSL to hex
+  hslToHex(h, s, l) {
+    h /= 360;
+    s /= 100;
+    l /= 100;
+    
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h * 6) % 2 - 1));
+    const m = l - c / 2;
+    
+    let r = 0, g = 0, b = 0;
+    
+    if (0 <= h && h < 1) {
+      r = c; g = x; b = 0;
+    } else if (1 <= h && h < 2) {
+      r = x; g = c; b = 0;
+    } else if (2 <= h && h < 3) {
+      r = 0; g = c; b = x;
+    } else if (3 <= h && h < 4) {
+      r = 0; g = x; b = c;
+    } else if (4 <= h && h < 5) {
+      r = x; g = 0; b = c;
+    } else if (5 <= h && h < 6) {
+      r = c; g = 0; b = x;
+    }
+    
+    const rHex = Math.round((r + m) * 255).toString(16).padStart(2, '0');
+    const gHex = Math.round((g + m) * 255).toString(16).padStart(2, '0');
+    const bHex = Math.round((b + m) * 255).toString(16).padStart(2, '0');
+    
+    return `#${rHex}${gHex}${bHex}`;
+  }
+
+  openHSLColorPicker() {
+    // Remove existing color picker
+    const existingPicker = document.getElementById('hsl-color-picker');
+    if (existingPicker) {
+      existingPicker.remove();
+    }
+
+    // Create HSL color picker
+    const picker = document.createElement('div');
+    picker.id = 'hsl-color-picker';
+    picker.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--menu-bg, #333);
+      border: 2px solid var(--border, #555);
+      border-radius: 8px;
+      padding: 20px;
+      z-index: 10000;
+      min-width: 300px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    `;
+
+    // Current HSL values (default to a nice blue-gray)
+    let currentH = 210;
+    let currentS = 25;
+    let currentL = 25;
+
+    // Create color preview
+    const preview = document.createElement('div');
+    preview.style.cssText = `
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      margin: 0 auto 20px;
+      border: 2px solid var(--border, #555);
+      background: hsl(${currentH}, ${currentS}%, ${currentL}%);
+    `;
+
+    // Create sliders
+    const createSlider = (label, min, max, value, onChange) => {
+      const container = document.createElement('div');
+      container.style.cssText = 'margin-bottom: 15px;';
+      
+      const labelEl = document.createElement('label');
+      labelEl.textContent = label;
+      labelEl.style.cssText = 'display: block; margin-bottom: 5px; color: var(--fg, #fff); font-size: 14px;';
+      
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.min = min;
+      slider.max = max;
+      slider.value = value;
+      slider.style.cssText = 'width: 100%; margin-bottom: 5px;';
+      
+      const valueDisplay = document.createElement('span');
+      valueDisplay.textContent = value;
+      valueDisplay.style.cssText = 'color: var(--fg, #fff); font-size: 12px; font-family: monospace;';
+      
+      slider.addEventListener('input', (e) => {
+        const newValue = parseInt(e.target.value);
+        valueDisplay.textContent = newValue;
+        onChange(newValue);
+      });
+      
+      container.appendChild(labelEl);
+      container.appendChild(slider);
+      container.appendChild(valueDisplay);
+      
+      return { slider, onChange };
+    };
+
+    // Hue slider
+    const hueSlider = createSlider('Hue (0-360)', 0, 360, currentH, (value) => {
+      currentH = value;
+      preview.style.background = `hsl(${currentH}, ${currentS}%, ${currentL}%)`;
+    });
+
+    // Saturation slider
+    const satSlider = createSlider('Saturation (0-100)', 0, 100, currentS, (value) => {
+      currentS = value;
+      preview.style.background = `hsl(${currentH}, ${currentS}%, ${currentL}%)`;
+    });
+
+    // Lightness slider
+    const lightSlider = createSlider('Lightness (0-100)', 0, 100, currentL, (value) => {
+      currentL = value;
+      preview.style.background = `hsl(${currentH}, ${currentS}%, ${currentL}%)`;
+    });
+
+    // Apply button
+    const applyBtn = document.createElement('button');
+    applyBtn.textContent = 'Apply Theme';
+    applyBtn.style.cssText = `
+      background: var(--accent, #3a7bd5);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-size: 14px;
+    `;
+
+    applyBtn.addEventListener('click', () => {
+      this.applyCustomTheme(currentH, currentS, currentL);
+      picker.remove();
+    });
+
+    // Cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = `
+      background: var(--muted, #666);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+
+    cancelBtn.addEventListener('click', () => {
+      picker.remove();
+      // Revert to previous theme
+      const previousTheme = localStorage.getItem('ppPage_theme') || 'dark';
+      this.setTheme(previousTheme);
+    });
+
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--fg, #fff);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    closeBtn.addEventListener('click', () => {
+      picker.remove();
+      // Revert to previous theme
+      const previousTheme = localStorage.getItem('ppPage_theme') || 'dark';
+      this.setTheme(previousTheme);
+    });
+
+    // Add elements to picker
+    picker.appendChild(closeBtn);
+    picker.appendChild(preview);
+    picker.appendChild(hueSlider.container);
+    picker.appendChild(satSlider.container);
+    picker.appendChild(lightSlider.container);
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'text-align: center; margin-top: 20px;';
+    buttonContainer.appendChild(applyBtn);
+    buttonContainer.appendChild(cancelBtn);
+    picker.appendChild(buttonContainer);
+
+    // Add to page
+    document.body.appendChild(picker);
+
+    // Close on escape key
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape') {
+        picker.remove();
+        document.removeEventListener('keydown', escapeHandler);
+        // Revert to previous theme
+        const previousTheme = localStorage.getItem('ppPage_theme') || 'dark';
+        this.setTheme(previousTheme);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+  }
+
+  applyCustomTheme(h, s, l) {
+    const bgColor = `hsl(${h}, ${s}%, ${l}%)`;
+    const bgHex = this.hslToHex(h, s, l);
+    
+    // Calculate contrasting text color
+    const fgColor = l < 50 ? '#ffffff' : '#000000';
+    
+    // Calculate complementary colors
+    const menuBg = bgColor;
+    const menuFg = fgColor;
+    const sidebarBg = `hsl(${h}, ${s}%, ${Math.max(0, l - 20)}%)`;
+    const sidebarFg = fgColor;
+    const borderColor = `hsl(${h}, ${s}%, ${Math.max(0, l - 10)}%)`;
+    const mutedColor = l < 50 ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)';
+    
+    // Apply all CSS variables
+    document.body.style.setProperty('--bg', bgColor);
+    document.body.style.setProperty('--fg', fgColor);
+    document.body.style.setProperty('--menu-bg', menuBg);
+    document.body.style.setProperty('--menu-fg', menuFg);
+    document.body.style.setProperty('--sidebar-bg', sidebarBg);
+    document.body.style.setProperty('--sidebar-fg', sidebarFg);
+    document.body.style.setProperty('--border', borderColor);
+    document.body.style.setProperty('--muted', mutedColor);
+    document.body.style.setProperty('--link', fgColor);
+    document.body.style.setProperty('--success-color', '#28a745');
+    document.body.style.setProperty('--success-hover-color', '#218838');
+    document.body.style.setProperty('--danger-color', '#dc3545');
+    document.body.style.setProperty('--danger-hover-color', '#c82333');
+    document.body.style.setProperty('--btn-text-color', fgColor);
+    
+    console.log('🎨 Custom theme applied:', { h, s, l, bgColor, fgColor });
   }
 
   makeNote() {
