@@ -106,7 +106,7 @@ class SimpleBlog {
             <span id="github-status">not connected</span>
           </div>
           
-          <div class="build-indicator" style="margin-left: auto; padding: 0 8px; font-size: 11px; color: #666; font-family: monospace;">
+          <div class="build-indicator" id="build-indicator" style="margin-left: auto; padding: 0 8px; font-size: 11px; color: #666; font-family: monospace; cursor: pointer; user-select: none;" title="Click to increment build">
             ${this.generateBuildWord()}
           </div>
         </div>
@@ -123,21 +123,64 @@ class SimpleBlog {
       'alpha', 'beta', 'gamma', 'delta', 'echo', 'foxtrot', 'golf', 'hotel',
       'india', 'juliet', 'kilo', 'lima', 'mike', 'november', 'oscar', 'papa',
       'quebec', 'romeo', 'sierra', 'tango', 'uniform', 'victor', 'whiskey',
-      'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
+      'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden',
+      'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
+      'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
+      'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade'
     ];
     
-    const buildDate = '20250929';
+    // Get current date and time for dynamic build word
+    const now = new Date();
+    const buildDate = now.getFullYear().toString() + 
+                     String(now.getMonth() + 1).padStart(2, '0') + 
+                     String(now.getDate()).padStart(2, '0') +
+                     String(now.getHours()).padStart(2, '0') +
+                     String(now.getMinutes()).padStart(2, '0');
+    
+    // Get build counter from localStorage or start at 1
+    const buildCounter = parseInt(localStorage.getItem('buildCounter') || '0') + 1;
+    localStorage.setItem('buildCounter', buildCounter.toString());
+    
+    // Combine date and counter for unique seed
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
     }
+    seed += buildCounter; // Add counter to make each build unique
     
     const calculatedIndex = seed % words.length;
     const word = words[calculatedIndex];
     
-    console.log(`🔧 Build word calculation: date=${buildDate}, seed=${seed}, calculated=${calculatedIndex}, word=${word}`);
+    console.log(`🔧 Build word calculation: date=${buildDate}, counter=${buildCounter}, seed=${seed}, calculated=${calculatedIndex}, word=${word}`);
     
-    return word;
+    return `${word}-${buildCounter}`;
+  }
+
+  incrementBuildWord() {
+    // Increment the build counter
+    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '0');
+    const newCounter = currentCounter + 1;
+    localStorage.setItem('buildCounter', newCounter.toString());
+    
+    // Update the display
+    const buildIndicator = document.getElementById('build-indicator');
+    if (buildIndicator) {
+      buildIndicator.textContent = this.generateBuildWord();
+      console.log(`🔧 Build word incremented to: ${buildIndicator.textContent}`);
+    }
+  }
+
+  setupBuildWordAutoRefresh() {
+    // Update build word every minute to show current time
+    setInterval(() => {
+      const buildIndicator = document.getElementById('build-indicator');
+      if (buildIndicator) {
+        buildIndicator.textContent = this.generateBuildWord();
+      }
+    }, 60000); // 60000ms = 1 minute
+    
+    console.log('🔧 Build word auto-refresh setup - will update every minute');
   }
 
   bindEvents() {
@@ -318,6 +361,12 @@ class SimpleBlog {
       console.log('🎲 Random post clicked');
       this.loadRandomPost();
     });
+
+    // Build indicator click handler
+    this.addClickHandler('#build-indicator', () => {
+      console.log('🔧 Build indicator clicked - incrementing build');
+      this.incrementBuildWord();
+    });
     
     console.log('✅ Button events setup complete');
   }
@@ -340,6 +389,9 @@ class SimpleBlog {
     
     // Setup submenu functionality
     this.setupSubmenus();
+    
+    // Setup build word auto-refresh (every minute)
+    this.setupBuildWordAutoRefresh();
   }
 
   setupPageSpecificElements() {
@@ -1922,7 +1974,7 @@ class SimpleBlog {
       const postContent = JSON.stringify(postData, null, 2);
       
       // Publish directly to GitHub using GitHub API
-      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/page/posts/${postData.slug}.json`, {
+      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`, {
         method: 'PUT',
         headers: {
           'Authorization': `token ${githubToken}`,
@@ -1963,7 +2015,7 @@ class SimpleBlog {
       if (!githubToken) return;
       
       // Get current index
-      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/page/posts/index.json', {
+      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
         headers: {
           'Authorization': `token ${githubToken}`,
         }
@@ -1982,7 +2034,7 @@ class SimpleBlog {
         });
         
         // Update index file
-        await fetch(`https://api.github.com/repos/pigeonPious/page/contents/page/posts/index.json`, {
+        await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
           method: 'PUT',
           headers: {
             'Authorization': `token ${githubToken}`,

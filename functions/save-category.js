@@ -67,7 +67,7 @@ exports.handler = async (event, context) => {
       const { data: categoriesFile } = await octokit.repos.getContent({
         owner,
         repo,
-        path: 'page/data/categories.json',
+        path: 'data/categories.json',
         ref: branch
       });
       categories = JSON.parse(Buffer.from(categoriesFile.content, 'base64').toString());
@@ -84,7 +84,7 @@ exports.handler = async (event, context) => {
       await octokit.repos.createOrUpdateFileContents({
         owner,
         repo,
-        path: 'page/data/categories.json',
+        path: 'data/categories.json',
         message: `Add category: ${category}`,
         content: Buffer.from(JSON.stringify(categories, null, 2)).toString('base64'),
         sha: categoriesFile ? categoriesFile.sha : undefined,

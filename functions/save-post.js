@@ -73,7 +73,7 @@ exports.handler = async (event, context) => {
     };
 
     // Save post file
-    const postPath = `page/posts/${slug}.json`;
+    const postPath = `posts/${slug}.json`;
     await octokit.repos.createOrUpdateFileContents({
       owner,
       repo,
@@ -87,7 +87,7 @@ exports.handler = async (event, context) => {
     const { data: indexFile } = await octokit.repos.getContent({
       owner,
       repo,
-      path: 'page/posts/index.json',
+      path: 'posts/index.json',
       ref: branch
     });
 
@@ -102,7 +102,7 @@ exports.handler = async (event, context) => {
     await octokit.repos.createOrUpdateFileContents({
       owner,
       repo,
-      path: 'page/posts/index.json',
+      path: 'posts/index.json',
       message: `Update index for post: ${title}`,
       content: Buffer.from(JSON.stringify(indexContent, null, 2)).toString('base64'),
       sha: indexFile.sha,
