@@ -126,7 +126,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250926';
+    const buildDate = '20250927';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -1256,38 +1256,38 @@ class SimpleBlog {
       }
     });
     
-    // Normal button styling
+    // Button style 1: Clean text-only buttons (no frame, no background)
     newImportBtn.style.cssText = `
-      background: #555;
+      background: transparent;
       color: #fff;
-      border: 1px solid #666;
+      border: none;
       font-weight: bold;
       font-size: 12px;
       padding: 4px 8px;
       cursor: pointer;
-      border-radius: 3px;
-      transition: background 0.2s;
+      transition: color 0.2s;
+      outline: none;
     `;
     
     newCloseBtn.style.cssText = `
-      background: #555;
+      background: transparent;
       color: #fff;
-      border: 1px solid #666;
+      border: none;
       font-weight: bold;
       font-size: 16px;
       padding: 4px 8px;
       cursor: pointer;
-      border-radius: 3px;
-      transition: background 0.2s;
+      transition: color 0.2s;
+      outline: none;
       min-width: 20px;
       text-align: center;
     `;
     
-    // Add hover effects
-    newImportBtn.addEventListener('mouseenter', () => { newImportBtn.style.background = '#666'; });
-    newImportBtn.addEventListener('mouseleave', () => { newImportBtn.style.background = '#555'; });
-    newCloseBtn.addEventListener('mouseenter', () => { newCloseBtn.style.background = '#666'; });
-    newCloseBtn.addEventListener('mouseleave', () => { newCloseBtn.style.background = '#555'; });
+    // Add hover effects (color change only)
+    newImportBtn.addEventListener('mouseenter', () => { newImportBtn.style.color = '#ccc'; });
+    newImportBtn.addEventListener('mouseleave', () => { newImportBtn.style.color = '#fff'; });
+    newCloseBtn.addEventListener('mouseenter', () => { newCloseBtn.style.color = '#ccc'; });
+    newCloseBtn.addEventListener('mouseleave', () => { newCloseBtn.style.color = '#fff'; });
     
     console.log('✅ Image magazine buttons setup complete');
     console.log('🔍 Buttons now have normal styling and hover effects');
@@ -1303,6 +1303,25 @@ class SimpleBlog {
       console.log('⚠️ Magazine header not found for drag setup');
       return;
     }
+    
+    // Add double spacer line at the top as visual drag handle
+    const dragHandle = document.createElement('div');
+    dragHandle.style.cssText = `
+      height: 8px;
+      background: repeating-linear-gradient(
+        to bottom,
+        #444 0px,
+        #444 2px,
+        transparent 2px,
+        transparent 4px
+      );
+      margin-bottom: 8px;
+      cursor: move;
+      user-select: none;
+    `;
+    
+    // Insert drag handle at the top of the header
+    header.insertBefore(dragHandle, header.firstChild);
     
     // Make header draggable
     let isDragging = false;
@@ -1354,7 +1373,7 @@ class SimpleBlog {
     header.style.userSelect = 'none';
     
     console.log('✅ Magazine drag functionality setup complete');
-    console.log('🔍 Click and drag the header to move the magazine');
+    console.log('🔍 Click and drag the header (including double lines) to move the magazine');
   }
 
   createImageMagazine() {
