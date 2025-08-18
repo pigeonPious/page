@@ -7,7 +7,9 @@ class SimpleBlog {
   constructor() {
     this.currentPost = null;
     this.posts = [];
-    this.theme = 'dark';
+    // Load theme from localStorage or default to dark
+    this.theme = localStorage.getItem('ppPage_theme') || 'dark';
+    console.log('🎨 Theme loaded from localStorage:', this.theme);
     this.init();
   }
 
@@ -104,7 +106,7 @@ class SimpleBlog {
       'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden'
     ];
     
-    const buildDate = '20250827';
+    const buildDate = '20250828';
     let seed = 0;
     for (let i = 0; i < buildDate.length; i++) {
       seed += buildDate.charCodeAt(i);
@@ -433,8 +435,11 @@ class SimpleBlog {
       if (response.ok) {
         const data = await response.json();
         // Handle both array format and object with posts property
-        this.posts = Array.isArray(data) ? data : (data.posts || []);
-        console.log(`✅ Loaded ${this.posts.length} posts:`, this.posts.map(p => p.title));
+        const allPosts = Array.isArray(data) ? data : (data.posts || []);
+        
+        // Filter to only include posts that actually exist as files
+        this.posts = await this.filterAvailablePosts(allPosts);
+        console.log(`✅ Loaded ${this.posts.length} available posts:`, this.posts.map(p => p.title));
         
         // Auto-load the most recent post if we have posts
         if (this.posts.length > 0) {
@@ -450,6 +455,26 @@ class SimpleBlog {
       this.posts = [];
       this.displayDefaultContent();
     }
+  }
+
+  async filterAvailablePosts(posts) {
+    const availablePosts = [];
+    
+    for (const post of posts) {
+      try {
+        // Check if the post file actually exists
+        const response = await fetch(`posts/${post.slug}.json`);
+        if (response.ok) {
+          availablePosts.push(post);
+        } else {
+          console.warn(`⚠️ Post file not found: ${post.slug}.json`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error checking post ${post.slug}:`, error);
+      }
+    }
+    
+    return availablePosts;
   }
 
   async loadPost(slug) {
@@ -506,20 +531,25 @@ class SimpleBlog {
   }
 
   setTheme(mode) {
+    console.log('🎨 Setting theme:', mode);
     this.theme = mode;
     
     // Remove existing theme classes
     document.body.classList.remove('dark-mode', 'light-mode', 'custom-mode');
+    console.log('🧹 Removed existing theme classes');
     
     if (mode === 'dark') {
       document.body.classList.add('dark-mode');
+      console.log('🌙 Added dark-mode class');
     } else if (mode === 'light') {
       document.body.classList.add('light-mode');
+      console.log('☀️ Added light-mode class');
     } else if (mode === 'custom') {
       document.body.classList.add('custom-mode');
       // Apply custom colors
       document.body.style.setProperty('--bg', '#2a2a2a');
       document.body.style.setProperty('--fg', '#ffffff');
+      console.log('🎨 Added custom-mode class with custom colors');
     } else if (mode === 'random') {
       // Generate random theme
       const h = Math.floor(Math.random() * 361);
@@ -530,13 +560,23 @@ class SimpleBlog {
       document.body.classList.add('custom-mode');
       document.body.style.setProperty('--bg', color);
       document.body.style.setProperty('--fg', l < 50 ? '#ffffff' : '#232323');
+      console.log('🎲 Added random theme:', color);
     }
     
     // Update theme display
     this.updateThemeDisplay(mode);
+    console.log('✅ Theme display updated');
     
     // Save to localStorage
     localStorage.setItem('ppPage_theme', mode);
+    console.log('💾 Theme saved to localStorage');
+    
+    // Debug: show current body classes
+    console.log('🔍 Current body classes:', document.body.className);
+    console.log('🔍 Current CSS variables:', {
+      '--bg': getComputedStyle(document.body).getPropertyValue('--bg'),
+      '--fg': getComputedStyle(document.body).getPropertyValue('--fg')
+    });
   }
 
   updateThemeDisplay(mode) {
