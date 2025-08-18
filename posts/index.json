@@ -1,5 +1,11 @@
 [
   {
+    "slug": "post-dddd",
+    "title": "Post DDDD",
+    "date": "2025-08-18",
+    "keywords": "test, devlog:hablet"
+  },
+  {
     "slug": "website-devlog-1",
     "title": "Blog System Improvements",
     "date": "2025-August-16",
