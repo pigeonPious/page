@@ -32,6 +32,10 @@ class SimpleBlog {
     this.setTheme(this.theme, false); // Don't open HSL picker on page load
     console.log('✅ Theme set');
     
+    // Initialize font size
+    this.initializeFontSize();
+    console.log('✅ Font size initialized');
+    
     // If custom theme, check for saved HSL values and apply them
     if (this.theme === 'custom') {
       const savedHSL = localStorage.getItem('ppPage_custom_hsl');
@@ -78,6 +82,19 @@ class SimpleBlog {
               <div class="menu-entry disabled">Undo</div>
               <div class="menu-entry editor-only" id="make-note-button">Make Note</div>
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry blog-only" id="save-pdf-button">Save as PDF</div>
+              <div class="menu-entry blog-only" id="font-size-menu">Font Size
+                <div class="submenu font-size-submenu">
+                  <div class="menu-entry" id="font-smaller">Smaller</div>
+                  <div class="menu-entry" id="font-larger">Larger</div>
+                  <div class="menu-entry" id="font-reset">Reset</div>
+                </div>
+              </div>
+              <div class="menu-separator admin-only"></div>
+              <div class="menu-entry admin-only" id="quick-edit-button">Quick Edit</div>
+              <div class="menu-entry admin-only" id="category-manager-button">Category Manager</div>
+              <div class="menu-entry admin-only" id="draft-manager-button">Draft Manager</div>
             </div>
           </div>
           
@@ -727,9 +744,19 @@ class SimpleBlog {
     });
 
     // Editor-specific buttons
+    this.addClickHandler('#import-btn', () => {
+      console.log('📥 Import button clicked');
+      this.importPost();
+    });
+
     this.addClickHandler('#export-btn', () => {
       console.log('📤 Export button clicked');
       this.exportPost();
+    });
+
+    this.addClickHandler('#save-draft-btn', () => {
+      console.log('💾 Save draft button clicked');
+      this.saveDraft();
     });
 
     this.addClickHandler('#images-btn', () => {
@@ -851,6 +878,42 @@ class SimpleBlog {
     this.addClickHandler('#twitter-share', () => {
       console.log('🐦 Twitter share button clicked');
       this.shareToTwitter();
+    });
+    
+    // Edit menu buttons
+    this.addClickHandler('#save-pdf-button', () => {
+      console.log('📄 Save as PDF button clicked');
+      this.saveAsPDF();
+    });
+    
+    this.addClickHandler('#font-smaller', () => {
+      console.log('🔤 Font smaller clicked');
+      this.adjustFontSize('smaller');
+    });
+    
+    this.addClickHandler('#font-larger', () => {
+      console.log('🔤 Font larger clicked');
+      this.adjustFontSize('larger');
+    });
+    
+    this.addClickHandler('#font-reset', () => {
+      console.log('🔤 Font reset clicked');
+      this.adjustFontSize('reset');
+    });
+    
+    this.addClickHandler('#quick-edit-button', () => {
+      console.log('✏️ Quick edit button clicked');
+      this.quickEdit();
+    });
+    
+    this.addClickHandler('#category-manager-button', () => {
+      console.log('🗂️ Category manager button clicked');
+      this.showCategoryManager();
+    });
+    
+    this.addClickHandler('#draft-manager-button', () => {
+      console.log('📝 Draft manager button clicked');
+      this.showDraftManager();
     });
     
     console.log('✅ Button events setup complete');
@@ -4998,6 +5061,314 @@ class SimpleBlog {
     document.removeEventListener('keydown', this.globalKeyHandler);
     
     console.log('✅ Cleanup complete');
+  }
+
+  // ========== NEW EDIT MENU FUNCTIONS ==========
+
+  saveAsPDF() {
+    console.log('📄 Saving post as PDF...');
+    
+    // Use browser's print functionality to save as PDF
+    const originalTitle = document.title;
+    const postTitle = document.getElementById('post-title');
+    
+    if (postTitle) {
+      document.title = postTitle.textContent + ' - PDF Export';
+    }
+    
+    // Hide taskbar temporarily for cleaner PDF
+    const taskbar = document.querySelector('.menu-bar');
+    if (taskbar) {
+      taskbar.style.display = 'none';
+    }
+    
+    window.print();
+    
+    // Restore original state
+    document.title = originalTitle;
+    if (taskbar) {
+      taskbar.style.display = 'flex';
+    }
+    
+    console.log('✅ PDF print dialog opened');
+  }
+
+  adjustFontSize(action) {
+    console.log(`🔤 Adjusting font size: ${action}`);
+    
+    const contentElement = document.getElementById('post-content');
+    if (!contentElement) {
+      console.log('⚠️ No post content found');
+      return;
+    }
+    
+    let currentSize = localStorage.getItem('fontSize') || '13';
+    currentSize = parseInt(currentSize);
+    
+    switch (action) {
+      case 'smaller':
+        currentSize = Math.max(10, currentSize - 1);
+        break;
+      case 'larger':
+        currentSize = Math.min(20, currentSize + 1);
+        break;
+      case 'reset':
+        currentSize = 13;
+        break;
+    }
+    
+    document.body.style.fontSize = currentSize + 'px';
+    localStorage.setItem('fontSize', currentSize.toString());
+    
+    console.log(`✅ Font size set to ${currentSize}px`);
+  }
+
+  quickEdit() {
+    console.log('✏️ Opening quick edit...');
+    
+    const currentPost = this.currentPost;
+    if (!currentPost) {
+      alert('No post currently loaded to edit');
+      return;
+    }
+    
+    // Store edit data and redirect to editor
+    localStorage.setItem('editPostData', JSON.stringify(currentPost));
+    window.location.href = 'editor.html';
+  }
+
+  showCategoryManager() {
+    console.log('🗂️ Opening category manager...');
+    
+    // Create modal for category management
+    const modal = document.createElement('div');
+    modal.className = 'category-manager-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: var(--menu-bg);
+      color: var(--menu-fg);
+      padding: 20px;
+      border: 1px solid var(--border);
+      min-width: 400px;
+      max-height: 70vh;
+      overflow-y: auto;
+    `;
+    
+    content.innerHTML = `
+      <h3>Category Manager</h3>
+      <p>Manage post categories and devlog projects:</p>
+      <div id="category-list">Loading categories...</div>
+      <div style="margin-top: 20px;">
+        <button onclick="this.closest('.category-manager-modal').remove()" style="background: var(--menu-bg); color: var(--menu-fg); border: 1px solid var(--border); padding: 5px 10px; cursor: pointer;">Close</button>
+      </div>
+    `;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Load categories
+    this.loadCategories();
+  }
+
+  showDraftManager() {
+    console.log('📝 Opening draft manager...');
+    
+    // Create modal for draft management
+    const modal = document.createElement('div');
+    modal.className = 'draft-manager-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: var(--menu-bg);
+      color: var(--menu-fg);
+      padding: 20px;
+      border: 1px solid var(--border);
+      min-width: 400px;
+      max-height: 70vh;
+      overflow-y: auto;
+    `;
+    
+    content.innerHTML = `
+      <h3>Draft Manager</h3>
+      <p>Manage your saved drafts:</p>
+      <div id="draft-list">Loading drafts...</div>
+      <div style="margin-top: 20px;">
+        <button onclick="this.closest('.draft-manager-modal').remove()" style="background: var(--menu-bg); color: var(--menu-fg); border: 1px solid var(--border); padding: 5px 10px; cursor: pointer;">Close</button>
+      </div>
+    `;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Load drafts
+    this.loadDrafts();
+  }
+
+  importPost() {
+    console.log('📥 Importing post...');
+    
+    // Create file input
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+    
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const postData = JSON.parse(e.target.result);
+          
+          // Populate editor with imported data
+          const titleInput = document.getElementById('postTitle');
+          const contentEditor = document.getElementById('visualEditor');
+          
+          if (titleInput) titleInput.value = postData.title || '';
+          if (contentEditor) contentEditor.innerHTML = postData.content || '';
+          
+          // Set flags if they exist
+          if (postData.keywords) {
+            localStorage.setItem('current_post_flags', postData.keywords);
+          }
+          
+          console.log('✅ Post imported successfully');
+          this.showMenuStyle1Message('Post imported successfully!', 'success');
+          
+        } catch (error) {
+          console.error('❌ Error importing post:', error);
+          this.showMenuStyle1Message('Error importing post. Please check the file format.', 'error');
+        }
+      };
+      
+      reader.readAsText(file);
+    };
+    
+    fileInput.click();
+  }
+
+  async saveDraft() {
+    console.log('💾 Saving draft...');
+    
+    const token = localStorage.getItem('github_token');
+    if (!token) {
+      this.showMenuStyle1Message('GitHub connection required to save drafts', 'error');
+      return;
+    }
+    
+    // Get current post data
+    const titleInput = document.getElementById('postTitle');
+    const contentEditor = document.getElementById('visualEditor');
+    const flags = localStorage.getItem('current_post_flags') || '';
+    
+    if (!titleInput || !contentEditor) {
+      this.showMenuStyle1Message('Editor not found', 'error');
+      return;
+    }
+    
+    const title = titleInput.value.trim() || 'Untitled Draft';
+    const content = contentEditor.innerHTML.trim();
+    
+    if (!content) {
+      this.showMenuStyle1Message('Cannot save empty draft', 'error');
+      return;
+    }
+    
+    const slug = title.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50);
+    
+    const draftData = {
+      slug: slug,
+      title: title,
+      date: new Date().toISOString().split('T')[0],
+      category: 'draft',
+      keywords: flags,
+      content: content,
+      isDraft: true,
+      savedAt: new Date().toISOString()
+    };
+    
+    try {
+      // Save to GitHub in drafts folder
+      const repo = localStorage.getItem('github_repo') || 'pigeonPious/page';
+      const filename = `draft-${slug}-${Date.now()}.json`;
+      const path = `drafts/${filename}`;
+      
+      const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Save draft: ${title}`,
+          content: btoa(JSON.stringify(draftData, null, 2))
+        })
+      });
+      
+      if (response.ok) {
+        console.log('✅ Draft saved successfully');
+        this.showMenuStyle1Message('Draft saved successfully!', 'success');
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error saving draft:', error);
+      this.showMenuStyle1Message('Error saving draft. Please check your connection.', 'error');
+    }
+  }
+
+  async loadCategories() {
+    // Implementation for loading and displaying categories
+    const categoryList = document.getElementById('category-list');
+    if (categoryList) {
+      categoryList.innerHTML = 'Category management features coming soon...';
+    }
+  }
+
+  async loadDrafts() {
+    // Implementation for loading and displaying drafts
+    const draftList = document.getElementById('draft-list');
+    if (draftList) {
+      draftList.innerHTML = 'Draft management features coming soon...';
+    }
+  }
+
+  initializeFontSize() {
+    const savedSize = localStorage.getItem('fontSize');
+    if (savedSize) {
+      document.body.style.fontSize = savedSize + 'px';
+      console.log(`🔤 Font size restored to ${savedSize}px`);
+    }
   }
 }
 

@@ -154,14 +154,12 @@ body {
 }
 
 .page-container {
-  max-height: 100vh;
-  overflow-y: auto;
+  min-height: calc(100vh - 24px); /* Account for taskbar height */
 }
 
-/* Limit content height to prevent excessive scrolling */
+/* Remove embedded scrollbars - let page scroll naturally */
 .main-column {
-  max-height: calc(100vh - 24px); /* Account for taskbar height */
-  overflow-y: auto;
+  min-height: calc(100vh - 24px);
 }
 
 /* Taskbar */
