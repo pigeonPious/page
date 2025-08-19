@@ -29,6 +29,17 @@ class SimpleBlog {
     console.log('✅ Events bound');
     this.loadPosts();
     console.log('✅ Posts loaded');
+    
+    // Check for post parameter in URL (from editor navigation)
+    const urlParams = new URLSearchParams(window.location.search);
+    const postSlug = urlParams.get('post');
+    if (postSlug) {
+      console.log(`🔗 Loading post from URL parameter: ${postSlug}`);
+      this.loadPost(postSlug);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     this.setTheme(this.theme, false); // Don't open HSL picker on page load
     console.log('✅ Theme set');
     
@@ -84,13 +95,7 @@ class SimpleBlog {
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
               <div class="menu-separator"></div>
 
-              <div class="menu-entry blog-only" id="font-size-menu">Font Size
-                <div class="submenu font-size-submenu">
-                  <div class="menu-entry" id="font-smaller">Smaller</div>
-                  <div class="menu-entry" id="font-larger">Larger</div>
-                  <div class="menu-entry" id="font-reset">Reset</div>
-                </div>
-              </div>
+              <div class="menu-entry blog-only" id="font-size-button">Font Size</div>
               <div class="menu-separator admin-only"></div>
               <div class="menu-entry admin-only" id="quick-edit-button">Quick Edit</div>
               <div class="menu-entry admin-only" id="category-manager-button">Category Manager</div>
@@ -883,19 +888,9 @@ class SimpleBlog {
     // Edit menu buttons
 
     
-    this.addClickHandler('#font-smaller', () => {
-      console.log('🔤 Font smaller clicked');
-      this.adjustFontSize('smaller');
-    });
-    
-    this.addClickHandler('#font-larger', () => {
-      console.log('🔤 Font larger clicked');
-      this.adjustFontSize('larger');
-    });
-    
-    this.addClickHandler('#font-reset', () => {
-      console.log('🔤 Font reset clicked');
-      this.adjustFontSize('reset');
+    this.addClickHandler('#font-size-button', () => {
+      console.log('🔤 Font size button clicked');
+      this.showFontSizeWindow();
     });
     
     this.addClickHandler('#quick-edit-button', () => {
@@ -4117,8 +4112,15 @@ class SimpleBlog {
           `;
           
           postEntry.addEventListener('click', () => {
-            this.loadPost(post.slug);
-            this.closeAllMenus();
+            // Check if we're in the editor
+            if (window.location.pathname.includes('editor.html')) {
+              // Redirect to main blog with the selected post
+              window.location.href = `index.html?post=${post.slug}`;
+            } else {
+              // We're on the main blog, load post normally
+              this.loadPost(post.slug);
+              this.closeAllMenus();
+            }
           });
           
           // Add hover effects
@@ -4173,8 +4175,15 @@ class SimpleBlog {
         `;
         
         postEntry.addEventListener('click', () => {
-          this.loadPost(post.slug);
-          this.closeAllMenus();
+          // Check if we're in the editor
+          if (window.location.pathname.includes('editor.html')) {
+            // Redirect to main blog with the selected post
+            window.location.href = `index.html?post=${post.slug}`;
+          } else {
+            // We're on the main blog, load post normally
+            this.loadPost(post.slug);
+            this.closeAllMenus();
+          }
         });
         
         // Add hover effects
@@ -4370,11 +4379,18 @@ class SimpleBlog {
         
         // Add click handler to load post
         postEntry.addEventListener('click', () => {
-          this.loadPost(post.slug);
-          // Close only the projects submenu, not all menus
-          if (submenu.parentNode) {
-            submenu.remove();
-            this.globalCurrentlyOpenSubSubmenu = null;
+          // Check if we're in the editor
+          if (window.location.pathname.includes('editor.html')) {
+            // Redirect to main blog with the selected post
+            window.location.href = `index.html?post=${post.slug}`;
+          } else {
+            // We're on the main blog, load post normally
+            this.loadPost(post.slug);
+            // Close only the projects submenu, not all menus
+            if (submenu.parentNode) {
+              submenu.remove();
+              this.globalCurrentlyOpenSubSubmenu = null;
+            }
           }
         });
         
@@ -4567,8 +4583,15 @@ class SimpleBlog {
       
       // Add click handler to load post
       postEntry.addEventListener('click', () => {
-        this.loadPost(post.slug);
-        window.remove();
+        // Check if we're in the editor
+        if (window.location.pathname.includes('editor.html')) {
+          // Redirect to main blog with the selected post
+          window.location.href = `index.html?post=${post.slug}`;
+        } else {
+          // We're on the main blog, load post normally
+          this.loadPost(post.slug);
+          window.remove();
+        }
       });
       
       postsList.appendChild(postEntry);
@@ -5066,6 +5089,139 @@ class SimpleBlog {
 
 
 
+  showFontSizeWindow() {
+    console.log('🔤 Opening font size window...');
+    
+    // Check if window already exists
+    const existingWindow = document.getElementById('fontSizeWindow');
+    if (existingWindow) {
+      existingWindow.remove();
+    }
+    
+    // Get current font size
+    let currentSize = localStorage.getItem('fontSize') || '13';
+    currentSize = parseInt(currentSize);
+    
+    // Create menu style 2 window
+    const fontWindow = document.createElement('div');
+    fontWindow.id = 'fontSizeWindow';
+    fontWindow.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--menu-bg);
+      color: var(--menu-fg);
+      border: 1px solid var(--border);
+      padding: 20px;
+      z-index: 10000;
+      font-family: monospace;
+      font-size: 13px;
+      min-width: 200px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    `;
+    
+    fontWindow.innerHTML = `
+      <div style="margin-bottom: 15px; font-weight: bold;">Font Size</div>
+      <div style="margin-bottom: 15px;">Current: ${currentSize}px</div>
+      <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px;">
+        <button id="font-decrease" style="
+          background: var(--menu-bg);
+          color: var(--menu-fg);
+          border: 1px solid var(--border);
+          padding: 8px 16px;
+          cursor: pointer;
+          font-family: monospace;
+          font-size: 16px;
+          font-weight: bold;
+        ">-</button>
+        <button id="font-increase" style="
+          background: var(--menu-bg);
+          color: var(--menu-fg);
+          border: 1px solid var(--border);
+          padding: 8px 16px;
+          cursor: pointer;
+          font-family: monospace;
+          font-size: 16px;
+          font-weight: bold;
+        ">+</button>
+      </div>
+      <div style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">Press + or - keys</div>
+      <button id="font-close" style="
+        background: var(--menu-bg);
+        color: var(--menu-fg);
+        border: 1px solid var(--border);
+        padding: 6px 12px;
+        cursor: pointer;
+        font-family: monospace;
+        font-size: 11px;
+      ">Close</button>
+    `;
+    
+    document.body.appendChild(fontWindow);
+    
+    // Add button event listeners
+    const decreaseBtn = document.getElementById('font-decrease');
+    const increaseBtn = document.getElementById('font-increase');
+    const closeBtn = document.getElementById('font-close');
+    
+    decreaseBtn.addEventListener('click', () => {
+      this.adjustFontSize('smaller');
+      this.updateFontSizeDisplay();
+    });
+    
+    increaseBtn.addEventListener('click', () => {
+      this.adjustFontSize('larger');
+      this.updateFontSizeDisplay();
+    });
+    
+    closeBtn.addEventListener('click', () => {
+      fontWindow.remove();
+      document.removeEventListener('keydown', this.fontSizeKeyHandler);
+    });
+    
+    // Add keyboard support
+    this.fontSizeKeyHandler = (e) => {
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        this.adjustFontSize('larger');
+        this.updateFontSizeDisplay();
+      } else if (e.key === '-') {
+        e.preventDefault();
+        this.adjustFontSize('smaller');
+        this.updateFontSizeDisplay();
+      } else if (e.key === 'Escape') {
+        fontWindow.remove();
+        document.removeEventListener('keydown', this.fontSizeKeyHandler);
+      }
+    };
+    
+    document.addEventListener('keydown', this.fontSizeKeyHandler);
+    
+    // Close on outside click
+    setTimeout(() => {
+      const outsideClick = (e) => {
+        if (!fontWindow.contains(e.target)) {
+          fontWindow.remove();
+          document.removeEventListener('click', outsideClick);
+          document.removeEventListener('keydown', this.fontSizeKeyHandler);
+        }
+      };
+      document.addEventListener('click', outsideClick);
+    }, 100);
+    
+    console.log('✅ Font size window opened');
+  }
+  
+  updateFontSizeDisplay() {
+    const currentSize = localStorage.getItem('fontSize') || '13';
+    const sizeDisplay = document.querySelector('#fontSizeWindow div:nth-child(2)');
+    if (sizeDisplay) {
+      sizeDisplay.textContent = `Current: ${currentSize}px`;
+    }
+  }
+
   adjustFontSize(action) {
     console.log(`🔤 Adjusting font size: ${action}`);
     
@@ -5083,14 +5239,15 @@ class SimpleBlog {
         currentSize = Math.max(10, currentSize - 1);
         break;
       case 'larger':
-        currentSize = Math.min(20, currentSize + 1);
+        currentSize = Math.min(24, currentSize + 1);
         break;
       case 'reset':
         currentSize = 13;
         break;
     }
     
-    document.body.style.fontSize = currentSize + 'px';
+    // Apply font size to post content specifically
+    contentElement.style.fontSize = currentSize + 'px';
     localStorage.setItem('fontSize', currentSize.toString());
     
     console.log(`✅ Font size set to ${currentSize}px`);
