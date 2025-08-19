@@ -4258,6 +4258,13 @@ class SimpleBlog {
         border-radius: 4px;
       `;
       
+      // Position the sub-submenu to align with its category entry
+      const positionSubSubmenu = () => {
+        const categoryRect = categoryEntry.getBoundingClientRect();
+        const submenuRect = submenu.getBoundingClientRect();
+        subSubmenu.style.top = `${categoryRect.top - submenuRect.top}px`;
+      };
+      
       // Add posts to sub-submenu
       posts.forEach(post => {
         const postEntry = document.createElement('div');
@@ -4291,14 +4298,35 @@ class SimpleBlog {
         subSubmenu.appendChild(postEntry);
       });
       
-      // SIMPLE LOGIC: Show sub-submenu on hover, hide when hovering another category
+      // Add invisible buffer zone around sub-submenu for easier navigation
+      const bufferZone = document.createElement('div');
+      bufferZone.style.cssText = `
+        position: absolute;
+        left: -10px;
+        top: -10px;
+        right: -10px;
+        bottom: -10px;
+        z-index: 999;
+        pointer-events: none;
+      `;
+      subSubmenu.appendChild(bufferZone);
+      
+      // STABLE LOGIC: Show sub-submenu on hover, position it correctly, keep it open
       categoryEntry.addEventListener('mouseenter', () => {
         // Close previously open sub-submenu
         if (currentlyOpenSubSubmenu && currentlyOpenSubSubmenu !== subSubmenu) {
           currentlyOpenSubSubmenu.style.display = 'none';
         }
         
-        // Open this sub-submenu
+        // Position and open this sub-submenu
+        positionSubSubmenu();
+        subSubmenu.style.display = 'block';
+        currentlyOpenSubSubmenu = subSubmenu;
+      });
+      
+      // Keep sub-submenu open when hovering over it
+      subSubmenu.addEventListener('mouseenter', () => {
+        // Ensure it stays visible
         subSubmenu.style.display = 'block';
         currentlyOpenSubSubmenu = subSubmenu;
       });
