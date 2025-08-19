@@ -136,6 +136,10 @@ class SimpleBlog {
         <div class="cache-clear-btn" id="cache-clear-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #dc3545; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #dc3545; border-radius: 3px;" title="Clear all cache and reload">
           🧹
         </div>
+        
+        <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: default; user-select: none;" data-note="Welcome to my Blog!">
+          PiousPigeon
+        </div>
         </div>
       </div>
     `;
@@ -1563,6 +1567,32 @@ class SimpleBlog {
     
     if (contentElement) {
       contentElement.innerHTML = post.content || '';
+      
+      // Add flashing cursor at the end of the post
+      const cursor = document.createElement('span');
+      cursor.className = 'flashing-cursor';
+      cursor.textContent = '_';
+      cursor.style.cssText = `
+        color: var(--fg);
+        font-family: monospace;
+        margin-left: 2px;
+        animation: blink 1s infinite;
+      `;
+      contentElement.appendChild(cursor);
+      
+      // Add CSS animation if it doesn't exist
+      if (!document.getElementById('cursor-animation')) {
+        const style = document.createElement('style');
+        style.id = 'cursor-animation';
+        style.textContent = `
+          @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
       console.log('🔍 Set content to:', post.content ? post.content.substring(0, 100) + '...' : '');
     } else {
       console.error('❌ contentElement not found!');
@@ -4535,20 +4565,20 @@ class SimpleBlog {
   setupHoverNotes() {
     console.log('📝 Setting up hover notes...');
     
-    // Find all note-link elements
-    const noteLinks = document.querySelectorAll('.note-link');
+    // Find all elements with data-note attribute (including .note-link and .pigeon-label)
+    const noteElements = document.querySelectorAll('[data-note]');
     
-    noteLinks.forEach(link => {
+    noteElements.forEach(element => {
       // Remove existing listeners to prevent duplication
-      link.removeEventListener('mouseenter', this.showHoverNote);
-      link.removeEventListener('mouseleave', this.hideHoverNote);
+      element.removeEventListener('mouseenter', this.showHoverNote);
+      element.removeEventListener('mouseleave', this.hideHoverNote);
       
       // Add hover event listeners
-      link.addEventListener('mouseenter', (e) => this.showHoverNote(e));
-      link.addEventListener('mouseleave', () => this.hideHoverNote());
+      element.addEventListener('mouseenter', (e) => this.showHoverNote(e));
+      element.addEventListener('mouseleave', () => this.hideHoverNote());
     });
     
-    console.log(`✅ Hover notes setup for ${noteLinks.length} elements`);
+    console.log(`✅ Hover notes setup for ${noteElements.length} elements`);
   }
 
   showHoverNote(event) {
