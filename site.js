@@ -136,9 +136,6 @@ class SimpleBlog {
         <div class="cache-clear-btn" id="cache-clear-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #dc3545; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #dc3545; border-radius: 3px;" title="Clear all cache and reload">
           🧹
         </div>
-        <div class="build-increment-btn" id="build-increment-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #28a745; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #28a745; border-radius: 3px;" title="Increment build word (for new builds)">
-          🔧
-        </div>
         </div>
       </div>
     `;
@@ -298,6 +295,27 @@ class SimpleBlog {
     }, 1000);
     
     console.log('✅ All cache cleared and page will reload');
+  }
+  
+  // Function to increment build word (called automatically on new builds)
+  incrementBuildWord() {
+    console.log('🔧 Incrementing build word for new build...');
+    
+    // Get current build counter
+    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
+    const newCounter = currentCounter + 1;
+    
+    // Update build counter
+    localStorage.setItem('buildCounter', newCounter.toString());
+    
+    // Update build word display
+    const buildWordElement = document.getElementById('build-word');
+    if (buildWordElement) {
+      buildWordElement.textContent = `build-${newCounter}`;
+    }
+    
+    console.log(`🔧 Build word incremented from ${currentCounter} to ${newCounter}`);
+    console.log('✅ Build word updated successfully');
   }
 
   async validateGitHubToken() {
@@ -875,14 +893,6 @@ class SimpleBlog {
       }
     });
     
-    // Add build increment button handler
-    this.addClickHandler('#build-increment-btn', () => {
-      console.log('🔧 Build increment button clicked');
-      if (confirm('Increment build word? This should only be done when pushing a new build.')) {
-        this.incrementBuildWord();
-      }
-    });
-    
     this.addClickHandler('#show-localstorage', () => {
       console.log('📋 Show localStorage button clicked');
       const storage = {};
@@ -1014,19 +1024,35 @@ class SimpleBlog {
       console.warn('⚠️ All posts menu element not found');
     }
 
-    // Projects submenu - CLICK ONLY, no hover
+    // Projects submenu - hover shows categories, click opens floating window
     const projectsMenu = document.getElementById('projects-menu');
     if (projectsMenu) {
       // Remove existing listeners to prevent duplication
-      projectsMenu.removeEventListener('click', this.projectsClickHandler);
+      projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
+      projectsMenu.removeEventListener('mouseleave', this.projectsMouseLeaveHandler);
       
-      this.projectsClickHandler = () => {
-        console.log('📝 Projects menu clicked - opening submenu');
-        this.updateProjectsSubmenu(this.posts || []);
+      let openTimeout = null;
+      
+      this.projectsMouseEnterHandler = () => {
+        console.log('📝 Projects submenu hovered');
+        if (openTimeout) {
+          clearTimeout(openTimeout);
+        }
+        openTimeout = setTimeout(() => {
+          this.updateProjectsSubmenu(this.posts || []);
+        }, 150); // Small delay to prevent accidental opening
       };
       
-      projectsMenu.addEventListener('click', this.projectsClickHandler);
-      console.log('✅ Projects submenu click handler attached');
+      this.projectsMouseLeaveHandler = () => {
+        if (openTimeout) {
+          clearTimeout(openTimeout);
+          openTimeout = null;
+        }
+      };
+      
+      projectsMenu.addEventListener('mouseenter', this.projectsMouseEnterHandler);
+      projectsMenu.addEventListener('mouseleave', this.projectsMouseLeaveHandler);
+      console.log('✅ Projects submenu hover handler attached');
     } else {
       console.warn('⚠️ Projects menu element not found');
     }
@@ -4205,112 +4231,45 @@ class SimpleBlog {
     `;
     submenu.appendChild(bufferZone);
     
-    // Track currently open sub-submenu
-    let currentlyOpenSubSubmenu = null;
-    
-    // Add category entries that expand on hover
+    // Add category entries that open floating windows when clicked
     Object.keys(devlogCategories).forEach(category => {
       const posts = devlogCategories[category];
       
+      // Create category entry
       const categoryEntry = document.createElement('div');
-      categoryEntry.className = 'menu-entry category-entry';
-      categoryEntry.textContent = `${category} >`;
+      categoryEntry.className = 'menu-entry';
+      categoryEntry.textContent = `${category} (${posts.length})`;
       categoryEntry.style.cssText = `
         padding: 8px 12px;
         cursor: pointer;
         color: var(--menu-fg, #fff);
         font-size: 13px;
         border-bottom: 1px solid var(--border, #555);
-        text-transform: capitalize;
-        position: relative;
-      `;
-      
-      // Create sub-submenu for this category
-      const subSubmenu = document.createElement('div');
-      subSubmenu.className = 'sub-submenu';
-      subSubmenu.style.cssText = `
-        position: absolute;
-        left: 100%;
-        top: 0;
         background: var(--menu-bg, #333);
-        border: 1px solid var(--menu-border, #555);
-        padding: 5px 0;
-        min-width: 200px;
-        z-index: 1001;
-        display: none;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+        border-radius: 2px;
+        margin: 1px 2px;
+        text-transform: capitalize;
       `;
       
-      // Add posts to sub-submenu
-      posts.forEach(post => {
-        const postEntry = document.createElement('div');
-        postEntry.className = 'menu-entry';
-        postEntry.textContent = post.title || post.slug;
-        postEntry.style.cssText = `
-          padding: 8px 12px;
-          cursor: pointer;
-          color: var(--menu-fg, #fff);
-          font-size: 13px;
-          border-bottom: 1px solid var(--border, #555);
-        `;
-        
-        postEntry.addEventListener('click', () => {
-          this.loadPost(post.slug);
-          this.closeAllMenus();
-        });
-        
-        subSubmenu.appendChild(postEntry);
-      });
-      
-      // Show sub-submenu on hover
+      // Add hover effects
       categoryEntry.addEventListener('mouseenter', () => {
-        // Close previously open sub-submenu
-        if (currentlyOpenSubSubmenu && currentlyOpenSubSubmenu !== subSubmenu) {
-          currentlyOpenSubSubmenu.style.display = 'none';
-        }
-        
-        // Open this sub-submenu
-        subSubmenu.style.display = 'block';
-        currentlyOpenSubSubmenu = subSubmenu;
+        categoryEntry.style.background = 'var(--menu-hover-bg, #555)';
+        categoryEntry.style.transform = 'translateX(2px)';
       });
       
-      // Hide sub-submenu when leaving category entry
       categoryEntry.addEventListener('mouseleave', () => {
-        setTimeout(() => {
-          // Check if mouse is over the sub-submenu
-          const rect = subSubmenu.getBoundingClientRect();
-          const mouseX = event.clientX;
-          const mouseY = event.clientY;
-          
-          if (mouseX < rect.left || mouseX > rect.right || mouseY < rect.top || mouseY > rect.bottom) {
-            subSubmenu.style.display = 'none';
-            if (currentlyOpenSubSubmenu === subSubmenu) {
-              currentlyOpenSubSubmenu = null;
-            }
-          }
-        }, 50);
+        categoryEntry.style.background = 'var(--menu-bg, #333)';
+        categoryEntry.style.transform = 'translateX(0)';
       });
       
-      // Hide sub-submenu when leaving it
-      subSubmenu.addEventListener('mouseleave', () => {
-        subSubmenu.style.display = 'none';
-        if (currentlyOpenSubSubmenu === subSubmenu) {
-          currentlyOpenSubSubmenu = null;
-        }
+      // Add click handler to open floating window
+      categoryEntry.addEventListener('click', () => {
+        this.showDevlogPostsWindow(category, posts);
+        this.closeAllMenus();
       });
       
-      // Also hide when mouse leaves the entire submenu area
-      subSubmenu.addEventListener('mouseout', (e) => {
-        if (!subSubmenu.contains(e.relatedTarget)) {
-          subSubmenu.style.display = 'none';
-          if (currentlyOpenSubSubmenu === subSubmenu) {
-            currentlyOpenSubSubmenu = null;
-          }
-        }
-      });
-      
-      // Add both to the main submenu
       submenu.appendChild(categoryEntry);
-      submenu.appendChild(subSubmenu);
     });
     
     projectsMenu.appendChild(submenu);
@@ -4324,7 +4283,6 @@ class SimpleBlog {
       closeTimeout = setTimeout(() => {
         if (!projectsMenu.matches(':hover') && !submenu.matches(':hover')) {
           submenu.remove();
-          currentlyOpenSubSubmenu = null;
         }
       }, 300); // Increased buffer time to 300ms
     };
@@ -4337,10 +4295,9 @@ class SimpleBlog {
           clearTimeout(closeTimeout);
         }
         closeTimeout = setTimeout(() => {
-          if (!navigationArea.matches(':hover')) {
-            submenu.remove();
-            currentlyOpenSubSubmenu = null;
-          }
+                  if (!navigationArea.matches(':hover')) {
+          submenu.remove();
+        }
         }, 300); // Increased buffer time to 300ms
       });
     }
@@ -4356,7 +4313,7 @@ class SimpleBlog {
     projectsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
     
-    console.log('✅ Devlog submenu updated with hierarchical categories:', Object.keys(devlogCategories));
+    console.log('✅ Devlog submenu updated with clickable categories:', Object.keys(devlogCategories).length);
   }
 
   showDevlogPostsWindow(category, posts) {
