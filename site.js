@@ -158,7 +158,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic', 'quantum', 'radar'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic', 'quantum', 'radar', 'stellar'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -2950,13 +2950,26 @@ class SimpleBlog {
       // Get current URL
       const currentUrl = `${window.location.origin}${window.location.pathname}?post=${currentPost.slug}`;
       
-      // Check for highlighted text
-      const selection = window.getSelection();
+      // Check for highlighted text - use preserved selection if available
       let shareText = '';
+      let highlightedText = '';
       
-      if (selection && selection.toString().trim()) {
+      // First try to get from preserved selection
+      if (this.currentSelection && this.currentSelection.text) {
+        highlightedText = this.currentSelection.text.trim();
+        console.log('🔵 shareToBluesky: Using preserved selection:', highlightedText);
+      } else {
+        // Fallback to current selection
+        const selection = window.getSelection();
+        if (selection && selection.toString().trim()) {
+          highlightedText = selection.toString().trim();
+          console.log('🔵 shareToBluesky: Using current selection:', highlightedText);
+        }
+      }
+      
+      if (highlightedText) {
         // Use highlighted text + post link
-        shareText = `${selection.toString().trim()}\n\n${currentUrl}`;
+        shareText = `${highlightedText}\n\n${currentUrl}`;
         console.log('🔵 shareToBluesky: Using highlighted text + link');
       } else {
         // Use post title + link
@@ -2968,9 +2981,24 @@ class SimpleBlog {
       const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(shareText)}`;
       
       console.log('🔵 shareToBluesky: Opening Bluesky compose:', blueskyUrl);
+      console.log('🔵 shareToBluesky: Share text:', shareText);
       
       // Open in new tab
       window.open(blueskyUrl, '_blank');
+      
+      // Restore the selection after sharing
+      if (this.currentSelection && this.currentSelection.range) {
+        setTimeout(() => {
+          try {
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(this.currentSelection.range);
+            console.log('🔵 shareToBluesky: Selection restored after sharing');
+          } catch (error) {
+            console.warn('⚠️ shareToBluesky: Could not restore selection:', error);
+          }
+        }, 100);
+      }
       
     } catch (error) {
       console.error('❌ shareToBluesky: Error sharing to Bluesky:', error);
@@ -2993,13 +3021,26 @@ class SimpleBlog {
       // Get current URL
       const currentUrl = `${window.location.origin}${window.location.pathname}?post=${currentPost.slug}`;
       
-      // Check for highlighted text
-      const selection = window.getSelection();
+      // Check for highlighted text - use preserved selection if available
       let shareText = '';
+      let highlightedText = '';
       
-      if (selection && selection.toString().trim()) {
+      // First try to get from preserved selection
+      if (this.currentSelection && this.currentSelection.text) {
+        highlightedText = this.currentSelection.text.trim();
+        console.log('🐦 shareToTwitter: Using preserved selection:', highlightedText);
+      } else {
+        // Fallback to current selection
+        const selection = window.getSelection();
+        if (selection && selection.toString().trim()) {
+          highlightedText = selection.toString().trim();
+          console.log('🐦 shareToTwitter: Using current selection:', highlightedText);
+        }
+      }
+      
+      if (highlightedText) {
         // Use highlighted text + post link
-        shareText = `${selection.toString().trim()}\n\n${currentUrl}`;
+        shareText = `${highlightedText}\n\n${currentUrl}`;
         console.log('🐦 shareToTwitter: Using highlighted text + link');
       } else {
         // Use post title + link
@@ -3013,9 +3054,24 @@ class SimpleBlog {
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
       
       console.log('🐦 shareToTwitter: Opening Twitter compose:', twitterUrl);
+      console.log('🐦 shareToTwitter: Share text:', shareText);
       
       // Open in new tab
       window.open(twitterUrl, '_blank');
+      
+      // Restore the selection after sharing
+      if (this.currentSelection && this.currentSelection.range) {
+        setTimeout(() => {
+          try {
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(this.currentSelection.range);
+            console.log('🐦 shareToTwitter: Selection restored after sharing');
+          } catch (error) {
+            console.warn('⚠️ shareToTwitter: Could not restore selection:', error);
+          }
+        }, 100);
+      }
       
     } catch (error) {
       console.error('❌ shareToTwitter: Error sharing to Twitter:', error);
