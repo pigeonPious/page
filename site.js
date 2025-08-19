@@ -4080,14 +4080,9 @@ class SimpleBlog {
     const navigationArea = document.querySelector('#navigation-menu');
     if (navigationArea) {
       navigationArea.addEventListener('mouseleave', () => {
-        if (closeTimeout) {
-          clearTimeout(closeTimeout);
-        }
-        closeTimeout = setTimeout(() => {
-          if (!navigationArea.matches(':hover')) {
-            submenu.remove();
-          }
-        }, 300); // Increased buffer time to 300ms
+        // Don't close submenus when leaving navigation area
+        // This prevents interference with Level 3 menus
+        return;
       });
     }
     
@@ -4284,6 +4279,23 @@ class SimpleBlog {
         this.globalCurrentlyOpenSubSubmenu = null;
       }
     });
+    
+    // Prevent any other mouse events from closing the Level 3 menus
+    // Level 3 only closes when: new category hovered, post clicked, or click outside
+    submenu.addEventListener('mouseleave', (e) => {
+      // Do nothing - let Level 3 stay open
+      e.stopPropagation();
+    });
+    
+    // Prevent navigation area mouseleave from closing Level 3
+    const navigationArea = document.querySelector('.navigation-area');
+    if (navigationArea) {
+      const originalMouseLeave = navigationArea.onmouseleave;
+      navigationArea.addEventListener('mouseleave', (e) => {
+        // Don't close Level 3 menus when leaving navigation area
+        e.stopPropagation();
+      });
+    }
     
     console.log('✅ Projects submenu updated: simplified logic, level 3 only closes on category change or click outside');
   }
