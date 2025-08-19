@@ -367,6 +367,7 @@ body {
   box-sizing: border-box;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  height: auto;
 }
 
 .visual-editor:empty::before {
