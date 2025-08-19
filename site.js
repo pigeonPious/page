@@ -896,19 +896,22 @@ class SimpleBlog {
         const indexData = await response.json();
         console.log('🔍 All Posts submenu: Index data loaded:', indexData);
         
-        // Handle both array and object formats
-        if (Array.isArray(indexData)) {
-          allPosts = indexData;
-        } else if (indexData.posts && Array.isArray(indexData.posts)) {
-          allPosts = indexData.posts;
-        }
-        
-        console.log('✅ All Posts submenu: Posts loaded from index:', allPosts.length);
-      } else {
-        console.warn('⚠️ All Posts submenu: Could not load index file:', response.status);
-        // Fallback: use cached posts
-        allPosts = this.posts;
-      }
+                          // Handle both array and object formats
+                  if (Array.isArray(indexData)) {
+                    allPosts = indexData;
+                  } else if (indexData.posts && Array.isArray(indexData.posts)) {
+                    allPosts = indexData.posts;
+                  }
+                  
+                  console.log('✅ All Posts submenu: Posts loaded from index:', allPosts.length);
+                  
+                  // Update local posts array to keep in sync
+                  this.posts = allPosts;
+                } else {
+                  console.warn('⚠️ All Posts submenu: Could not load index file:', response.status);
+                  // Fallback: use cached posts
+                  allPosts = this.posts;
+                }
       
       // Clear loading indicator
       submenu.innerHTML = '';
@@ -1198,6 +1201,10 @@ class SimpleBlog {
           const mostRecent = this.posts[0];
           console.log('📚 loadPosts: Displaying most recent post:', mostRecent);
           await this.loadPost(mostRecent.slug);
+          
+          // Update navigation menu with all posts' flags
+          const allFlags = this.posts.map(post => post.keywords || '').join(',');
+          this.updateNavigationMenu(allFlags);
         } else {
           console.log('⚠️ loadPosts: No posts found in index');
           this.displayDefaultContent();
@@ -2688,14 +2695,21 @@ class SimpleBlog {
         console.log('✅ Post published successfully to GitHub');
         
         // Update posts index
-        await this.updatePostsIndex(postData);
+        const indexUpdated = await this.updatePostsIndex(postData);
         
-        this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`, 'success');
-        
-        // Redirect to the published post after a short delay
-        setTimeout(() => {
-          window.location.href = `index.html?post=${postData.slug}`;
-        }, 3000);
+        if (indexUpdated) {
+          // Refresh the posts list and navigation
+          await this.loadPosts();
+          
+          this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`, 'success');
+          
+          // Redirect to the published post after a short delay
+          setTimeout(() => {
+            window.location.href = `index.html?post=${postData.slug}`;
+          }, 3000);
+        } else {
+          this.showMenuStyle1Message('⚠️ Post published but index update failed. Navigation may not show the new post.', 'warning');
+        }
       } else {
         const error = await response.json();
         console.error('❌ Failed to publish post:', error);
@@ -2727,7 +2741,7 @@ class SimpleBlog {
       // Get current index
       const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
         headers: {
-          'Authorization': `token ${githubToken}`,
+          'Authorization': `token ${token}`,
         }
       });
       
@@ -2747,7 +2761,7 @@ class SimpleBlog {
         await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
           method: 'PUT',
           headers: {
-            'Authorization': `token ${githubToken}`,
+            'Authorization': `token ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -2759,6 +2773,12 @@ class SimpleBlog {
         });
         
         console.log('✅ Posts index updated');
+        
+        // Update local posts array and refresh navigation
+        this.posts = currentIndex;
+        this.updateNavigationMenu(currentIndex.map(post => post.keywords).join(','));
+        
+        return true;
       }
     } catch (error) {
       console.error('❌ Error updating posts index:', error);
