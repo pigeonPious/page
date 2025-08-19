@@ -27,25 +27,29 @@ class SimpleBlog {
     console.log('✅ Taskbar created');
     this.bindEvents();
     console.log('✅ Events bound');
-    this.loadPosts();
-    console.log('✅ Posts loaded');
-    
-    // Check for post parameter in URL (from editor navigation)
-    const urlParams = new URLSearchParams(window.location.search);
-    const postSlug = urlParams.get('post');
-    if (postSlug) {
-      console.log(`🔗 Loading post from URL parameter: ${postSlug}`);
-      this.loadPost(postSlug);
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    
-    // Check for post hash in URL (direct linking)
-    const hashSlug = window.location.hash.substring(1); // Remove # from hash
-    if (hashSlug) {
-      console.log(`🔗 Loading post from URL hash: ${hashSlug}`);
-      this.loadPost(hashSlug);
-    }
+    // Load posts first, then handle URL parameters
+    this.loadPosts().then(() => {
+      console.log('✅ Posts loaded, now processing URL parameters');
+      
+      // Check for post parameter in URL (from editor navigation)
+      const urlParams = new URLSearchParams(window.location.search);
+      const postSlug = urlParams.get('post');
+      if (postSlug) {
+        console.log(`🔗 Loading post from URL parameter: ${postSlug}`);
+        this.loadPost(postSlug);
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
+      // Check for post hash in URL (direct linking)
+      const hashSlug = window.location.hash.substring(1); // Remove # from hash
+      if (hashSlug) {
+        console.log(`🔗 Loading post from URL hash: ${hashSlug}`);
+        this.loadPost(hashSlug);
+      }
+    }).catch(error => {
+      console.error('❌ Error loading posts:', error);
+    });
     
     // Handle browser back/forward navigation
     window.addEventListener('popstate', (event) => {
