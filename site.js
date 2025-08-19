@@ -148,10 +148,20 @@ class SimpleBlog {
   }
   
   getBuildInfo() {
-    // Get current build counter for display
-    const buildCounter = localStorage.getItem('buildCounter') || '1';
-    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    return `${buildCounter} (${timestamp})`;
+    // Get current build time for display
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    const dateString = now.toLocaleDateString('en-US', { 
+      month: '2-digit', 
+      day: '2-digit', 
+      year: '2-digit'
+    });
+    return `${timeString} (${dateString})`;
   }
 
   clearBuildCache() {
