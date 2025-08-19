@@ -1400,8 +1400,19 @@ class SimpleBlog {
         
         entry.addEventListener('click', () => {
           console.log('📝 Devlog selected:', post.title || 'Untitled');
-          this.loadPost(post.slug);
-          this.closeAllMenus();
+          // Check if we're in the editor
+          console.log('🔍 Current pathname:', window.location.pathname);
+          console.log('🔍 Current href:', window.location.href);
+          if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
+            console.log('📝 In editor - redirecting to main blog with post:', post.slug);
+            // Redirect to main blog with the selected post
+            window.location.href = `index.html?post=${post.slug}`;
+          } else {
+            console.log('🏠 On main blog - loading post normally:', post.slug);
+            // We're on the main blog, load post normally
+            this.loadPost(post.slug);
+            this.closeAllMenus();
+          }
         });
         
         entry.addEventListener('mouseenter', () => {
