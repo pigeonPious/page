@@ -40,6 +40,27 @@ class SimpleBlog {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     
+    // Check for post hash in URL (direct linking)
+    const hashSlug = window.location.hash.substring(1); // Remove # from hash
+    if (hashSlug) {
+      console.log(`🔗 Loading post from URL hash: ${hashSlug}`);
+      this.loadPost(hashSlug);
+    }
+    
+    // Handle browser back/forward navigation
+    window.addEventListener('popstate', (event) => {
+      console.log('🔙 Browser navigation detected:', event.state);
+      if (event.state && event.state.postSlug) {
+        this.loadPost(event.state.postSlug);
+      } else if (window.location.hash) {
+        const hashSlug = window.location.hash.substring(1);
+        this.loadPost(hashSlug);
+      } else {
+        // No specific post in URL, show most recent
+        this.loadMostRecentPost();
+      }
+    });
+    
     this.setTheme(this.theme, false); // Don't open HSL picker on page load
     console.log('✅ Theme set');
     
@@ -1599,6 +1620,13 @@ class SimpleBlog {
 
   displayPost(post) {
     console.log('🔍 MAXIMUM TROUBLESHOOTING: displayPost called with:', post);
+    
+    // Update URL to reflect current post (for direct linking and sharing)
+    if (post && post.slug) {
+      const newUrl = `${window.location.origin}${window.location.pathname}#${post.slug}`;
+      window.history.pushState({ postSlug: post.slug }, post.title, newUrl);
+      console.log('🔗 Updated URL to:', newUrl);
+    }
     
     const titleElement = document.getElementById('post-title');
     const dateElement = document.getElementById('post-date');
@@ -3484,8 +3512,8 @@ class SimpleBlog {
         return;
       }
       
-      // Get current URL
-      const currentUrl = `${window.location.origin}${window.location.pathname}?post=${currentPost.slug}`;
+      // Get current URL with post hash
+      const currentUrl = `${window.location.origin}${window.location.pathname}#${currentPost.slug}`;
       
       // Check for highlighted text - use preserved selection if available
       let shareText = '';
@@ -3555,8 +3583,8 @@ class SimpleBlog {
         return;
       }
       
-      // Get current URL
-      const currentUrl = `${window.location.origin}${window.location.pathname}?post=${currentPost.slug}`;
+      // Get current URL with post hash
+      const currentUrl = `${window.location.origin}${window.location.pathname}#${currentPost.slug}`;
       
       // Check for highlighted text - use preserved selection if available
       let shareText = '';
@@ -4113,10 +4141,14 @@ class SimpleBlog {
           
           postEntry.addEventListener('click', () => {
             // Check if we're in the editor
-            if (window.location.pathname.includes('editor.html')) {
+            console.log('🔍 Current pathname:', window.location.pathname);
+            console.log('🔍 Current href:', window.location.href);
+            if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
+              console.log('📝 In editor - redirecting to main blog with post:', post.slug);
               // Redirect to main blog with the selected post
               window.location.href = `index.html?post=${post.slug}`;
             } else {
+              console.log('🏠 On main blog - loading post normally:', post.slug);
               // We're on the main blog, load post normally
               this.loadPost(post.slug);
               this.closeAllMenus();
@@ -4176,10 +4208,14 @@ class SimpleBlog {
         
         postEntry.addEventListener('click', () => {
           // Check if we're in the editor
-          if (window.location.pathname.includes('editor.html')) {
+          console.log('🔍 Current pathname:', window.location.pathname);
+          console.log('🔍 Current href:', window.location.href);
+          if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
+            console.log('📝 In editor - redirecting to main blog with post:', post.slug);
             // Redirect to main blog with the selected post
             window.location.href = `index.html?post=${post.slug}`;
           } else {
+            console.log('🏠 On main blog - loading post normally:', post.slug);
             // We're on the main blog, load post normally
             this.loadPost(post.slug);
             this.closeAllMenus();
