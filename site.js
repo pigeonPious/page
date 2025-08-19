@@ -4310,17 +4310,7 @@ class SimpleBlog {
     
     projectsMenu.appendChild(submenu);
     
-    // SIMPLE CLOSING: Only close when leaving the entire projects menu area
-    projectsMenu.addEventListener('mouseleave', () => {
-      setTimeout(() => {
-        if (!projectsMenu.matches(':hover')) {
-          submenu.remove();
-          currentlyOpenSubSubmenu = null;
-        }
-      }, 200);
-    });
-    
-    // Add global click handler to close menus when clicking outside
+    // ONLY close when clicking outside the entire menu system
     document.addEventListener('click', (e) => {
       if (!projectsMenu.contains(e.target) && !submenu.contains(e.target)) {
         submenu.remove();
@@ -4328,7 +4318,8 @@ class SimpleBlog {
       }
     });
     
-    console.log('✅ Projects submenu updated with simplified sub-submenu logic');
+    // Don't close on mouseleave - let submenus stay open until explicitly closed
+    console.log('✅ Projects submenu updated: submenus stay open until clicked away');
   }
 
   showDevlogPostsWindow(category, posts) {
