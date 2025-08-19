@@ -77,6 +77,7 @@ class SimpleBlog {
             <div class="menu-dropdown">
               <div class="menu-entry disabled">Undo</div>
               <div class="menu-entry editor-only" id="make-note-button">Make Note</div>
+              <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
             </div>
           </div>
           
@@ -695,6 +696,12 @@ class SimpleBlog {
       this.preserveEditorSelection();
       this.captureSelectionAndMakeNote();
     });
+    
+    // Edit post button
+    this.addClickHandler('#edit-post-button', () => {
+      console.log('✏️ Edit post button clicked');
+      this.editCurrentPost();
+    });
 
     // Editor-specific buttons
     this.addClickHandler('#export-btn', () => {
@@ -840,10 +847,31 @@ class SimpleBlog {
   setupPageSpecificElements() {
     // Show/hide editor-specific items
     const isEditorPage = document.getElementById('postTitle') !== null;
+    const isBlogPage = !isEditorPage && window.location.pathname.includes('index.html');
+    
     const editorOnlyItems = document.querySelectorAll('.editor-only');
+    const blogOnlyItems = document.querySelectorAll('.blog-only');
+    const adminOnlyItems = document.querySelectorAll('.admin-only');
     
     editorOnlyItems.forEach(item => {
       item.style.display = isEditorPage ? 'block' : 'none';
+    });
+    
+    blogOnlyItems.forEach(item => {
+      item.style.display = isBlogPage ? 'block' : 'none';
+    });
+    
+    // Show admin items only if authenticated
+    adminOnlyItems.forEach(item => {
+      item.style.display = 'none'; // Hidden by default
+    });
+    
+    // Check authentication status for admin items
+    this.checkAuthentication().then(isAuthenticated => {
+      this.isAuthenticated = isAuthenticated;
+      adminOnlyItems.forEach(item => {
+        item.style.display = isAuthenticated ? 'block' : 'none';
+      });
     });
     
     // Setup hover note preview if we're on the editor page
@@ -851,6 +879,9 @@ class SimpleBlog {
       this.setupHoverNotePreview();
       // Apply editor-specific selection preservation
       this.preserveEditorSelection();
+      
+      // Check for edit data and populate form
+      this.loadEditData();
     }
   }
 
@@ -2724,6 +2755,36 @@ class SimpleBlog {
       
       console.log('📝 Post data prepared:', postData);
       
+      // Check if this is an edit (check for existing post data)
+      const editData = localStorage.getItem('editPostData');
+      let isEdit = false;
+      let originalSlug = '';
+      
+      if (editData) {
+        try {
+          const editPost = JSON.parse(editData);
+          originalSlug = editPost.slug;
+          isEdit = true;
+          console.log('✏️ This is an edit of existing post:', originalSlug);
+        } catch (error) {
+          console.warn('⚠️ Could not parse edit data:', error);
+        }
+      }
+      
+      // Check for duplicate posts (if not editing the same post)
+      if (!isEdit || postData.slug !== originalSlug) {
+        const duplicatePost = await this.checkForDuplicatePost(postData.slug);
+        if (duplicatePost) {
+          console.log('⚠️ Duplicate post detected:', duplicatePost);
+          const shouldOverwrite = await this.showOverwriteConfirmation(postData.title, duplicatePost.title);
+          if (!shouldOverwrite) {
+            console.log('❌ User cancelled overwrite');
+            return;
+          }
+          console.log('✅ User confirmed overwrite');
+        }
+      }
+      
       // Get GitHub token from localStorage
       const githubToken = localStorage.getItem('github_token');
       if (!githubToken) {
@@ -4066,6 +4127,167 @@ class SimpleBlog {
 
   warn(message) {
     this.log(message, 'warn');
+  }
+
+  editCurrentPost() {
+    console.log('✏️ editCurrentPost called');
+    
+    // Check if user is authenticated
+    if (!this.isAuthenticated) {
+      console.log('🔐 User not authenticated, redirecting to login');
+      this.showGitHubLogin();
+      return;
+    }
+    
+    // Get current post data
+    const currentPost = this.currentPost;
+    if (!currentPost || !currentPost.slug) {
+      console.log('⚠️ No current post to edit');
+      this.showMenuStyle1Message('No post currently loaded to edit.', 'error');
+      return;
+    }
+    
+    console.log('✏️ Editing post:', currentPost);
+    
+    // Store post data for editor
+    localStorage.setItem('editPostData', JSON.stringify({
+      slug: currentPost.slug,
+      title: currentPost.title,
+      content: currentPost.content,
+      keywords: currentPost.keywords,
+      date: currentPost.date
+    }));
+    
+    // Redirect to editor
+    window.location.href = 'editor.html';
+  }
+
+  async checkForDuplicatePost(slug) {
+    console.log('🔍 Checking for duplicate post:', slug);
+    
+    try {
+      // Check if post exists on GitHub
+      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`);
+      if (response.ok) {
+        const postData = await response.json();
+        const content = JSON.parse(atob(postData.content));
+        return {
+          slug: slug,
+          title: content.title || slug,
+          sha: postData.sha
+        };
+      }
+      return null; // No duplicate found
+    } catch (error) {
+      console.warn('⚠️ Error checking for duplicate post:', error);
+      return null;
+    }
+  }
+
+  async showOverwriteConfirmation(newTitle, existingTitle) {
+    console.log('⚠️ Showing overwrite confirmation for:', { newTitle, existingTitle });
+    
+    return new Promise((resolve) => {
+      // Create menu style 1 confirmation popup
+      const confirmBox = document.createElement('div');
+      confirmBox.className = 'menu-style-1-confirm';
+      confirmBox.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--menu-bg);
+        border: 1px solid var(--border);
+        padding: 16px 20px;
+        z-index: 10000;
+        min-width: 400px;
+        text-align: center;
+      `;
+      
+      const message = document.createElement('div');
+      message.style.cssText = `
+        color: var(--menu-fg);
+        font-size: 14px;
+        margin-bottom: 16px;
+        line-height: 1.4;
+      `;
+      message.innerHTML = `A post with the same name already exists:<br><br><strong>${existingTitle}</strong><br><br>Do you want to overwrite it?<br><br>Press <strong>Y</strong> to confirm or <strong>N</strong> to cancel`;
+      
+      confirmBox.appendChild(message);
+      document.body.appendChild(confirmBox);
+      
+      // Handle keyboard input
+      const handleKeyPress = (e) => {
+        if (e.key.toLowerCase() === 'y') {
+          confirmBox.remove();
+          document.removeEventListener('keydown', handleKeyPress);
+          resolve(true);
+        } else if (e.key.toLowerCase() === 'n') {
+          confirmBox.remove();
+          document.removeEventListener('keydown', handleKeyPress);
+          resolve(false);
+        }
+      };
+      
+      document.addEventListener('keydown', handleKeyPress);
+      confirmBox.focus();
+      
+      // Auto-remove after 10 seconds
+      setTimeout(() => {
+        if (confirmBox.parentNode) {
+          confirmBox.remove();
+          document.removeEventListener('keydown', handleKeyPress);
+          resolve(false);
+        }
+      }, 10000);
+    });
+  }
+
+  loadEditData() {
+    console.log('📝 Checking for edit data...');
+    
+    const editData = localStorage.getItem('editPostData');
+    if (!editData) {
+      console.log('📝 No edit data found');
+      return;
+    }
+    
+    try {
+      const editPost = JSON.parse(editData);
+      console.log('📝 Loading edit data:', editPost);
+      
+      // Populate the form fields
+      const titleField = document.getElementById('postTitle');
+      const contentField = document.getElementById('visualEditor');
+      
+      if (titleField && editPost.title) {
+        titleField.value = editPost.title;
+        console.log('📝 Title populated:', editPost.title);
+      }
+      
+      if (contentField && editPost.content) {
+        contentField.innerHTML = editPost.content;
+        console.log('📝 Content populated:', editPost.content);
+      }
+      
+      // Set flags if available
+      if (editPost.keywords) {
+        this.currentPostFlags = editPost.keywords;
+        localStorage.setItem('current_post_flags', editPost.keywords);
+        console.log('📝 Flags set:', editPost.keywords);
+      }
+      
+      // Clear the edit data after loading
+      localStorage.removeItem('editPostData');
+      console.log('📝 Edit data loaded and cleared');
+      
+      // Show success message
+      this.showMenuStyle1Message(`Editing post: ${editPost.title}`, 'success');
+      
+    } catch (error) {
+      console.error('❌ Error loading edit data:', error);
+      localStorage.removeItem('editPostData'); // Clear invalid data
+    }
   }
 
   // Cleanup method to prevent memory leaks
