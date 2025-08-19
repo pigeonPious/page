@@ -1568,7 +1568,7 @@ class SimpleBlog {
     if (contentElement) {
       contentElement.innerHTML = post.content || '';
       
-      // Add flashing cursor at the end of the post
+      // Add flashing cursor at the end of the post, ensuring it's after text content
       const cursor = document.createElement('span');
       cursor.className = 'flashing-cursor';
       cursor.textContent = '_';
@@ -1577,8 +1577,20 @@ class SimpleBlog {
         font-family: monospace;
         margin-left: 2px;
         animation: blink 1s infinite;
+        display: inline;
       `;
-      contentElement.appendChild(cursor);
+      
+      // Find the last text node or element and append cursor inline
+      const lastChild = contentElement.lastElementChild || contentElement;
+      if (lastChild && lastChild.tagName && (lastChild.tagName === 'P' || lastChild.tagName === 'DIV' || lastChild.tagName === 'SPAN')) {
+        // If last element is a block element, append cursor inside it
+        lastChild.appendChild(cursor);
+      } else {
+        // If no suitable element, create a span to wrap the cursor
+        const wrapper = document.createElement('span');
+        wrapper.appendChild(cursor);
+        contentElement.appendChild(wrapper);
+      }
       
       // Add CSS animation if it doesn't exist
       if (!document.getElementById('cursor-animation')) {
