@@ -148,6 +148,22 @@ body {
   background: var(--bg);
 }
 
+/* Prevent over-scrolling on short posts */
+body {
+  overflow-x: hidden;
+}
+
+.page-container {
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+/* Limit content height to prevent excessive scrolling */
+.main-column {
+  max-height: calc(100vh - 24px); /* Account for taskbar height */
+  overflow-y: auto;
+}
+
 /* Taskbar */
 .menu-bar {
   user-select: none;
