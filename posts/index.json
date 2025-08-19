@@ -1,5 +1,11 @@
 [
   {
+    "slug": "build-notes",
+    "title": "Build Notes",
+    "date": "2025-01-30",
+    "keywords": "devlog:website"
+  },
+  {
     "slug": "testing-one-more-time",
     "title": "testing one more time",
     "date": "2025-08-19",

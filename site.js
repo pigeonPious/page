@@ -145,31 +145,11 @@ class SimpleBlog {
     console.log('✅ Taskbar created');
   }
   
-    generateRandomTheme() {
-    // Generate random HSL values for a new theme
-    const hue = Math.floor(Math.random() * 360);
-    const saturation = Math.floor(Math.random() * 30) + 20; // 20-50% saturation
-    const lightness = Math.floor(Math.random() * 10) + 10;  // 10-20% lightness for dark theme
-    
-    const hsl = `${hue}, ${saturation}%, ${lightness}%`;
-    console.log(`🎨 Generated random theme: HSL(${hsl})`);
-    
-    // Apply the random theme
-    this.setTheme('custom');
-    localStorage.setItem('ppPage_custom_hsl', hsl);
-    
-    // Apply the HSL values
-    this.applyHSLTheme(hue, saturation, lightness);
-    
-    console.log(`✅ Random theme applied: HSL(${hsl})`);
-  }
+  
 
   clearBuildCache() {
     console.log('🧹 MAXIMUM TROUBLESHOOTING: clearBuildCache called!');
     console.log('🧹 localStorage before clearing:', Object.keys(localStorage));
-    
-    // Generate random theme for new build
-    this.generateRandomTheme();
     
     // Clear stored build word
     const oldBuildWord = localStorage.getItem('currentBuildWord');
@@ -1647,7 +1627,7 @@ class SimpleBlog {
     console.log('🧹 Removed existing theme classes');
     
     // Clear any inline styles from previous custom/random themes
-    const cssVars = ['--bg', '--fg', '--menu-bg', '--menu-fg', '--sidebar-bg', '--sidebar-fg', '--border', '--muted', '--link', '--success-color', '--success-hover-color', '--danger-color', '--danger-hover-color', '--btn-text-color'];
+    const cssVars = ['--bg', '--fg', '--menu-bg', '--menu-fg', '--sidebar-bg', '--sidebar-fg', '--border', '--muted', '--link', '--accent', '--success-color', '--success-hover-color', '--danger-color', '--danger-hover-color', '--btn-text-color'];
     cssVars.forEach(varName => {
       document.body.style.removeProperty(varName);
     });
@@ -1691,6 +1671,7 @@ class SimpleBlog {
       const sidebarFg = fgColor;
       const borderColor = `hsl(${h},${s}%,${Math.max(0, l - 10)}%)`;
       const mutedColor = l < 50 ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)';
+      const accentColor = l < 50 ? '#ffffff' : `hsl(${h},${s}%,${Math.min(100, l + 30)}%)`;
       
       document.body.classList.add('custom-mode');
       document.body.style.setProperty('--bg', bgColor);
@@ -1702,6 +1683,7 @@ class SimpleBlog {
       document.body.style.setProperty('--border', borderColor);
       document.body.style.setProperty('--muted', mutedColor);
       document.body.style.setProperty('--link', fgColor);
+      document.body.style.setProperty('--accent', accentColor);
       document.body.style.setProperty('--success-color', '#28a745');
       document.body.style.setProperty('--success-hover-color', '#218838');
       document.body.style.setProperty('--danger-color', '#dc3545');
@@ -1948,6 +1930,7 @@ class SimpleBlog {
     const sidebarFg = fgColor;
     const borderColor = `hsl(${h}, ${s}%, ${Math.max(0, l - 10)}%)`;
     const mutedColor = l < 50 ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)';
+    const accentColor = l < 50 ? '#ffffff' : `hsl(${h}, ${s}%, ${Math.min(100, l + 30)}%)`;
     
     // Apply all CSS variables
     document.body.style.setProperty('--bg', bgColor);
@@ -1959,6 +1942,7 @@ class SimpleBlog {
     document.body.style.setProperty('--border', borderColor);
     document.body.style.setProperty('--muted', mutedColor);
     document.body.style.setProperty('--link', fgColor);
+    document.body.style.setProperty('--accent', accentColor);
     document.body.style.setProperty('--success-color', '#28a745');
     document.body.style.setProperty('--success-hover-color', '#218838');
     document.body.style.setProperty('--danger-color', '#dc3545');
