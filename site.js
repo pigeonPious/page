@@ -4572,10 +4572,12 @@ class SimpleBlog {
       // Remove existing listeners to prevent duplication
       element.removeEventListener('mouseenter', this.showHoverNote);
       element.removeEventListener('mouseleave', this.hideHoverNote);
+      element.removeEventListener('mousemove', this.updateHoverNotePosition);
       
       // Add hover event listeners
       element.addEventListener('mouseenter', (e) => this.showHoverNote(e));
       element.addEventListener('mouseleave', () => this.hideHoverNote());
+      element.addEventListener('mousemove', (e) => this.updateHoverNotePosition(e));
     });
     
     console.log(`✅ Hover notes setup for ${noteElements.length} elements`);
@@ -4609,12 +4611,59 @@ class SimpleBlog {
       document.body.appendChild(tooltip);
     }
     
-    // Position tooltip near mouse
-    const rect = link.getBoundingClientRect();
-    tooltip.style.left = (event.clientX + 10) + 'px';
-    tooltip.style.top = (event.clientY - 30) + 'px';
     tooltip.textContent = noteText;
     tooltip.style.display = 'block';
+    
+    // Position tooltip with boundary detection
+    this.positionHoverNote(tooltip, event);
+  }
+
+  positionHoverNote(tooltip, event) {
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    const offset = 10;
+    
+    // Get tooltip dimensions (need to make it visible first to measure)
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const tooltipWidth = tooltipRect.width;
+    const tooltipHeight = tooltipRect.height;
+    
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    let left = mouseX + offset;
+    let top = mouseY - tooltipHeight - offset;
+    
+    // Check right boundary - if tooltip would go off screen, position to the left of cursor
+    if (left + tooltipWidth > viewportWidth) {
+      left = mouseX - tooltipWidth - offset;
+    }
+    
+    // Check left boundary - if still off screen, align to left edge
+    if (left < 0) {
+      left = 5;
+    }
+    
+    // Check top boundary - if tooltip would go off screen, position below cursor
+    if (top < 0) {
+      top = mouseY + offset;
+    }
+    
+    // Check bottom boundary - if tooltip would go off screen, position above cursor
+    if (top + tooltipHeight > viewportHeight) {
+      top = mouseY - tooltipHeight - offset;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+
+  updateHoverNotePosition(event) {
+    const tooltip = document.getElementById('hoverNote');
+    if (tooltip && tooltip.style.display === 'block') {
+      this.positionHoverNote(tooltip, event);
+    }
   }
 
   hideHoverNote() {
@@ -4656,12 +4705,11 @@ class SimpleBlog {
     // Calculate width based on text length
     const textWidth = Math.min(noteText.length * 6, 100); // 6px per character, max 100px
     tooltip.style.width = `${textWidth}px`;
-    
-    // Position tooltip near mouse
-    tooltip.style.left = (event.clientX + 10) + 'px';
-    tooltip.style.top = (event.clientY - 30) + 'px';
     tooltip.textContent = noteText;
     tooltip.style.display = 'block';
+    
+    // Position tooltip with boundary detection (same as regular hover notes)
+    this.positionHoverNote(tooltip, event);
   }
 
   hideHoverNotePreview() {
