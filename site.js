@@ -893,12 +893,30 @@ class SimpleBlog {
     if (allPostsMenu) {
       // Remove existing listeners to prevent duplication
       allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
+      allPostsMenu.removeEventListener('mouseleave', this.allPostsMouseLeaveHandler);
+      
+      let openTimeout = null;
+      
       this.allPostsMouseEnterHandler = () => {
         console.log('📚 All posts submenu hovered');
-        // Use our new navigation system instead of the old showAllPostsSubmenu
-        this.updateAllPostsSubmenu(this.posts || []);
+        if (openTimeout) {
+          clearTimeout(openTimeout);
+        }
+        openTimeout = setTimeout(() => {
+          // Use the old showAllPostsSubmenu for now to ensure click handlers work
+          this.showAllPostsSubmenu(allPostsMenu);
+        }, 150); // Small delay to prevent accidental opening
       };
+      
+      this.allPostsMouseLeaveHandler = () => {
+        if (openTimeout) {
+          clearTimeout(openTimeout);
+          openTimeout = null;
+        }
+      };
+      
       allPostsMenu.addEventListener('mouseenter', this.allPostsMouseEnterHandler);
+      allPostsMenu.addEventListener('mouseleave', this.allPostsMouseLeaveHandler);
       console.log('✅ All posts submenu handler attached');
     } else {
       console.warn('⚠️ All posts menu element not found');
@@ -909,12 +927,30 @@ class SimpleBlog {
     if (projectsMenu) {
       // Remove existing listeners to prevent duplication
       projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
+      projectsMenu.removeEventListener('mouseleave', this.projectsMouseLeaveHandler);
+      
+      let openTimeout = null;
+      
       this.projectsMouseEnterHandler = () => {
         console.log('📝 Projects submenu hovered');
-        // Use our new navigation system instead of the old showDevlogSubmenu
-        this.updateProjectsSubmenu(this.posts || []);
+        if (openTimeout) {
+          clearTimeout(openTimeout);
+        }
+        openTimeout = setTimeout(() => {
+          // Use our new navigation system instead of the old showDevlogSubmenu
+          this.updateProjectsSubmenu(this.posts || []);
+        }, 150); // Small delay to prevent accidental opening
       };
+      
+      this.projectsMouseLeaveHandler = () => {
+        if (openTimeout) {
+          clearTimeout(openTimeout);
+          openTimeout = null;
+        }
+      };
+      
       projectsMenu.addEventListener('mouseenter', this.projectsMouseEnterHandler);
+      projectsMenu.addEventListener('mouseleave', this.projectsMouseLeaveHandler);
       console.log('✅ Projects submenu handler attached');
     } else {
       console.warn('⚠️ Projects menu element not found');
@@ -936,7 +972,22 @@ class SimpleBlog {
       padding: 5px 0;
       min-width: 150px;
       z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
     `;
+    
+    // Add invisible buffer zone around submenu for easier navigation
+    const bufferZone = document.createElement('div');
+    bufferZone.style.cssText = `
+      position: absolute;
+      left: -10px;
+      top: -10px;
+      right: -10px;
+      bottom: -10px;
+      z-index: 999;
+      pointer-events: none;
+    `;
+    submenu.appendChild(bufferZone);
     
     // Show loading indicator
     const loadingEntry = document.createElement('div');
@@ -1005,7 +1056,14 @@ class SimpleBlog {
           const entry = document.createElement('div');
           entry.className = 'menu-entry';
           entry.textContent = post.title || 'Untitled';
-          entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
+          entry.style.cssText = `
+            padding: 8px 15px; 
+            cursor: pointer; 
+            color: var(--menu-fg, #fff);
+            transition: background-color 0.15s ease;
+            border-radius: 3px;
+            margin: 1px 2px;
+          `;
           
           // Add unique ID for debugging
           entry.id = `post-entry-${post.slug}`;
@@ -1056,11 +1114,13 @@ class SimpleBlog {
           entry.addEventListener('mouseenter', () => {
             console.log(`🔍 Mouse enter on post entry: ${post.title}`);
             entry.style.background = 'var(--menu-hover-bg, #555)';
+            entry.style.transform = 'translateX(2px)';
           });
           
           entry.addEventListener('mouseleave', () => {
             console.log(`🔍 Mouse leave on post entry: ${post.title}`);
             entry.style.background = 'transparent';
+            entry.style.transform = 'translateX(0)';
           });
           
           console.log(`🔍 Appending entry to submenu:`, entry);
@@ -2709,7 +2769,20 @@ class SimpleBlog {
     // Handle input events
     const handleInput = (e) => {
       if (e.key === 'Enter') {
-        const commitMessage = input.value.trim() || `Publish: ${postTitle}`;
+        // Check if this is an edit to provide better default commit message
+        const editData = localStorage.getItem('editPostData');
+        let defaultMessage = `Publish: ${postTitle}`;
+        
+        if (editData) {
+          try {
+            const editPost = JSON.parse(editData);
+            defaultMessage = `Update post: ${postTitle}`;
+          } catch (error) {
+            console.warn('⚠️ Could not parse edit data for commit message:', error);
+          }
+        }
+        
+        const commitMessage = input.value.trim() || defaultMessage;
         this.publishPostToGitHub(postTitle, postContent, commitMessage);
         this.removeInputBox(inputBox);
       } else if (e.key === 'Escape') {
@@ -2759,6 +2832,7 @@ class SimpleBlog {
       const editData = localStorage.getItem('editPostData');
       let isEdit = false;
       let originalSlug = '';
+      let currentSha = null;
       
       if (editData) {
         try {
@@ -2766,6 +2840,25 @@ class SimpleBlog {
           originalSlug = editPost.slug;
           isEdit = true;
           console.log('✏️ This is an edit of existing post:', originalSlug);
+          
+          // For edits, we need to get the current SHA of the post file
+          try {
+            const postResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`, {
+              headers: {
+                'Authorization': `token ${githubToken}`,
+              }
+            });
+            
+            if (postResponse.ok) {
+              const postData = await postResponse.json();
+              currentSha = postData.sha;
+              console.log('✅ Got current SHA for edit:', currentSha);
+            } else {
+              console.warn('⚠️ Could not get current SHA for edit:', postResponse.status);
+            }
+          } catch (error) {
+            console.warn('⚠️ Error getting current SHA for edit:', error);
+          }
         } catch (error) {
           console.warn('⚠️ Could not parse edit data:', error);
         }
@@ -2782,6 +2875,8 @@ class SimpleBlog {
             return;
           }
           console.log('✅ User confirmed overwrite');
+          // Use the SHA from the duplicate post if we're overwriting
+          currentSha = duplicatePost.sha;
         }
       }
       
@@ -2793,21 +2888,63 @@ class SimpleBlog {
         return;
       }
       
+      // Handle slug changes during edits
+      if (isEdit && originalSlug !== postData.slug) {
+        console.log('🔄 Slug changed during edit, deleting old file first');
+        
+        // Delete the old file
+        if (currentSha) {
+          const deleteResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `token ${githubToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: `Delete old post file (slug changed): ${originalSlug}`,
+              sha: currentSha,
+              branch: 'main'
+            })
+          });
+          
+          if (deleteResponse.ok) {
+            console.log('✅ Old post file deleted successfully');
+          } else {
+            console.warn('⚠️ Failed to delete old post file:', deleteResponse.status);
+          }
+        }
+        
+        // Reset SHA since we're creating a new file
+        currentSha = null;
+      }
+      
       // Create post file content
       const postContent = JSON.stringify(postData, null, 2);
       
       // Publish directly to GitHub using GitHub API
+      const requestBody = {
+        message: commitMessage,
+        content: btoa(postContent), // Base64 encode content
+        branch: 'main'
+      };
+      
+      // Include SHA if we have it (for edits or overwrites)
+      if (currentSha) {
+        requestBody.sha = currentSha;
+        console.log('🔧 Including SHA for update:', currentSha);
+      } else {
+        console.log('🔧 No SHA available - creating new file');
+      }
+      
+      console.log('📤 Publishing with request body:', requestBody);
+      
       const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`, {
         method: 'PUT',
         headers: {
           'Authorization': `token ${githubToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: commitMessage,
-          content: btoa(postContent), // Base64 encode content
-          branch: 'main'
-        })
+        body: JSON.stringify(requestBody)
       });
       
       if (response.ok) {
@@ -2817,6 +2954,12 @@ class SimpleBlog {
         const indexUpdated = await this.updatePostsIndex(postData);
         
         if (indexUpdated) {
+          // Clear edit data after successful publish
+          if (isEdit) {
+            localStorage.removeItem('editPostData');
+            console.log('🧹 Edit data cleared after successful publish');
+          }
+          
           // Refresh the posts list
           await this.loadPosts();
           
@@ -2832,7 +2975,16 @@ class SimpleBlog {
       } else {
         const error = await response.json();
         console.error('❌ Failed to publish post:', error);
-        this.showMenuStyle1Message(`❌ Failed to publish post: ${error.message || 'Unknown error'}`, 'error');
+        
+        // Provide more specific error messages for common issues
+        let errorMessage = error.message || 'Unknown error';
+        if (error.message && error.message.includes('sha')) {
+          errorMessage = 'SHA missing or invalid. This usually happens when editing a post. Please try refreshing and editing again.';
+        } else if (error.message && error.message.includes('already exists')) {
+          errorMessage = 'A file with this name already exists. Please choose a different title or overwrite the existing post.';
+        }
+        
+        this.showMenuStyle1Message(`❌ Failed to publish post: ${errorMessage}`, 'error');
       }
       
     } catch (error) {
@@ -2857,6 +3009,21 @@ class SimpleBlog {
         return false;
       }
       
+      // Check if this is an edit
+      const editData = localStorage.getItem('editPostData');
+      let isEdit = false;
+      let originalSlug = '';
+      
+      if (editData) {
+        try {
+          const editPost = JSON.parse(editData);
+          originalSlug = editPost.slug;
+          isEdit = true;
+        } catch (error) {
+          console.warn('⚠️ Could not parse edit data:', error);
+        }
+      }
+      
       // Get current index
       const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
         headers: {
@@ -2868,33 +3035,97 @@ class SimpleBlog {
         const indexData = await indexResponse.json();
         const currentIndex = JSON.parse(atob(indexData.content));
         
-        // Add new post
-        currentIndex.unshift({
-          slug: postData.slug,
-          title: postData.title,
-          date: postData.date,
-          keywords: postData.keywords
-        });
-        
-        // Update index file
-        await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `token ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: `Add post: ${postData.title}`,
-            content: btoa(JSON.stringify(currentIndex, null, 2)),
-            sha: indexData.sha,
-            branch: 'main'
-          })
-        });
-        
-        console.log('✅ Posts index updated');
-        
-        // Update local posts array
-        this.posts = currentIndex;
+        if (isEdit && originalSlug !== postData.slug) {
+          // Handle slug change during edit - remove old entry and add new one
+          const filteredIndex = currentIndex.filter(post => post.slug !== originalSlug);
+          filteredIndex.unshift({
+            slug: postData.slug,
+            title: postData.title,
+            date: postData.date,
+            keywords: postData.keywords
+          });
+          
+          // Update index file
+          await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: `Update post (slug changed): ${postData.title}`,
+              content: btoa(JSON.stringify(filteredIndex, null, 2)),
+              sha: indexData.sha,
+              branch: 'main'
+            })
+          });
+          
+          console.log('✅ Posts index updated (slug changed)');
+          this.posts = filteredIndex;
+        } else if (isEdit) {
+          // Handle regular edit - update existing entry
+          const existingIndex = currentIndex.findIndex(post => post.slug === postData.slug);
+          if (existingIndex !== -1) {
+            currentIndex[existingIndex] = {
+              slug: postData.slug,
+              title: postData.title,
+              date: postData.date,
+              keywords: postData.keywords
+            };
+          } else {
+            // Fallback: add new entry if not found
+            currentIndex.unshift({
+              slug: postData.slug,
+              title: postData.title,
+              date: postData.date,
+              keywords: postData.keywords
+            });
+          }
+          
+          // Update index file
+          await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: `Update post: ${postData.title}`,
+              content: btoa(JSON.stringify(currentIndex, null, 2)),
+              sha: indexData.sha,
+              branch: 'main'
+            })
+          });
+          
+          console.log('✅ Posts index updated (edit)');
+          this.posts = currentIndex;
+        } else {
+          // Handle new post - add new entry
+          currentIndex.unshift({
+            slug: postData.slug,
+            title: postData.title,
+            date: postData.date,
+            keywords: postData.keywords
+          });
+          
+          // Update index file
+          await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: `Add post: ${postData.title}`,
+              content: btoa(JSON.stringify(currentIndex, null, 2)),
+              sha: indexData.sha,
+              branch: 'main'
+            })
+          });
+          
+          console.log('✅ Posts index updated (new post)');
+          this.posts = currentIndex;
+        }
         
         return true;
       }
@@ -3647,7 +3878,22 @@ class SimpleBlog {
       padding: 5px 0;
       min-width: 250px;
       z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
     `;
+    
+    // Add invisible buffer zone around submenu for easier navigation
+    const bufferZone = document.createElement('div');
+    bufferZone.style.cssText = `
+      position: absolute;
+      left: -10px;
+      top: -10px;
+      right: -10px;
+      bottom: -10px;
+      z-index: 999;
+      pointer-events: none;
+    `;
+    submenu.appendChild(bufferZone);
     
     // Add devlog category groups first
     Object.keys(groupedPosts).forEach(category => {
@@ -3670,27 +3916,40 @@ class SimpleBlog {
       categorySeparator.textContent = category;
       submenu.appendChild(categorySeparator);
       
-      // Add posts in this category
-      posts.forEach(post => {
-        const postEntry = document.createElement('div');
-        postEntry.className = 'menu-entry';
-        postEntry.textContent = post.title || post.slug;
-        postEntry.style.cssText = `
-          padding: 8px 12px 8px 20px;
-          cursor: pointer;
-          color: var(--menu-fg, #fff);
-          font-size: 13px;
-          border-bottom: 1px solid var(--border, #555);
-          background: var(--menu-bg, #333);
-        `;
-        
-        postEntry.addEventListener('click', () => {
-          this.loadPost(post.slug);
-          this.closeAllMenus();
+              // Add posts in this category
+        posts.forEach(post => {
+          const postEntry = document.createElement('div');
+          postEntry.className = 'menu-entry';
+          postEntry.textContent = post.title || post.slug;
+          postEntry.style.cssText = `
+            padding: 8px 12px 8px 20px;
+            cursor: pointer;
+            color: var(--menu-fg, #fff);
+            font-size: 13px;
+            border-bottom: 1px solid var(--border, #555);
+            background: var(--menu-bg, #333);
+            transition: background-color 0.15s ease, transform 0.15s ease;
+            border-radius: 2px;
+          `;
+          
+          postEntry.addEventListener('click', () => {
+            this.loadPost(post.slug);
+            this.closeAllMenus();
+          });
+          
+          // Add hover effects
+          postEntry.addEventListener('mouseenter', () => {
+            postEntry.style.background = 'var(--menu-hover-bg, #555)';
+            postEntry.style.transform = 'translateX(2px)';
+          });
+          
+          postEntry.addEventListener('mouseleave', () => {
+            postEntry.style.background = 'var(--menu-bg, #333)';
+            postEntry.style.transform = 'translateX(0)';
+          });
+          
+          submenu.appendChild(postEntry);
         });
-        
-        submenu.appendChild(postEntry);
-      });
     });
     
     // Add general posts at the end (if any)
@@ -3724,11 +3983,24 @@ class SimpleBlog {
           font-size: 13px;
           border-bottom: 1px solid var(--border, #555);
           background: var(--menu-bg, #333);
+          transition: background-color 0.15s ease, transform 0.15s ease;
+          border-radius: 2px;
         `;
         
         postEntry.addEventListener('click', () => {
           this.loadPost(post.slug);
           this.closeAllMenus();
+        });
+        
+        // Add hover effects
+        postEntry.addEventListener('mouseenter', () => {
+          postEntry.style.background = 'var(--menu-hover-bg, #555)';
+          postEntry.style.transform = 'translateX(2px)';
+        });
+        
+        postEntry.addEventListener('mouseleave', () => {
+          postEntry.style.background = 'var(--menu-bg, #333)';
+          postEntry.style.transform = 'translateX(0)';
         });
         
         submenu.appendChild(postEntry);
@@ -3737,26 +4009,41 @@ class SimpleBlog {
     
     allPostsMenu.appendChild(submenu);
     
-    // Add mouse leave handler to close entire submenu
+    // Add mouse leave handler to close entire submenu with buffer
+    let closeTimeout = null;
     const closeSubmenu = () => {
-      setTimeout(() => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+      }
+      closeTimeout = setTimeout(() => {
         if (!allPostsMenu.matches(':hover') && !submenu.matches(':hover')) {
           submenu.remove();
         }
-      }, 100);
+      }, 300); // Increased buffer time to 300ms
     };
     
     // Also close when leaving the entire navigation area
     const navigationArea = document.querySelector('#navigation-menu');
     if (navigationArea) {
       navigationArea.addEventListener('mouseleave', () => {
-        setTimeout(() => {
+        if (closeTimeout) {
+          clearTimeout(closeTimeout);
+        }
+        closeTimeout = setTimeout(() => {
           if (!navigationArea.matches(':hover')) {
             submenu.remove();
           }
-        }, 100);
+        }, 300); // Increased buffer time to 300ms
       });
     }
+    
+    // Cancel close timeout when mouse enters submenu
+    submenu.addEventListener('mouseenter', () => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
+      }
+    });
     
     allPostsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
@@ -3824,7 +4111,22 @@ class SimpleBlog {
       padding: 5px 0;
       min-width: 200px;
       z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
     `;
+    
+    // Add invisible buffer zone around submenu for easier navigation
+    const bufferZone = document.createElement('div');
+    bufferZone.style.cssText = `
+      position: absolute;
+      left: -10px;
+      top: -10px;
+      right: -10px;
+      bottom: -10px;
+      z-index: 999;
+      pointer-events: none;
+    `;
+    submenu.appendChild(bufferZone);
     
     // Track currently open sub-submenu
     let currentlyOpenSubSubmenu = null;
@@ -3936,28 +4238,43 @@ class SimpleBlog {
     
     projectsMenu.appendChild(submenu);
     
-    // Add mouse leave handler to close entire submenu
+    // Add mouse leave handler to close entire submenu with buffer
+    let closeTimeout = null;
     const closeSubmenu = () => {
-      setTimeout(() => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+      }
+      closeTimeout = setTimeout(() => {
         if (!projectsMenu.matches(':hover') && !submenu.matches(':hover')) {
           submenu.remove();
           currentlyOpenSubSubmenu = null;
         }
-      }, 100);
+      }, 300); // Increased buffer time to 300ms
     };
     
     // Also close when leaving the entire navigation area
     const navigationArea = document.querySelector('#navigation-menu');
     if (navigationArea) {
       navigationArea.addEventListener('mouseleave', () => {
-        setTimeout(() => {
+        if (closeTimeout) {
+          clearTimeout(closeTimeout);
+        }
+        closeTimeout = setTimeout(() => {
           if (!navigationArea.matches(':hover')) {
             submenu.remove();
             currentlyOpenSubSubmenu = null;
           }
-        }, 100);
+        }, 300); // Increased buffer time to 300ms
       });
     }
+    
+    // Cancel close timeout when mouse enters submenu
+    submenu.addEventListener('mouseenter', () => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
+      }
+    });
     
     projectsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
