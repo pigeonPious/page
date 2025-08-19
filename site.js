@@ -2416,11 +2416,10 @@ class SimpleBlog {
       startX = e.clientX;
       startY = e.clientY;
       
-      // Get current position
-      const currentLeft = parseInt(magazine.style.left) || 0;
-      const currentTop = parseInt(magazine.style.top) || 0;
-      startLeft = currentLeft;
-      startTop = currentTop;
+      // Get current position using getBoundingClientRect for accurate positioning
+      const rect = magazine.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
       
       header.style.cursor = 'grabbing';
       
@@ -2521,8 +2520,9 @@ class SimpleBlog {
       isDragging = true;
       startX = e.clientX;
       startY = e.clientY;
-      startLeft = parseInt(magazine.style.left) || 0;
-      startTop = parseInt(magazine.style.top) || 0;
+      const rect = magazine.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
       header.style.cursor = 'grabbing';
       e.preventDefault();
     });
