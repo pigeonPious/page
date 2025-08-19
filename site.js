@@ -158,7 +158,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic', 'quantum'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic', 'quantum', 'radar'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -303,6 +303,9 @@ class SimpleBlog {
 
   setupMenuSystem() {
     console.log('🔧 Setting up menu system...');
+    
+    // Initialize text selection preservation
+    this.initializeTextSelectionPreservation();
     
     // Menu toggle - store reference for cleanup
     this.globalClickHandler = (e) => {
@@ -538,6 +541,25 @@ class SimpleBlog {
         -moz-user-select: text !important;
         -ms-user-select: text !important;
       }
+      
+      /* Protect text selection on social sharing buttons */
+      #bluesky-share,
+      #twitter-share {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+      }
+      
+      /* Protect text selection on all taskbar buttons */
+      .taskbar button,
+      .taskbar .menu-entry,
+      .taskbar [id$="-btn"] {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+      }
     `;
     
     // Remove existing style if it exists
@@ -548,6 +570,71 @@ class SimpleBlog {
     
     document.head.appendChild(editorStyle);
     console.log('📝 Editor selection preservation CSS applied');
+  }
+
+  initializeTextSelectionPreservation() {
+    // Store the current text selection
+    this.currentSelection = null;
+    
+    // Monitor text selection changes
+    document.addEventListener('selectionchange', () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim()) {
+        this.currentSelection = {
+          text: selection.toString(),
+          range: selection.getRangeAt(0).cloneRange()
+        };
+        console.log('📝 Text selection captured:', this.currentSelection.text);
+      }
+    });
+    
+    // Add click handlers to preserve selection on taskbar interactions
+    this.addSelectionPreservationHandlers();
+  }
+
+  addSelectionPreservationHandlers() {
+    // Add handlers to all taskbar-related elements
+    const selectors = [
+      '#bluesky-share',
+      '#twitter-share',
+      '.taskbar button',
+      '.menu-entry',
+      '[id$="-btn"]',
+      '.menu-item',
+      '.submenu'
+    ];
+    
+    selectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(element => {
+        // Preserve selection before click
+        element.addEventListener('mousedown', (e) => {
+          if (this.currentSelection && this.currentSelection.text) {
+            console.log('📝 Preserving selection before click:', this.currentSelection.text);
+            // Store the selection temporarily
+            this.tempSelection = { ...this.currentSelection };
+          }
+        });
+        
+        // Restore selection after click
+        element.addEventListener('click', (e) => {
+          if (this.tempSelection && this.tempSelection.range) {
+            setTimeout(() => {
+              try {
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(this.tempSelection.range);
+                console.log('📝 Selection restored after click:', this.tempSelection.text);
+              } catch (error) {
+                console.warn('⚠️ Could not restore selection:', error);
+              }
+            }, 10);
+          }
+        });
+      });
+    });
+    
+    console.log('📝 Selection preservation handlers added');
   }
 
   setupButtonEvents() {
