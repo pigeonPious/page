@@ -154,24 +154,15 @@ class SimpleBlog {
     
     console.log('🔧 Stored values:', { storedBuildWord, storedBuildCounter });
     
-    // Check if build counter has changed (indicating a new build)
+    // ALWAYS generate a new build word on every page load/build
     const currentBuildCounter = parseInt(localStorage.getItem('buildCounter') || '1');
     
     console.log('🔧 Current build counter:', currentBuildCounter);
-    console.log('🔧 Stored build counter:', storedBuildCounter);
-    console.log('🔧 Comparison result:', storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter);
+    console.log('🔧 ALWAYS generating new build word for fresh builds');
     
-    // Only clear cache if this is a new build (counter changed)
-    if (storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter) {
-      console.log('🧹 NEW BUILD DETECTED! Clearing cache...');
-      console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
-      this.clearBuildCache();
-      console.log('🧹 Cache cleared, generating new build word...');
-    } else if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
-      // Use existing build word if it's the same build
-      console.log(`🔧 Build word: Using existing build word: ${storedBuildWord}`);
-      return storedBuildWord;
-    }
+    // Clear cache on every build to ensure fresh data
+    this.clearBuildCache();
+    console.log('🧹 Cache cleared, generating new build word...');
     
     // Generate a new build word
     const words = [
@@ -4218,19 +4209,6 @@ class SimpleBlog {
       border-radius: 4px;
     `;
     
-    // Add invisible buffer zone around submenu for easier navigation
-    const bufferZone = document.createElement('div');
-    bufferZone.style.cssText = `
-      position: absolute;
-      left: -10px;
-      top: -10px;
-      right: -10px;
-      bottom: -10px;
-      z-index: 999;
-      pointer-events: none;
-    `;
-    submenu.appendChild(bufferZone);
-    
     // Track currently open sub-submenu
     let currentlyOpenSubSubmenu = null;
     
@@ -4249,9 +4227,7 @@ class SimpleBlog {
         font-size: 13px;
         border-bottom: 1px solid var(--border, #555);
         background: var(--menu-bg, #333);
-        transition: background-color 0.15s ease, transform 0.15s ease;
-        border-radius: 2px;
-        margin: 1px 2px;
+        transition: background-color 0.15s ease;
         text-transform: capitalize;
         position: relative;
       `;
@@ -4272,19 +4248,6 @@ class SimpleBlog {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         border-radius: 4px;
       `;
-      
-      // Add invisible buffer zone around sub-submenu for easier navigation
-      const subSubmenuBuffer = document.createElement('div');
-      subSubmenuBuffer.style.cssText = `
-        position: absolute;
-        left: -15px;
-        top: -15px;
-        right: -15px;
-        bottom: -15px;
-        z-index: 1000;
-        pointer-events: none;
-      `;
-      subSubmenu.appendChild(subSubmenuBuffer);
       
       // Add posts to sub-submenu
       posts.forEach(post => {
@@ -4319,7 +4282,7 @@ class SimpleBlog {
         subSubmenu.appendChild(postEntry);
       });
       
-      // Show sub-submenu on hover
+      // SIMPLE LOGIC: Show sub-submenu on hover, hide when hovering another category
       categoryEntry.addEventListener('mouseenter', () => {
         // Close previously open sub-submenu
         if (currentlyOpenSubSubmenu && currentlyOpenSubSubmenu !== subSubmenu) {
@@ -4331,47 +4294,6 @@ class SimpleBlog {
         currentlyOpenSubSubmenu = subSubmenu;
       });
       
-      // Hide sub-submenu when leaving category entry (with delay to allow moving to sub-submenu)
-      let categoryLeaveTimeout = null;
-      categoryEntry.addEventListener('mouseleave', () => {
-        categoryLeaveTimeout = setTimeout(() => {
-          // Only close if mouse is not over the sub-submenu
-          if (!subSubmenu.matches(':hover')) {
-            subSubmenu.style.display = 'none';
-            if (currentlyOpenSubSubmenu === subSubmenu) {
-              currentlyOpenSubSubmenu = null;
-            }
-          }
-        }, 150); // Increased delay for better reliability
-      });
-      
-      // Cancel timeout when entering sub-submenu
-      subSubmenu.addEventListener('mouseenter', () => {
-        if (categoryLeaveTimeout) {
-          clearTimeout(categoryLeaveTimeout);
-          categoryLeaveTimeout = null;
-        }
-      });
-      
-      // Hide sub-submenu when leaving it (with delay)
-      let subSubmenuLeaveTimeout = null;
-      subSubmenu.addEventListener('mouseleave', () => {
-        subSubmenuLeaveTimeout = setTimeout(() => {
-          subSubmenu.style.display = 'none';
-          if (currentlyOpenSubSubmenu === subSubmenu) {
-            currentlyOpenSubSubmenu = null;
-          }
-        }, 100);
-      });
-      
-      // Cancel timeout when re-entering sub-submenu
-      subSubmenu.addEventListener('mouseenter', () => {
-        if (subSubmenuLeaveTimeout) {
-          clearTimeout(subSubmenuLeaveTimeout);
-          subSubmenuLeaveTimeout = null;
-        }
-      });
-      
       // Add both to the main submenu
       submenu.appendChild(categoryEntry);
       submenu.appendChild(subSubmenu);
@@ -4379,34 +4301,25 @@ class SimpleBlog {
     
     projectsMenu.appendChild(submenu);
     
-    // Add mouse leave handler to close entire submenu with buffer
-    let closeTimeout = null;
-    const closeSubmenu = () => {
-      if (closeTimeout) {
-        clearTimeout(closeTimeout);
-      }
-      closeTimeout = setTimeout(() => {
-        if (!projectsMenu.matches(':hover') && !submenu.matches(':hover')) {
+    // SIMPLE CLOSING: Only close when leaving the entire projects menu area
+    projectsMenu.addEventListener('mouseleave', () => {
+      setTimeout(() => {
+        if (!projectsMenu.matches(':hover')) {
           submenu.remove();
           currentlyOpenSubSubmenu = null;
         }
-      }, 400); // Increased buffer time for better reliability
-    };
+      }, 200);
+    });
     
-    // Cancel close timeout when mouse enters submenu or sub-submenu
-    submenu.addEventListener('mouseenter', () => {
-      if (closeTimeout) {
-        clearTimeout(closeTimeout);
-        closeTimeout = null;
+    // Add global click handler to close menus when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!projectsMenu.contains(e.target) && !submenu.contains(e.target)) {
+        submenu.remove();
+        currentlyOpenSubSubmenu = null;
       }
     });
     
-    // Only close when leaving the projects menu area (not navigation area)
-    projectsMenu.addEventListener('mouseleave', closeSubmenu);
-    
-    // Don't close submenu when leaving it - let individual handlers manage sub-submenus
-    
-    console.log('✅ Projects submenu updated with hierarchical categories:', Object.keys(devlogCategories).length);
+    console.log('✅ Projects submenu updated with simplified sub-submenu logic');
   }
 
   showDevlogPostsWindow(category, posts) {
