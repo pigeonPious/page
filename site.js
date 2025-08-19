@@ -3826,6 +3826,9 @@ class SimpleBlog {
       z-index: 1000;
     `;
     
+    // Track currently open sub-submenu
+    let currentlyOpenSubSubmenu = null;
+    
     // Add category entries that expand on hover
     Object.keys(devlogCategories).forEach(category => {
       const posts = devlogCategories[category];
@@ -3881,7 +3884,14 @@ class SimpleBlog {
       
       // Show sub-submenu on hover
       categoryEntry.addEventListener('mouseenter', () => {
+        // Close previously open sub-submenu
+        if (currentlyOpenSubSubmenu && currentlyOpenSubSubmenu !== subSubmenu) {
+          currentlyOpenSubSubmenu.style.display = 'none';
+        }
+        
+        // Open this sub-submenu
         subSubmenu.style.display = 'block';
+        currentlyOpenSubSubmenu = subSubmenu;
       });
       
       // Hide sub-submenu when leaving category entry
@@ -3894,6 +3904,9 @@ class SimpleBlog {
           
           if (mouseX < rect.left || mouseX > rect.right || mouseY < rect.top || mouseY > rect.bottom) {
             subSubmenu.style.display = 'none';
+            if (currentlyOpenSubSubmenu === subSubmenu) {
+              currentlyOpenSubSubmenu = null;
+            }
           }
         }, 50);
       });
@@ -3901,12 +3914,18 @@ class SimpleBlog {
       // Hide sub-submenu when leaving it
       subSubmenu.addEventListener('mouseleave', () => {
         subSubmenu.style.display = 'none';
+        if (currentlyOpenSubSubmenu === subSubmenu) {
+          currentlyOpenSubSubmenu = null;
+        }
       });
       
       // Also hide when mouse leaves the entire submenu area
       subSubmenu.addEventListener('mouseout', (e) => {
         if (!subSubmenu.contains(e.relatedTarget)) {
           subSubmenu.style.display = 'none';
+          if (currentlyOpenSubSubmenu === subSubmenu) {
+            currentlyOpenSubSubmenu = null;
+          }
         }
       });
       
@@ -3922,6 +3941,7 @@ class SimpleBlog {
       setTimeout(() => {
         if (!projectsMenu.matches(':hover') && !submenu.matches(':hover')) {
           submenu.remove();
+          currentlyOpenSubSubmenu = null;
         }
       }, 100);
     };
@@ -3933,6 +3953,7 @@ class SimpleBlog {
         setTimeout(() => {
           if (!navigationArea.matches(':hover')) {
             submenu.remove();
+            currentlyOpenSubSubmenu = null;
           }
         }, 100);
       });
