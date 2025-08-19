@@ -32,6 +32,20 @@ class SimpleBlog {
     this.setTheme(this.theme);
     console.log('✅ Theme set');
     
+    // If custom theme, check for saved HSL values and apply them
+    if (this.theme === 'custom') {
+      const savedHSL = localStorage.getItem('ppPage_custom_hsl');
+      if (savedHSL) {
+        try {
+          const { h, s, l } = JSON.parse(savedHSL);
+          this.applyCustomTheme(h, s, l);
+          console.log('🎨 Applied saved custom theme HSL values on page load:', { h, s, l });
+        } catch (error) {
+          console.warn('⚠️ Could not parse saved custom theme HSL values on page load:', error);
+        }
+      }
+    }
+    
     // Load saved post flags
     this.loadSavedFlags();
     
@@ -762,6 +776,12 @@ class SimpleBlog {
       console.log('🔧 Test build increment button clicked');
       this.incrementBuildWord();
       alert('Build incremented! Check console for details.');
+    });
+    
+    // Add build indicator click handler for manual build increments
+    this.addClickHandler('#build-indicator', () => {
+      console.log('🔧 Build indicator clicked - incrementing build');
+      this.incrementBuildWord();
     });
     
     this.addClickHandler('#show-localstorage', () => {
@@ -1526,6 +1546,21 @@ class SimpleBlog {
     localStorage.setItem('ppPage_theme', mode);
     console.log('💾 Theme saved to localStorage');
     
+    // If custom theme, also save HSL values
+    if (mode === 'custom') {
+      // Check if we have saved HSL values
+      const savedHSL = localStorage.getItem('ppPage_custom_hsl');
+      if (savedHSL) {
+        try {
+          const { h, s, l } = JSON.parse(savedHSL);
+          this.applyCustomTheme(h, s, l);
+          console.log('🎨 Applied saved custom theme HSL values:', { h, s, l });
+        } catch (error) {
+          console.warn('⚠️ Could not parse saved custom theme HSL values:', error);
+        }
+      }
+    }
+    
     // Debug: show current body classes
     console.log('🔍 Current body classes:', document.body.className);
     console.log('🔍 Current CSS variables:', {
@@ -1757,6 +1792,10 @@ class SimpleBlog {
     document.body.style.setProperty('--danger-color', '#dc3545');
     document.body.style.setProperty('--danger-hover-color', '#c82333');
     document.body.style.setProperty('--btn-text-color', fgColor);
+    
+    // Save custom theme HSL values to localStorage
+    localStorage.setItem('ppPage_custom_hsl', JSON.stringify({ h, s, l }));
+    console.log('💾 Custom theme HSL values saved to localStorage:', { h, s, l });
     
     console.log('🎨 Custom theme applied:', { h, s, l, bgColor, fgColor });
   }
