@@ -130,6 +130,10 @@ class SimpleBlog {
             <span id="github-status">not connected</span>
           </div>
           
+          <div class="build-info" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #666; font-family: monospace;">
+            Build: ${this.getBuildInfo()}
+          </div>
+          
 
         <div class="cache-clear-btn" id="cache-clear-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #dc3545; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #dc3545; border-radius: 3px;" title="Clear all cache and reload">
           🧹
@@ -141,6 +145,13 @@ class SimpleBlog {
     // Insert at the beginning of body
     document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
     console.log('✅ Taskbar created');
+  }
+  
+  getBuildInfo() {
+    // Get current build counter for display
+    const buildCounter = localStorage.getItem('buildCounter') || '1';
+    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    return `${buildCounter} (${timestamp})`;
   }
 
   clearBuildCache() {
@@ -4211,7 +4222,11 @@ class SimpleBlog {
         // Add click handler to load post
         postEntry.addEventListener('click', () => {
           this.loadPost(post.slug);
-          this.closeAllMenus();
+          // Close only the projects submenu, not all menus
+          if (submenu.parentNode) {
+            submenu.remove();
+            currentlyOpenSubSubmenu = null;
+          }
         });
         
         subSubmenu.appendChild(postEntry);
@@ -4271,42 +4286,8 @@ class SimpleBlog {
       }
     });
     
-    // Add a more robust mouse tracking to prevent accidental closing
-    let isOverMenuSystem = false;
-    
-    projectsMenu.addEventListener('mouseenter', () => {
-      isOverMenuSystem = true;
-    });
-    
-    submenu.addEventListener('mouseenter', () => {
-      isOverMenuSystem = true;
-    });
-    
-    projectsMenu.addEventListener('mouseleave', (e) => {
-      // Only close if we're not moving to the submenu
-      const relatedTarget = e.relatedTarget;
-      if (relatedTarget && !submenu.contains(relatedTarget)) {
-        setTimeout(() => {
-          if (!isOverMenuSystem) {
-            submenu.remove();
-            currentlyOpenSubSubmenu = null;
-          }
-        }, 100);
-      }
-    });
-    
-    submenu.addEventListener('mouseleave', (e) => {
-      // Only close if we're not moving to the projects menu
-      const relatedTarget = e.relatedTarget;
-      if (relatedTarget && !projectsMenu.contains(relatedTarget)) {
-        setTimeout(() => {
-          if (!isOverMenuSystem) {
-            submenu.remove();
-            currentlyOpenSubSubmenu = null;
-          }
-        }, 100);
-      }
-    });
+    // SIMPLE LOGIC: Only close when clicking outside or hovering different category
+    // No complex mouse tracking that could cause conflicts
     
     console.log('✅ Projects submenu updated: level 3 stays open until explicitly closed');
   }
