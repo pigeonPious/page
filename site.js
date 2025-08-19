@@ -2983,14 +2983,6 @@ class SimpleBlog {
     console.log('🚀 Publishing to GitHub:', { title, commitMessage });
     
     try {
-      // Get GitHub token
-      const githubToken = localStorage.getItem('github_token');
-      if (!githubToken) {
-        console.log('🔐 No GitHub token found, redirecting to login');
-        this.showGitHubLogin();
-        return;
-      }
-      
       // Check if user is authenticated
       const isAuthenticated = await this.checkAuthentication();
       if (!isAuthenticated) {
@@ -5076,90 +5068,29 @@ class SimpleBlog {
   saveAsPDF() {
     console.log('📄 Saving post as PDF...');
     
-    const postContent = document.getElementById('post-content');
+    // Use browser's print functionality to save as PDF
+    const originalTitle = document.title;
     const postTitle = document.getElementById('post-title');
     
-    if (!postContent || !postTitle) {
-      this.showMenuStyle1Message('No post content to export', 'error');
-      return;
+    if (postTitle) {
+      document.title = postTitle.textContent + ' - PDF Export';
     }
     
-    // Create a clean PDF version
-    const originalTitle = document.title;
-    document.title = postTitle.textContent + ' - PDF Export';
+    // Hide taskbar temporarily for cleaner PDF
+    const taskbar = document.querySelector('.menu-bar');
+    if (taskbar) {
+      taskbar.style.display = 'none';
+    }
     
-    // Hide taskbar and other UI elements temporarily
-    const elementsToHide = [
-      '.menu-bar',
-      '.github-status-container', 
-      '.taskbar-status',
-      '.cache-clear-btn',
-      '.pigeon-label'
-    ];
-    
-    const hiddenElements = [];
-    elementsToHide.forEach(selector => {
-      const element = document.querySelector(selector);
-      if (element) {
-        hiddenElements.push({
-          element: element,
-          originalDisplay: element.style.display
-        });
-        element.style.display = 'none';
-      }
-    });
-    
-    // Add print-specific styles
-    const printStyles = document.createElement('style');
-    printStyles.id = 'pdf-print-styles';
-    printStyles.innerHTML = `
-      @media print {
-        body { 
-          font-size: 12pt !important;
-          line-height: 1.4 !important;
-          color: #000 !important;
-          background: #fff !important;
-        }
-        .post-title { 
-          font-size: 18pt !important;
-          margin-bottom: 10pt !important;
-          color: #000 !important;
-        }
-        .post-date { 
-          font-size: 10pt !important;
-          margin-bottom: 15pt !important;
-          color: #666 !important;
-        }
-        .post-content { 
-          color: #000 !important;
-          background: #fff !important;
-        }
-        .post-content h1, .post-content h2, .post-content h3 {
-          color: #000 !important;
-        }
-        .flashing-cursor { display: none !important; }
-      }
-    `;
-    document.head.appendChild(printStyles);
-    
-    // Open print dialog
     window.print();
     
     // Restore original state
     document.title = originalTitle;
-    
-    // Restore hidden elements
-    hiddenElements.forEach(item => {
-      item.element.style.display = item.originalDisplay;
-    });
-    
-    // Remove print styles
-    const printStylesElement = document.getElementById('pdf-print-styles');
-    if (printStylesElement) {
-      printStylesElement.remove();
+    if (taskbar) {
+      taskbar.style.display = 'flex';
     }
     
-    console.log('✅ PDF print dialog opened with post content');
+    console.log('✅ PDF print dialog opened');
   }
 
   adjustFontSize(action) {

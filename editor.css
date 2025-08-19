@@ -355,7 +355,6 @@ body {
   width: 100%;
   min-width: 0;
   min-height: calc(100vh - 150px);
-  max-height: none;
   padding: 20px;
   border: none;
   background: var(--bg);
@@ -368,7 +367,6 @@ body {
   box-sizing: border-box;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  overflow-y: visible;
 }
 
 .visual-editor:empty::before {
