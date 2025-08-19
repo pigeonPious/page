@@ -2874,17 +2874,46 @@ class SimpleBlog {
       return;
     }
     
+    // Create magazine-style image container
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'image-container';
+    imageContainer.style.cssText = `
+      float: left;
+      margin-right: 16px;
+      margin-bottom: 12px;
+      max-width: 40%;
+      clear: both;
+    `;
+    
     // Create image element
     const img = document.createElement('img');
     img.src = `assets/${filename}`;
     img.style.cssText = `
-      max-width: 150px;
+      width: 100%;
       height: auto;
-      border: 1px solid #444;
-      border-radius: 4px;
-      margin: 8px 0;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      margin: 0;
+      padding: 0;
       cursor: pointer;
+      display: block;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     `;
+    
+    // Add hover effects
+    img.addEventListener('mouseenter', () => {
+      img.style.transform = 'scale(1.02)';
+      img.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    });
+    
+    img.addEventListener('mouseleave', () => {
+      img.style.transform = 'scale(1)';
+      img.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+    });
+    
+    // Add image to container
+    imageContainer.appendChild(img);
     
     // Only insert into the post content area
     const selection = window.getSelection();
@@ -2894,16 +2923,16 @@ class SimpleBlog {
       // Check if selection is within the post content area
       if (visualEditor.contains(range.commonAncestorContainer) || 
           visualEditor === range.commonAncestorContainer) {
-        range.insertNode(img);
+        range.insertNode(imageContainer);
         range.collapse(false);
         console.log('✅ Image inserted at cursor position');
       } else {
         console.log('⚠️ Selection not in post content, inserting at end');
-        visualEditor.appendChild(img);
+        visualEditor.appendChild(imageContainer);
       }
     } else {
       // No selection, insert at the end of the post content
-      visualEditor.appendChild(img);
+      visualEditor.appendChild(imageContainer);
       console.log('✅ Image inserted at end of post');
     }
     

@@ -595,8 +595,8 @@ body.custom-mode .box-style-1.message-box {
   max-width: 90vw;
   max-height: 90vh;
   z-index: 10000;
-  background: var(--menu-bg) !important;
-  color: var(--menu-fg) !important;
+  background: var(--bg) !important;
+  color: var(--fg) !important;
   border: 1px solid var(--border);
   border-radius: 0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -1116,4 +1116,62 @@ body.custom-mode .console-output {
   background: var(--bg) !important;
   border-color: var(--border) !important;
   color: var(--fg) !important;
+}
+
+/* Magazine-style image display in editor */
+.visual-editor img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  display: block;
+  float: left;
+  margin-right: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.visual-editor img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Ensure proper text wrapping around images */
+.visual-editor p {
+  overflow: hidden;
+  line-height: 1.6;
+  margin: 1em 0;
+}
+
+.visual-editor p:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Magazine-style text flow */
+.visual-editor {
+  text-align: justify;
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Image container for better text flow */
+.visual-editor .image-container {
+  float: left;
+  margin-right: 16px;
+  margin-bottom: 12px;
+  max-width: 40%;
+}
+
+.visual-editor .image-container img {
+  float: none;
+  margin: 0;
+  width: 100%;
+  height: auto;
 }
