@@ -383,6 +383,24 @@ class SimpleBlog {
       menuItem.classList.remove('open');
       console.log('✅ Removed "open" class from menu-item');
     });
+    
+    // Close all submenus and sub-submenus
+    const allSubmenus = document.querySelectorAll('.submenu, .sub-submenu');
+    console.log('🔧 Closing all submenus, found:', allSubmenus.length, 'submenus');
+    
+    allSubmenus.forEach(submenu => {
+      submenu.remove();
+      console.log('✅ Removed submenu:', submenu.className);
+    });
+    
+    // Reset menu state
+    this.resetMenuState();
+  }
+
+  resetMenuState() {
+    console.log('🔄 Resetting menu state - all submenus cleared');
+    // This ensures that when menus are reopened, they start fresh
+    // No cached submenus or stale event listeners
   }
 
   preventSelectionLoss() {
@@ -3521,7 +3539,20 @@ class SimpleBlog {
       titleSpan.style.cssText = 'display: block; font-weight: normal;';
       
       const keywordSpan = document.createElement('span');
-      keywordSpan.textContent = post.keywords || 'general';
+      // Only show the main category, not all keywords
+      let mainCategory = 'general';
+      if (post.keywords) {
+        if (post.keywords.includes('devlog:')) {
+          const devlogMatch = post.keywords.match(/devlog:([^,]+)/);
+          mainCategory = devlogMatch ? `devlog:${devlogMatch[1]}` : 'devlog';
+        } else if (post.keywords.includes('devlog')) {
+          mainCategory = 'devlog';
+        } else {
+          // Take the first keyword as main category
+          mainCategory = post.keywords.split(',')[0].trim();
+        }
+      }
+      keywordSpan.textContent = mainCategory;
       keywordSpan.style.cssText = `
         display: block; 
         font-size: 11px; 
@@ -3559,6 +3590,18 @@ class SimpleBlog {
         }
       }, 100);
     };
+    
+    // Also close when leaving the entire navigation area
+    const navigationArea = document.querySelector('#navigation-menu');
+    if (navigationArea) {
+      navigationArea.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+          if (!navigationArea.matches(':hover')) {
+            submenu.remove();
+          }
+        }, 100);
+      });
+    }
     
     allPostsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
@@ -3727,6 +3770,18 @@ class SimpleBlog {
         }
       }, 100);
     };
+    
+    // Also close when leaving the entire navigation area
+    const navigationArea = document.querySelector('#navigation-menu');
+    if (navigationArea) {
+      navigationArea.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+          if (!navigationArea.matches(':hover')) {
+            submenu.remove();
+          }
+        }, 100);
+      });
+    }
     
     devlogMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
