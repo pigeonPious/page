@@ -3514,6 +3514,27 @@ class SimpleBlog {
       return;
     }
     
+    // Group posts by devlog category
+    const groupedPosts = {};
+    const generalPosts = [];
+    
+    allPosts.forEach(post => {
+      if (post.keywords && post.keywords.includes('devlog')) {
+        let category = 'devlog';
+        if (post.keywords.includes('devlog:')) {
+          const devlogMatch = post.keywords.match(/devlog:([^,]+)/);
+          category = devlogMatch ? `devlog:${devlogMatch[1]}` : 'devlog';
+        }
+        
+        if (!groupedPosts[category]) {
+          groupedPosts[category] = [];
+        }
+        groupedPosts[category].push(post);
+      } else {
+        generalPosts.push(post);
+      }
+    });
+    
     // Create submenu
     const submenu = document.createElement('div');
     submenu.className = 'submenu';
@@ -3524,61 +3545,95 @@ class SimpleBlog {
       background: var(--menu-bg, #333);
       border: 1px solid var(--menu-border, #555);
       padding: 5px 0;
-      min-width: 200px;
+      min-width: 250px;
       z-index: 1000;
     `;
     
-    // Add all posts with keyword labels
-    allPosts.forEach(post => {
-      const postEntry = document.createElement('div');
-      postEntry.className = 'menu-entry';
+    // Add devlog category groups first
+    Object.keys(groupedPosts).forEach(category => {
+      const posts = groupedPosts[category];
       
-      // Create title and keyword display
-      const titleSpan = document.createElement('span');
-      titleSpan.textContent = post.title || post.slug;
-      titleSpan.style.cssText = 'display: block; font-weight: normal;';
-      
-      const keywordSpan = document.createElement('span');
-      // Only show the main category, not all keywords
-      let mainCategory = 'general';
-      if (post.keywords) {
-        if (post.keywords.includes('devlog:')) {
-          const devlogMatch = post.keywords.match(/devlog:([^,]+)/);
-          mainCategory = devlogMatch ? `devlog:${devlogMatch[1]}` : 'devlog';
-        } else if (post.keywords.includes('devlog')) {
-          mainCategory = 'devlog';
-        } else {
-          // Take the first keyword as main category
-          mainCategory = post.keywords.split(',')[0].trim();
-        }
-      }
-      keywordSpan.textContent = mainCategory;
-      keywordSpan.style.cssText = `
-        display: block; 
-        font-size: 11px; 
-        color: var(--muted, #888); 
-        font-style: italic;
-        margin-top: 2px;
-      `;
-      
-      postEntry.appendChild(titleSpan);
-      postEntry.appendChild(keywordSpan);
-      
-      postEntry.style.cssText = `
-        padding: 8px 12px;
-        cursor: pointer;
-        color: var(--menu-fg, #fff);
-        font-size: 13px;
+      // Add category separator with label
+      const categorySeparator = document.createElement('div');
+      categorySeparator.className = 'category-separator';
+      categorySeparator.style.cssText = `
+        padding: 6px 12px;
+        background: var(--menu-bg, #333);
+        color: var(--muted, #888);
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         border-bottom: 1px solid var(--border, #555);
+        border-top: 1px solid var(--border, #555);
       `;
+      categorySeparator.textContent = category;
+      submenu.appendChild(categorySeparator);
       
-      postEntry.addEventListener('click', () => {
-        this.loadPost(post.slug);
-        this.closeAllMenus();
+      // Add posts in this category
+      posts.forEach(post => {
+        const postEntry = document.createElement('div');
+        postEntry.className = 'menu-entry';
+        postEntry.textContent = post.title || post.slug;
+        postEntry.style.cssText = `
+          padding: 8px 12px 8px 20px;
+          cursor: pointer;
+          color: var(--menu-fg, #fff);
+          font-size: 13px;
+          border-bottom: 1px solid var(--border, #555);
+          background: var(--menu-bg, #333);
+        `;
+        
+        postEntry.addEventListener('click', () => {
+          this.loadPost(post.slug);
+          this.closeAllMenus();
+        });
+        
+        submenu.appendChild(postEntry);
       });
-      
-      submenu.appendChild(postEntry);
     });
+    
+    // Add general posts at the end (if any)
+    if (generalPosts.length > 0) {
+      // Add general separator
+      const generalSeparator = document.createElement('div');
+      generalSeparator.className = 'category-separator';
+      generalSeparator.style.cssText = `
+        padding: 6px 12px;
+        background: var(--menu-bg, #333);
+        color: var(--muted, #888);
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border, #555);
+        border-top: 1px solid var(--border, #555);
+      `;
+      generalSeparator.textContent = 'general';
+      submenu.appendChild(generalSeparator);
+      
+      // Add general posts
+      generalPosts.forEach(post => {
+        const postEntry = document.createElement('div');
+        postEntry.className = 'menu-entry';
+        postEntry.textContent = post.title || post.slug;
+        postEntry.style.cssText = `
+          padding: 8px 12px 8px 20px;
+          cursor: pointer;
+          color: var(--menu-fg, #fff);
+          font-size: 13px;
+          border-bottom: 1px solid var(--border, #555);
+          background: var(--menu-bg, #333);
+        `;
+        
+        postEntry.addEventListener('click', () => {
+          this.loadPost(post.slug);
+          this.closeAllMenus();
+        });
+        
+        submenu.appendChild(postEntry);
+      });
+    }
     
     allPostsMenu.appendChild(submenu);
     
@@ -3606,7 +3661,7 @@ class SimpleBlog {
     allPostsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
     
-    console.log('✅ All Posts submenu updated with', allPosts.length, 'posts');
+    console.log('✅ All Posts submenu updated with grouped posts:', Object.keys(groupedPosts).length, 'categories +', generalPosts.length, 'general posts');
   }
 
   updateDevlogSubmenu(allPosts) {
