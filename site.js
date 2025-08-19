@@ -4325,7 +4325,7 @@ class SimpleBlog {
       existingWindow.remove();
     }
     
-    // Create the floating window
+    // Create the floating window in menu style 1
     const window = document.createElement('div');
     window.id = 'devlog-posts-window';
     window.style.cssText = `
@@ -4334,16 +4334,15 @@ class SimpleBlog {
       left: 50%;
       transform: translate(-50%, -50%);
       background: var(--menu-bg, #333);
-      border: 2px solid var(--accent-color, #4a9eff);
-      border-radius: 8px;
-      padding: 20px;
-      min-width: 400px;
-      max-width: 600px;
-      max-height: 80vh;
+      border: 1px solid var(--border, #555);
+      padding: 16px;
+      min-width: 350px;
+      max-width: 500px;
+      max-height: 70vh;
       z-index: 10000;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       overflow-y: auto;
       font-family: inherit;
+      cursor: move;
     `;
     
     // Create header with title and close button
@@ -4352,48 +4351,45 @@ class SimpleBlog {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 2px solid var(--accent-color, #4a9eff);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border, #555);
+      cursor: move;
     `;
     
-    const title = document.createElement('h3');
-    title.textContent = `${category.charAt(0).toUpperCase() + category.slice(1)} Devlog Posts`;
+    const title = document.createElement('div');
+    title.textContent = `${category.charAt(0).toUpperCase() + category.slice(1)} Posts`;
     title.style.cssText = `
       margin: 0;
-      color: var(--accent-color, #4a9eff);
-      font-size: 18px;
+      color: var(--menu-fg, #fff);
+      font-size: 16px;
       font-weight: bold;
       text-transform: capitalize;
     `;
     
     const closeButton = document.createElement('div');
+    closeButton.className = 'close-button';
     closeButton.textContent = '×';
     closeButton.style.cssText = `
       cursor: pointer;
-      font-size: 24px;
-      color: var(--muted, #888);
-      width: 30px;
-      height: 30px;
+      font-size: 20px;
+      color: var(--menu-fg, #fff);
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s ease;
       user-select: none;
+      transition: color 0.15s ease;
     `;
     
-    // Add hover effects to close button
+    // Add hover effect to close button
     closeButton.addEventListener('mouseenter', () => {
-      closeButton.style.background = 'var(--danger-color, #dc3545)';
-      closeButton.style.color = 'white';
-      closeButton.style.transform = 'scale(1.1)';
+      closeButton.style.color = 'var(--danger-color, #dc3545)';
     });
     
     closeButton.addEventListener('mouseleave', () => {
-      closeButton.style.background = 'transparent';
-      closeButton.style.color = 'var(--muted, #888)';
-      closeButton.style.transform = 'scale(1)';
+      closeButton.style.color = 'var(--menu-fg, #fff)';
     });
     
     // Close window when close button is clicked
@@ -4410,75 +4406,48 @@ class SimpleBlog {
     postsList.style.cssText = `
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 2px;
     `;
     
     posts.forEach(post => {
       const postEntry = document.createElement('div');
+      postEntry.className = 'post-entry';
       postEntry.style.cssText = `
-        padding: 12px 16px;
+        padding: 10px 12px;
         background: var(--menu-bg, #333);
         border: 1px solid var(--border, #555);
-        border-radius: 6px;
         cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      `;
-      
-      const postInfo = document.createElement('div');
-      postInfo.style.cssText = `
-        flex: 1;
+        transition: background-color 0.15s ease;
+        color: var(--menu-fg, #fff);
+        font-size: 13px;
+        line-height: 1.3;
       `;
       
       const postTitle = document.createElement('div');
       postTitle.textContent = post.title || post.slug;
       postTitle.style.cssText = `
-        font-weight: bold;
-        color: var(--menu-fg, #fff);
-        margin-bottom: 4px;
-        font-size: 14px;
+        font-weight: normal;
+        margin-bottom: 2px;
       `;
       
       const postDate = document.createElement('div');
       postDate.textContent = post.date || 'No date';
       postDate.style.cssText = `
         color: var(--muted, #888);
-        font-size: 12px;
+        font-size: 11px;
+        font-style: italic;
       `;
       
-      postInfo.appendChild(postTitle);
-      postInfo.appendChild(postDate);
+      postEntry.appendChild(postTitle);
+      postEntry.appendChild(postDate);
       
-      const clickIndicator = document.createElement('div');
-      clickIndicator.textContent = '→';
-      clickIndicator.style.cssText = `
-        color: var(--accent-color, #4a9eff);
-        font-size: 18px;
-        font-weight: bold;
-        opacity: 0.7;
-        transition: all 0.2s ease;
-      `;
-      
-      postEntry.appendChild(postInfo);
-      postEntry.appendChild(clickIndicator);
-      
-      // Add hover effects
+      // Add hover effect
       postEntry.addEventListener('mouseenter', () => {
         postEntry.style.background = 'var(--menu-hover-bg, #555)';
-        postEntry.style.borderColor = 'var(--accent-color, #4a9eff)';
-        postEntry.style.transform = 'translateX(4px)';
-        clickIndicator.style.opacity = '1';
-        clickIndicator.style.transform = 'translateX(4px)';
       });
       
       postEntry.addEventListener('mouseleave', () => {
         postEntry.style.background = 'var(--menu-bg, #333)';
-        postEntry.style.borderColor = 'var(--border, #555)';
-        postEntry.style.transform = 'translateX(0)';
-        clickIndicator.style.opacity = '0.7';
-        clickIndicator.style.transform = 'translateX(0)';
       });
       
       // Add click handler to load post
@@ -4495,10 +4464,10 @@ class SimpleBlog {
     // Add to document
     document.body.appendChild(window);
     
-    // Make window draggable
-    this.makeWindowDraggable(window, header);
+    // Make entire window draggable (not just header)
+    this.makeWindowDraggable(window);
     
-    // Close window ONLY on escape key or close button (no outside click closing)
+    // Close window on escape key
     const closeOnEscape = (e) => {
       if (e.key === 'Escape') {
         window.remove();
@@ -4510,25 +4479,27 @@ class SimpleBlog {
     console.log(`✅ Devlog posts window opened for ${category} with ${posts.length} posts`);
   }
 
-  makeWindowDraggable(window, header) {
+  makeWindowDraggable(window) {
     let isDragging = false;
     let startX, startY, startLeft, startTop;
     
-    header.style.cursor = 'grab';
-    
-    header.addEventListener('mousedown', (e) => {
-      if (e.target === header || e.target.parentNode === header) {
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        
-        const rect = window.getBoundingClientRect();
-        startLeft = rect.left;
-        startTop = rect.top;
-        
-        header.style.cursor = 'grabbing';
-        e.preventDefault();
+    // Make entire window draggable
+    window.addEventListener('mousedown', (e) => {
+      // Don't start dragging if clicking on close button or post entries
+      if (e.target.closest('.close-button') || e.target.closest('.post-entry')) {
+        return;
       }
+      
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      
+      const rect = window.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
+      
+      window.style.cursor = 'grabbing';
+      e.preventDefault();
     });
     
     document.addEventListener('mousemove', (e) => {
@@ -4555,7 +4526,7 @@ class SimpleBlog {
     document.addEventListener('mouseup', () => {
       if (isDragging) {
         isDragging = false;
-        header.style.cursor = 'grab';
+        window.style.cursor = 'move';
       }
     });
   }
