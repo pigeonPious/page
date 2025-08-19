@@ -17,6 +17,24 @@
   --unit: 100px; /* Base unit size - same as editor */
 }
 
+body.light-mode {
+  --bg: #f7f7f7;
+  --fg: #232323;
+  --sidebar-bg: #eaeaea;
+  --sidebar-fg: #232323;
+  --accent: #3a7bd5;
+  --menu-bg: var(--bg);
+  --menu-fg: #232323;
+  --border: #cccccc;
+  --muted: #666666;
+  --link: #232323;
+  --success-color: #28a745;
+  --success-hover-color: #218838;
+  --danger-color: #dc3545;
+  --danger-hover-color: #c82333;
+  --btn-text-color: white;
+}
+
 body.dark-mode {
   --bg: #272727;
   --fg: #acada8;
