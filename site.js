@@ -14,7 +14,7 @@ class SimpleBlog {
     
     // Initialize handler references to prevent memory leaks
     this.allPostsMouseEnterHandler = null;
-    this.devlogMouseEnterHandler = null;
+    this.projectsMouseEnterHandler = null;
     
     console.log('🔍 About to call init()...');
     this.init();
@@ -75,8 +75,8 @@ class SimpleBlog {
               <div class="menu-separator"></div>
               <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
+              <div class="menu-entry has-submenu" id="projects-menu" style="position: relative;">Projects ></div>
               <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
-              <div class="menu-entry has-submenu" id="devlog-menu" style="position: relative;">Devlog ></div>
             </div>
           </div>
           
@@ -853,20 +853,20 @@ class SimpleBlog {
       console.warn('⚠️ All posts menu element not found');
     }
 
-    // Devlog submenu
-    const devlogMenu = document.getElementById('devlog-menu');
-    if (devlogMenu) {
+    // Projects submenu
+    const projectsMenu = document.getElementById('projects-menu');
+    if (projectsMenu) {
       // Remove existing listeners to prevent duplication
-      devlogMenu.removeEventListener('mouseenter', this.devlogMouseEnterHandler);
-      this.devlogMouseEnterHandler = () => {
-        console.log('📝 Devlog submenu hovered');
+      projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
+      this.projectsMouseEnterHandler = () => {
+        console.log('📝 Projects submenu hovered');
         // Use our new navigation system instead of the old showDevlogSubmenu
-        this.updateDevlogSubmenu(this.posts || []);
+        this.updateProjectsSubmenu(this.posts || []);
       };
-      devlogMenu.addEventListener('mouseenter', this.devlogMouseEnterHandler);
-      console.log('✅ Devlog submenu handler attached');
+      projectsMenu.addEventListener('mouseenter', this.projectsMouseEnterHandler);
+      console.log('✅ Projects submenu handler attached');
     } else {
-      console.warn('⚠️ Devlog menu element not found');
+      console.warn('⚠️ Projects menu element not found');
     }
     
     console.log('✅ Submenus setup complete');
@@ -3487,8 +3487,8 @@ class SimpleBlog {
     // Update All Posts submenu
     this.updateAllPostsSubmenu(allPosts);
     
-    // Update Devlog submenu
-    this.updateDevlogSubmenu(allPosts);
+    // Update Projects submenu
+    this.updateProjectsSubmenu(allPosts);
     
     console.log('✅ Navigation menu fully updated');
   }
@@ -3664,18 +3664,18 @@ class SimpleBlog {
     console.log('✅ All Posts submenu updated with grouped posts:', Object.keys(groupedPosts).length, 'categories +', generalPosts.length, 'general posts');
   }
 
-  updateDevlogSubmenu(allPosts) {
-    console.log('📋 Updating Devlog submenu');
+  updateProjectsSubmenu(allPosts) {
+    console.log('📋 Updating Projects submenu');
     
-    // Find the devlog menu item
-    const devlogMenu = document.querySelector('#devlog-menu');
-    if (!devlogMenu) {
-      console.log('⚠️ Devlog menu not found');
+    // Find the projects menu item
+    const projectsMenu = document.querySelector('#projects-menu');
+    if (!projectsMenu) {
+      console.log('⚠️ Projects menu not found');
       return;
     }
     
     // Clear existing devlog submenu
-    const existingSubmenu = devlogMenu.querySelector('.submenu');
+    const existingSubmenu = projectsMenu.querySelector('.submenu');
     if (existingSubmenu) {
       existingSubmenu.remove();
     }
@@ -3815,12 +3815,12 @@ class SimpleBlog {
       submenu.appendChild(subSubmenu);
     });
     
-    devlogMenu.appendChild(submenu);
+    projectsMenu.appendChild(submenu);
     
     // Add mouse leave handler to close entire submenu
     const closeSubmenu = () => {
       setTimeout(() => {
-        if (!devlogMenu.matches(':hover') && !submenu.matches(':hover')) {
+        if (!projectsMenu.matches(':hover') && !submenu.matches(':hover')) {
           submenu.remove();
         }
       }, 100);
@@ -3838,7 +3838,7 @@ class SimpleBlog {
       });
     }
     
-    devlogMenu.addEventListener('mouseleave', closeSubmenu);
+    projectsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
     
     console.log('✅ Devlog submenu updated with hierarchical categories:', Object.keys(devlogCategories));
@@ -4039,9 +4039,9 @@ class SimpleBlog {
       allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
     }
     
-    const devlogMenu = document.getElementById('devlog-menu');
-    if (devlogMenu && this.devlogMouseEnterHandler) {
-      devlogMenu.removeEventListener('mouseenter', this.devlogMouseEnterHandler);
+    const projectsMenu = document.getElementById('projects-menu');
+    if (projectsMenu && this.projectsMouseEnterHandler) {
+      projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
     }
     
     // Remove global event listeners
