@@ -143,21 +143,11 @@ class SimpleBlog {
     console.log('🔧 Stored build counter:', storedBuildCounter);
     console.log('🔧 Comparison result:', storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter);
     
-    // Clear cache if this is a new build OR if stored counter doesn't match current
-    if (storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter) {
-      console.log('🧹 NEW BUILD DETECTED! Clearing cache...');
-      console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
-      this.clearBuildCache();
-      
-      // After clearing cache, we need to generate a new build word
-      console.log('🧹 Cache cleared, generating new build word...');
-    }
-    
-    // Only use stored build word if counters match
-    if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
-      console.log(`🔧 Build word: Using stored build word: ${storedBuildWord}`);
-      return storedBuildWord;
-    }
+    // ALWAYS clear cache on every build to ensure fresh data
+    console.log('🧹 BUILD DETECTED! Clearing cache...');
+    console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
+    this.clearBuildCache();
+    console.log('🧹 Cache cleared, generating new build word...');
     
     // Generate a new build word only if none exists or if it's a new build
     const words = [
@@ -168,7 +158,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -505,6 +495,17 @@ class SimpleBlog {
     this.addClickHandler('#test-github-token', () => {
       console.log('🔐 Test GitHub token button clicked');
       this.validateGitHubToken();
+    });
+    
+    // Social sharing buttons
+    this.addClickHandler('#bluesky-share', () => {
+      console.log('🔵 Bluesky share button clicked');
+      this.shareToBluesky();
+    });
+    
+    this.addClickHandler('#twitter-share', () => {
+      console.log('🐦 Twitter share button clicked');
+      this.shareToTwitter();
     });
     
     console.log('✅ Button events setup complete');
@@ -2667,6 +2668,94 @@ class SimpleBlog {
     } catch (error) {
       console.error('❌ removePostFromIndex: Error removing post from index:', error);
       return false;
+    }
+  }
+
+  shareToBluesky() {
+    console.log('🔵 shareToBluesky: Starting Bluesky share...');
+    
+    try {
+      // Get current post information
+      const currentPost = this.currentPost;
+      if (!currentPost || !currentPost.slug) {
+        console.warn('⚠️ shareToBluesky: No current post found');
+        this.showMenuStyle1Message('No post to share. Please navigate to a post first.', 'error');
+        return;
+      }
+      
+      // Get current URL
+      const currentUrl = `${window.location.origin}${window.location.pathname}?post=${currentPost.slug}`;
+      
+      // Check for highlighted text
+      const selection = window.getSelection();
+      let shareText = '';
+      
+      if (selection && selection.toString().trim()) {
+        // Use highlighted text + post link
+        shareText = `${selection.toString().trim()}\n\n${currentUrl}`;
+        console.log('🔵 shareToBluesky: Using highlighted text + link');
+      } else {
+        // Use post title + link
+        shareText = `${currentPost.title || 'Check out this post'}\n\n${currentUrl}`;
+        console.log('🔵 shareToBluesky: Using post title + link');
+      }
+      
+      // Create Bluesky share URL
+      const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(shareText)}`;
+      
+      console.log('🔵 shareToBluesky: Opening Bluesky compose:', blueskyUrl);
+      
+      // Open in new tab
+      window.open(blueskyUrl, '_blank');
+      
+    } catch (error) {
+      console.error('❌ shareToBluesky: Error sharing to Bluesky:', error);
+      this.showMenuStyle1Message('Error sharing to Bluesky. Please try again.', 'error');
+    }
+  }
+
+  shareToTwitter() {
+    console.log('🐦 shareToTwitter: Starting Twitter share...');
+    
+    try {
+      // Get current post information
+      const currentPost = this.currentPost;
+      if (!currentPost || !currentPost.slug) {
+        console.warn('⚠️ shareToTwitter: No current post found');
+        this.showMenuStyle1Message('No post to share. Please navigate to a post first.', 'error');
+        return;
+      }
+      
+      // Get current URL
+      const currentUrl = `${window.location.origin}${window.location.pathname}?post=${currentPost.slug}`;
+      
+      // Check for highlighted text
+      const selection = window.getSelection();
+      let shareText = '';
+      
+      if (selection && selection.toString().trim()) {
+        // Use highlighted text + post link
+        shareText = `${selection.toString().trim()}\n\n${currentUrl}`;
+        console.log('🐦 shareToTwitter: Using highlighted text + link');
+      } else {
+        // Use post title + link
+        // Twitter has character limits, so keep it concise
+        const title = currentPost.title || 'Check out this post';
+        shareText = `${title}\n\n${currentUrl}`;
+        console.log('🐦 shareToTwitter: Using post title + link');
+      }
+      
+      // Create Twitter share URL
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+      
+      console.log('🐦 shareToTwitter: Opening Twitter compose:', twitterUrl);
+      
+      // Open in new tab
+      window.open(twitterUrl, '_blank');
+      
+    } catch (error) {
+      console.error('❌ shareToTwitter: Error sharing to Twitter:', error);
+      this.showMenuStyle1Message('Error sharing to Twitter. Please try again.', 'error');
     }
   }
 
