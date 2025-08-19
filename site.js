@@ -158,7 +158,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -304,6 +304,21 @@ class SimpleBlog {
   setupMenuSystem() {
     console.log('🔧 Setting up menu system...');
     
+    // Store the last valid text selection
+    this.lastValidSelection = null;
+    
+    // Monitor text selection changes
+    document.addEventListener('selectionchange', () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim()) {
+        this.lastValidSelection = {
+          text: selection.toString(),
+          range: selection.getRangeAt(0).cloneRange()
+        };
+        console.log('📝 Text selection captured:', this.lastValidSelection.text);
+      }
+    });
+    
     // Menu toggle - store reference for cleanup
     this.globalClickHandler = (e) => {
       // Don't close menus when clicking on theme buttons
@@ -312,11 +327,21 @@ class SimpleBlog {
         return;
       }
       
+      // Check if we're clicking on the taskbar
+      const isTaskbarClick = e.target.closest('.taskbar') || e.target.closest('.menu-item') || e.target.closest('.menu-dropdown');
+      
       const menuItem = e.target.closest('.menu-item');
       if (menuItem) {
         console.log('📋 Menu item clicked:', menuItem.querySelector('.label')?.textContent);
+        // Preserve text selection before opening menu
+        this.preserveTextSelection();
         this.toggleMenu(menuItem);
+      } else if (isTaskbarClick) {
+        // Clicking on taskbar but not on a menu item - don't close menus
+        console.log('📋 Taskbar area clicked, preserving menus');
+        return;
       } else {
+        // Clicking outside taskbar - close menus
         this.closeAllMenus();
       }
     };
@@ -330,6 +355,9 @@ class SimpleBlog {
       }
     };
     document.addEventListener('keydown', this.globalKeyHandler);
+    
+    // Prevent text selection loss on taskbar elements
+    this.preventSelectionLoss();
     
     console.log('✅ Menu system setup complete');
   }
@@ -373,6 +401,48 @@ class SimpleBlog {
     openMenus.forEach(menuItem => {
       menuItem.classList.remove('open');
       console.log('✅ Removed "open" class from menu-item');
+    });
+    
+    // Restore text selection after closing menus
+    this.restoreTextSelection();
+  }
+
+  preserveTextSelection() {
+    if (this.lastValidSelection && this.lastValidSelection.text) {
+      console.log('📝 Preserving text selection:', this.lastValidSelection.text);
+      // Store the selection temporarily
+      this.tempSelection = { ...this.lastValidSelection };
+    }
+  }
+
+  restoreTextSelection() {
+    if (this.tempSelection && this.tempSelection.range) {
+      try {
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(this.tempSelection.range);
+        console.log('📝 Text selection restored:', this.tempSelection.text);
+      } catch (error) {
+        console.warn('⚠️ Could not restore text selection:', error);
+      }
+    }
+  }
+
+  preventSelectionLoss() {
+    // Prevent text selection from being lost when clicking on taskbar elements
+    const taskbarElements = document.querySelectorAll('.taskbar, .menu-item, .menu-dropdown, .submenu');
+    
+    taskbarElements.forEach(element => {
+      element.addEventListener('mousedown', (e) => {
+        // Don't prevent default on menu items that need to be clickable
+        if (e.target.closest('.menu-entry') || e.target.closest('[data-mode]')) {
+          return;
+        }
+        
+        // For other taskbar elements, prevent selection loss
+        e.preventDefault();
+        e.stopPropagation();
+      });
     });
   }
 
