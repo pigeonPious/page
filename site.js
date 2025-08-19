@@ -4232,11 +4232,28 @@ class SimpleBlog {
         currentlyOpenSubSubmenu = subSubmenu;
       });
       
-      // Keep sub-submenu open when hovering over it
+      // Keep sub-submenu open when hovering over it - CRITICAL for stability
       subSubmenu.addEventListener('mouseenter', () => {
         // Ensure it stays visible
         subSubmenu.style.display = 'block';
         currentlyOpenSubSubmenu = subSubmenu;
+      });
+      
+      // Prevent sub-submenu from closing when mouse leaves category entry
+      categoryEntry.addEventListener('mouseleave', (e) => {
+        // Only close if we're not moving to the sub-submenu
+        const relatedTarget = e.relatedTarget;
+        if (relatedTarget && !subSubmenu.contains(relatedTarget)) {
+          // Small delay to allow moving to sub-submenu
+          setTimeout(() => {
+            if (!subSubmenu.matches(':hover')) {
+              subSubmenu.style.display = 'none';
+              if (currentlyOpenSubSubmenu === subSubmenu) {
+                currentlyOpenSubSubmenu = null;
+              }
+            }
+          }, 50);
+        }
       });
       
       // Add both to the main submenu
@@ -4254,8 +4271,44 @@ class SimpleBlog {
       }
     });
     
-    // Don't close on mouseleave - let submenus stay open until explicitly closed
-    console.log('✅ Projects submenu updated: submenus stay open until clicked away');
+    // Add a more robust mouse tracking to prevent accidental closing
+    let isOverMenuSystem = false;
+    
+    projectsMenu.addEventListener('mouseenter', () => {
+      isOverMenuSystem = true;
+    });
+    
+    submenu.addEventListener('mouseenter', () => {
+      isOverMenuSystem = true;
+    });
+    
+    projectsMenu.addEventListener('mouseleave', (e) => {
+      // Only close if we're not moving to the submenu
+      const relatedTarget = e.relatedTarget;
+      if (relatedTarget && !submenu.contains(relatedTarget)) {
+        setTimeout(() => {
+          if (!isOverMenuSystem) {
+            submenu.remove();
+            currentlyOpenSubSubmenu = null;
+          }
+        }, 100);
+      }
+    });
+    
+    submenu.addEventListener('mouseleave', (e) => {
+      // Only close if we're not moving to the projects menu
+      const relatedTarget = e.relatedTarget;
+      if (relatedTarget && !projectsMenu.contains(relatedTarget)) {
+        setTimeout(() => {
+          if (!isOverMenuSystem) {
+            submenu.remove();
+            currentlyOpenSubSubmenu = null;
+          }
+        }, 100);
+      }
+    });
+    
+    console.log('✅ Projects submenu updated: level 3 stays open until explicitly closed');
   }
 
   showDevlogPostsWindow(category, posts) {
