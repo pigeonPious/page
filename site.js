@@ -2983,6 +2983,14 @@ class SimpleBlog {
     console.log('🚀 Publishing to GitHub:', { title, commitMessage });
     
     try {
+      // Get GitHub token first
+      const githubToken = localStorage.getItem('github_token');
+      if (!githubToken) {
+        console.log('🔐 No GitHub token found, redirecting to login');
+        this.showGitHubLogin();
+        return;
+      }
+      
       // Check if user is authenticated
       const isAuthenticated = await this.checkAuthentication();
       if (!isAuthenticated) {
@@ -3054,13 +3062,7 @@ class SimpleBlog {
         }
       }
       
-      // Get GitHub token from localStorage
-      const githubToken = localStorage.getItem('github_token');
-      if (!githubToken) {
-        this.showMenuStyle1Message('GitHub token not found. Please authenticate again.', 'error');
-        this.showGitHubLogin();
-        return;
-      }
+      // Token already retrieved at function start
       
       // Handle slug changes during edits
       if (isEdit && originalSlug !== postData.slug) {
