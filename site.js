@@ -4164,7 +4164,7 @@ class SimpleBlog {
       return;
     }
     
-    // Clear existing devlog submenu
+    // Clear existing projects submenu
     const existingSubmenu = projectsMenu.querySelector('.submenu');
     if (existingSubmenu) {
       existingSubmenu.remove();
@@ -4231,14 +4231,17 @@ class SimpleBlog {
     `;
     submenu.appendChild(bufferZone);
     
-    // Add category entries that open floating windows when clicked
+    // Track currently open sub-submenu
+    let currentlyOpenSubSubmenu = null;
+    
+    // Add category entries that expand on hover
     Object.keys(devlogCategories).forEach(category => {
       const posts = devlogCategories[category];
       
       // Create category entry
       const categoryEntry = document.createElement('div');
-      categoryEntry.className = 'menu-entry';
-      categoryEntry.textContent = `${category} (${posts.length})`;
+      categoryEntry.className = 'menu-entry category-entry';
+      categoryEntry.textContent = `${category} >`;
       categoryEntry.style.cssText = `
         padding: 8px 12px;
         cursor: pointer;
@@ -4250,26 +4253,110 @@ class SimpleBlog {
         border-radius: 2px;
         margin: 1px 2px;
         text-transform: capitalize;
+        position: relative;
       `;
       
-      // Add hover effects
+      // Create sub-submenu for this category
+      const subSubmenu = document.createElement('div');
+      subSubmenu.className = 'sub-submenu';
+      subSubmenu.style.cssText = `
+        position: absolute;
+        left: 100%;
+        top: 0;
+        background: var(--menu-bg, #333);
+        border: 1px solid var(--menu-border, #555);
+        padding: 5px 0;
+        min-width: 200px;
+        z-index: 1001;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+      `;
+      
+      // Add posts to sub-submenu
+      posts.forEach(post => {
+        const postEntry = document.createElement('div');
+        postEntry.className = 'menu-entry';
+        postEntry.textContent = post.title || post.slug;
+        postEntry.style.cssText = `
+          padding: 8px 12px;
+          cursor: pointer;
+          color: var(--menu-fg, #fff);
+          font-size: 13px;
+          border-bottom: 1px solid var(--border, #555);
+          background: var(--menu-bg, #333);
+          transition: background-color 0.15s ease;
+        `;
+        
+        // Add hover effects
+        postEntry.addEventListener('mouseenter', () => {
+          postEntry.style.background = 'var(--menu-hover-bg, #555)';
+        });
+        
+        postEntry.addEventListener('mouseleave', () => {
+          postEntry.style.background = 'var(--menu-bg, #333)';
+        });
+        
+        // Add click handler to load post
+        postEntry.addEventListener('click', () => {
+          this.loadPost(post.slug);
+          this.closeAllMenus();
+        });
+        
+        subSubmenu.appendChild(postEntry);
+      });
+      
+      // Show sub-submenu on hover
       categoryEntry.addEventListener('mouseenter', () => {
-        categoryEntry.style.background = 'var(--menu-hover-bg, #555)';
-        categoryEntry.style.transform = 'translateX(2px)';
+        // Close previously open sub-submenu
+        if (currentlyOpenSubSubmenu && currentlyOpenSubSubmenu !== subSubmenu) {
+          currentlyOpenSubSubmenu.style.display = 'none';
+        }
+        
+        // Open this sub-submenu
+        subSubmenu.style.display = 'block';
+        currentlyOpenSubSubmenu = subSubmenu;
       });
       
+      // Hide sub-submenu when leaving category entry
       categoryEntry.addEventListener('mouseleave', () => {
-        categoryEntry.style.background = 'var(--menu-bg, #333)';
-        categoryEntry.style.transform = 'translateX(0)';
+        // Small delay to allow moving to sub-submenu
+        setTimeout(() => {
+          // Check if mouse is over the sub-submenu
+          const rect = subSubmenu.getBoundingClientRect();
+          const mouseX = event.clientX;
+          const mouseY = event.clientY;
+          
+          if (mouseX < rect.left || mouseX > rect.right || mouseY < rect.top || mouseY > rect.bottom) {
+            subSubmenu.style.display = 'none';
+            if (currentlyOpenSubSubmenu === subSubmenu) {
+              currentlyOpenSubSubmenu = null;
+            }
+          }
+        }, 100);
       });
       
-      // Add click handler to open floating window
-      categoryEntry.addEventListener('click', () => {
-        this.showDevlogPostsWindow(category, posts);
-        this.closeAllMenus();
+      // Hide sub-submenu when leaving it
+      subSubmenu.addEventListener('mouseleave', () => {
+        subSubmenu.style.display = 'none';
+        if (currentlyOpenSubSubmenu === subSubmenu) {
+          currentlyOpenSubSubmenu = null;
+        }
       });
       
+      // Also hide when mouse leaves the entire submenu area
+      subSubmenu.addEventListener('mouseout', (e) => {
+        if (!subSubmenu.contains(e.relatedTarget)) {
+          subSubmenu.style.display = 'none';
+          if (currentlyOpenSubSubmenu === subSubmenu) {
+            currentlyOpenSubSubmenu = null;
+          }
+        }
+      });
+      
+      // Add both to the main submenu
       submenu.appendChild(categoryEntry);
+      submenu.appendChild(subSubmenu);
     });
     
     projectsMenu.appendChild(submenu);
@@ -4283,6 +4370,7 @@ class SimpleBlog {
       closeTimeout = setTimeout(() => {
         if (!projectsMenu.matches(':hover') && !submenu.matches(':hover')) {
           submenu.remove();
+          currentlyOpenSubSubmenu = null;
         }
       }, 300); // Increased buffer time to 300ms
     };
@@ -4295,9 +4383,10 @@ class SimpleBlog {
           clearTimeout(closeTimeout);
         }
         closeTimeout = setTimeout(() => {
-                  if (!navigationArea.matches(':hover')) {
-          submenu.remove();
-        }
+          if (!navigationArea.matches(':hover')) {
+            submenu.remove();
+            currentlyOpenSubSubmenu = null;
+          }
         }, 300); // Increased buffer time to 300ms
       });
     }
@@ -4313,7 +4402,7 @@ class SimpleBlog {
     projectsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
     
-    console.log('✅ Devlog submenu updated with clickable categories:', Object.keys(devlogCategories).length);
+    console.log('✅ Projects submenu updated with hierarchical categories:', Object.keys(devlogCategories).length);
   }
 
   showDevlogPostsWindow(category, posts) {
