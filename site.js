@@ -130,9 +130,12 @@ class SimpleBlog {
             <span id="github-status">not connected</span>
           </div>
           
-          <div class="build-indicator" id="build-indicator" style="margin-left: auto; padding: 0 8px; font-size: 11px; color: #666; font-family: monospace; cursor: pointer; user-select: none;" title="Click to increment build">
-            ${this.generateBuildWord()}
-          </div>
+                  <div class="build-indicator" id="build-indicator" style="margin-left: auto; padding: 0 8px; font-size: 11px; color: #666; font-family: monospace; cursor: pointer; user-select: none;" title="Click to increment build">
+          ${this.generateBuildWord()}
+        </div>
+        <div class="cache-clear-btn" id="cache-clear-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #dc3545; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #dc3545; border-radius: 3px;" title="Clear all cache and reload">
+          🧹
+        </div>
         </div>
       </div>
     `;
@@ -256,6 +259,50 @@ class SimpleBlog {
     console.log('✅ Build cache cleared - MAXIMUM TROUBLESHOOTING COMPLETE');
   }
 
+  // Enhanced cache clearer for new builds
+  clearAllCache() {
+    console.log('🧹 Clearing all cache for new build...');
+    
+    // Increment build counter for new build
+    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
+    const newCounter = currentCounter + 1;
+    localStorage.setItem('buildCounter', newCounter.toString());
+    console.log(`🔧 Build counter incremented from ${currentCounter} to ${newCounter}`);
+    
+    // Clear all localStorage items
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    console.log('🧹 Clearing localStorage keys:', keysToRemove);
+    
+    keysToRemove.forEach(key => {
+      const oldValue = localStorage.getItem(key);
+      localStorage.removeItem(key);
+      console.log(`🧹 Cleared: ${key} = ${oldValue}`);
+    });
+    
+    // Clear sessionStorage
+    sessionStorage.clear();
+    console.log('🧹 Cleared sessionStorage');
+    
+    // Clear any cached data in memory
+    this.posts = [];
+    this.currentPost = null;
+    
+    // Force reload to ensure fresh state
+    console.log('🧹 Cache cleared, reloading page...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+    
+    console.log('✅ All cache cleared and page will reload');
+  }
+
   async validateGitHubToken() {
     try {
       const githubConfig = localStorage.getItem('githubConfig');
@@ -295,6 +342,35 @@ class SimpleBlog {
 
 
 
+  setupCSSVariables() {
+    console.log('🎨 Setting up CSS variables...');
+    
+    // Set CSS custom properties for consistent theming
+    const root = document.documentElement;
+    
+    // Accent color for highlights and borders
+    root.style.setProperty('--accent-color', '#4a9eff');
+    
+    // Danger color for close buttons and warnings
+    root.style.setProperty('--danger-color', '#dc3545');
+    
+    // Success color for positive actions
+    root.style.setProperty('--success-color', '#28a745');
+    
+    // Warning color for cautions
+    root.style.setProperty('--warning-color', '#ffc107');
+    
+    // Menu colors for consistent styling
+    root.style.setProperty('--menu-bg', '#2d2d2d');
+    root.style.setProperty('--menu-fg', '#ffffff');
+    root.style.setProperty('--menu-border', '#555555');
+    root.style.setProperty('--menu-hover-bg', '#4a4a4a');
+    root.style.setProperty('--muted', '#888888');
+    root.style.setProperty('--border', '#555555');
+    
+    console.log('✅ CSS variables setup complete');
+  }
+
   setupBuildWordAutoRefresh() {
     // Build word is now static and only changes on actual builds
     // No auto-refresh needed
@@ -303,6 +379,9 @@ class SimpleBlog {
 
   bindEvents() {
     console.log('🔧 bindEvents() called');
+    
+    // Setup CSS variables
+    this.setupCSSVariables();
     
     // Menu system
     console.log('🔍 Setting up menu system...');
@@ -789,6 +868,14 @@ class SimpleBlog {
     this.addClickHandler('#build-indicator', () => {
       console.log('🔧 Build indicator clicked - incrementing build');
       this.incrementBuildWord();
+    });
+    
+    // Add cache clear button handler
+    this.addClickHandler('#cache-clear-btn', () => {
+      console.log('🧹 Cache clear button clicked');
+      if (confirm('Clear all cache and reload? This will reset all stored data.')) {
+        this.clearAllCache();
+      }
     });
     
     this.addClickHandler('#show-localstorage', () => {
@@ -3905,13 +3992,14 @@ class SimpleBlog {
       categorySeparator.style.cssText = `
         padding: 6px 12px;
         background: var(--menu-bg, #333);
-        color: var(--muted, #888);
+        color: var(--accent-color, #4a9eff);
         font-size: 11px;
         font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border-bottom: 1px solid var(--border, #555);
-        border-top: 1px solid var(--border, #555);
+        border-bottom: 2px solid var(--accent-color, #4a9eff);
+        border-top: 2px solid var(--accent-color, #4a9eff);
+        text-shadow: 0 0 8px var(--accent-color, #4a9eff);
       `;
       categorySeparator.textContent = category;
       submenu.appendChild(categorySeparator);
@@ -3960,13 +4048,14 @@ class SimpleBlog {
       generalSeparator.style.cssText = `
         padding: 6px 12px;
         background: var(--menu-bg, #333);
-        color: var(--muted, #888);
+        color: var(--accent-color, #4a9eff);
         font-size: 11px;
         font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border-bottom: 1px solid var(--border, #555);
-        border-top: 1px solid var(--border, #555);
+        border-bottom: 2px solid var(--accent-color, #4a9eff);
+        border-top: 2px solid var(--accent-color, #4a9eff);
+        text-shadow: 0 0 8px var(--accent-color, #4a9eff);
       `;
       generalSeparator.textContent = 'general';
       submenu.appendChild(generalSeparator);
@@ -4280,6 +4369,263 @@ class SimpleBlog {
     submenu.addEventListener('mouseleave', closeSubmenu);
     
     console.log('✅ Devlog submenu updated with hierarchical categories:', Object.keys(devlogCategories));
+  }
+
+  showDevlogPostsWindow(category, posts) {
+    console.log(`📋 Opening devlog posts window for category: ${category} with ${posts.length} posts`);
+    
+    // Remove any existing devlog window
+    const existingWindow = document.getElementById('devlog-posts-window');
+    if (existingWindow) {
+      existingWindow.remove();
+    }
+    
+    // Create the floating window
+    const window = document.createElement('div');
+    window.id = 'devlog-posts-window';
+    window.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--menu-bg, #333);
+      border: 2px solid var(--accent-color, #4a9eff);
+      border-radius: 8px;
+      padding: 20px;
+      min-width: 400px;
+      max-width: 600px;
+      max-height: 80vh;
+      z-index: 10000;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      overflow-y: auto;
+      font-family: inherit;
+    `;
+    
+    // Create header with title and close button
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--accent-color, #4a9eff);
+    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = `${category.charAt(0).toUpperCase() + category.slice(1)} Devlog Posts`;
+    title.style.cssText = `
+      margin: 0;
+      color: var(--accent-color, #4a9eff);
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: capitalize;
+    `;
+    
+    const closeButton = document.createElement('div');
+    closeButton.textContent = '×';
+    closeButton.style.cssText = `
+      cursor: pointer;
+      font-size: 24px;
+      color: var(--muted, #888);
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      user-select: none;
+    `;
+    
+    // Add hover effects to close button
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = 'var(--danger-color, #dc3545)';
+      closeButton.style.color = 'white';
+      closeButton.style.transform = 'scale(1.1)';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = 'transparent';
+      closeButton.style.color = 'var(--muted, #888)';
+      closeButton.style.transform = 'scale(1)';
+    });
+    
+    // Close window when close button is clicked
+    closeButton.addEventListener('click', () => {
+      window.remove();
+    });
+    
+    header.appendChild(title);
+    header.appendChild(closeButton);
+    window.appendChild(header);
+    
+    // Create posts list
+    const postsList = document.createElement('div');
+    postsList.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    `;
+    
+    posts.forEach(post => {
+      const postEntry = document.createElement('div');
+      postEntry.style.cssText = `
+        padding: 12px 16px;
+        background: var(--menu-bg, #333);
+        border: 1px solid var(--border, #555);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      `;
+      
+      const postInfo = document.createElement('div');
+      postInfo.style.cssText = `
+        flex: 1;
+      `;
+      
+      const postTitle = document.createElement('div');
+      postTitle.textContent = post.title || post.slug;
+      postTitle.style.cssText = `
+        font-weight: bold;
+        color: var(--menu-fg, #fff);
+        margin-bottom: 4px;
+        font-size: 14px;
+      `;
+      
+      const postDate = document.createElement('div');
+      postDate.textContent = post.date || 'No date';
+      postDate.style.cssText = `
+        color: var(--muted, #888);
+        font-size: 12px;
+      `;
+      
+      postInfo.appendChild(postTitle);
+      postInfo.appendChild(postDate);
+      
+      const clickIndicator = document.createElement('div');
+      clickIndicator.textContent = '→';
+      clickIndicator.style.cssText = `
+        color: var(--accent-color, #4a9eff);
+        font-size: 18px;
+        font-weight: bold;
+        opacity: 0.7;
+        transition: all 0.2s ease;
+      `;
+      
+      postEntry.appendChild(postInfo);
+      postEntry.appendChild(clickIndicator);
+      
+      // Add hover effects
+      postEntry.addEventListener('mouseenter', () => {
+        postEntry.style.background = 'var(--menu-hover-bg, #555)';
+        postEntry.style.borderColor = 'var(--accent-color, #4a9eff)';
+        postEntry.style.transform = 'translateX(4px)';
+        clickIndicator.style.opacity = '1';
+        clickIndicator.style.transform = 'translateX(4px)';
+      });
+      
+      postEntry.addEventListener('mouseleave', () => {
+        postEntry.style.background = 'var(--menu-bg, #333)';
+        postEntry.style.borderColor = 'var(--border, #555)';
+        postEntry.style.transform = 'translateX(0)';
+        clickIndicator.style.opacity = '0.7';
+        clickIndicator.style.transform = 'translateX(0)';
+      });
+      
+      // Add click handler to load post
+      postEntry.addEventListener('click', () => {
+        this.loadPost(post.slug);
+        window.remove();
+      });
+      
+      postsList.appendChild(postEntry);
+    });
+    
+    window.appendChild(postsList);
+    
+    // Add to document
+    document.body.appendChild(window);
+    
+    // Make window draggable
+    this.makeWindowDraggable(window, header);
+    
+    // Close window when clicking outside
+    const closeOnOutsideClick = (e) => {
+      if (!window.contains(e.target)) {
+        window.remove();
+        document.removeEventListener('click', closeOnOutsideClick);
+      }
+    };
+    
+    // Delay the outside click handler to prevent immediate closing
+    setTimeout(() => {
+      document.addEventListener('click', closeOnOutsideClick);
+    }, 100);
+    
+    // Close window on escape key
+    const closeOnEscape = (e) => {
+      if (e.key === 'Escape') {
+        window.remove();
+        document.removeEventListener('keydown', closeOnEscape);
+      }
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    
+    console.log(`✅ Devlog posts window opened for ${category} with ${posts.length} posts`);
+  }
+
+  makeWindowDraggable(window, header) {
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    
+    header.style.cursor = 'grab';
+    
+    header.addEventListener('mousedown', (e) => {
+      if (e.target === header || e.target.parentNode === header) {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        const rect = window.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        
+        header.style.cursor = 'grabbing';
+        e.preventDefault();
+      }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      const newLeft = startLeft + deltaX;
+      const newTop = startTop + deltaY;
+      
+      // Keep window within viewport bounds
+      const maxLeft = window.innerWidth - window.offsetWidth;
+      const maxTop = window.innerHeight - window.offsetHeight;
+      
+      const clampedLeft = Math.max(0, Math.min(newLeft, maxLeft));
+      const clampedTop = Math.max(0, Math.min(newTop, maxTop));
+      
+      window.style.left = `${clampedLeft}px`;
+      window.style.top = `${clampedTop}px`;
+      window.style.transform = 'none';
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        header.style.cursor = 'grab';
+      }
+    });
   }
 
   toggleConsole() {
