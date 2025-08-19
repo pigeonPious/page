@@ -826,7 +826,8 @@ class SimpleBlog {
       allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
       this.allPostsMouseEnterHandler = () => {
         console.log('📚 All posts submenu hovered');
-        this.showAllPostsSubmenu(allPostsMenu);
+        // Use our new navigation system instead of the old showAllPostsSubmenu
+        this.updateAllPostsSubmenu(this.posts || []);
       };
       allPostsMenu.addEventListener('mouseenter', this.allPostsMouseEnterHandler);
       console.log('✅ All posts submenu handler attached');
@@ -841,7 +842,8 @@ class SimpleBlog {
       devlogMenu.removeEventListener('mouseenter', this.devlogMouseEnterHandler);
       this.devlogMouseEnterHandler = () => {
         console.log('📝 Devlog submenu hovered');
-        this.showDevlogSubmenu(devlogMenu);
+        // Use our new navigation system instead of the old showDevlogSubmenu
+        this.updateDevlogSubmenu(this.posts || []);
       };
       devlogMenu.addEventListener('mouseenter', this.devlogMouseEnterHandler);
       console.log('✅ Devlog submenu handler attached');
