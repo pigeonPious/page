@@ -3510,11 +3510,29 @@ class SimpleBlog {
       z-index: 1000;
     `;
     
-    // Add all posts
+    // Add all posts with keyword labels
     allPosts.forEach(post => {
       const postEntry = document.createElement('div');
       postEntry.className = 'menu-entry';
-      postEntry.textContent = post.title || post.slug;
+      
+      // Create title and keyword display
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = post.title || post.slug;
+      titleSpan.style.cssText = 'display: block; font-weight: normal;';
+      
+      const keywordSpan = document.createElement('span');
+      keywordSpan.textContent = post.keywords || 'general';
+      keywordSpan.style.cssText = `
+        display: block; 
+        font-size: 11px; 
+        color: var(--muted, #888); 
+        font-style: italic;
+        margin-top: 2px;
+      `;
+      
+      postEntry.appendChild(titleSpan);
+      postEntry.appendChild(keywordSpan);
+      
       postEntry.style.cssText = `
         padding: 8px 12px;
         cursor: pointer;
@@ -3532,6 +3550,19 @@ class SimpleBlog {
     });
     
     allPostsMenu.appendChild(submenu);
+    
+    // Add mouse leave handler to close entire submenu
+    const closeSubmenu = () => {
+      setTimeout(() => {
+        if (!allPostsMenu.matches(':hover') && !submenu.matches(':hover')) {
+          submenu.remove();
+        }
+      }, 100);
+    };
+    
+    allPostsMenu.addEventListener('mouseleave', closeSubmenu);
+    submenu.addEventListener('mouseleave', closeSubmenu);
+    
     console.log('✅ All Posts submenu updated with', allPosts.length, 'posts');
   }
 
@@ -3655,18 +3686,30 @@ class SimpleBlog {
         subSubmenu.style.display = 'block';
       });
       
+      // Hide sub-submenu when leaving category entry
       categoryEntry.addEventListener('mouseleave', () => {
-        // Small delay to allow moving to sub-submenu
         setTimeout(() => {
-          if (!subSubmenu.matches(':hover')) {
+          // Check if mouse is over the sub-submenu
+          const rect = subSubmenu.getBoundingClientRect();
+          const mouseX = event.clientX;
+          const mouseY = event.clientY;
+          
+          if (mouseX < rect.left || mouseX > rect.right || mouseY < rect.top || mouseY > rect.bottom) {
             subSubmenu.style.display = 'none';
           }
-        }, 100);
+        }, 50);
       });
       
       // Hide sub-submenu when leaving it
       subSubmenu.addEventListener('mouseleave', () => {
         subSubmenu.style.display = 'none';
+      });
+      
+      // Also hide when mouse leaves the entire submenu area
+      subSubmenu.addEventListener('mouseout', (e) => {
+        if (!subSubmenu.contains(e.relatedTarget)) {
+          subSubmenu.style.display = 'none';
+        }
       });
       
       // Add both to the main submenu
@@ -3675,6 +3718,19 @@ class SimpleBlog {
     });
     
     devlogMenu.appendChild(submenu);
+    
+    // Add mouse leave handler to close entire submenu
+    const closeSubmenu = () => {
+      setTimeout(() => {
+        if (!devlogMenu.matches(':hover') && !submenu.matches(':hover')) {
+          submenu.remove();
+        }
+      }, 100);
+    };
+    
+    devlogMenu.addEventListener('mouseleave', closeSubmenu);
+    submenu.addEventListener('mouseleave', closeSubmenu);
+    
     console.log('✅ Devlog submenu updated with hierarchical categories:', Object.keys(devlogCategories));
   }
 
