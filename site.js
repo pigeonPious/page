@@ -727,11 +727,11 @@ class SimpleBlog {
       this.loadRandomPost();
     });
 
-    // Build indicator click handler
-    this.addClickHandler('#build-indicator', () => {
-      console.log('🔧 Build indicator clicked - incrementing build');
-      this.incrementBuildWord();
-    });
+    // Build indicator - no click handler needed, only changes on actual builds
+    // this.addClickHandler('#build-indicator', () => {
+    //   console.log('🔧 Build indicator clicked - incrementing build');
+    //   this.incrementBuildWord();
+    // });
     
     // Debug button handlers
     this.addClickHandler('#test-cache-clear', () => {
@@ -1202,9 +1202,11 @@ class SimpleBlog {
           console.log('📚 loadPosts: Displaying most recent post:', mostRecent);
           await this.loadPost(mostRecent.slug);
           
-          // Update navigation menu with all posts' flags
-          const allFlags = this.posts.map(post => post.keywords || '').join(',');
-          this.updateNavigationMenu(allFlags);
+          // Update navigation menu with all posts (with a small delay to ensure DOM is ready)
+          console.log('🧭 loadPosts: Updating navigation menu with', this.posts.length, 'posts');
+          setTimeout(() => {
+            this.updateNavigationMenu();
+          }, 100);
         } else {
           console.log('⚠️ loadPosts: No posts found in index');
           this.displayDefaultContent();
@@ -3462,6 +3464,82 @@ class SimpleBlog {
   updateNavigationMenu(flags) {
     console.log('🧭 Updating navigation menu with flags:', flags);
     
+    // Get all posts to work with
+    const allPosts = this.posts || [];
+    console.log('🧭 Total posts available for navigation:', allPosts.length);
+    
+    // Update All Posts submenu
+    this.updateAllPostsSubmenu(allPosts);
+    
+    // Update Devlog submenu
+    this.updateDevlogSubmenu(allPosts);
+    
+    console.log('✅ Navigation menu fully updated');
+  }
+
+  updateAllPostsSubmenu(allPosts) {
+    console.log('📚 Updating All Posts submenu with', allPosts.length, 'posts');
+    
+    // Find the all posts menu item
+    const allPostsMenu = document.querySelector('#all-posts-menu');
+    if (!allPostsMenu) {
+      console.log('⚠️ All Posts menu not found');
+      return;
+    }
+    
+    // Clear existing submenu
+    const existingSubmenu = allPostsMenu.querySelector('.submenu');
+    if (existingSubmenu) {
+      existingSubmenu.remove();
+    }
+    
+    if (allPosts.length === 0) {
+      console.log('📋 No posts to show in All Posts submenu');
+      return;
+    }
+    
+    // Create submenu
+    const submenu = document.createElement('div');
+    submenu.className = 'submenu';
+    submenu.style.cssText = `
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background: var(--menu-bg, #333);
+      border: 1px solid var(--menu-border, #555);
+      padding: 5px 0;
+      min-width: 200px;
+      z-index: 1000;
+    `;
+    
+    // Add all posts
+    allPosts.forEach(post => {
+      const postEntry = document.createElement('div');
+      postEntry.className = 'menu-entry';
+      postEntry.textContent = post.title || post.slug;
+      postEntry.style.cssText = `
+        padding: 8px 12px;
+        cursor: pointer;
+        color: var(--menu-fg, #fff);
+        font-size: 13px;
+        border-bottom: 1px solid var(--border, #555);
+      `;
+      
+      postEntry.addEventListener('click', () => {
+        this.loadPost(post.slug);
+        this.closeAllMenus();
+      });
+      
+      submenu.appendChild(postEntry);
+    });
+    
+    allPostsMenu.appendChild(submenu);
+    console.log('✅ All Posts submenu updated with', allPosts.length, 'posts');
+  }
+
+  updateDevlogSubmenu(allPosts) {
+    console.log('📋 Updating Devlog submenu');
+    
     // Find the devlog menu item
     const devlogMenu = document.querySelector('#devlog-menu');
     if (!devlogMenu) {
@@ -3475,8 +3553,7 @@ class SimpleBlog {
       existingSubmenu.remove();
     }
     
-    // Get all posts to filter by flags
-    const allPosts = this.posts || [];
+    // Filter for devlog posts
     const devlogPosts = allPosts.filter(post => {
       const postFlags = post.keywords || '';
       return postFlags.includes('devlog');
@@ -3565,7 +3642,7 @@ class SimpleBlog {
     });
     
     devlogMenu.appendChild(submenu);
-    console.log('✅ Navigation menu updated with devlog categories:', Object.keys(devlogCategories));
+    console.log('✅ Devlog submenu updated with categories:', Object.keys(devlogCategories));
   }
 
   toggleConsole() {
