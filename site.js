@@ -954,8 +954,15 @@ class SimpleBlog {
         openTimeout = setTimeout(() => {
           // Close other level 1 menus first
           this.closeOtherLevel1Menus('all-posts-menu');
-          // Use the old showAllPostsSubmenu for now to ensure click handlers work
-          this.showAllPostsSubmenu(allPostsMenu);
+          
+          // Only create submenu if it doesn't already exist
+          const existingSubmenu = allPostsMenu.querySelector('.submenu');
+          if (!existingSubmenu) {
+            console.log('📚 Creating new All Posts submenu');
+            this.showAllPostsSubmenu(allPostsMenu);
+          } else {
+            console.log('📚 All Posts submenu already exists, not recreating');
+          }
         }, 150); // Small delay to prevent accidental opening
       };
       
@@ -990,7 +997,15 @@ class SimpleBlog {
         openTimeout = setTimeout(() => {
           // Close other level 1 menus first
           this.closeOtherLevel1Menus('projects-menu');
-          this.updateProjectsSubmenu(this.posts || []);
+          
+          // Only create submenu if it doesn't already exist
+          const existingSubmenu = projectsMenu.querySelector('.submenu');
+          if (!existingSubmenu) {
+            console.log('📝 Creating new Projects submenu');
+            this.updateProjectsSubmenu(this.posts || []);
+          } else {
+            console.log('📝 Projects submenu already exists, not recreating');
+          }
         }, 150); // Small delay to prevent accidental opening
       };
       
