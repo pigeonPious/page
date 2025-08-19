@@ -4178,8 +4178,10 @@ class SimpleBlog {
       border-radius: 4px;
     `;
     
-    // Track currently open sub-submenu
-    let currentlyOpenSubSubmenu = null;
+    // Track currently open sub-submenu globally
+    if (!this.globalCurrentlyOpenSubSubmenu) {
+      this.globalCurrentlyOpenSubSubmenu = null;
+    }
     
     // Add category entries that expand on hover
     Object.keys(devlogCategories).forEach(category => {
@@ -4255,25 +4257,27 @@ class SimpleBlog {
           // Close only the projects submenu, not all menus
           if (submenu.parentNode) {
             submenu.remove();
-            currentlyOpenSubSubmenu = null;
+            this.globalCurrentlyOpenSubSubmenu = null;
           }
         });
         
         subSubmenu.appendChild(postEntry);
       });
       
-      // SIMPLE LOGIC: Show sub-submenu on hover, close previous one
+      // EXACT LOGIC: Level 3 only closes when new level 3 opens, nothing to do with mouse position
       categoryEntry.addEventListener('mouseenter', () => {
-        // Close previously open sub-submenu
-        if (currentlyOpenSubSubmenu && currentlyOpenSubSubmenu !== subSubmenu) {
-          currentlyOpenSubSubmenu.style.display = 'none';
+        // Close previously open sub-submenu ONLY when opening a new one
+        if (this.globalCurrentlyOpenSubSubmenu && this.globalCurrentlyOpenSubSubmenu !== subSubmenu) {
+          this.globalCurrentlyOpenSubSubmenu.style.display = 'none';
         }
         
         // Position and open this sub-submenu
         positionSubSubmenu();
         subSubmenu.style.display = 'block';
-        currentlyOpenSubSubmenu = subSubmenu;
+        this.globalCurrentlyOpenSubSubmenu = subSubmenu;
       });
+      
+      // NO mouseleave events - level 3 stays open until explicitly closed
       
       // Add both to the main submenu
       submenu.appendChild(categoryEntry);
@@ -4286,7 +4290,7 @@ class SimpleBlog {
     document.addEventListener('click', (e) => {
       if (!projectsMenu.contains(e.target) && !submenu.contains(e.target)) {
         submenu.remove();
-        currentlyOpenSubSubmenu = null;
+        this.globalCurrentlyOpenSubSubmenu = null;
       }
     });
     
