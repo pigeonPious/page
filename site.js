@@ -29,7 +29,7 @@ class SimpleBlog {
     console.log('✅ Events bound');
     this.loadPosts();
     console.log('✅ Posts loaded');
-    this.setTheme(this.theme);
+    this.setTheme(this.theme, false); // Don't open HSL picker on page load
     console.log('✅ Theme set');
     
     // If custom theme, check for saved HSL values and apply them
@@ -135,6 +135,9 @@ class SimpleBlog {
         </div>
         <div class="cache-clear-btn" id="cache-clear-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #dc3545; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #dc3545; border-radius: 3px;" title="Clear all cache and reload">
           🧹
+        </div>
+        <div class="build-increment-btn" id="build-increment-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #28a745; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #28a745; border-radius: 3px;" title="Increment build word (for new builds)">
+          🔧
         </div>
         </div>
       </div>
@@ -262,12 +265,6 @@ class SimpleBlog {
   // Enhanced cache clearer for new builds
   clearAllCache() {
     console.log('🧹 Clearing all cache for new build...');
-    
-    // Increment build counter for new build
-    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
-    const newCounter = currentCounter + 1;
-    localStorage.setItem('buildCounter', newCounter.toString());
-    console.log(`🔧 Build counter incremented from ${currentCounter} to ${newCounter}`);
     
     // Clear all localStorage items
     const keysToRemove = [];
@@ -831,7 +828,7 @@ class SimpleBlog {
         console.log('🎨 Custom theme button clicked - calling setTheme...');
       }
       
-      this.setTheme(mode);
+      this.setTheme(mode, mode === 'custom'); // Open HSL picker only for custom theme
     });
 
     // Navigation buttons
@@ -875,6 +872,14 @@ class SimpleBlog {
       console.log('🧹 Cache clear button clicked');
       if (confirm('Clear all cache and reload? This will reset all stored data.')) {
         this.clearAllCache();
+      }
+    });
+    
+    // Add build increment button handler
+    this.addClickHandler('#build-increment-btn', () => {
+      console.log('🔧 Build increment button clicked');
+      if (confirm('Increment build word? This should only be done when pushing a new build.')) {
+        this.incrementBuildWord();
       }
     });
     
@@ -1009,36 +1014,19 @@ class SimpleBlog {
       console.warn('⚠️ All posts menu element not found');
     }
 
-    // Projects submenu
+    // Projects submenu - CLICK ONLY, no hover
     const projectsMenu = document.getElementById('projects-menu');
     if (projectsMenu) {
       // Remove existing listeners to prevent duplication
-      projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
-      projectsMenu.removeEventListener('mouseleave', this.projectsMouseLeaveHandler);
+      projectsMenu.removeEventListener('click', this.projectsClickHandler);
       
-      let openTimeout = null;
-      
-      this.projectsMouseEnterHandler = () => {
-        console.log('📝 Projects submenu hovered');
-        if (openTimeout) {
-          clearTimeout(openTimeout);
-        }
-        openTimeout = setTimeout(() => {
-          // Use our new navigation system instead of the old showDevlogSubmenu
-          this.updateProjectsSubmenu(this.posts || []);
-        }, 150); // Small delay to prevent accidental opening
+      this.projectsClickHandler = () => {
+        console.log('📝 Projects menu clicked - opening submenu');
+        this.updateProjectsSubmenu(this.posts || []);
       };
       
-      this.projectsMouseLeaveHandler = () => {
-        if (openTimeout) {
-          clearTimeout(openTimeout);
-          openTimeout = null;
-        }
-      };
-      
-      projectsMenu.addEventListener('mouseenter', this.projectsMouseEnterHandler);
-      projectsMenu.addEventListener('mouseleave', this.projectsMouseLeaveHandler);
-      console.log('✅ Projects submenu handler attached');
+      projectsMenu.addEventListener('click', this.projectsClickHandler);
+      console.log('✅ Projects submenu click handler attached');
     } else {
       console.warn('⚠️ Projects menu element not found');
     }
@@ -1644,8 +1632,8 @@ class SimpleBlog {
     }
   }
 
-  setTheme(mode) {
-    console.log('🎨 Setting theme:', mode);
+  setTheme(mode, openHSL = false) {
+    console.log('🎨 Setting theme:', mode, 'openHSL:', openHSL);
     this.theme = mode;
     
     // Remove existing theme classes
@@ -1668,18 +1656,18 @@ class SimpleBlog {
     } else if (mode === 'custom') {
       document.body.classList.add('custom-mode');
       
-      // Open HSL color picker instead of setting hardcoded colors
-      console.log('🎨 Custom theme selected, calling openHSLColorPicker...');
-      console.log('🎨 this object:', this);
-      console.log('🎨 this.openHSLColorPicker:', this.openHSLColorPicker);
-      console.log('🎨 typeof this.openHSLColorPicker:', typeof this.openHSLColorPicker);
-      
-      try {
-        this.openHSLColorPicker();
-        console.log('✅ HSL color picker opened successfully');
-      } catch (error) {
-        console.error('❌ Error opening HSL color picker:', error);
-        console.error('❌ Error stack:', error.stack);
+      // Only open HSL color picker if explicitly requested (not on page load)
+      if (openHSL) {
+        console.log('🎨 Custom theme selected by user, opening HSL color picker...');
+        try {
+          this.openHSLColorPicker();
+          console.log('✅ HSL color picker opened successfully');
+        } catch (error) {
+          console.error('❌ Error opening HSL color picker:', error);
+          console.error('❌ Error stack:', error.stack);
+        }
+      } else {
+        console.log('🎨 Custom theme restored from localStorage, not opening HSL picker');
       }
     } else if (mode === 'random') {
       // Generate random theme
@@ -4553,20 +4541,7 @@ class SimpleBlog {
     // Make window draggable
     this.makeWindowDraggable(window, header);
     
-    // Close window when clicking outside
-    const closeOnOutsideClick = (e) => {
-      if (!window.contains(e.target)) {
-        window.remove();
-        document.removeEventListener('click', closeOnOutsideClick);
-      }
-    };
-    
-    // Delay the outside click handler to prevent immediate closing
-    setTimeout(() => {
-      document.addEventListener('click', closeOnOutsideClick);
-    }, 100);
-    
-    // Close window on escape key
+    // Close window ONLY on escape key or close button (no outside click closing)
     const closeOnEscape = (e) => {
       if (e.key === 'Escape') {
         window.remove();
