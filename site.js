@@ -1204,11 +1204,8 @@ class SimpleBlog {
           console.log('📚 loadPosts: Displaying most recent post:', mostRecent);
           await this.loadPost(mostRecent.slug);
           
-          // Update navigation menu with all posts (with a small delay to ensure DOM is ready)
-          console.log('🧭 loadPosts: Updating navigation menu with', this.posts.length, 'posts');
-          setTimeout(() => {
-            this.updateNavigationMenu();
-          }, 100);
+          // Don't create submenus on page load - only create them on hover
+          console.log('🧭 loadPosts: Posts loaded, submenus will be created on hover');
         } else {
           console.log('⚠️ loadPosts: No posts found in index');
           this.displayDefaultContent();
@@ -2702,7 +2699,7 @@ class SimpleBlog {
         const indexUpdated = await this.updatePostsIndex(postData);
         
         if (indexUpdated) {
-          // Refresh the posts list and navigation
+          // Refresh the posts list
           await this.loadPosts();
           
           this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`, 'success');
@@ -2778,9 +2775,8 @@ class SimpleBlog {
         
         console.log('✅ Posts index updated');
         
-        // Update local posts array and refresh navigation
+        // Update local posts array
         this.posts = currentIndex;
-        this.updateNavigationMenu(currentIndex.map(post => post.keywords).join(','));
         
         return true;
       }
@@ -3601,27 +3597,39 @@ class SimpleBlog {
       z-index: 1000;
     `;
     
-    // Add posts by category
+    // Add category entries that expand on hover
     Object.keys(devlogCategories).forEach(category => {
       const posts = devlogCategories[category];
       
-      // Add category header
-      if (category !== 'general') {
-        const categoryHeader = document.createElement('div');
-        categoryHeader.className = 'menu-entry';
-        categoryHeader.textContent = category;
-        categoryHeader.style.cssText = `
-          padding: 6px 12px;
-          color: var(--muted, #888);
-          font-size: 12px;
-          font-weight: bold;
-          border-bottom: 1px solid var(--border, #555);
-          text-transform: capitalize;
-        `;
-        submenu.appendChild(categoryHeader);
-      }
+      const categoryEntry = document.createElement('div');
+      categoryEntry.className = 'menu-entry category-entry';
+      categoryEntry.textContent = `${category} >`;
+      categoryEntry.style.cssText = `
+        padding: 8px 12px;
+        cursor: pointer;
+        color: var(--menu-fg, #fff);
+        font-size: 13px;
+        border-bottom: 1px solid var(--border, #555);
+        text-transform: capitalize;
+        position: relative;
+      `;
       
-      // Add posts in this category
+      // Create sub-submenu for this category
+      const subSubmenu = document.createElement('div');
+      subSubmenu.className = 'sub-submenu';
+      subSubmenu.style.cssText = `
+        position: absolute;
+        left: 100%;
+        top: 0;
+        background: var(--menu-bg, #333);
+        border: 1px solid var(--menu-border, #555);
+        padding: 5px 0;
+        min-width: 200px;
+        z-index: 1001;
+        display: none;
+      `;
+      
+      // Add posts to sub-submenu
       posts.forEach(post => {
         const postEntry = document.createElement('div');
         postEntry.className = 'menu-entry';
@@ -3639,12 +3647,35 @@ class SimpleBlog {
           this.closeAllMenus();
         });
         
-        submenu.appendChild(postEntry);
+        subSubmenu.appendChild(postEntry);
       });
+      
+      // Show sub-submenu on hover
+      categoryEntry.addEventListener('mouseenter', () => {
+        subSubmenu.style.display = 'block';
+      });
+      
+      categoryEntry.addEventListener('mouseleave', () => {
+        // Small delay to allow moving to sub-submenu
+        setTimeout(() => {
+          if (!subSubmenu.matches(':hover')) {
+            subSubmenu.style.display = 'none';
+          }
+        }, 100);
+      });
+      
+      // Hide sub-submenu when leaving it
+      subSubmenu.addEventListener('mouseleave', () => {
+        subSubmenu.style.display = 'none';
+      });
+      
+      // Add both to the main submenu
+      submenu.appendChild(categoryEntry);
+      submenu.appendChild(subSubmenu);
     });
     
     devlogMenu.appendChild(submenu);
-    console.log('✅ Devlog submenu updated with categories:', Object.keys(devlogCategories));
+    console.log('✅ Devlog submenu updated with hierarchical categories:', Object.keys(devlogCategories));
   }
 
   toggleConsole() {
