@@ -130,9 +130,7 @@ class SimpleBlog {
             <span id="github-status">not connected</span>
           </div>
           
-                  <div class="build-indicator" id="build-indicator" style="margin-left: auto; padding: 0 8px; font-size: 11px; color: #666; font-family: monospace; cursor: pointer; user-select: none;" title="Click to increment build">
-          ${this.generateBuildWord()}
-        </div>
+
         <div class="cache-clear-btn" id="cache-clear-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #dc3545; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #dc3545; border-radius: 3px;" title="Clear all cache and reload">
           🧹
         </div>
@@ -143,81 +141,6 @@ class SimpleBlog {
     // Insert at the beginning of body
     document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
     console.log('✅ Taskbar created');
-  }
-
-    generateBuildWord() {
-    console.log('🔧 generateBuildWord called - MAXIMUM TROUBLESHOOTING MODE');
-    
-    // Check if we already have a build word stored
-    let storedBuildWord = localStorage.getItem('currentBuildWord');
-    let storedBuildCounter = localStorage.getItem('buildCounter');
-    
-    console.log('🔧 Stored values:', { storedBuildWord, storedBuildCounter });
-    
-    // Check if build counter has changed (indicating a new build)
-    const currentBuildCounter = parseInt(localStorage.getItem('buildCounter') || '1');
-    
-    console.log('🔧 Current build counter:', currentBuildCounter);
-    console.log('🔧 Stored build counter:', storedBuildCounter);
-    console.log('🔧 Comparison result:', storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter);
-    
-    // Only clear cache if this is a new build (counter changed)
-    if (storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter) {
-      console.log('🧹 NEW BUILD DETECTED! Clearing cache...');
-      console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
-      this.clearBuildCache();
-      console.log('🧹 Cache cleared, generating new build word...');
-    } else if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
-      // Use existing build word if it's the same build
-      console.log(`🔧 Build word: Using existing build word: ${storedBuildWord}`);
-      return storedBuildWord;
-    }
-    
-    // Generate a new build word
-    const words = [
-      'alpha', 'beta', 'gamma', 'delta', 'echo', 'foxtrot', 'golf', 'hotel',
-      'india', 'juliet', 'kilo', 'lima', 'mike', 'november', 'oscar', 'papa',
-      'quebec', 'romeo', 'sierra', 'tango', 'uniform', 'victor', 'whiskey',
-      'xray', 'yankee', 'zulu', 'crimson', 'azure', 'emerald', 'golden',
-      'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
-      'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
-      'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic', 'quantum', 'radar', 'stellar', 'nebula'
-    ];
-    
-    // Use a fixed seed based on the build counter to ensure consistent word selection
-    const seed = currentBuildCounter;
-    const calculatedIndex = seed % words.length;
-    const word = words[calculatedIndex];
-    
-    const newBuildWord = `${word}-${currentBuildCounter}`;
-    
-    // Store the build word so it doesn't change on reloads
-    localStorage.setItem('currentBuildWord', newBuildWord);
-    
-    console.log(`🔧 Build word: Generated new build word: ${newBuildWord} (seed: ${seed}, index: ${calculatedIndex})`);
-    console.log(`🔧 Stored in localStorage:`, { currentBuildWord: newBuildWord, buildCounter: currentBuildCounter });
-    
-    return newBuildWord;
-  }
-
-  incrementBuildWord() {
-    // Increment the build counter (should only be called on actual builds)
-    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
-    const newCounter = currentCounter + 1;
-    localStorage.setItem('buildCounter', newCounter.toString());
-    
-    // Clear the stored build word so a new one will be generated
-    localStorage.removeItem('currentBuildWord');
-    
-    // Update the display
-    const buildIndicator = document.getElementById('build-indicator');
-    if (buildIndicator) {
-      buildIndicator.textContent = this.generateBuildWord();
-      console.log(`🔧 Build word incremented to: ${buildIndicator.textContent}`);
-    }
-    
-    console.log(`🔧 Build counter incremented from ${currentCounter} to ${newCounter}`);
   }
 
   clearBuildCache() {
@@ -879,11 +802,7 @@ class SimpleBlog {
       alert('Build incremented! Check console for details.');
     });
     
-    // Add build indicator click handler for manual build increments
-    this.addClickHandler('#build-indicator', () => {
-      console.log('🔧 Build indicator clicked - incrementing build');
-      this.incrementBuildWord();
-    });
+
     
     // Add cache clear button handler
     this.addClickHandler('#cache-clear-btn', () => {
@@ -4260,9 +4179,9 @@ class SimpleBlog {
       
       // Position the sub-submenu to align with its category entry
       const positionSubSubmenu = () => {
-        const categoryRect = categoryEntry.getBoundingClientRect();
-        const submenuRect = submenu.getBoundingClientRect();
-        subSubmenu.style.top = `${categoryRect.top - submenuRect.top}px`;
+        // Get the category entry's position relative to the submenu
+        const categoryTop = categoryEntry.offsetTop;
+        subSubmenu.style.top = `${categoryTop}px`;
       };
       
       // Add posts to sub-submenu
@@ -4298,18 +4217,7 @@ class SimpleBlog {
         subSubmenu.appendChild(postEntry);
       });
       
-      // Add invisible buffer zone around sub-submenu for easier navigation
-      const bufferZone = document.createElement('div');
-      bufferZone.style.cssText = `
-        position: absolute;
-        left: -10px;
-        top: -10px;
-        right: -10px;
-        bottom: -10px;
-        z-index: 999;
-        pointer-events: none;
-      `;
-      subSubmenu.appendChild(bufferZone);
+
       
       // STABLE LOGIC: Show sub-submenu on hover, position it correctly, keep it open
       categoryEntry.addEventListener('mouseenter', () => {
