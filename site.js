@@ -920,6 +920,22 @@ class SimpleBlog {
   setupSubmenus() {
     console.log('🔧 Setting up submenus...');
     
+    // Global menu manager - ensures only one menu open at each level
+    this.closeOtherLevel1Menus = (currentMenu) => {
+      const allLevel1Menus = ['all-posts-menu', 'projects-menu'];
+      allLevel1Menus.forEach(menuId => {
+        if (menuId !== currentMenu) {
+          const menu = document.getElementById(menuId);
+          if (menu) {
+            const existingSubmenu = menu.querySelector('.submenu');
+            if (existingSubmenu) {
+              existingSubmenu.remove();
+            }
+          }
+        }
+      });
+    };
+    
     // All posts submenu
     const allPostsMenu = document.getElementById('all-posts-menu');
     if (allPostsMenu) {
@@ -935,6 +951,8 @@ class SimpleBlog {
           clearTimeout(openTimeout);
         }
         openTimeout = setTimeout(() => {
+          // Close other level 1 menus first
+          this.closeOtherLevel1Menus('all-posts-menu');
           // Use the old showAllPostsSubmenu for now to ensure click handlers work
           this.showAllPostsSubmenu(allPostsMenu);
         }, 150); // Small delay to prevent accidental opening
@@ -969,6 +987,8 @@ class SimpleBlog {
           clearTimeout(openTimeout);
         }
         openTimeout = setTimeout(() => {
+          // Close other level 1 menus first
+          this.closeOtherLevel1Menus('projects-menu');
           this.updateProjectsSubmenu(this.posts || []);
         }, 150); // Small delay to prevent accidental opening
       };
@@ -987,7 +1007,7 @@ class SimpleBlog {
       console.warn('⚠️ Projects menu element not found');
     }
     
-    console.log('✅ Submenus setup complete');
+    console.log('✅ Submenus setup complete with menu hierarchy management');
   }
 
   async showAllPostsSubmenu(menuElement) {
@@ -4232,9 +4252,7 @@ class SimpleBlog {
         subSubmenu.appendChild(postEntry);
       });
       
-
-      
-      // STABLE LOGIC: Show sub-submenu on hover, position it correctly, keep it open
+      // SIMPLE LOGIC: Show sub-submenu on hover, close previous one
       categoryEntry.addEventListener('mouseenter', () => {
         // Close previously open sub-submenu
         if (currentlyOpenSubSubmenu && currentlyOpenSubSubmenu !== subSubmenu) {
@@ -4245,30 +4263,6 @@ class SimpleBlog {
         positionSubSubmenu();
         subSubmenu.style.display = 'block';
         currentlyOpenSubSubmenu = subSubmenu;
-      });
-      
-      // Keep sub-submenu open when hovering over it - CRITICAL for stability
-      subSubmenu.addEventListener('mouseenter', () => {
-        // Ensure it stays visible
-        subSubmenu.style.display = 'block';
-        currentlyOpenSubSubmenu = subSubmenu;
-      });
-      
-      // Prevent sub-submenu from closing when mouse leaves category entry
-      categoryEntry.addEventListener('mouseleave', (e) => {
-        // Only close if we're not moving to the sub-submenu
-        const relatedTarget = e.relatedTarget;
-        if (relatedTarget && !subSubmenu.contains(relatedTarget)) {
-          // Small delay to allow moving to sub-submenu
-          setTimeout(() => {
-            if (!subSubmenu.matches(':hover')) {
-              subSubmenu.style.display = 'none';
-              if (currentlyOpenSubSubmenu === subSubmenu) {
-                currentlyOpenSubSubmenu = null;
-              }
-            }
-          }, 50);
-        }
       });
       
       // Add both to the main submenu
@@ -4286,10 +4280,7 @@ class SimpleBlog {
       }
     });
     
-    // SIMPLE LOGIC: Only close when clicking outside or hovering different category
-    // No complex mouse tracking that could cause conflicts
-    
-    console.log('✅ Projects submenu updated: level 3 stays open until explicitly closed');
+    console.log('✅ Projects submenu updated: simplified logic, level 3 only closes on category change or click outside');
   }
 
   showDevlogPostsWindow(category, posts) {
