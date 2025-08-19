@@ -154,15 +154,24 @@ class SimpleBlog {
     
     console.log('🔧 Stored values:', { storedBuildWord, storedBuildCounter });
     
-    // ALWAYS generate a new build word on every page load/build
+    // Check if build counter has changed (indicating a new build)
     const currentBuildCounter = parseInt(localStorage.getItem('buildCounter') || '1');
     
     console.log('🔧 Current build counter:', currentBuildCounter);
-    console.log('🔧 ALWAYS generating new build word for fresh builds');
+    console.log('🔧 Stored build counter:', storedBuildCounter);
+    console.log('🔧 Comparison result:', storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter);
     
-    // Clear cache on every build to ensure fresh data
-    this.clearBuildCache();
-    console.log('🧹 Cache cleared, generating new build word...');
+    // Only clear cache if this is a new build (counter changed)
+    if (storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter) {
+      console.log('🧹 NEW BUILD DETECTED! Clearing cache...');
+      console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
+      this.clearBuildCache();
+      console.log('🧹 Cache cleared, generating new build word...');
+    } else if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
+      // Use existing build word if it's the same build
+      console.log(`🔧 Build word: Using existing build word: ${storedBuildWord}`);
+      return storedBuildWord;
+    }
     
     // Generate a new build word
     const words = [
