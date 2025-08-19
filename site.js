@@ -158,7 +158,7 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic', 'quantum'
     ];
     
     // Get build counter from localStorage - this should only change on actual builds
@@ -394,6 +394,9 @@ class SimpleBlog {
       element.classList.add('preserve-selection');
     });
     
+    // Also handle dynamically created submenus
+    this.setupSubmenuSelectionPreservation();
+    
     // Add global CSS to prevent selection clearing on taskbar interactions
     const style = document.createElement('style');
     style.textContent = `
@@ -420,8 +423,131 @@ class SimpleBlog {
         -ms-user-select: text !important;
         cursor: pointer;
       }
+      
+      /* Prevent selection loss on all taskbar-related elements */
+      .taskbar,
+      .menu-item,
+      .menu-dropdown,
+      .submenu,
+      .menu-entry {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+      }
+      
+      /* But allow text selection on actual clickable content */
+      .menu-entry,
+      [data-mode] {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        cursor: pointer;
+      }
+      
+      /* Editor-specific preservation */
+      .editor-container,
+      .post-content,
+      .note-input,
+      .flags-input,
+      .image-magazine {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+      }
     `;
     document.head.appendChild(style);
+  }
+
+  setupSubmenuSelectionPreservation() {
+    // Monitor for dynamically created submenus and apply selection preservation
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if it's a submenu or menu-related element
+            if (node.classList && (
+              node.classList.contains('submenu') ||
+              node.classList.contains('menu-dropdown') ||
+              node.classList.contains('menu-entry')
+            )) {
+              node.style.userSelect = 'none';
+              node.style.webkitUserSelect = 'none';
+              node.style.mozUserSelect = 'none';
+              node.style.msUserSelect = 'none';
+              node.classList.add('preserve-selection');
+              console.log('📝 Applied selection preservation to new submenu element');
+            }
+            
+            // Also check child elements
+            const submenuElements = node.querySelectorAll('.submenu, .menu-dropdown, .menu-entry');
+            submenuElements.forEach(element => {
+              element.style.userSelect = 'none';
+              element.style.webkitUserSelect = 'none';
+              element.style.mozUserSelect = 'none';
+              element.style.msUserSelect = 'none';
+              element.classList.add('preserve-selection');
+            });
+          }
+        });
+      });
+    });
+    
+    // Observe the entire document for new submenus
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    console.log('📝 Submenu selection preservation observer setup complete');
+  }
+
+  preserveEditorSelection() {
+    // Add specific CSS to prevent selection loss in editor
+    const editorStyle = document.createElement('style');
+    editorStyle.id = 'editor-selection-preservation';
+    editorStyle.textContent = `
+      /* Prevent selection loss in editor areas */
+      #postTitle,
+      #postContent,
+      .post-content,
+      .editor-container {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+      }
+      
+      /* Ensure note creation doesn't clear selection */
+      .note-input,
+      .flags-input,
+      .image-magazine {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+      }
+      
+      /* But allow text selection in the actual input fields */
+      .note-input input,
+      .flags-input input {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+      }
+    `;
+    
+    // Remove existing style if it exists
+    const existingStyle = document.getElementById('editor-selection-preservation');
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+    
+    document.head.appendChild(editorStyle);
+    console.log('📝 Editor selection preservation CSS applied');
   }
 
   setupButtonEvents() {
@@ -443,7 +569,8 @@ class SimpleBlog {
     // Make note button
     this.addClickHandler('#make-note-button', () => {
       console.log('📌 Make note button clicked');
-      // Capture selection immediately before any menu interactions
+      // Ensure text selection is preserved before creating note
+      this.preserveEditorSelection();
       this.captureSelectionAndMakeNote();
     });
 
@@ -594,6 +721,8 @@ class SimpleBlog {
     // Setup hover note preview if we're on the editor page
     if (isEditorPage) {
       this.setupHoverNotePreview();
+      // Apply editor-specific selection preservation
+      this.preserveEditorSelection();
     }
   }
 
