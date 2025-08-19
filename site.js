@@ -108,10 +108,8 @@ class SimpleBlog {
           </div>
           
           <div class="menu-item" data-menu="connect">
-            <div class="label">Connect</div>
+            <div class="label">Share</div>
             <div class="menu-dropdown">
-              <div class="menu-entry" id="github-connect">Connect to GitHub</div>
-              <div class="menu-separator"></div>
               <div class="menu-entry" id="bluesky-share">Share to Bluesky</div>
               <div class="menu-entry" id="twitter-share">Share to Twitter</div>
             </div>
@@ -138,7 +136,7 @@ class SimpleBlog {
         </div>
         
         <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: default; user-select: none;" data-note="Welcome to my Blog!">
-          PiousPigeon
+          <span id="github-connect-underscore" style="color: #fff; cursor: pointer; margin-right: 2px;">_</span>PiousPigeon
         </div>
         </div>
       </div>
@@ -757,9 +755,15 @@ class SimpleBlog {
       this.toggleConsole();
     });
 
-    // GitHub connect button
+    // GitHub connect button (old - will be removed from menu)
     this.addClickHandler('#github-connect', () => {
       console.log('🔐 GitHub connect button clicked');
+      this.showGitHubLogin();
+    });
+    
+    // GitHub connect underscore
+    this.addClickHandler('#github-connect-underscore', () => {
+      console.log('🔐 GitHub connect underscore clicked');
       this.showGitHubLogin();
     });
 
@@ -3784,6 +3788,16 @@ class SimpleBlog {
       } else {
         githubStatus.textContent = 'not connected';
         githubStatus.style.color = '#dc3545';
+      }
+    }
+    
+    // Update underscore color based on GitHub connection status
+    const githubUnderscore = document.getElementById('github-connect-underscore');
+    if (githubUnderscore) {
+      if (isAuthenticated) {
+        githubUnderscore.style.color = '#28a745'; // Green when connected
+      } else {
+        githubUnderscore.style.color = '#fff'; // White when not connected
       }
     }
     
