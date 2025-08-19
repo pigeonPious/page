@@ -1120,7 +1120,7 @@ body.custom-mode .console-output {
 
 /* Magazine-style image display in editor */
 .visual-editor img {
-  max-width: 100%;
+  max-width: 200px;
   height: auto;
   border: 1px solid var(--border);
   border-radius: 0;
@@ -1166,7 +1166,7 @@ body.custom-mode .console-output {
   float: left;
   margin-right: 16px;
   margin-bottom: 12px;
-  max-width: 40%;
+  max-width: 200px;
 }
 
 .visual-editor .image-container img {

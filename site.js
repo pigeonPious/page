@@ -2539,7 +2539,7 @@ class SimpleBlog {
       transform: translate(-50%, -50%);
       width: 400px;
       height: 500px;
-      background: var(--menu-bg);
+      background: var(--bg);
       border: 1px solid var(--border);
       z-index: 10000;
       display: flex;
@@ -2552,12 +2552,12 @@ class SimpleBlog {
     const header = document.createElement('div');
     header.style.cssText = `
       padding: 8px 12px;
-      border-bottom: 1px solid #444;
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #333;
-      color: #fff;
+      background: var(--bg);
+      color: var(--fg);
       cursor: move;
       user-select: none;
     `;
@@ -2881,7 +2881,7 @@ class SimpleBlog {
       float: left;
       margin-right: 16px;
       margin-bottom: 12px;
-      max-width: 40%;
+      max-width: 200px;
       clear: both;
     `;
     
