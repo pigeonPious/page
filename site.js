@@ -143,13 +143,19 @@ class SimpleBlog {
     console.log('🔧 Stored build counter:', storedBuildCounter);
     console.log('🔧 Comparison result:', storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter);
     
-    // ALWAYS clear cache on every build to ensure fresh data
-    console.log('🧹 BUILD DETECTED! Clearing cache...');
-    console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
-    this.clearBuildCache();
-    console.log('🧹 Cache cleared, generating new build word...');
+    // Only clear cache if this is a new build (counter changed)
+    if (storedBuildCounter && parseInt(storedBuildCounter) !== currentBuildCounter) {
+      console.log('🧹 NEW BUILD DETECTED! Clearing cache...');
+      console.log('🧹 Stored counter:', storedBuildCounter, 'Current counter:', currentBuildCounter);
+      this.clearBuildCache();
+      console.log('🧹 Cache cleared, generating new build word...');
+    } else if (storedBuildWord && storedBuildCounter && parseInt(storedBuildCounter) === currentBuildCounter) {
+      // Use existing build word if it's the same build
+      console.log(`🔧 Build word: Using existing build word: ${storedBuildWord}`);
+      return storedBuildWord;
+    }
     
-    // Generate a new build word only if none exists or if it's a new build
+    // Generate a new build word
     const words = [
       'alpha', 'beta', 'gamma', 'delta', 'echo', 'foxtrot', 'golf', 'hotel',
       'india', 'juliet', 'kilo', 'lima', 'mike', 'november', 'oscar', 'papa',
@@ -158,24 +164,21 @@ class SimpleBlog {
       'amber', 'bronze', 'copper', 'diamond', 'emerald', 'flame', 'glow', 'haze',
       'iris', 'jade', 'kale', 'lime', 'mint', 'neon', 'opal', 'pearl',
       'quartz', 'ruby', 'sapphire', 'topaz', 'ultra', 'violet', 'warm', 'xenon',
-      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic', 'quantum', 'radar', 'stellar'
+      'yellow', 'zinc', 'aqua', 'blush', 'coral', 'dusk', 'eve', 'fade', 'nova', 'orbit', 'pulse', 'quantum', 'radar', 'stellar', 'nebula', 'cosmic', 'phoenix', 'zenith', 'aurora', 'nova', 'stellar', 'cosmic', 'quantum', 'radar', 'stellar', 'nebula'
     ];
     
-    // Get build counter from localStorage - this should only change on actual builds
-    const buildCounter = parseInt(localStorage.getItem('buildCounter') || '1');
-    
     // Use a fixed seed based on the build counter to ensure consistent word selection
-    const seed = buildCounter;
+    const seed = currentBuildCounter;
     const calculatedIndex = seed % words.length;
     const word = words[calculatedIndex];
     
-    const newBuildWord = `${word}-${buildCounter}`;
+    const newBuildWord = `${word}-${currentBuildCounter}`;
     
     // Store the build word so it doesn't change on reloads
     localStorage.setItem('currentBuildWord', newBuildWord);
     
     console.log(`🔧 Build word: Generated new build word: ${newBuildWord} (seed: ${seed}, index: ${calculatedIndex})`);
-    console.log(`🔧 Stored in localStorage:`, { currentBuildWord: newBuildWord, buildCounter });
+    console.log(`🔧 Stored in localStorage:`, { currentBuildWord: newBuildWord, buildCounter: currentBuildCounter });
     
     return newBuildWord;
   }
@@ -934,9 +937,6 @@ class SimpleBlog {
           entry.id = `post-entry-${post.slug}`;
           console.log(`🔍 Created entry element:`, entry);
           
-          // Add visual debugging - make entries more obvious
-          entry.style.border = '2px solid red';
-          entry.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
           entry.title = `Click to load: ${post.title} (${post.slug})`;
           
           entry.addEventListener('click', (e) => {
@@ -3380,8 +3380,10 @@ class SimpleBlog {
     `;
     
     // Set current flags if they exist
-    if (this.currentPostFlags) {
-      input.value = this.currentPostFlags;
+    const existingFlags = localStorage.getItem('current_post_flags') || '';
+    if (existingFlags) {
+      input.value = existingFlags;
+      console.log('🏷️ Loaded existing flags:', existingFlags);
     }
     
     inputBox.appendChild(input);
@@ -3420,7 +3422,6 @@ class SimpleBlog {
     console.log('🏷️ Setting post flags:', flags);
     
     // Store flags for the current post
-    // In a real implementation, this would be saved with the post
     const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
     
     // Parse flags for navigation menu
@@ -3432,7 +3433,119 @@ class SimpleBlog {
     // Store in localStorage for persistence
     localStorage.setItem('current_post_flags', flags);
     
+    // Update navigation menu with new flags
+    this.updateNavigationMenu(flagArray);
+    
     console.log('✅ Post flags saved:', flags);
+  }
+
+  updateNavigationMenu(flags) {
+    console.log('🧭 Updating navigation menu with flags:', flags);
+    
+    // Find the devlog menu item
+    const devlogMenu = document.querySelector('#devlog-menu');
+    if (!devlogMenu) {
+      console.log('⚠️ Devlog menu not found');
+      return;
+    }
+    
+    // Clear existing devlog submenu
+    const existingSubmenu = devlogMenu.querySelector('.submenu');
+    if (existingSubmenu) {
+      existingSubmenu.remove();
+    }
+    
+    // Get all posts to filter by flags
+    const allPosts = this.posts || [];
+    const devlogPosts = allPosts.filter(post => {
+      const postFlags = post.keywords || '';
+      return postFlags.includes('devlog');
+    });
+    
+    if (devlogPosts.length === 0) {
+      console.log('📋 No devlog posts found');
+      return;
+    }
+    
+    // Group posts by devlog subcategory
+    const devlogCategories = {};
+    devlogPosts.forEach(post => {
+      const postFlags = post.keywords || '';
+      const devlogFlag = postFlags.split(',').find(f => f.trim().startsWith('devlog:'));
+      
+      if (devlogFlag) {
+        const category = devlogFlag.split(':')[1] || 'general';
+        if (!devlogCategories[category]) {
+          devlogCategories[category] = [];
+        }
+        devlogCategories[category].push(post);
+      } else if (postFlags.includes('devlog')) {
+        // General devlog posts without subcategory
+        if (!devlogCategories['general']) {
+          devlogCategories['general'] = [];
+        }
+        devlogCategories['general'].push(post);
+      }
+    });
+    
+    // Create submenu with categories
+    const submenu = document.createElement('div');
+    submenu.className = 'submenu';
+    submenu.style.cssText = `
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background: var(--menu-bg, #333);
+      border: 1px solid var(--menu-border, #555);
+      padding: 5px 0;
+      min-width: 200px;
+      z-index: 1000;
+    `;
+    
+    // Add posts by category
+    Object.keys(devlogCategories).forEach(category => {
+      const posts = devlogCategories[category];
+      
+      // Add category header
+      if (category !== 'general') {
+        const categoryHeader = document.createElement('div');
+        categoryHeader.className = 'menu-entry';
+        categoryHeader.textContent = category;
+        categoryHeader.style.cssText = `
+          padding: 6px 12px;
+          color: var(--muted, #888);
+          font-size: 12px;
+          font-weight: bold;
+          border-bottom: 1px solid var(--border, #555);
+          text-transform: capitalize;
+        `;
+        submenu.appendChild(categoryHeader);
+      }
+      
+      // Add posts in this category
+      posts.forEach(post => {
+        const postEntry = document.createElement('div');
+        postEntry.className = 'menu-entry';
+        postEntry.textContent = post.title || post.slug;
+        postEntry.style.cssText = `
+          padding: 8px 12px;
+          cursor: pointer;
+          color: var(--menu-fg, #fff);
+          font-size: 13px;
+          border-bottom: 1px solid var(--border, #555);
+        `;
+        
+        postEntry.addEventListener('click', () => {
+          this.loadPost(post.slug);
+          this.closeAllMenus();
+        });
+        
+        submenu.appendChild(postEntry);
+      });
+    });
+    
+    devlogMenu.appendChild(submenu);
+    console.log('✅ Navigation menu updated with devlog categories:', Object.keys(devlogCategories));
   }
 
   toggleConsole() {
