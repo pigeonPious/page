@@ -147,49 +147,17 @@ class SimpleBlog {
     console.log('✅ Taskbar created');
   }
   
-  getBuildInfo() {
-    // Get the actual build time when this build was pushed
-    const buildTime = localStorage.getItem('lastBuildTime');
-    if (buildTime) {
-      const buildDate = new Date(buildTime);
-      const timeString = buildDate.toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit'
-      });
-      const dateString = buildDate.toLocaleDateString('en-US', { 
-        month: '2-digit', 
-        day: '2-digit', 
-        year: '2-digit'
-      });
-      return `${timeString} (${dateString})`;
-    }
-    
-    // Fallback: show current time if no build time stored
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    const dateString = now.toLocaleDateString('en-US', { 
-      month: '2-digit', 
-      day: '2-digit', 
-      year: '2-digit'
-    });
-    return `${timeString} (${dateString})`;
+    getBuildInfo() {
+    // Get current build number
+    const buildCounter = localStorage.getItem('buildCounter') || '0';
+    return `Build: ${buildCounter}`;
   }
 
   clearBuildCache() {
     console.log('🧹 MAXIMUM TROUBLESHOOTING: clearBuildCache called!');
     console.log('🧹 localStorage before clearing:', Object.keys(localStorage));
     
-    // Store the current build time when clearing cache (indicating new build)
-    const buildTime = new Date().toISOString();
-    localStorage.setItem('lastBuildTime', buildTime);
-    console.log('🧹 Stored new build time:', buildTime);
+
     
     // Clear stored build word
     const oldBuildWord = localStorage.getItem('currentBuildWord');
