@@ -131,7 +131,11 @@ class SimpleBlog {
           </div>
           
           <div class="build-info" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #666; font-family: monospace;">
-            Build: ${this.getBuildInfo()}
+            ${this.getBuildInfo()}
+          </div>
+          
+          <div class="git-update-btn" id="git-update-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #4a9eff; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #4a9eff; border-radius: 3px;" title="Update git build info">
+            🔧
           </div>
           
 
@@ -148,16 +152,79 @@ class SimpleBlog {
   }
   
     getBuildInfo() {
-    // Get current build number
+    // Get the actual git build information
+    // Try to get from git commit count first, fallback to localStorage
+    const gitCommitCount = localStorage.getItem('gitCommitCount');
     const buildCounter = localStorage.getItem('buildCounter') || '0';
+    
+    if (gitCommitCount) {
+      return `Build: ${gitCommitCount}`;
+    }
+    
     return `Build: ${buildCounter}`;
+  }
+
+  updateGitBuildInfo() {
+    // Get the current git commit count and hash for build identification
+    // This will be called when a new build is detected
+    const currentTime = new Date().toISOString();
+    const timestamp = Date.now();
+    
+    // Store build timestamp and increment build counter
+    const currentBuildCount = parseInt(localStorage.getItem('buildCounter') || '0');
+    const newBuildCount = currentBuildCount + 1;
+    
+    localStorage.setItem('buildCounter', newBuildCount.toString());
+    localStorage.setItem('lastBuildTime', currentTime);
+    localStorage.setItem('lastBuildTimestamp', timestamp.toString());
+    
+    // Try to get git commit info if available (for development)
+    // In production, this would come from the build process
+    const gitCommitHash = localStorage.getItem('gitCommitHash') || 'unknown';
+    const gitCommitCount = localStorage.getItem('gitCommitCount') || newBuildCount.toString();
+    
+    // Update the build info display
+    const buildInfoElement = document.querySelector('.build-info');
+    if (buildInfoElement) {
+      buildInfoElement.textContent = `Build: ${gitCommitCount}`;
+    }
+    
+    console.log(`🔧 Build info updated: Build ${newBuildCount}, Time: ${currentTime}, Git: ${gitCommitHash}`);
+  }
+
+  // Function to manually set git commit info (called during build process)
+  setGitBuildInfo(commitCount, commitHash) {
+    localStorage.setItem('gitCommitCount', commitCount.toString());
+    localStorage.setItem('gitCommitHash', commitHash);
+    
+    // Update the display
+    const buildInfoElement = document.querySelector('.build-info');
+    if (buildInfoElement) {
+      buildInfoElement.textContent = `Build: ${commitCount}`;
+    }
+    
+    console.log(`🔧 Git build info set: Commit ${commitCount}, Hash: ${commitHash}`);
+  }
+
+  // Function to manually set git commit count (for testing)
+  setGitCommitCount(commitCount) {
+    localStorage.setItem('gitCommitCount', commitCount.toString());
+    
+    // Update the display
+    const buildInfoElement = document.querySelector('.build-info');
+    if (buildInfoElement) {
+      buildInfoElement.textContent = `Build: ${commitCount}`;
+    }
+    
+    console.log(`🔧 Git commit count set to: ${commitCount}`);
   }
 
   clearBuildCache() {
     console.log('🧹 MAXIMUM TROUBLESHOOTING: clearBuildCache called!');
     console.log('🧹 localStorage before clearing:', Object.keys(localStorage));
     
-
+    // Update git commit count for new build
+    this.updateGitBuildInfo();
     
     // Clear stored build word
     const oldBuildWord = localStorage.getItem('currentBuildWord');
@@ -800,6 +867,17 @@ class SimpleBlog {
     //   console.log('🔧 Build indicator clicked - incrementing build');
     //   this.incrementBuildWord();
     // });
+    
+    // Git update button
+    this.addClickHandler('#git-update-btn', () => {
+      console.log('🔧 Git update button clicked');
+      this.updateGitBuildInfo();
+    });
+    
+    // Add console command for testing git commit count
+    window.setGitCommitCount = (count) => {
+      this.setGitCommitCount(count);
+    };
     
     // Debug button handlers
     this.addClickHandler('#test-cache-clear', () => {
