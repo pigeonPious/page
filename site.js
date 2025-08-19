@@ -1225,34 +1225,46 @@ class SimpleBlog {
             e.preventDefault();
             e.stopPropagation();
             console.log('📖 Post selected:', post.title || 'Untitled', 'slug:', post.slug);
-            console.log('🔍 About to call loadPost with slug:', post.slug);
-            console.log('🔍 this object:', this);
-            console.log('🔍 this.loadPost function:', this.loadPost);
-            console.log('🔍 typeof this.loadPost:', typeof this.loadPost);
             
-            // Close menus first
-            console.log('🔍 Closing all menus...');
-            this.closeAllMenus();
-            console.log('🔍 Menus closed');
-            
-            // Then load the post
-            try {
-              console.log('🔍 Calling loadPost...');
-              const loadPromise = this.loadPost(post.slug);
-              console.log('🔍 loadPost returned promise:', loadPromise);
+            // Check if we're in the editor
+            console.log('🔍 Current pathname:', window.location.pathname);
+            console.log('🔍 Current href:', window.location.href);
+            if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
+              console.log('📝 In editor - redirecting to main blog with post:', post.slug);
+              // Redirect to main blog with the selected post
+              window.location.href = `index.html?post=${post.slug}`;
+            } else {
+              console.log('🏠 On main blog - loading post normally:', post.slug);
+              // We're on the main blog, load post normally
+              console.log('🔍 About to call loadPost with slug:', post.slug);
+              console.log('🔍 this object:', this);
+              console.log('🔍 this.loadPost function:', this.loadPost);
+              console.log('🔍 typeof this.loadPost:', typeof this.loadPost);
               
-              if (loadPromise && typeof loadPromise.then === 'function') {
-                loadPromise.then(() => {
-                  console.log('✅ Post loaded successfully:', post.slug);
-                }).catch(error => {
-                  console.error('❌ Error loading post:', error);
-                });
-              } else {
-                console.error('❌ loadPost did not return a promise:', loadPromise);
+              // Close menus first
+              console.log('🔍 Closing all menus...');
+              this.closeAllMenus();
+              console.log('🔍 Menus closed');
+              
+              // Then load the post
+              try {
+                console.log('🔍 Calling loadPost...');
+                const loadPromise = this.loadPost(post.slug);
+                console.log('🔍 loadPost returned promise:', loadPromise);
+                
+                if (loadPromise && typeof loadPromise.then === 'function') {
+                  loadPromise.then(() => {
+                    console.log('✅ Post loaded successfully:', post.slug);
+                  }).catch(error => {
+                    console.error('❌ Error loading post:', error);
+                  });
+                } else {
+                  console.error('❌ loadPost did not return a promise:', loadPromise);
+                }
+              } catch (error) {
+                console.error('❌ Error calling loadPost:', error);
+                console.error('❌ Error stack:', error.stack);
               }
-            } catch (error) {
-              console.error('❌ Error calling loadPost:', error);
-              console.error('❌ Error stack:', error.stack);
             }
           });
           
