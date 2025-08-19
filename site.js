@@ -83,7 +83,7 @@ class SimpleBlog {
               <div class="menu-entry editor-only" id="make-note-button">Make Note</div>
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
               <div class="menu-separator"></div>
-              <div class="menu-entry blog-only" id="save-pdf-button">Save as PDF</div>
+
               <div class="menu-entry blog-only" id="font-size-menu">Font Size
                 <div class="submenu font-size-submenu">
                   <div class="menu-entry" id="font-smaller">Smaller</div>
@@ -881,10 +881,7 @@ class SimpleBlog {
     });
     
     // Edit menu buttons
-    this.addClickHandler('#save-pdf-button', () => {
-      console.log('📄 Save as PDF button clicked');
-      this.saveAsPDF();
-    });
+
     
     this.addClickHandler('#font-smaller', () => {
       console.log('🔤 Font smaller clicked');
@@ -5067,89 +5064,7 @@ class SimpleBlog {
 
   // ========== NEW EDIT MENU FUNCTIONS ==========
 
-  saveAsPDF() {
-    console.log('📄 Saving post as PDF...');
-    
-    const postContent = document.getElementById('post-content');
-    const postTitle = document.getElementById('post-title');
-    
-    if (!postContent || !postTitle) {
-      this.showMenuStyle1Message('No post content to export', 'error');
-      return;
-    }
-    
-    // Store original values
-    const originalTitle = document.title;
-    document.title = postTitle.textContent + ' - PDF Export';
-    
-    // Hide UI elements for clean PDF
-    const elementsToHide = [
-      '.menu-bar',
-      '.pigeon-label'
-    ];
-    
-    const hiddenElements = [];
-    elementsToHide.forEach(selector => {
-      const element = document.querySelector(selector);
-      if (element) {
-        hiddenElements.push({
-          element: element,
-          originalDisplay: element.style.display
-        });
-        element.style.display = 'none';
-      }
-    });
-    
-    // Add print styles
-    const printStyles = document.createElement('style');
-    printStyles.id = 'pdf-print-styles';
-    printStyles.innerHTML = `
-      @media print {
-        body { 
-          font-size: 12pt !important;
-          line-height: 1.4 !important;
-          color: #000 !important;
-          background: #fff !important;
-        }
-        .post-title { 
-          font-size: 18pt !important;
-          margin-bottom: 10pt !important;
-          color: #000 !important;
-        }
-        .post-date { 
-          font-size: 10pt !important;
-          margin-bottom: 15pt !important;
-          color: #666 !important;
-        }
-        .post-content { 
-          color: #000 !important;
-          background: #fff !important;
-        }
-        .post-content h1, .post-content h2, .post-content h3 {
-          color: #000 !important;
-        }
-        .flashing-cursor { display: none !important; }
-      }
-    `;
-    document.head.appendChild(printStyles);
-    
-    // Open print dialog
-    window.print();
-    
-    // Restore everything
-    document.title = originalTitle;
-    
-    hiddenElements.forEach(item => {
-      item.element.style.display = item.originalDisplay;
-    });
-    
-    const printStylesElement = document.getElementById('pdf-print-styles');
-    if (printStylesElement) {
-      printStylesElement.remove();
-    }
-    
-    console.log('✅ PDF print dialog opened with post content');
-  }
+
 
   adjustFontSize(action) {
     console.log(`🔤 Adjusting font size: ${action}`);
