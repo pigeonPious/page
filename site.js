@@ -4273,6 +4273,19 @@ class SimpleBlog {
         border-radius: 4px;
       `;
       
+      // Add invisible buffer zone around sub-submenu for easier navigation
+      const subSubmenuBuffer = document.createElement('div');
+      subSubmenuBuffer.style.cssText = `
+        position: absolute;
+        left: -15px;
+        top: -15px;
+        right: -15px;
+        bottom: -15px;
+        z-index: 1000;
+        pointer-events: none;
+      `;
+      subSubmenu.appendChild(subSubmenuBuffer);
+      
       // Add posts to sub-submenu
       posts.forEach(post => {
         const postEntry = document.createElement('div');
@@ -4318,39 +4331,44 @@ class SimpleBlog {
         currentlyOpenSubSubmenu = subSubmenu;
       });
       
-      // Hide sub-submenu when leaving category entry
+      // Hide sub-submenu when leaving category entry (with delay to allow moving to sub-submenu)
+      let categoryLeaveTimeout = null;
       categoryEntry.addEventListener('mouseleave', () => {
-        // Small delay to allow moving to sub-submenu
-        setTimeout(() => {
-          // Check if mouse is over the sub-submenu
-          const rect = subSubmenu.getBoundingClientRect();
-          const mouseX = event.clientX;
-          const mouseY = event.clientY;
-          
-          if (mouseX < rect.left || mouseX > rect.right || mouseY < rect.top || mouseY > rect.bottom) {
+        categoryLeaveTimeout = setTimeout(() => {
+          // Only close if mouse is not over the sub-submenu
+          if (!subSubmenu.matches(':hover')) {
             subSubmenu.style.display = 'none';
             if (currentlyOpenSubSubmenu === subSubmenu) {
               currentlyOpenSubSubmenu = null;
             }
           }
-        }, 100);
+        }, 150); // Increased delay for better reliability
       });
       
-      // Hide sub-submenu when leaving it
-      subSubmenu.addEventListener('mouseleave', () => {
-        subSubmenu.style.display = 'none';
-        if (currentlyOpenSubSubmenu === subSubmenu) {
-          currentlyOpenSubSubmenu = null;
+      // Cancel timeout when entering sub-submenu
+      subSubmenu.addEventListener('mouseenter', () => {
+        if (categoryLeaveTimeout) {
+          clearTimeout(categoryLeaveTimeout);
+          categoryLeaveTimeout = null;
         }
       });
       
-      // Also hide when mouse leaves the entire submenu area
-      subSubmenu.addEventListener('mouseout', (e) => {
-        if (!subSubmenu.contains(e.relatedTarget)) {
+      // Hide sub-submenu when leaving it (with delay)
+      let subSubmenuLeaveTimeout = null;
+      subSubmenu.addEventListener('mouseleave', () => {
+        subSubmenuLeaveTimeout = setTimeout(() => {
           subSubmenu.style.display = 'none';
           if (currentlyOpenSubSubmenu === subSubmenu) {
             currentlyOpenSubSubmenu = null;
           }
+        }, 100);
+      });
+      
+      // Cancel timeout when re-entering sub-submenu
+      subSubmenu.addEventListener('mouseenter', () => {
+        if (subSubmenuLeaveTimeout) {
+          clearTimeout(subSubmenuLeaveTimeout);
+          subSubmenuLeaveTimeout = null;
         }
       });
       
@@ -4372,26 +4390,10 @@ class SimpleBlog {
           submenu.remove();
           currentlyOpenSubSubmenu = null;
         }
-      }, 300); // Increased buffer time to 300ms
+      }, 400); // Increased buffer time for better reliability
     };
     
-    // Also close when leaving the entire navigation area
-    const navigationArea = document.querySelector('#navigation-menu');
-    if (navigationArea) {
-      navigationArea.addEventListener('mouseleave', () => {
-        if (closeTimeout) {
-          clearTimeout(closeTimeout);
-        }
-        closeTimeout = setTimeout(() => {
-          if (!navigationArea.matches(':hover')) {
-            submenu.remove();
-            currentlyOpenSubSubmenu = null;
-          }
-        }, 300); // Increased buffer time to 300ms
-      });
-    }
-    
-    // Cancel close timeout when mouse enters submenu
+    // Cancel close timeout when mouse enters submenu or sub-submenu
     submenu.addEventListener('mouseenter', () => {
       if (closeTimeout) {
         clearTimeout(closeTimeout);
@@ -4399,8 +4401,10 @@ class SimpleBlog {
       }
     });
     
+    // Only close when leaving the projects menu area (not navigation area)
     projectsMenu.addEventListener('mouseleave', closeSubmenu);
-    submenu.addEventListener('mouseleave', closeSubmenu);
+    
+    // Don't close submenu when leaving it - let individual handlers manage sub-submenus
     
     console.log('✅ Projects submenu updated with hierarchical categories:', Object.keys(devlogCategories).length);
   }
