@@ -144,9 +144,9 @@ class SimpleBlog {
           <div class="menu-item" data-menu="projects">
             <div class="label">Projects</div>
             <div class="menu-dropdown" id="projects-dropdown">
-              <div class="menu-entry" id="projects-menu">Loading...</div>
-              <div class="menu-separator"></div>
               <a class="menu-entry" href="https://linktr.ee/PiousPigeon" target="_blank">Linktree</a>
+              <div class="menu-separator"></div>
+              <div class="menu-entry" id="projects-menu">Loading...</div>
             </div>
           </div>
           
