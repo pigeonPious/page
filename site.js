@@ -4978,12 +4978,6 @@ class SimpleBlog {
       return;
     }
     
-    // Clear existing projects submenu
-    const existingSubmenu = projectsMenu.querySelector('.submenu');
-    if (existingSubmenu) {
-      existingSubmenu.remove();
-    }
-    
     // Filter for devlog posts
     console.log('📋 All posts for projects menu:', allPosts);
     const devlogPosts = allPosts.filter(post => {
@@ -4997,6 +4991,7 @@ class SimpleBlog {
     
     if (devlogPosts.length === 0) {
       console.log('📋 No devlog posts found');
+      projectsMenu.textContent = 'No projects found';
       return;
     }
     
@@ -5039,165 +5034,54 @@ class SimpleBlog {
     
     console.log('📋 Final devlog categories:', devlogCategories);
     
-    // Create submenu with categories
-    const submenu = document.createElement('div');
-    submenu.className = 'submenu';
-    submenu.style.cssText = `
-      position: absolute;
-      left: 100%;
-      top: 0;
-      background: var(--menu-bg, #333);
-      border: 1px solid var(--menu-border, #555);
-      padding: 5px 0;
-      min-width: 200px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      border-radius: 4px;
+    // Create simple list of project categories
+    const categoriesList = document.createElement('div');
+    categoriesList.className = 'project-categories';
+    categoriesList.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     `;
     
-    // Track currently open sub-submenu globally
-    if (!this.globalCurrentlyOpenSubSubmenu) {
-      this.globalCurrentlyOpenSubSubmenu = null;
-    }
-    
-    // Add category entries that expand on hover
+    // Add category entries
     Object.keys(devlogCategories).forEach(category => {
       const posts = devlogCategories[category];
       
       // Create category entry
       const categoryEntry = document.createElement('div');
-      categoryEntry.className = 'menu-entry category-entry';
+      categoryEntry.className = 'menu-entry project-category';
       categoryEntry.textContent = `${category} >`;
       categoryEntry.style.cssText = `
-        padding: 8px 12px;
+        padding: 3px 6px;
         cursor: pointer;
-        color: var(--menu-fg, #fff);
-        font-size: 13px;
-        border-bottom: 1px solid var(--border, #555);
-        background: var(--menu-bg, #333);
+        color: var(--fg);
+        font-size: 12px;
         transition: background-color 0.15s ease;
         text-transform: capitalize;
-        position: relative;
       `;
       
-      // Create sub-submenu for this category
-      const subSubmenu = document.createElement('div');
-      subSubmenu.className = 'sub-submenu';
-      subSubmenu.style.cssText = `
-        position: absolute;
-        left: 100%;
-        top: 0;
-        background: var(--menu-bg, #333);
-        border: 1px solid var(--menu-border, #555);
-        padding: 5px 0;
-        min-width: 200px;
-        z-index: 1001;
-        display: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        border-radius: 4px;
-      `;
-      
-      // Position the sub-submenu to align with its category entry
-      const positionSubSubmenu = () => {
-        // Get the category entry's position relative to the submenu
-        const categoryTop = categoryEntry.offsetTop;
-        subSubmenu.style.top = `${categoryTop}px`;
-      };
-      
-      // Add posts to sub-submenu
-      posts.forEach(post => {
-        const postEntry = document.createElement('div');
-        postEntry.className = 'menu-entry';
-        postEntry.textContent = post.title || post.slug;
-        postEntry.style.cssText = `
-          padding: 8px 12px;
-          cursor: pointer;
-          color: var(--menu-fg, #fff);
-          font-size: 13px;
-          border-bottom: 1px solid var(--border, #555);
-          background: var(--menu-bg, #333);
-          transition: background-color 0.15s ease;
-        `;
-        
-        // Add hover effects
-        postEntry.addEventListener('mouseenter', () => {
-          postEntry.style.background = 'var(--menu-hover-bg, #555)';
-        });
-        
-        postEntry.addEventListener('mouseleave', () => {
-          postEntry.style.background = 'var(--menu-bg, #333)';
-        });
-        
-        // Add click handler to load post
-        postEntry.addEventListener('click', () => {
-          // Check if we're in the editor
-          if (window.location.pathname.includes('editor.html')) {
-            // Redirect to main blog with the selected post
-            window.location.href = `index.html?post=${post.slug}`;
-          } else {
-            // We're on the main blog, load post normally
-            this.loadPost(post.slug);
-            // Close only the projects submenu, not all menus
-            if (submenu.parentNode) {
-              submenu.remove();
-              this.globalCurrentlyOpenSubSubmenu = null;
-            }
-          }
-        });
-        
-        subSubmenu.appendChild(postEntry);
-      });
-      
-      // EXACT LOGIC: Level 3 only closes when new level 3 opens, nothing to do with mouse position
+      // Add hover effect
       categoryEntry.addEventListener('mouseenter', () => {
-        // Close previously open sub-submenu ONLY when opening a new one
-        if (this.globalCurrentlyOpenSubSubmenu && this.globalCurrentlyOpenSubSubmenu !== subSubmenu) {
-          this.globalCurrentlyOpenSubSubmenu.style.display = 'none';
-        }
-        
-        // Position and open this sub-submenu
-        positionSubSubmenu();
-        subSubmenu.style.display = 'block';
-        this.globalCurrentlyOpenSubSubmenu = subSubmenu;
+        categoryEntry.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
       });
       
-      // NO mouseleave events - level 3 stays open until explicitly closed
+      categoryEntry.addEventListener('mouseleave', () => {
+        categoryEntry.style.backgroundColor = 'transparent';
+      });
       
-      // Add both to the main submenu
-      submenu.appendChild(categoryEntry);
-      submenu.appendChild(subSubmenu);
+      // Add click handler to show posts
+      categoryEntry.addEventListener('click', () => {
+        this.showDevlogPostsWindow(category, posts);
+      });
+      
+      categoriesList.appendChild(categoryEntry);
     });
     
     // Replace the "Loading..." text with the project categories
     projectsMenu.innerHTML = '';
-    projectsMenu.appendChild(submenu);
+    projectsMenu.appendChild(categoriesList);
     
-    // ONLY close when clicking outside the entire menu system
-    document.addEventListener('click', (e) => {
-      if (!projectsMenu.contains(e.target) && !submenu.contains(e.target)) {
-        submenu.remove();
-        this.globalCurrentlyOpenSubSubmenu = null;
-      }
-    });
-    
-    // Prevent any other mouse events from closing the Level 3 menus
-    // Level 3 only closes when: new category hovered, post clicked, or click outside
-    submenu.addEventListener('mouseleave', (e) => {
-      // Do nothing - let Level 3 stay open
-      e.stopPropagation();
-    });
-    
-    // Prevent navigation area mouseleave from closing Level 3
-    const navigationArea = document.querySelector('.navigation-area');
-    if (navigationArea) {
-      const originalMouseLeave = navigationArea.onmouseleave;
-      navigationArea.addEventListener('mouseleave', (e) => {
-        // Don't close Level 3 menus when leaving navigation area
-        e.stopPropagation();
-      });
-    }
-    
-    console.log('✅ Projects submenu updated: simplified logic, level 3 only closes on category change or click outside');
+    console.log('✅ Projects submenu updated with simple category list');
   }
 
   showDevlogPostsWindow(category, posts) {
