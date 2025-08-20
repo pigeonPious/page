@@ -3013,69 +3013,7 @@ class SimpleBlog {
     console.log('✅ Editor drag and drop setup complete');
   }
 
-  makeImageDraggable(imageContainer) {
-    let isDragging = false;
-    let startX, startY, startLeft, startTop;
-    
-    // Make the image container draggable
-    imageContainer.style.cursor = 'move';
-    
-    // Add drag handle functionality to the entire image container
-    imageContainer.addEventListener('mousedown', (e) => {
-      // Don't start drag if clicking on positioning buttons
-      if (e.target.classList.contains('pos-btn')) {
-        return;
-      }
-      
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      
-      // Get current position
-      const rect = imageContainer.getBoundingClientRect();
-      startLeft = rect.left;
-      startTop = rect.top;
-      
-      imageContainer.style.cursor = 'grabbing';
-      imageContainer.style.opacity = '0.8';
-      
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
-      e.preventDefault();
-      
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-      
-      // Update image position
-      const newLeft = startLeft + deltaX;
-      const newTop = startTop + deltaY;
-      
-      // Apply new position
-      imageContainer.style.position = 'absolute';
-      imageContainer.style.left = newLeft + 'px';
-      imageContainer.style.top = newTop + 'px';
-      imageContainer.style.zIndex = '1000';
-      
-      // Remove float and margins when dragging
-      imageContainer.style.float = 'none';
-      imageContainer.style.margin = '0';
-    });
-    
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        imageContainer.style.cursor = 'move';
-        imageContainer.style.opacity = '1';
-        
-        console.log('✅ Image repositioned');
-      }
-    });
-  }
+
 
   addImagePositioningOverlay(imageContainer) {
     // Create positioning overlay
@@ -3112,6 +3050,19 @@ class SimpleBlog {
         pointer-events: auto;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
       ">&lt;</button>
+      <button class="pos-btn pos-row" style="
+        background: transparent;
+        color: var(--accent);
+        border: none;
+        padding: 6px 10px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        pointer-events: auto;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+      ">—</button>
       <button class="pos-btn pos-right" style="
         background: transparent;
         color: var(--accent);
@@ -3162,6 +3113,7 @@ class SimpleBlog {
     
     // Add click handlers for positioning
     const leftBtn = overlay.querySelector('.pos-left');
+    const rowBtn = overlay.querySelector('.pos-row');
     const rightBtn = overlay.querySelector('.pos-right');
     const deleteBtn = overlay.querySelector('.pos-delete');
     
@@ -3177,6 +3129,20 @@ class SimpleBlog {
         clear: both;
       `;
       console.log('✅ Image positioned left');
+    });
+    
+    // Row positioning (inline, no clear)
+    rowBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      imageContainer.style.cssText = `
+        position: relative;
+        float: left;
+        margin-right: 16px;
+        margin-bottom: 12px;
+        max-width: 200px;
+        clear: none;
+      `;
+      console.log('✅ Image positioned in row');
     });
     
     // Right positioning (float right)
@@ -3204,9 +3170,6 @@ class SimpleBlog {
     
     // Setup drag and drop for the visual editor if not already done
     this.setupEditorDragAndDrop();
-    
-    // Make image draggable for repositioning
-    this.makeImageDraggable(imageContainer);
   }
 
   showImagePositioningControls(imageContainer) {

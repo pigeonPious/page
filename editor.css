@@ -1212,7 +1212,18 @@ body.custom-mode .console-output {
   clear: both;
 }
 
-/* Center positioning removed - now only left/right available */
+/* Row positioning for horizontal layout */
+.visual-editor .image-container[style*="clear: none"] {
+  float: left;
+  margin-right: 16px;
+  margin-bottom: 12px;
+  clear: none;
+}
+
+/* Ensure proper spacing in rows */
+.visual-editor .image-container[style*="clear: none"] + .image-container[style*="clear: none"] {
+  margin-left: 0;
+}
 
 /* Fix text wrapping issues */
 .visual-editor {
