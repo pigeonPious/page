@@ -150,8 +150,6 @@ class SimpleBlog {
               <div class="menu-entry" data-mode="custom">Custom…</div>
               <div class="menu-entry" data-mode="random">Random</div>
               <div class="menu-separator"></div>
-              <div class="menu-entry" id="toggle-console">Console</div>
-              <div class="menu-separator"></div>
               <div class="menu-entry" id="toggle-editor-mode">Raw Mode</div>
             </div>
           </div>
@@ -164,14 +162,7 @@ class SimpleBlog {
             </div>
           </div>
           
-          <div class="menu-item" data-menu="debug">
-            <div class="label">Debug</div>
-            <div class="menu-dropdown">
-              <div class="menu-entry" id="test-cache-clear">Test Cache Clear</div>
-              <div class="menu-entry" id="test-build-increment">Test Build Increment</div>
-              <div class="menu-entry" id="show-localstorage">Show localStorage</div>
-            </div>
-          </div>
+
           
           <div class="taskbar-status editor-only">
             <span id="github-status">not connected</span>
@@ -180,9 +171,7 @@ class SimpleBlog {
 
           
 
-        <div class="cache-clear-btn" id="cache-clear-btn" style="margin-left: 8px; padding: 0 8px; font-size: 11px; color: #dc3545; font-family: monospace; cursor: pointer; user-select: none; border: 1px solid #dc3545; border-radius: 3px;" title="Clear all cache and reload">
-          🧹
-        </div>
+
         
         <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: default; user-select: none;" data-note="Welcome to my Blog!">
           <span id="github-connect-underscore" style="color: #fff; cursor: pointer; margin-right: 2px;">_</span>PiousPigeon
@@ -805,12 +794,6 @@ class SimpleBlog {
       this.showFlagsModal();
     });
 
-    // Console toggle
-    this.addClickHandler('#toggle-console', () => {
-      console.log('🖥️ Console toggle clicked');
-      this.toggleConsole();
-    });
-
     // Editor mode toggle (Raw/Preview)
     this.addClickHandler('#toggle-editor-mode', () => {
       console.log('📝 Editor mode toggle clicked');
@@ -865,39 +848,7 @@ class SimpleBlog {
     
 
     
-    // Debug button handlers
-    this.addClickHandler('#test-cache-clear', () => {
-      console.log('🧹 Test cache clear button clicked');
-      this.clearBuildCache();
-      alert('Cache cleared! Check console for details.');
-    });
-    
-    this.addClickHandler('#test-build-increment', () => {
-      console.log('🔧 Test build increment button clicked');
-      this.incrementBuildWord();
-      alert('Build incremented! Check console for details.');
-    });
-    
 
-    
-    // Add cache clear button handler
-    this.addClickHandler('#cache-clear-btn', () => {
-      console.log('🧹 Cache clear button clicked');
-      if (confirm('Clear all cache and reload? This will reset all stored data.')) {
-        this.clearAllCache();
-      }
-    });
-    
-    this.addClickHandler('#show-localstorage', () => {
-      console.log('📋 Show localStorage button clicked');
-      const storage = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        storage[key] = localStorage.getItem(key);
-      }
-      console.log('📋 localStorage contents:', storage);
-      alert('localStorage contents logged to console!');
-    });
     
     this.addClickHandler('#test-github-token', () => {
       console.log('🔐 Test GitHub token button clicked');
