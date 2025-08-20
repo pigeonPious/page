@@ -5113,21 +5113,13 @@ class SimpleBlog {
       console.log(`  - Devlog flag found: "${devlogFlag}"`);
       
       if (devlogFlag) {
-        // Extract just the category name after "devlog:" and before any comma or space
+        // Extract just the category name after "devlog:" and before any comma
         const category = devlogFlag.split(':')[1] || 'general';
-        // Clean up category name for display - take only the first word
-        let displayName = category.trim().split(',')[0].split(' ')[0].trim();
+        // Clean up category name for display - take everything before the first comma
+        let displayName = category.trim().split(',')[0].trim();
         
-        // Special case for Hablet (capitalize first letter)
-        if (displayName.toLowerCase() === 'hablet') {
-          displayName = 'Hablet';
-        }
-        // Special case for Website (capitalize first letter)
-        else if (displayName.toLowerCase() === 'website') {
-          displayName = 'Website';
-        }
-        // For other categories, capitalize first letter
-        else if (displayName.length > 0) {
+        // Capitalize first letter of the category name
+        if (displayName.length > 0) {
           displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
         }
         
