@@ -1221,13 +1221,14 @@ body.custom-mode .console-output {
 
 /* Fix text wrapping issues */
 .visual-editor {
-  overflow: hidden; /* Contains floats */
+  overflow: visible; /* Allow content to flow naturally */
 }
 
 .visual-editor p {
   overflow: visible; /* Allow text to flow around images */
   line-height: 1.6;
   margin: 1em 0;
+  clear: both; /* Ensure paragraphs clear floats */
 }
 
 .visual-editor p:after {
@@ -1239,5 +1240,34 @@ body.custom-mode .console-output {
 /* Ensure proper text flow */
 .visual-editor .image-container {
   display: block;
+  clear: both;
+  margin-bottom: 1em; /* Add space below images */
+}
+
+/* Make sure image containers don't interfere with text flow */
+.visual-editor div:has(.image-container) {
+  clear: both;
+  margin-bottom: 1em;
+}
+
+/* Ensure text flows around images properly */
+.visual-editor .image-container[style*="float: left"] {
+  float: left;
+  margin-right: 16px;
+  margin-bottom: 12px;
+  clear: both;
+}
+
+.visual-editor .image-container[style*="float: right"] {
+  float: right;
+  margin-left: 16px;
+  margin-bottom: 12px;
+  clear: both;
+}
+
+.visual-editor .image-container[style*="float: none"] {
+  float: none;
+  margin: 0 auto 16px auto;
+  text-align: center;
   clear: both;
 }

@@ -2855,7 +2855,9 @@ class SimpleBlog {
       // Add drag and drop functionality
       item.draggable = true;
       item.addEventListener('dragstart', (e) => {
+        // Set both text data and image data for better compatibility
         e.dataTransfer.setData('text/plain', filename);
+        e.dataTransfer.setData('text/html', `<img src="assets/${filename}" style="max-width: 200px; height: auto;">`);
         e.dataTransfer.effectAllowed = 'copy';
         item.style.opacity = '0.5';
       });
@@ -2890,11 +2892,13 @@ class SimpleBlog {
     const imageContainer = document.createElement('div');
     imageContainer.className = 'image-container';
     imageContainer.style.cssText = `
+      position: relative;
       float: left;
       margin-right: 16px;
       margin-bottom: 12px;
       max-width: 200px;
       clear: both;
+      display: block;
     `;
     
     // Create image element
@@ -2927,7 +2931,7 @@ class SimpleBlog {
     // Add image to container
     imageContainer.appendChild(img);
     
-    // Insert the image first
+    // Insert the image as a block element, not inline
     let inserted = false;
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -2936,17 +2940,22 @@ class SimpleBlog {
       // Check if selection is within the post content area
       if (visualEditor.contains(range.commonAncestorContainer) || 
           visualEditor === range.commonAncestorContainer) {
-        range.insertNode(imageContainer);
+        // Insert as a block element
+        const blockElement = document.createElement('div');
+        blockElement.appendChild(imageContainer);
+        range.insertNode(blockElement);
         range.collapse(false);
         inserted = true;
-        console.log('✅ Image inserted at cursor position');
+        console.log('✅ Image inserted at cursor position as block');
       }
     }
     
     if (!inserted) {
       // No selection, insert at the end of the post content
-      visualEditor.appendChild(imageContainer);
-      console.log('✅ Image inserted at end of post');
+      const blockElement = document.createElement('div');
+      blockElement.appendChild(imageContainer);
+      visualEditor.appendChild(blockElement);
+      console.log('✅ Image inserted at end of post as block');
     }
     
     // Add positioning overlay functionality
@@ -2980,7 +2989,21 @@ class SimpleBlog {
       e.preventDefault();
       visualEditor.classList.remove('drag-over');
       
-      const filename = e.dataTransfer.getData('text/plain');
+      // Try to get HTML data first for better preview
+      let filename = e.dataTransfer.getData('text/html');
+      if (filename) {
+        // Extract filename from HTML if possible
+        const match = filename.match(/src="assets\/([^"]+)"/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+      
+      // Fallback to text data
+      if (!filename) {
+        filename = e.dataTransfer.getData('text/plain');
+      }
+      
       if (filename) {
         console.log('🖼️ Dropped image:', filename);
         this.insertImageToPost(filename);
