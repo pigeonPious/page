@@ -4964,7 +4964,14 @@ class SimpleBlog {
   updateProjectsSubmenu(allPosts) {
     console.log('📋 Updating Projects submenu');
     
-    // Find the projects menu item
+    // Find the projects dropdown container
+    const projectsDropdown = document.querySelector('#projects-dropdown');
+    if (!projectsDropdown) {
+      console.log('⚠️ Projects dropdown not found');
+      return;
+    }
+    
+    // Find the projects menu item (the "Loading..." element)
     const projectsMenu = document.querySelector('#projects-menu');
     if (!projectsMenu) {
       console.log('⚠️ Projects menu not found');
@@ -5161,6 +5168,8 @@ class SimpleBlog {
       submenu.appendChild(subSubmenu);
     });
     
+    // Replace the "Loading..." text with the project categories
+    projectsMenu.innerHTML = '';
     projectsMenu.appendChild(submenu);
     
     // ONLY close when clicking outside the entire menu system
