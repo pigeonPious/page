@@ -77,10 +77,14 @@ class SimpleBlog {
         }
       }
       
-      // Show site map by default after posts are loaded
+          // Show site map by default after posts are loaded (only in blog mode)
+    if (!window.location.pathname.includes('editor.html')) {
       setTimeout(() => {
         this.showSiteMap();
       }, 500);
+    } else {
+      console.log('🗺️ Site map not shown (editor mode)');
+    }
     }).catch(error => {
       console.error('❌ Error loading posts:', error);
     });
@@ -174,8 +178,6 @@ class SimpleBlog {
               <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
               <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
-              <div class="menu-separator"></div>
-              <div class="menu-entry has-submenu" id="categories-menu" style="position: relative;">Categories ></div>
               <div class="menu-entry" id="show-site-map">Site Map</div>
             </div>
           </div>
@@ -1113,47 +1115,8 @@ class SimpleBlog {
       console.warn('⚠️ All posts menu element not found');
     }
 
-    // Categories submenu - show all available categories
-    const categoriesMenu = document.getElementById('categories-menu');
-    if (categoriesMenu) {
-      // Remove existing listeners to prevent duplication
-      categoriesMenu.removeEventListener('mouseenter', this.categoriesMouseEnterHandler);
-      categoriesMenu.removeEventListener('mouseleave', this.categoriesMouseLeaveHandler);
-      categoriesMenu.removeEventListener('click', this.categoriesClickHandler);
-      
-      this.categoriesMouseEnterHandler = () => {
-        console.log('📝 Categories menu hovered');
-        this.showCategoriesSubmenu(categoriesMenu);
-      };
-      
-      this.categoriesMouseLeaveHandler = () => {
-        // No timeout needed for categories submenu
-      };
-      
-      this.categoriesClickHandler = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('📝 Categories menu clicked');
-        
-        // Close other level 1 menus first
-        this.closeOtherLevel1Menus('categories-menu');
-        
-        // Toggle submenu - close if open, open if closed
-        const existingSubmenu = categoriesMenu.querySelector('.submenu');
-        if (existingSubmenu) {
-          existingSubmenu.remove();
-        } else {
-          this.showCategoriesSubmenu(categoriesMenu);
-        }
-      };
-      
-      categoriesMenu.addEventListener('mouseenter', this.categoriesMouseEnterHandler);
-      categoriesMenu.addEventListener('mouseleave', this.categoriesMouseLeaveHandler);
-      categoriesMenu.addEventListener('click', this.categoriesClickHandler);
-      console.log('✅ Categories submenu handler attached');
-    } else {
-      console.warn('⚠️ Categories menu element not found');
-    }
+
+
 
     // Projects submenu - now handled by updateProjectsSubmenu
     const projectsMenu = document.getElementById('projects-menu');
@@ -1170,7 +1133,7 @@ class SimpleBlog {
 
 
 
-  // Helper function to display posts in submenus
+  // Helper function to display posts in submenus with category labels
   displayPostsInSubmenu(submenu, posts) {
     // Clear any existing content
     submenu.innerHTML = '';
@@ -1188,44 +1151,148 @@ class SimpleBlog {
     `;
     submenu.appendChild(bufferZone);
     
-    // Add post entries
+    // Add post entries with category grouping
     if (posts && posts.length > 0) {
+      // Group posts by categories (flags)
+      const categories = {};
+      const uncategorized = [];
+      
       posts.forEach((post) => {
         if (!post || !post.slug) {
           return;
         }
         
-        const entry = document.createElement('div');
-        entry.className = 'menu-entry';
-        entry.textContent = post.title || 'Untitled';
-        entry.style.cssText = `
-          padding: 4px 12px; 
-          cursor: pointer; 
-          color: var(--menu-fg, #fff);
-          transition: background-color 0.15s ease;
-          border-radius: 3px;
-          margin: 0.25px 1px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-        `;
-        
-        entry.title = `Click to load: ${post.title} (${post.slug})`;
-        
-        entry.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        if (post.keywords && post.keywords.trim()) {
+          // Split flags by comma and process each one
+          const flags = post.keywords.split(',').map(f => f.trim()).filter(f => f.length > 0);
           
-          if (window.location.pathname.includes('editor.html')) {
-            window.location.href = `index.html?post=${post.slug}`;
-          } else {
-            this.loadPost(post.slug);
-          }
-        });
-        
-        submenu.appendChild(entry);
+          flags.forEach(flag => {
+            // Capitalize first letter of the flag
+            let displayName = flag.charAt(0).toUpperCase() + flag.slice(1).toLowerCase();
+            
+            if (!categories[displayName]) {
+              categories[displayName] = [];
+            }
+            
+            // Only add post if it's not already in this category
+            if (!categories[displayName].find(p => p.slug === post.slug)) {
+              categories[displayName].push(post);
+            }
+          });
+        } else {
+          uncategorized.push(post);
+        }
       });
+      
+      // Display categorized posts
+      Object.keys(categories).sort().forEach(category => {
+        const postsInCategory = categories[category];
+        
+        // Add category label
+        const categoryLabel = document.createElement('div');
+        categoryLabel.className = 'menu-entry category-label';
+        categoryLabel.textContent = `└─ ${category}`;
+        categoryLabel.style.cssText = `
+          padding: 2px 12px;
+          color: var(--accent-color, #4a9eff);
+          font-size: 11px;
+          font-weight: bold;
+          cursor: default;
+          pointer-events: none;
+          margin-top: 8px;
+          margin-bottom: 2px;
+        `;
+        submenu.appendChild(categoryLabel);
+        
+        // Add posts in this category
+        postsInCategory.forEach((post) => {
+          const entry = document.createElement('div');
+          entry.className = 'menu-entry';
+          entry.textContent = `   ├─ ${post.title || 'Untitled'}`;
+          entry.style.cssText = `
+            padding: 2px 12px 2px 24px;
+            cursor: pointer; 
+            color: var(--menu-fg, #fff);
+            transition: background-color 0.15s ease;
+            border-radius: 3px;
+            margin: 0.25px 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+            font-size: 12px;
+          `;
+          
+          entry.title = `Click to load: ${post.title} (${post.slug})`;
+          
+          entry.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (window.location.pathname.includes('editor.html')) {
+              window.location.href = `index.html?post=${post.slug}`;
+            } else {
+              this.loadPost(post.slug);
+            }
+          });
+          
+          submenu.appendChild(entry);
+        });
+      });
+      
+      // Display uncategorized posts if any
+      if (uncategorized.length > 0) {
+        // Add uncategorized label
+        const uncategorizedLabel = document.createElement('div');
+        uncategorizedLabel.className = 'menu-entry category-label';
+        uncategorizedLabel.textContent = `└─ Uncategorized`;
+        uncategorizedLabel.style.cssText = `
+          padding: 2px 12px;
+          color: var(--accent-color, #4a9eff);
+          font-size: 11px;
+          font-weight: bold;
+          cursor: default;
+          pointer-events: none;
+          margin-top: 8px;
+          margin-bottom: 2px;
+        `;
+        submenu.appendChild(uncategorizedLabel);
+        
+        // Add uncategorized posts
+        uncategorized.forEach((post) => {
+          const entry = document.createElement('div');
+          entry.className = 'menu-entry';
+          entry.textContent = `   ├─ ${post.title || 'Untitled'}`;
+          entry.style.cssText = `
+            padding: 2px 12px 2px 24px;
+            cursor: pointer; 
+            color: var(--menu-fg, #fff);
+            transition: background-color 0.15s ease;
+            border-radius: 3px;
+            margin: 0.25px 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+            font-size: 12px;
+          `;
+          
+          entry.title = `Click to load: ${post.title} (${post.slug})`;
+          
+          entry.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (window.location.pathname.includes('editor.html')) {
+              window.location.href = `index.html?post=${post.slug}`;
+            } else {
+              this.loadPost(post.slug);
+            }
+          });
+          
+          submenu.appendChild(entry);
+        });
+      }
     } else {
       const noPostsEntry = document.createElement('div');
       noPostsEntry.className = 'menu-entry';
@@ -1235,165 +1302,9 @@ class SimpleBlog {
     }
   }
   
-  // Helper function to display categories with hover submenus
-  displayCategoriesInSubmenu(submenu, posts) {
-    // Clear any existing content
-    submenu.innerHTML = '';
+
     
-    // Add invisible buffer zone around submenu for easier navigation
-    const bufferZone = document.createElement('div');
-    bufferZone.style.cssText = `
-      position: absolute;
-      left: -10px;
-      top: -10px;
-      right: -10px;
-      bottom: -10px;
-      z-index: 9999;
-      pointer-events: none;
-    `;
-    submenu.appendChild(bufferZone);
-    
-    // Group posts by all flags (not just devlog)
-    const categories = {};
-    
-    posts.forEach(post => {
-      const postFlags = post.keywords || '';
-      if (postFlags.trim()) {
-        // Split flags by comma and process each one
-        const flags = postFlags.split(',').map(f => f.trim()).filter(f => f.length > 0);
-        
-        flags.forEach(flag => {
-          // Capitalize first letter of the flag
-          let displayName = flag.charAt(0).toUpperCase() + flag.slice(1).toLowerCase();
-          
-          if (!categories[displayName]) {
-            categories[displayName] = [];
-          }
-          
-          // Only add post if it's not already in this category
-          if (!categories[displayName].find(p => p.slug === post.slug)) {
-            categories[displayName].push(post);
-          }
-        });
-      }
-    });
-    
-    if (Object.keys(categories).length === 0) {
-      const noPostsEntry = document.createElement('div');
-      noPostsEntry.className = 'menu-entry';
-      noPostsEntry.textContent = 'No categories found';
-      noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
-      submenu.appendChild(noPostsEntry);
-      return;
-    }
-    
-    // Create category entries with hover submenus
-    Object.keys(categories).sort().forEach(category => {
-      const postsInCategory = categories[category];
-      
-      const categoryEntry = document.createElement('div');
-      categoryEntry.className = 'menu-entry has-submenu';
-      categoryEntry.textContent = `${category} (${postsInCategory.length})`;
-      categoryEntry.style.cssText = `
-        padding: 4px 12px; 
-        cursor: pointer; 
-        color: var(--menu-fg, #fff);
-        transition: background-color 0.15s ease;
-        border-radius: 3px;
-        margin: 0.25px 1px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 200px;
-        position: relative;
-      `;
-      
-      // Create hover submenu for posts in this category
-      const postsSubmenu = document.createElement('div');
-      postsSubmenu.className = 'submenu';
-      postsSubmenu.style.cssText = `
-        position: absolute;
-        left: 100%;
-        top: 0;
-        background: var(--menu-bg, #333);
-        border: 1px solid var(--menu-border, #555);
-        padding: 1.25px 0;
-        min-width: 200px;
-        z-index: 10001;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        border-radius: 4px;
-        display: none;
-      `;
-      
-      // Add post entries to the submenu
-      postsInCategory.forEach(post => {
-        const postEntry = document.createElement('div');
-        postEntry.className = 'menu-entry';
-        postEntry.textContent = post.title || 'Untitled';
-        postEntry.style.cssText = `
-          padding: 4px 12px; 
-          cursor: pointer; 
-          color: var(--menu-fg, #fff);
-          transition: background-color 0.15s ease;
-          border-radius: 3px;
-          margin: 0.25px 1px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-        `;
-        
-        postEntry.title = `Click to load: ${post.title} (${post.slug})`;
-        
-        postEntry.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          if (window.location.pathname.includes('editor.html')) {
-            window.location.href = `index.html?post=${post.slug}`;
-          } else {
-            this.loadPost(post.slug);
-          }
-        });
-        
-        postsSubmenu.appendChild(postEntry);
-      });
-      
-      // Show submenu on hover
-      categoryEntry.addEventListener('mouseenter', () => {
-        postsSubmenu.style.display = 'block';
-      });
-      
-      categoryEntry.addEventListener('mouseleave', () => {
-        setTimeout(() => {
-          if (!postsSubmenu.matches(':hover')) {
-            postsSubmenu.style.display = 'none';
-          }
-        }, 100);
-      });
-      
-      // Hide submenu when leaving posts submenu
-      postsSubmenu.addEventListener('mouseleave', () => {
-        postsSubmenu.style.display = 'none';
-      });
-      
-      // Add buffer zone to posts submenu
-      const postsBufferZone = document.createElement('div');
-      postsBufferZone.style.cssText = `
-        position: absolute;
-        left: -10px;
-        top: -10px;
-        right: -10px;
-        bottom: -10px;
-        z-index: 10000;
-        pointer-events: none;
-      `;
-      postsSubmenu.appendChild(postsBufferZone);
-      
-      categoryEntry.appendChild(postsSubmenu);
-      submenu.appendChild(categoryEntry);
-    });
-  }
+
 
   async showAllPostsSubmenu(menuElement) {
     // Create submenu for all posts
@@ -5789,7 +5700,16 @@ class SimpleBlog {
         postLinks.forEach(link => {
           link.addEventListener('click', () => {
             const slug = link.getAttribute('data-slug');
-            this.loadPost(slug);
+            
+            if (window.location.pathname.includes('editor.html')) {
+              // In editor mode: populate the editor with this post
+              console.log(`📝 Editor mode: Loading post ${slug} for editing`);
+              this.loadEditDataForPost(slug);
+            } else {
+              // In blog mode: navigate to the post
+              console.log(`📖 Blog mode: Loading post ${slug} for viewing`);
+              this.loadPost(slug);
+            }
             // Don't close site map - keep it open
           });
         });
@@ -5964,72 +5884,9 @@ hideSiteMap() {
   }
 }
 
-  showCategoriesSubmenu(menuElement) {
-    console.log('📝 Showing categories submenu');
-    
-    // Create submenu for categories
-    const submenu = document.createElement('div');
-    submenu.className = 'submenu';
-          submenu.style.cssText = `
-        position: absolute;
-        left: 100%;
-        top: 0;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        padding: 5px 0;
-        min-width: 200px;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        border-radius: 4px;
-      `;
-    
-    // Remove existing submenu
-    const existingSubmenu = menuElement.querySelector('.submenu');
-    if (existingSubmenu) {
-      existingSubmenu.remove();
-    }
-    
-    // Add new submenu
-    menuElement.appendChild(submenu);
-    
-    // Use cached posts if available, otherwise load
-    if (this.posts && this.posts.length > 0) {
-      this.displayCategoriesInSubmenu(submenu, this.posts);
-    } else {
-      // Show loading indicator
-      const loadingEntry = document.createElement('div');
-      loadingEntry.className = 'menu-entry';
-      loadingEntry.textContent = 'Loading categories...';
-      loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
-      submenu.appendChild(loadingEntry);
-      
-      // Load and display categories
-      this.loadCategoriesForSubmenu(submenu);
-    }
-    
-    // Remove submenu on mouse leave
-    const categoriesMouseLeaveHandler = () => {
-      setTimeout(() => {
-        if (submenu.parentNode) {
-          submenu.remove();
-        }
-      }, 100);
-    };
-    
-    // Remove any existing listener to prevent duplication
-    menuElement.removeEventListener('mouseleave', categoriesMouseLeaveHandler);
-    menuElement.addEventListener('mouseleave', categoriesMouseLeaveHandler);
-  }
 
-  // Legacy function - now replaced by displayCategoriesInSubmenu
-  async loadCategoriesForSubmenu(submenu) {
-    console.log('📝 Using cached posts for categories submenu');
-    if (this.posts && this.posts.length > 0) {
-      this.displayCategoriesInSubmenu(submenu, this.posts);
-    } else {
-      submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--muted, #888); font-style: italic;">No posts available</div>';
-    }
-  }
+
+
 
   makeWindowDraggable(window) {
     let isDragging = false;
@@ -6575,9 +6432,82 @@ hideSiteMap() {
       }, 10000);
     });
   }
+  
+  // Load edit data for a specific post (used by site map in editor mode)
+  async loadEditDataForPost(slug) {
+    console.log(`📝 Loading edit data for post: ${slug}`);
+    
+    try {
+      // Try to load from local file first (faster)
+      const localResponse = await fetch(`posts/${slug}.json`);
+      if (localResponse.ok) {
+        const postData = await localResponse.json();
+        console.log(`✅ Loaded post data from local: ${postData.title}`);
+        this.populateEditorWithPost(postData);
+        return;
+      }
+    } catch (localError) {
+      console.log('🔄 Local file not found, trying GitHub...');
+    }
+    
+    // Fallback to GitHub API
+    try {
+      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`);
+      if (response.ok) {
+        const indexData = await response.json();
+        if (indexData.content && indexData.encoding === 'base64') {
+          const decodedContent = atob(indexData.content);
+          const postData = JSON.parse(decodedContent);
+          console.log(`✅ Loaded post data from GitHub: ${postData.title}`);
+          this.populateEditorWithPost(postData);
+          return;
+        }
+      }
+    } catch (githubError) {
+      console.error('❌ Failed to load post from GitHub:', githubError);
+    }
+    
+    console.error('❌ Could not load post data for editing');
+  }
+  
+  // Populate editor fields with post data
+  populateEditorWithPost(postData) {
+    console.log(`📝 Populating editor with: ${postData.title}`);
+    
+    // Populate title field
+    const titleField = document.getElementById('postTitle');
+    if (titleField) {
+      titleField.value = postData.title || '';
+      console.log('✅ Title field populated');
+    }
+    
+    // Populate content field
+    const contentField = document.getElementById('visualEditor');
+    if (contentField) {
+      contentField.innerHTML = postData.content || '';
+      console.log('✅ Content field populated');
+    }
+    
+    // Populate flags/keywords field
+    const flagsField = document.getElementById('keywords-input');
+    if (flagsField) {
+      flagsField.value = postData.keywords || '';
+      console.log('✅ Flags field populated');
+    }
+    
+    // Store current post slug for editing
+    localStorage.setItem('current_post_slug', postData.slug);
+    console.log(`✅ Editor populated with post: ${postData.title}`);
+  }
 
   loadEditData() {
     console.log('📝 Checking for edit data...');
+    
+    // Hide site map when in editor mode
+    if (window.location.pathname.includes('editor.html')) {
+      this.hideSiteMap();
+      console.log('🗺️ Site map hidden (editor mode)');
+    }
     
     const editData = localStorage.getItem('editPostData');
     if (!editData) {
