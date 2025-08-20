@@ -5271,48 +5271,17 @@ class SimpleBlog {
     siteMap.id = 'site-map';
     siteMap.style.cssText = `
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 280px;
-      height: 100vh;
-      background: var(--bg);
-      border-right: 1px solid var(--border);
-      padding: 16px;
-      overflow-y: auto;
+      top: 60px;
+      left: 20px;
+      background: transparent;
+      padding: 8px;
       z-index: 1000;
       font-family: monospace;
-      font-size: 13px;
-      line-height: 1.4;
-    `;
-    
-    // Create header
-    const header = document.createElement('div');
-    header.style.cssText = `
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-      font-weight: bold;
+      font-size: 11px;
+      line-height: 1.2;
       color: var(--fg);
+      pointer-events: none;
     `;
-    header.textContent = 'Site Map';
-    
-    // Create close button
-    const closeBtn = document.createElement('div');
-    closeBtn.textContent = '×';
-    closeBtn.style.cssText = `
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      cursor: pointer;
-      font-size: 18px;
-      color: var(--fg);
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
-    closeBtn.addEventListener('click', () => this.hideSiteMap());
     
     // Create content container
     const content = document.createElement('div');
@@ -5346,34 +5315,40 @@ class SimpleBlog {
           // Check if current post is in this category
           const isCurrentCategory = currentSlug && postsInCategory.some(p => p.slug === currentSlug);
           
-          treeHTML += `<div style="margin-bottom: 8px;">`;
-          treeHTML += `<div style="font-weight: bold; margin-bottom: 2px;">`;
-          treeHTML += `|-${category}`;
-          treeHTML += `</div>`;
-          
-          // Show posts in category
-          postsInCategory.forEach(post => {
-            const isCurrentPost = post.slug === currentSlug;
-            treeHTML += `<div style="margin-left: 16px; margin-bottom: 1px;">`;
-            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
-            treeHTML += `|       | >${post.title}`;
-            treeHTML += `</span>`;
+          if (isCurrentCategory) {
+            // Show expanded category if current post is in it
+            treeHTML += `<div style="margin-bottom: 6px;">`;
+            treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─${category}</div>`;
+            
+            // Show posts in category
+            postsInCategory.forEach(post => {
+              const isCurrentPost = post.slug === currentSlug;
+              treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
+              treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
+              treeHTML += `   ├─${post.title}`;
+              treeHTML += `</span>`;
+              treeHTML += `</div>`;
+            });
+            
             treeHTML += `</div>`;
-          });
-          
-          treeHTML += `</div>`;
+          } else {
+            // Show collapsed category
+            treeHTML += `<div style="margin-bottom: 4px;">`;
+            treeHTML += `<div style="font-weight: bold;">└─${category} (${postsInCategory.length})</div>`;
+            treeHTML += `</div>`;
+          }
         });
         
-        // Show uncategorized posts
+        // Show uncategorized posts (always expanded)
         const uncategorized = posts.filter(post => !post.keywords || !post.keywords.match(/devlog:/));
         if (uncategorized.length > 0) {
-          treeHTML += `<div style="margin-bottom: 8px;">`;
-          treeHTML += `<div style="font-weight: bold; margin-bottom: 2px;">|-Uncategorized</div>`;
+          treeHTML += `<div style="margin-bottom: 6px;">`;
+          treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
           uncategorized.forEach(post => {
             const isCurrentPost = post.slug === currentSlug;
-            treeHTML += `<div style="margin-left: 16px; margin-bottom: 1px;">`;
-            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
-            treeHTML += `|       | >${post.title}`;
+            treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
+            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
+            treeHTML += `   ├─${post.title}`;
             treeHTML += `</span>`;
             treeHTML += `</div>`;
           });
@@ -5388,7 +5363,6 @@ class SimpleBlog {
           link.addEventListener('click', () => {
             const slug = link.getAttribute('data-slug');
             this.loadPost(slug);
-            this.hideSiteMap();
           });
         });
       })
@@ -5397,9 +5371,7 @@ class SimpleBlog {
         content.innerHTML = '<div style="color: var(--fg);">Error loading site map</div>';
       });
     
-    // Assemble the site map
-    siteMap.appendChild(header);
-    siteMap.appendChild(closeBtn);
+    // Add content to site map
     siteMap.appendChild(content);
     
     // Add to page
