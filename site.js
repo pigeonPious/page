@@ -121,9 +121,7 @@ class SimpleBlog {
               <div class="menu-separator"></div>
 
               <div class="menu-entry blog-only" id="font-size-button">Font Size</div>
-              <div class="menu-separator admin-only"></div>
-              <div class="menu-entry admin-only" id="quick-edit-button">Quick Edit</div>
-              <div class="menu-entry admin-only" id="category-manager-button">Category Manager</div>
+
               <div class="menu-entry admin-only" id="draft-manager-button">Draft Manager</div>
             </div>
           </div>
@@ -144,7 +142,7 @@ class SimpleBlog {
           <div class="menu-item" data-menu="projects">
             <div class="label">Projects</div>
             <div class="menu-dropdown" id="projects-dropdown">
-              <div class="menu-entry" id="projects-menu">Categories ></div>
+              <div class="menu-entry" id="projects-menu">Loading...</div>
             </div>
           </div>
           
@@ -872,15 +870,7 @@ class SimpleBlog {
       this.showFontSizeWindow();
     });
     
-    this.addClickHandler('#quick-edit-button', () => {
-      console.log('✏️ Quick edit button clicked');
-      this.quickEdit();
-    });
-    
-    this.addClickHandler('#category-manager-button', () => {
-      console.log('🗂️ Category manager button clicked');
-      this.showCategoryManager();
-    });
+
     
     this.addClickHandler('#draft-manager-button', () => {
       console.log('📝 Draft manager button clicked');
@@ -1038,31 +1028,184 @@ class SimpleBlog {
       // Remove existing listeners to prevent duplication
       projectsMenu.removeEventListener('click', this.projectsClickHandler);
       
-      this.projectsClickHandler = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('📝 Projects menu clicked');
-        
-        // Close other level 1 menus first
-        this.closeOtherLevel1Menus('projects-menu');
-        
-        // Only create submenu if it doesn't already exist
-        const existingSubmenu = projectsMenu.querySelector('.submenu');
-        if (!existingSubmenu) {
-          console.log('📝 Creating new Projects submenu');
-          this.updateProjectsSubmenu(this.posts || []);
-        } else {
-          console.log('📝 Projects submenu already exists, not recreating');
-        }
+      // Projects menu now shows categories on hover
+      this.projectsMouseEnterHandler = () => {
+        console.log('📝 Projects menu hovered');
+        this.showProjectsCategories(this.posts || []);
       };
       
-      projectsMenu.addEventListener('click', this.projectsClickHandler);
-      console.log('✅ Projects menu click handler attached');
+      projectsMenu.addEventListener('mouseenter', this.projectsMouseEnterHandler);
+      
+      // Also populate categories immediately if posts are available
+      if (this.posts && this.posts.length > 0) {
+        this.showProjectsCategories(this.posts);
+      }
+      
+      console.log('✅ Projects menu hover handler attached');
     } else {
       console.warn('⚠️ Projects menu element not found');
     }
     
     console.log('✅ Submenus setup complete with menu hierarchy management');
+  }
+
+  showProjectsCategories(posts) {
+    console.log('📝 Showing projects categories directly');
+    
+    const projectsDropdown = document.getElementById('projects-dropdown');
+    if (!projectsDropdown) {
+      console.warn('⚠️ Projects dropdown not found');
+      return;
+    }
+    
+    // Clear existing content
+    projectsDropdown.innerHTML = '';
+    
+    if (!posts || posts.length === 0) {
+      const noPostsEntry = document.createElement('div');
+      noPostsEntry.className = 'menu-entry';
+      noPostsEntry.textContent = 'No posts found';
+      noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+      projectsDropdown.appendChild(noPostsEntry);
+      return;
+    }
+    
+    // Extract unique categories from posts
+    const categories = [...new Set(posts.map(post => post.keywords || 'general'))];
+    console.log('📝 Found categories:', categories);
+    
+    // Create category entries
+    categories.forEach(category => {
+      const categoryEntry = document.createElement('div');
+      categoryEntry.className = 'menu-entry';
+      categoryEntry.textContent = category;
+      categoryEntry.style.cssText = `
+        padding: 8px 15px;
+        cursor: pointer;
+        color: var(--menu-fg, #fff);
+        transition: background-color 0.15s ease;
+        border-radius: 3px;
+        margin: 1px 2px;
+      `;
+      
+      categoryEntry.title = `Click to see posts in: ${category}`;
+      
+      // Add click handler to show posts for this category
+      categoryEntry.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log(`📝 Category clicked: ${category}`);
+        
+        // Show posts for this category
+        this.showCategoryPosts(category, posts);
+      });
+      
+      // Add hover effects
+      categoryEntry.addEventListener('mouseenter', () => {
+        categoryEntry.style.background = 'var(--menu-hover-bg, #555)';
+        categoryEntry.style.transform = 'translateX(2px)';
+      });
+      
+      categoryEntry.addEventListener('mouseleave', () => {
+        categoryEntry.style.background = 'transparent';
+        categoryEntry.style.transform = 'translateX(0)';
+      });
+      
+      projectsDropdown.appendChild(categoryEntry);
+    });
+    
+    console.log('✅ Projects categories displayed directly');
+  }
+
+  showCategoryPosts(category, allPosts) {
+    console.log(`📝 Showing posts for category: ${category}`);
+    
+    // Filter posts by category
+    const categoryPosts = allPosts.filter(post => (post.keywords || 'general') === category);
+    console.log(`📝 Found ${categoryPosts.length} posts in category: ${category}`);
+    
+    // Create a floating window to show the posts
+    const postsWindow = document.createElement('div');
+    postsWindow.className = 'category-posts-window';
+    postsWindow.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--menu-bg);
+      color: var(--menu-fg);
+      border: 1px solid var(--border);
+      padding: 20px;
+      min-width: 300px;
+      max-height: 70vh;
+      overflow-y: auto;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    `;
+    
+    postsWindow.innerHTML = `
+      <h3 style="margin: 0 0 15px 0; font-size: 14px;">Posts in: ${category}</h3>
+      <div id="category-posts-list"></div>
+      <div style="margin-top: 20px; text-align: center;">
+        <button onclick="this.closest('.category-posts-window').remove()" style="background: var(--menu-bg); color: var(--menu-fg); border: 1px solid var(--border); padding: 5px 10px; cursor: pointer;">Close</button>
+      </div>
+    `;
+    
+    document.body.appendChild(postsWindow);
+    
+    // Populate posts list
+    const postsList = postsWindow.querySelector('#category-posts-list');
+    if (categoryPosts.length > 0) {
+      categoryPosts.forEach(post => {
+        const postEntry = document.createElement('div');
+        postEntry.className = 'menu-entry';
+        postEntry.textContent = post.title || 'Untitled';
+        postEntry.style.cssText = `
+          padding: 6px 12px;
+          cursor: pointer;
+          color: var(--menu-fg);
+          transition: background-color 0.15s ease;
+          border-radius: 3px;
+          margin: 2px 0;
+        `;
+        
+        postEntry.title = `Click to load: ${post.title}`;
+        
+        postEntry.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log(`📖 Loading post: ${post.title}`);
+          
+          // Close the posts window
+          postsWindow.remove();
+          
+          // Load the post
+          if (window.location.pathname.includes('editor.html')) {
+            window.location.href = `index.html?post=${post.slug}`;
+          } else {
+            this.closeAllMenus();
+            this.loadPost(post.slug);
+          }
+        });
+        
+        postEntry.addEventListener('mouseenter', () => {
+          postEntry.style.background = 'var(--menu-hover-bg, #555)';
+        });
+        
+        postEntry.addEventListener('mouseleave', () => {
+          postEntry.style.background = 'transparent';
+        });
+        
+        postsList.appendChild(postEntry);
+      });
+    } else {
+      const noPostsEntry = document.createElement('div');
+      noPostsEntry.className = 'menu-entry';
+      noPostsEntry.textContent = 'No posts found in this category';
+      noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+      postsList.appendChild(noPostsEntry);
+    }
   }
 
   async showAllPostsSubmenu(menuElement) {
@@ -5708,8 +5851,9 @@ class SimpleBlog {
     }
     
     const projectsMenu = document.getElementById('projects-menu');
-    if (projectsMenu && this.projectsClickHandler) {
-      projectsMenu.removeEventListener('click', this.projectsClickHandler);
+    if (projectsMenu) {
+      // Remove hover handler (projects menu now uses hover instead of click)
+      projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
     }
     
     // Remove global event listeners
@@ -5887,65 +6031,7 @@ class SimpleBlog {
     console.log(`✅ Font size set to ${currentSize}px`);
   }
 
-  quickEdit() {
-    console.log('✏️ Opening quick edit...');
-    
-    const currentPost = this.currentPost;
-    if (!currentPost) {
-      alert('No post currently loaded to edit');
-      return;
-    }
-    
-    // Store edit data and redirect to editor
-    localStorage.setItem('editPostData', JSON.stringify(currentPost));
-    window.location.href = 'editor.html';
-  }
 
-  showCategoryManager() {
-    console.log('🗂️ Opening category manager...');
-    
-    // Create modal for category management
-    const modal = document.createElement('div');
-    modal.className = 'category-manager-modal';
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-    `;
-    
-    const content = document.createElement('div');
-    content.style.cssText = `
-      background: var(--menu-bg);
-      color: var(--menu-fg);
-      padding: 20px;
-      border: 1px solid var(--border);
-      min-width: 400px;
-      max-height: 70vh;
-      overflow-y: auto;
-    `;
-    
-    content.innerHTML = `
-      <h3>Category Manager</h3>
-      <p>Manage post categories and devlog projects:</p>
-      <div id="category-list">Loading categories...</div>
-      <div style="margin-top: 20px;">
-        <button onclick="this.closest('.category-manager-modal').remove()" style="background: var(--menu-bg); color: var(--menu-fg); border: 1px solid var(--border); padding: 5px 10px; cursor: pointer;">Close</button>
-      </div>
-    `;
-    
-    modal.appendChild(content);
-    document.body.appendChild(modal);
-    
-    // Load categories
-    this.loadCategories();
-  }
 
   showDraftManager() {
     console.log('📝 Opening draft manager...');
@@ -6123,13 +6209,7 @@ class SimpleBlog {
     }
   }
 
-  async loadCategories() {
-    // Implementation for loading and displaying categories
-    const categoryList = document.getElementById('category-list');
-    if (categoryList) {
-      categoryList.innerHTML = 'Category management features coming soon...';
-    }
-  }
+
 
   async loadDrafts() {
     // Implementation for loading and displaying drafts
