@@ -1486,11 +1486,42 @@ class SimpleBlog {
           throw new Error('Unexpected GitHub API response format');
         }
       } else {
-        submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--muted, #888); font-style: italic;">Error loading posts</div>';
+        throw new Error(`GitHub API failed: ${response.status}`);
       }
     } catch (error) {
-      console.error('❌ Error loading posts for submenu:', error);
-      submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
+      console.log('🔄 Submenu: GitHub API failed, trying local index.json...');
+      
+      // Fallback to local index.json
+      try {
+        const localResponse = await fetch('posts/index.json');
+        if (localResponse.ok) {
+          const localData = await localResponse.json();
+          console.log('🔍 Submenu: Local index.json loaded:', localData);
+          
+          let allPosts = [];
+          if (Array.isArray(localData)) {
+            allPosts = localData;
+          } else if (localData.posts && Array.isArray(localData.posts)) {
+            allPosts = localData.posts;
+          } else {
+            throw new Error('Unexpected local index format');
+          }
+          
+          console.log('✅ Submenu: Loaded posts from local index:', allPosts.length);
+          
+          // Update local posts array to keep in sync
+          this.posts = allPosts;
+          
+          // Display posts in submenu
+          this.displayPostsInSubmenu(submenu, allPosts);
+          return;
+        } else {
+          throw new Error(`Local index failed: ${localResponse.status}`);
+        }
+      } catch (localError) {
+        console.error('❌ Submenu: Both GitHub API and local index failed:', localError);
+        submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
+      }
     }
   }
   
@@ -5601,16 +5632,60 @@ class SimpleBlog {
     // Create content container
     const content = document.createElement('div');
     
-    // Fetch posts from GitHub and build tree
-    fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json')
-      .then(response => response.json())
-      .then(indexData => {
-        // GitHub API returns content in base64, need to decode
-        if (indexData.content && indexData.encoding === 'base64') {
-          try {
-            const decodedContent = atob(indexData.content);
-            const posts = JSON.parse(decodedContent);
-            console.log('🔍 Site map: Loaded posts from GitHub:', posts.length);
+    // Fetch posts from GitHub and build tree (with local fallback)
+    const loadPostsForSiteMap = async () => {
+      try {
+        // Try GitHub API first
+        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
+        if (response.ok) {
+          const indexData = await response.json();
+          
+          // GitHub API returns content in base64, need to decode
+          if (indexData.content && indexData.encoding === 'base64') {
+            try {
+              const decodedContent = atob(indexData.content);
+              const posts = JSON.parse(decodedContent);
+              console.log('🔍 Site map: Loaded posts from GitHub:', posts.length);
+              return posts;
+            } catch (decodeError) {
+              console.error('❌ Error decoding GitHub content for site map:', decodeError);
+              throw new Error('Failed to decode GitHub content');
+            }
+          } else {
+            throw new Error('Unexpected GitHub API response format');
+          }
+        } else {
+          throw new Error(`GitHub API failed: ${response.status}`);
+        }
+      } catch (error) {
+        console.log('🔄 Site map: GitHub API failed, trying local index.json...');
+        
+        // Fallback to local index.json
+        try {
+          const localResponse = await fetch('posts/index.json');
+          if (localResponse.ok) {
+            const localData = await localResponse.json();
+            console.log('🔍 Site map: Loaded posts from local index:', localData);
+            
+            if (Array.isArray(localData)) {
+              return localData;
+            } else if (localData.posts && Array.isArray(localData.posts)) {
+              return localData.posts;
+            } else {
+              throw new Error('Unexpected local index format');
+            }
+          } else {
+            throw new Error(`Local index failed: ${localResponse.status}`);
+          }
+        } catch (localError) {
+          console.error('❌ Site map: Both GitHub API and local index failed:', localError);
+          throw localError;
+        }
+      }
+    };
+    
+    // Load posts and build site map
+    loadPostsForSiteMap().then(posts => {
             
             // Group posts by all flags (not just devlog)
         const categories = {};
@@ -5719,44 +5794,42 @@ class SimpleBlog {
           });
         });
         
-          } catch (decodeError) {
-            console.error('❌ Error decoding GitHub content for site map:', decodeError);
-            content.innerHTML = '<div style="color: var(--fg);">Error decoding site map data</div>';
+        // Add content to site map
+        siteMap.appendChild(content);
+        
+        // Add to page
+        document.body.appendChild(siteMap);
+        
+        // Store reference
+        this.currentSiteMap = siteMap;
+        
+        // Add resize listener to auto-close site map when window gets too narrow
+        this.siteMapResizeHandler = () => {
+          const windowWidth = window.innerWidth;
+          const siteMapWidth = 280; // Approximate width of site map content
+          const minContentWidth = 600; // Minimum width needed for main content
+          
+          if (windowWidth < (siteMapWidth + minContentWidth)) {
+            this.hideSiteMap();
           }
-        } else {
-          console.error('❌ Unexpected GitHub API response format for site map');
-          content.innerHTML = '<div style="color: var(--fg);">Error loading site map</div>';
-        }
-      })
-      .catch(error => {
+        };
+        
+        window.addEventListener('resize', this.siteMapResizeHandler);
+        
+        // Check initial window size
+        this.siteMapResizeHandler();
+        
+      }).catch(error => {
         console.error('Error loading posts for site map:', error);
         content.innerHTML = '<div style="color: var(--fg);">Error loading site map</div>';
+        
+        // Still add the site map container even if loading failed
+        siteMap.appendChild(content);
+        document.body.appendChild(siteMap);
+        this.currentSiteMap = siteMap;
       });
     
-    // Add content to site map
-    siteMap.appendChild(content);
-    
-    // Add to page
-    document.body.appendChild(siteMap);
-    
-    // Store reference
-    this.currentSiteMap = siteMap;
-    
-    // Add resize listener to auto-close site map when window gets too narrow
-    this.siteMapResizeHandler = () => {
-      const windowWidth = window.innerWidth;
-      const siteMapWidth = 280; // Approximate width of site map content
-      const minContentWidth = 600; // Minimum width needed for main content
-      
-      if (windowWidth < (siteMapWidth + minContentWidth)) {
-        this.hideSiteMap();
-      }
-    };
-    
-    window.addEventListener('resize', this.siteMapResizeHandler);
-    
-    // Check initial window size
-    this.siteMapResizeHandler();
+
   }
   
   // Expand a category in the site map
