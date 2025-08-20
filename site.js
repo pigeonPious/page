@@ -1170,7 +1170,7 @@ class SimpleBlog {
       top: -10px;
       right: -10px;
       bottom: -10px;
-      z-index: 999;
+      z-index: 9999;
       pointer-events: none;
     `;
     submenu.appendChild(bufferZone);
@@ -1235,7 +1235,7 @@ class SimpleBlog {
       top: -10px;
       right: -10px;
       bottom: -10px;
-      z-index: 999;
+      z-index: 9999;
       pointer-events: none;
     `;
     submenu.appendChild(bufferZone);
@@ -1309,7 +1309,7 @@ class SimpleBlog {
         border: 1px solid var(--menu-border, #555);
         padding: 1.25px 0;
         min-width: 200px;
-        z-index: 1001;
+        z-index: 10001;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         border-radius: 4px;
         display: none;
@@ -1375,7 +1375,7 @@ class SimpleBlog {
         top: -10px;
         right: -10px;
         bottom: -10px;
-        z-index: 1000;
+        z-index: 10000;
         pointer-events: none;
       `;
       postsSubmenu.appendChild(postsBufferZone);
@@ -1389,18 +1389,18 @@ class SimpleBlog {
     // Create submenu for all posts
     const submenu = document.createElement('div');
     submenu.className = 'submenu';
-    submenu.style.cssText = `
-      position: absolute;
-      left: 100%;
-      top: 0;
-      background: var(--menu-bg, #333);
-      border: 1px solid var(--menu-border, #555);
-      padding: 1.25px 0;
-      min-width: 200px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      border-radius: 4px;
-    `;
+          submenu.style.cssText = `
+        position: absolute;
+        left: 100%;
+        top: 0;
+        background: var(--menu-bg, #333);
+        border: 1px solid var(--menu-border, #555);
+        padding: 1.25px 0;
+        min-width: 200px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+      `;
     
     // Remove existing submenu
     const existingSubmenu = menuElement.querySelector('.submenu');
@@ -4928,7 +4928,7 @@ class SimpleBlog {
       top: -10px;
       right: -10px;
       bottom: -10px;
-      z-index: 999;
+      z-index: 9999;
       pointer-events: none;
     `;
     submenu.appendChild(bufferZone);
@@ -5845,18 +5845,18 @@ hideSiteMap() {
     // Create submenu for categories
     const submenu = document.createElement('div');
     submenu.className = 'submenu';
-    submenu.style.cssText = `
-      position: absolute;
-      left: 100%;
-      top: 0;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 5px 0;
-      min-width: 200px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      border-radius: 4px;
-    `;
+          submenu.style.cssText = `
+        position: absolute;
+        left: 100%;
+        top: 0;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        padding: 5px 0;
+        min-width: 200px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+      `;
     
     // Remove existing submenu
     const existingSubmenu = menuElement.querySelector('.submenu');
