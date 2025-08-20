@@ -5332,9 +5332,9 @@ class SimpleBlog {
             
             treeHTML += `</div>`;
           } else {
-            // Show collapsed category
+            // Show collapsed category with click to expand
             treeHTML += `<div style="margin-bottom: 4px;">`;
-            treeHTML += `<div style="font-weight: bold;">└─${category} (${postsInCategory.length})</div>`;
+            treeHTML += `<span class="category-link" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─${category} (${postsInCategory.length})</span>`;
             treeHTML += `</div>`;
           }
         });
@@ -5363,6 +5363,16 @@ class SimpleBlog {
           link.addEventListener('click', () => {
             const slug = link.getAttribute('data-slug');
             this.loadPost(slug);
+            // Don't close site map - keep it open
+          });
+        });
+        
+        // Add click handlers for category links
+        const categoryLinks = content.querySelectorAll('.category-link');
+        categoryLinks.forEach(link => {
+          link.addEventListener('click', () => {
+            const category = link.getAttribute('data-category');
+            this.expandCategoryInSiteMap(category, posts);
           });
         });
       })
@@ -5379,6 +5389,60 @@ class SimpleBlog {
     
     // Store reference
     this.currentSiteMap = siteMap;
+  }
+  
+  // Expand a category in the site map
+  expandCategoryInSiteMap(categoryName, allPosts) {
+    if (!this.currentSiteMap) return;
+    
+    const currentSlug = localStorage.getItem('current_post_slug');
+    const content = this.currentSiteMap.querySelector('div');
+    
+    // Find the category link to replace
+    const categoryLink = content.querySelector(`[data-category="${categoryName}"]`);
+    if (!categoryLink) return;
+    
+    // Get posts for this category
+    const categoryPosts = allPosts.filter(post => {
+      if (post.keywords) {
+        const categoryMatch = post.keywords.match(/devlog:([^,]+)/);
+        if (categoryMatch) {
+          return categoryMatch[1].trim() === categoryName;
+        }
+      }
+      return false;
+    });
+    
+    // Create expanded category HTML
+    let expandedHTML = '';
+    expandedHTML += `<div style="margin-bottom: 6px;">`;
+    expandedHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─${categoryName}</div>`;
+    
+    // Show posts in category
+    categoryPosts.forEach(post => {
+      const isCurrentPost = post.slug === currentSlug;
+      expandedHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
+      expandedHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
+      expandedHTML += `   ├─${post.title}`;
+      expandedHTML += `</span>`;
+      expandedHTML += `</div>`;
+    });
+    
+    expandedHTML += `</div>`;
+    
+    // Replace the category link with expanded content
+    const categoryContainer = categoryLink.parentElement;
+    categoryContainer.outerHTML = expandedHTML;
+    
+    // Re-add click handlers for the new post links
+    const newPostLinks = this.currentSiteMap.querySelectorAll('.post-link');
+    newPostLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        const slug = link.getAttribute('data-slug');
+        this.loadPost(slug);
+        // Don't close site map - keep it open
+      });
+    });
   }
 
 // Hide site map
