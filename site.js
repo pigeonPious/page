@@ -2852,6 +2852,18 @@ class SimpleBlog {
       // Double click to insert image
       item.addEventListener('dblclick', () => this.insertImageToPost(filename));
       
+      // Add drag and drop functionality
+      item.draggable = true;
+      item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', filename);
+        e.dataTransfer.effectAllowed = 'copy';
+        item.style.opacity = '0.5';
+      });
+      
+      item.addEventListener('dragend', () => {
+        item.style.opacity = '1';
+      });
+      
       // Hover effects
       item.addEventListener('mouseenter', () => {
         item.style.transform = 'scale(1.05)';
@@ -2943,6 +2955,41 @@ class SimpleBlog {
     console.log('✅ Image inserted:', filename);
   }
 
+  setupEditorDragAndDrop() {
+    // Only setup once
+    if (this.editorDragAndDropSetup) return;
+    this.editorDragAndDropSetup = true;
+    
+    const visualEditor = document.getElementById('visualEditor');
+    if (!visualEditor) return;
+    
+    // Prevent default drag behaviors
+    visualEditor.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      visualEditor.classList.add('drag-over');
+    });
+    
+    visualEditor.addEventListener('dragleave', (e) => {
+      if (!visualEditor.contains(e.relatedTarget)) {
+        visualEditor.classList.remove('drag-over');
+      }
+    });
+    
+    visualEditor.addEventListener('drop', (e) => {
+      e.preventDefault();
+      visualEditor.classList.remove('drag-over');
+      
+      const filename = e.dataTransfer.getData('text/plain');
+      if (filename) {
+        console.log('🖼️ Dropped image:', filename);
+        this.insertImageToPost(filename);
+      }
+    });
+    
+    console.log('✅ Editor drag and drop setup complete');
+  }
+
   addImagePositioningOverlay(imageContainer) {
     // Create positioning overlay
     const overlay = document.createElement('div');
@@ -3004,6 +3051,23 @@ class SimpleBlog {
         transition: all 0.2s ease;
         pointer-events: auto;
       ">&gt;</button>
+      <button class="pos-btn pos-delete" style="
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--danger-color);
+        color: var(--btn-text-color);
+        border: none;
+        border-radius: 0;
+        padding: 4px 6px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        pointer-events: auto;
+        line-height: 1;
+      ">×</button>
     `;
     
     // Add overlay to image container
@@ -3026,6 +3090,7 @@ class SimpleBlog {
     const leftBtn = overlay.querySelector('.pos-left');
     const centerBtn = overlay.querySelector('.pos-center');
     const rightBtn = overlay.querySelector('.pos-right');
+    const deleteBtn = overlay.querySelector('.pos-delete');
     
     // Left positioning (float left)
     leftBtn.addEventListener('click', (e) => {
@@ -3068,6 +3133,18 @@ class SimpleBlog {
       `;
       console.log('✅ Image positioned right');
     });
+    
+    // Delete button functionality
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm('Are you sure you want to delete this image?')) {
+        imageContainer.remove();
+        console.log('✅ Image deleted from post');
+      }
+    });
+    
+    // Setup drag and drop for the visual editor if not already done
+    this.setupEditorDragAndDrop();
   }
 
   showImagePositioningControls(imageContainer) {

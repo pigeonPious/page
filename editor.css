@@ -1202,16 +1202,42 @@ body.custom-mode .console-output {
   float: left;
   margin-right: 16px;
   margin-bottom: 12px;
+  clear: both;
 }
 
 .visual-editor .image-container[style*="float: right"] {
   float: right;
   margin-left: 16px;
   margin-bottom: 12px;
+  clear: both;
 }
 
 .visual-editor .image-container[style*="float: none"] {
   float: none;
   margin: 0 auto 16px auto;
   text-align: center;
+  clear: both;
+}
+
+/* Fix text wrapping issues */
+.visual-editor {
+  overflow: hidden; /* Contains floats */
+}
+
+.visual-editor p {
+  overflow: visible; /* Allow text to flow around images */
+  line-height: 1.6;
+  margin: 1em 0;
+}
+
+.visual-editor p:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Ensure proper text flow */
+.visual-editor .image-container {
+  display: block;
+  clear: both;
 }
