@@ -2311,6 +2311,10 @@ class SimpleBlog {
     magazine.style.transform = 'translate(-50%, -50%)';
     magazine.style.zIndex = '10000';
     
+    // Show the magazine
+    magazine.style.display = 'flex';
+    magazine.classList.remove('hidden');
+    
     console.log('🔍 Magazine positioned at:', { x: initialX, y: initialY });
     console.log('🔍 Magazine created and positioned');
     
