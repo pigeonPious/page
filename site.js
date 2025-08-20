@@ -2320,7 +2320,9 @@ class SimpleBlog {
     
     console.log('✅ Image magazine opened');
   }
-    
+
+  // This function is no longer needed but keeping for compatibility
+  setupImageMagazineButtons() {
     // Get the existing buttons from HTML
     const importBtn = document.getElementById('import-image-btn');
     const closeBtn = document.getElementById('close-magazine-btn');
