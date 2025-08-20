@@ -2668,10 +2668,7 @@ class SimpleBlog {
     console.log('🔍 Magazine offsetParent:', magazine.offsetParent);
     console.log('🔍 Magazine offsetWidth/Height:', magazine.offsetWidth, magazine.offsetHeight);
     
-    // Start hidden
-    magazine.style.display = 'none';
-    magazine.classList.add('hidden');
-    
+    // Don't start hidden - let showImagesModal control visibility
     return magazine;
   }
 
