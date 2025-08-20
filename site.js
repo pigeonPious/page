@@ -3330,12 +3330,15 @@ class SimpleBlog {
       }
       
       // Check if user is authenticated
+      console.log('🔐 Checking authentication...');
       const isAuthenticated = await this.checkAuthentication();
+      console.log('🔐 Authentication result:', isAuthenticated);
       if (!isAuthenticated) {
         console.log('🔐 User not authenticated, redirecting to login');
         this.showGitHubLogin();
         return;
       }
+      console.log('🔐 Authentication successful, proceeding with publish...');
       
       // Create post data
       const postData = {
@@ -3451,6 +3454,8 @@ class SimpleBlog {
       }
       
       console.log('📤 Publishing with request body:', requestBody);
+      console.log('🔗 API endpoint:', `https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
+      console.log('🔐 Token length:', githubToken ? githubToken.length : 0);
       
       const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`, {
         method: 'PUT',
@@ -3460,6 +3465,9 @@ class SimpleBlog {
         },
         body: JSON.stringify(requestBody)
       });
+      
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
       
       if (response.ok) {
         console.log('✅ Post published successfully to GitHub');
@@ -3503,7 +3511,25 @@ class SimpleBlog {
       
     } catch (error) {
       console.error('❌ Error publishing post:', error);
-      this.showMenuStyle1Message('Error publishing post. Please check your connection and try again.', 'error');
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
+      // Provide more specific error messages
+      let userMessage = 'Error publishing post. ';
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        userMessage += 'Network error - please check your internet connection.';
+      } else if (error.message && error.message.includes('sha')) {
+        userMessage += 'SHA validation error - please try refreshing and editing again.';
+      } else if (error.message) {
+        userMessage += error.message;
+      } else {
+        userMessage += 'Please check your connection and try again.';
+      }
+      
+      this.showMenuStyle1Message(userMessage, 'error');
     }
   }
 
