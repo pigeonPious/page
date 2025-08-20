@@ -2915,7 +2915,8 @@ class SimpleBlog {
     // Add image to container
     imageContainer.appendChild(img);
     
-    // Only insert into the post content area
+    // Insert the image first
+    let inserted = false;
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
@@ -2925,20 +2926,176 @@ class SimpleBlog {
           visualEditor === range.commonAncestorContainer) {
         range.insertNode(imageContainer);
         range.collapse(false);
+        inserted = true;
         console.log('✅ Image inserted at cursor position');
-      } else {
-        console.log('⚠️ Selection not in post content, inserting at end');
-        visualEditor.appendChild(imageContainer);
       }
-    } else {
+    }
+    
+    if (!inserted) {
       // No selection, insert at the end of the post content
       visualEditor.appendChild(imageContainer);
       console.log('✅ Image inserted at end of post');
     }
     
-
+    // Show positioning controls
+    this.showImagePositioningControls(imageContainer);
     
     console.log('✅ Image inserted:', filename);
+  }
+
+  showImagePositioningControls(imageContainer) {
+    // Create positioning controls window
+    const controlsWindow = document.createElement('div');
+    controlsWindow.className = 'image-positioning-controls';
+    controlsWindow.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 10001;
+      font-family: inherit;
+      min-width: 200px;
+      text-align: center;
+    `;
+    
+    controlsWindow.innerHTML = `
+      <div style="margin-bottom: 16px; font-weight: bold; color: var(--fg);">Image Position</div>
+      <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 16px;">
+        <button id="pos-left" style="
+          padding: 8px 12px;
+          background: var(--accent);
+          color: var(--btn-text-color);
+          border: none;
+          border-radius: 0;
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 12px;
+          transition: background 0.2s;
+        ">Left</button>
+        <button id="pos-center" style="
+          padding: 8px 12px;
+          background: var(--accent);
+          color: var(--btn-text-color);
+          border: none;
+          border-radius: 0;
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 12px;
+          transition: background 0.2s;
+        ">Center</button>
+        <button id="pos-right" style="
+          padding: 8px 12px;
+          background: var(--accent);
+          color: var(--btn-text-color);
+          border: none;
+          border-radius: 0;
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 12px;
+          transition: background 0.2s;
+        ">Right</button>
+      </div>
+      <div style="font-size: 11px; color: var(--muted); margin-bottom: 12px;">
+        Choose how the image flows with text
+      </div>
+      <button id="pos-close" style="
+        padding: 6px 12px;
+        background: var(--muted);
+        color: var(--btn-text-color);
+        border: none;
+        border-radius: 0;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 11px;
+        transition: background 0.2s;
+      ">Close</button>
+    `;
+    
+    // Add to document
+    document.body.appendChild(controlsWindow);
+    
+    // Position controls near the image
+    const imageRect = imageContainer.getBoundingClientRect();
+    controlsWindow.style.left = (imageRect.left + imageRect.width / 2) + 'px';
+    controlsWindow.style.top = (imageRect.top - 100) + 'px';
+    controlsWindow.style.transform = 'translateX(-50%)';
+    
+    // Add event listeners
+    const leftBtn = controlsWindow.querySelector('#pos-left');
+    const centerBtn = controlsWindow.querySelector('#pos-center');
+    const rightBtn = controlsWindow.querySelector('#pos-right');
+    const closeBtn = controlsWindow.querySelector('#pos-close');
+    
+    // Left positioning (default - float left)
+    leftBtn.addEventListener('click', () => {
+      imageContainer.style.cssText = `
+        float: left;
+        margin-right: 16px;
+        margin-bottom: 12px;
+        max-width: 200px;
+        clear: both;
+      `;
+      controlsWindow.remove();
+      console.log('✅ Image positioned left');
+    });
+    
+    // Center positioning (centered, no float)
+    centerBtn.addEventListener('click', () => {
+      imageContainer.style.cssText = `
+        float: none;
+        margin: 0 auto 16px auto;
+        max-width: 200px;
+        clear: both;
+        text-align: center;
+      `;
+      controlsWindow.remove();
+      console.log('✅ Image positioned center');
+    });
+    
+    // Right positioning (float right)
+    rightBtn.addEventListener('click', () => {
+      imageContainer.style.cssText = `
+        float: right;
+        margin-left: 16px;
+        margin-bottom: 12px;
+        max-width: 200px;
+        clear: both;
+      `;
+      controlsWindow.remove();
+      console.log('✅ Image positioned right');
+    });
+    
+    // Close button
+    closeBtn.addEventListener('click', () => {
+      controlsWindow.remove();
+      console.log('✅ Image positioning controls closed');
+    });
+    
+    // Close when clicking outside
+    const outsideClickHandler = (e) => {
+      if (!controlsWindow.contains(e.target) && !imageContainer.contains(e.target)) {
+        controlsWindow.remove();
+        document.removeEventListener('click', outsideClickHandler);
+      }
+    };
+    
+    // Delay adding the outside click handler to prevent immediate closure
+    setTimeout(() => {
+      document.addEventListener('click', outsideClickHandler);
+    }, 100);
+    
+    // Auto-close after 10 seconds
+    setTimeout(() => {
+      if (controlsWindow.parentNode) {
+        controlsWindow.remove();
+        document.removeEventListener('click', outsideClickHandler);
+      }
+    }, 10000);
   }
 
   importImages() {

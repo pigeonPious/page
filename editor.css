@@ -1175,3 +1175,33 @@ body.custom-mode .console-output {
   width: 100%;
   height: auto;
 }
+
+/* Image positioning controls */
+.image-positioning-controls {
+  font-family: inherit;
+  z-index: 10001;
+}
+
+.image-positioning-controls button:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+/* Ensure proper text flow around positioned images */
+.visual-editor .image-container[style*="float: left"] {
+  float: left;
+  margin-right: 16px;
+  margin-bottom: 12px;
+}
+
+.visual-editor .image-container[style*="float: right"] {
+  float: right;
+  margin-left: 16px;
+  margin-bottom: 12px;
+}
+
+.visual-editor .image-container[style*="float: none"] {
+  float: none;
+  margin: 0 auto 16px auto;
+  text-align: center;
+}
