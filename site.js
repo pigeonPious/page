@@ -3889,8 +3889,26 @@ class SimpleBlog {
             return;
           }
           console.log('✅ User confirmed overwrite');
+          
           // Use the SHA from the duplicate post if we're overwriting
-          currentSha = duplicatePost.sha;
+          if (duplicatePost.sha) {
+            currentSha = duplicatePost.sha;
+            console.log('✅ Using SHA from duplicate check:', currentSha);
+          } else if (duplicatePost.needsShaFetch) {
+            console.log('🔄 Need to fetch SHA for existing post...');
+            try {
+              const shaResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
+              if (shaResponse.ok) {
+                const shaData = await shaResponse.json();
+                currentSha = shaData.sha;
+                console.log('✅ Successfully fetched SHA:', currentSha);
+              } else {
+                console.warn('⚠️ Failed to fetch SHA, status:', shaResponse.status);
+              }
+            } catch (shaError) {
+              console.error('❌ Error fetching SHA:', shaError);
+            }
+          }
         }
       }
       
@@ -6443,15 +6461,58 @@ hideSiteMap() {
       if (response.ok) {
         const postData = await response.json();
         const content = JSON.parse(atob(postData.content));
+        console.log(`✅ Found existing post on GitHub: ${slug} (SHA: ${postData.sha})`);
         return {
           slug: slug,
           title: content.title || slug,
           sha: postData.sha
         };
+      } else if (response.status === 404) {
+        console.log(`✅ No existing post found on GitHub: ${slug}`);
+        return null; // No duplicate found
+      } else {
+        console.warn(`⚠️ GitHub API returned status ${response.status} for ${slug}`);
       }
-      return null; // No duplicate found
     } catch (error) {
-      console.warn('⚠️ Error checking for duplicate post:', error);
+      console.log(`🔄 GitHub API failed for ${slug}, trying local check...`);
+    }
+    
+    // Fallback: check local posts array and local files
+    try {
+      if (this.posts && this.posts.length > 0) {
+        const existingPost = this.posts.find(post => post.slug === slug);
+        if (existingPost) {
+          console.log(`✅ Found existing post in local cache: ${slug}`);
+          // For local posts, we'll need to fetch the SHA when publishing
+          return {
+            slug: slug,
+            title: existingPost.title || slug,
+            sha: null,
+            needsShaFetch: true
+          };
+        }
+      }
+      
+      // Also check if we have a local file
+      try {
+        const localResponse = await fetch(`posts/${slug}.json`);
+        if (localResponse.ok) {
+          console.log(`✅ Found existing local post file: ${slug}`);
+          return {
+            slug: slug,
+            title: slug, // We don't know the title from local file
+            sha: null,
+            needsShaFetch: true
+          };
+        }
+      } catch (localError) {
+        // Local file doesn't exist
+      }
+      
+      console.log(`✅ No existing post found locally: ${slug}`);
+      return null; // No duplicate found
+    } catch (fallbackError) {
+      console.error('❌ Error in fallback duplicate check:', fallbackError);
       return null;
     }
   }
