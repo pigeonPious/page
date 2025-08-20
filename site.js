@@ -108,6 +108,7 @@ class SimpleBlog {
             <div class="label">File</div>
             <div class="menu-dropdown">
               <a class="menu-entry" id="new-post" href="editor.html">New Post</a>
+              <div class="menu-entry editor-only" id="open-in-github">Open in GitHub</div>
               <div class="menu-entry admin-only" id="edit-post-button" style="display: none;">Edit Post</div>
             </div>
           </div>
@@ -790,6 +791,12 @@ class SimpleBlog {
       this.showFlagsModal();
     });
 
+    // Open in GitHub button
+    this.addClickHandler('#open-in-github', () => {
+      console.log('🔗 Open in GitHub button clicked');
+      this.openCurrentPostInGitHub();
+    });
+
     // Editor mode toggle (Raw/Preview)
     this.addClickHandler('#toggle-editor-mode', () => {
       console.log('📝 Editor mode toggle clicked');
@@ -941,6 +948,9 @@ class SimpleBlog {
       
       // Check for edit data and populate form
       this.loadEditData();
+      
+      // Setup title field event listener for new posts
+      this.setupTitleFieldListener();
     }
   }
 
@@ -1515,96 +1525,7 @@ class SimpleBlog {
     }
   }
 
-  showDevlogSubmenu(menuElement) {
-    // Create devlog submenu
-    const submenu = document.createElement('div');
-    submenu.className = 'submenu';
-    submenu.style.cssText = `
-      position: absolute;
-      left: 100%;
-      top: 0;
-      background: var(--menu-bg, #333);
-      border: 1px solid var(--menu-border, #555);
-      border-radius: 4px;
-      padding: 5px 0;
-      min-width: 150px;
-      z-index: 1000;
-    `;
-    
-    // Filter devlog posts
-    const devlogPosts = this.posts.filter(post => 
-      post.title && post.title.toLowerCase().includes('devlog')
-    );
-    
-    if (devlogPosts.length > 0) {
-      devlogPosts.forEach(post => {
-        if (!post || !post.slug) {
-          console.warn('⚠️ Skipping invalid devlog post:', post);
-          return;
-        }
-        
-        const entry = document.createElement('div');
-        entry.className = 'menu-entry';
-        entry.textContent = post.title || 'Untitled';
-        entry.style.cssText = 'padding: 8px 15px; cursor: pointer; color: var(--menu-fg, #fff);';
-        
-        entry.addEventListener('click', () => {
-          console.log('📝 Devlog selected:', post.title || 'Untitled');
-          // Check if we're in the editor
-          console.log('🔍 Current pathname:', window.location.pathname);
-          console.log('🔍 Current href:', window.location.href);
-          if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
-            console.log('📝 In editor - redirecting to main blog with post:', post.slug);
-            // Redirect to main blog with the selected post
-            window.location.href = `index.html?post=${post.slug}`;
-          } else {
-            console.log('🏠 On main blog - loading post normally:', post.slug);
-            // We're on the main blog, load post normally
-            this.loadPost(post.slug);
-            this.closeAllMenus();
-          }
-        });
-        
-        entry.addEventListener('mouseenter', () => {
-          entry.style.background = 'var(--menu-hover-bg, #555)';
-        });
-        
-        entry.addEventListener('mouseleave', () => {
-          entry.style.background = 'transparent';
-        });
-        
-        submenu.appendChild(entry);
-      });
-    } else {
-      const entry = document.createElement('div');
-      entry.className = 'menu-entry';
-      entry.textContent = 'No devlog posts found';
-      entry.style.cssText = 'padding: 8px 15px; color: var(--menu-fg, #666); font-style: italic;';
-      submenu.appendChild(entry);
-    }
-    
-    // Remove existing submenu
-    const existingSubmenu = menuElement.querySelector('.submenu');
-    if (existingSubmenu) {
-      existingSubmenu.remove();
-    }
-    
-    // Add new submenu
-    menuElement.appendChild(submenu);
-    
-    // Remove submenu on mouse leave (DEVLOG SUBMENU)
-    const devlogMouseLeaveHandler = () => {
-      setTimeout(() => {
-        if (submenu.parentNode) {
-          submenu.remove();
-        }
-      }, 100);
-    };
-    
-    // Remove any existing listener to prevent duplication
-    menuElement.removeEventListener('mouseleave', devlogMouseLeaveHandler);
-    menuElement.addEventListener('mouseleave', devlogMouseLeaveHandler);
-  }
+
 
   async loadPosts() {
     console.log('🔍 loadPosts: Loading posts from index...');
@@ -1770,6 +1691,13 @@ class SimpleBlog {
       if (post) {
         this.displayPost(post);
         this.currentPost = post;
+        
+        // Store the current post slug in localStorage for the GitHub button
+        if (post.slug) {
+          localStorage.setItem('current_post_slug', post.slug);
+          console.log(`💾 Stored current post slug in localStorage: ${post.slug}`);
+        }
+        
         console.log(`✅ Post loaded successfully: ${post.title}`);
         return post;
       } else {
@@ -4692,6 +4620,34 @@ class SimpleBlog {
     }, 100);
   }
 
+  openCurrentPostInGitHub() {
+    console.log('🔗 Opening current post in GitHub...');
+    
+    // Get the current post slug from localStorage or URL
+    let postSlug = localStorage.getItem('current_post_slug');
+    
+    if (!postSlug) {
+      // Try to get from URL if we're editing an existing post
+      const urlParams = new URLSearchParams(window.location.search);
+      postSlug = urlParams.get('post');
+    }
+    
+    if (!postSlug) {
+      console.log('⚠️ No post slug found - cannot open in GitHub');
+      // Show a message to the user
+      alert('No post to open. Please save or load a post first.');
+      return;
+    }
+    
+    // Construct the GitHub URL for the post file
+    const githubUrl = `https://github.com/pigeonPious/page/blob/main/posts/${postSlug}.json`;
+    
+    console.log('🔗 Opening GitHub URL:', githubUrl);
+    
+    // Open in a new tab
+    window.open(githubUrl, '_blank');
+  }
+
   setPostFlags(flags) {
     console.log('🏷️ Setting post flags:', flags);
     
@@ -4992,10 +4948,15 @@ class SimpleBlog {
     }
     
     // Filter for devlog posts
+    console.log('📋 All posts for projects menu:', allPosts);
     const devlogPosts = allPosts.filter(post => {
       const postFlags = post.keywords || '';
-      return postFlags.includes('devlog');
+      const hasDevlog = postFlags.includes('devlog');
+      console.log(`📋 Post "${post.title}" has keywords: "${postFlags}", devlog: ${hasDevlog}`);
+      return hasDevlog;
     });
+    
+    console.log('📋 Devlog posts found:', devlogPosts);
     
     if (devlogPosts.length === 0) {
       console.log('📋 No devlog posts found');
@@ -5008,20 +4969,46 @@ class SimpleBlog {
       const postFlags = post.keywords || '';
       const devlogFlag = postFlags.split(',').find(f => f.trim().startsWith('devlog:'));
       
+      console.log(`📋 Processing post "${post.title}":`);
+      console.log(`  - Keywords: "${postFlags}"`);
+      console.log(`  - Devlog flag found: "${devlogFlag}"`);
+      
       if (devlogFlag) {
+        // Extract just the category name after "devlog:" and before any comma or space
         const category = devlogFlag.split(':')[1] || 'general';
-        if (!devlogCategories[category]) {
-          devlogCategories[category] = [];
+        // Clean up category name for display - take only the first word
+        let displayName = category.trim().split(',')[0].split(' ')[0].trim();
+        
+        // Special case for Hablet (capitalize first letter)
+        if (displayName.toLowerCase() === 'hablet') {
+          displayName = 'Hablet';
         }
-        devlogCategories[category].push(post);
+        // Special case for Website (capitalize first letter)
+        else if (displayName.toLowerCase() === 'website') {
+          displayName = 'Website';
+        }
+        // For other categories, capitalize first letter
+        else if (displayName.length > 0) {
+          displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
+        }
+        
+        console.log(`  - Category: "${category}" -> Display name: "${displayName}"`);
+        
+        if (!devlogCategories[displayName]) {
+          devlogCategories[displayName] = [];
+        }
+        devlogCategories[displayName].push(post);
       } else if (postFlags.includes('devlog')) {
         // General devlog posts without subcategory
-        if (!devlogCategories['general']) {
-          devlogCategories['general'] = [];
+        console.log(`  - General devlog post (no subcategory)`);
+        if (!devlogCategories['General']) {
+          devlogCategories['General'] = [];
         }
-        devlogCategories['general'].push(post);
+        devlogCategories['General'].push(post);
       }
     });
+    
+    console.log('📋 Final devlog categories:', devlogCategories);
     
     // Create submenu with categories
     const submenu = document.createElement('div');
@@ -5838,6 +5825,24 @@ class SimpleBlog {
       if (titleField && editPost.title) {
         titleField.value = editPost.title;
         console.log('📝 Title populated:', editPost.title);
+        
+        // Update localStorage with the current post slug for GitHub button
+        const slug = editPost.title.toLowerCase().replace(/[^a-z0-9]/gi, '-');
+        localStorage.setItem('current_post_slug', slug);
+        console.log('💾 Updated current post slug in localStorage:', slug);
+      }
+      
+      // Add event listener to title field to update localStorage as user types
+      if (titleField) {
+        titleField.addEventListener('input', () => {
+          const currentTitle = titleField.value.trim();
+          if (currentTitle) {
+            const slug = currentTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-');
+            localStorage.setItem('current_post_slug', slug);
+            console.log('💾 Updated current post slug in localStorage:', slug);
+          }
+        });
+        console.log('📝 Added title field event listener for localStorage updates');
       }
       
       if (contentField && editPost.content) {
@@ -5867,6 +5872,26 @@ class SimpleBlog {
     } catch (error) {
       console.error('❌ Error loading edit data:', error);
       localStorage.removeItem('editPostData'); // Clear invalid data
+    }
+  }
+
+  setupTitleFieldListener() {
+    console.log('📝 Setting up title field listener for new posts...');
+    
+    const titleField = document.getElementById('postTitle');
+    if (titleField) {
+      // Add event listener to title field to update localStorage as user types
+      titleField.addEventListener('input', () => {
+        const currentTitle = titleField.value.trim();
+        if (currentTitle) {
+          const slug = currentTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-');
+          localStorage.setItem('current_post_slug', slug);
+          console.log('💾 Updated current post slug in localStorage:', slug);
+        }
+      });
+      console.log('📝 Added title field event listener for new posts');
+    } else {
+      console.log('⚠️ Title field not found for event listener setup');
     }
   }
 
