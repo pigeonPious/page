@@ -1544,9 +1544,6 @@ class SimpleBlog {
           console.log(`💾 Stored current post slug in localStorage: ${post.slug}`);
         }
         
-        // Hide site map when loading a new post
-        this.hideSiteMap();
-        
         console.log(`✅ Post loaded successfully: ${post.title}`);
         return post;
       } else {
@@ -1653,9 +1650,6 @@ class SimpleBlog {
     if (titleElement) titleElement.textContent = '# Blog';
     if (dateElement) dateElement.textContent = '';
     if (contentElement) contentElement.innerHTML = '<p>Welcome to the blog! Posts will appear here once loaded.</p>';
-    
-    // Hide site map when returning to default content
-    this.hideSiteMap();
     
     console.log('✅ Default content displayed');
   }
@@ -5318,7 +5312,7 @@ class SimpleBlog {
           if (isCurrentCategory) {
             // Show expanded category if current post is in it
             treeHTML += `<div style="margin-bottom: 6px;">`;
-            treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─${category}</div>`;
+            treeHTML += `<span class="expanded-category-header" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold; margin-bottom: 1px;">└─${category}</span>`;
             
             // Show posts in category
             postsInCategory.forEach(post => {
@@ -5373,6 +5367,15 @@ class SimpleBlog {
           link.addEventListener('click', () => {
             const category = link.getAttribute('data-category');
             this.expandCategoryInSiteMap(category, posts);
+          });
+        });
+        
+        // Add click handlers for expanded category headers (to collapse)
+        const expandedCategoryHeaders = content.querySelectorAll('.expanded-category-header');
+        expandedCategoryHeaders.forEach(header => {
+          header.addEventListener('click', () => {
+            const category = header.getAttribute('data-category');
+            this.collapseCategoryInSiteMap(category, posts);
           });
         });
       })
@@ -5443,6 +5446,43 @@ class SimpleBlog {
         // Don't close site map - keep it open
       });
     });
+  }
+  
+  // Collapse a category in the site map
+  collapseCategoryInSiteMap(categoryName, allPosts) {
+    if (!this.currentSiteMap) return;
+    
+    const content = this.currentSiteMap.querySelector('div');
+    
+    // Find the expanded category to replace
+    const expandedCategory = content.querySelector(`[data-category="${categoryName}"]`);
+    if (!expandedCategory) return;
+    
+    // Get posts for this category
+    const categoryPosts = allPosts.filter(post => {
+      if (post.keywords) {
+        const categoryMatch = post.keywords.match(/devlog:([^,]+)/);
+        if (categoryMatch) {
+          return categoryMatch[1].trim() === categoryName;
+        }
+      }
+      return false;
+    });
+    
+    // Create collapsed category HTML
+    const collapsedHTML = `<div style="margin-bottom: 4px;"><span class="category-link" data-category="${categoryName}" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─${categoryName} (${categoryPosts.length})</span></div>`;
+    
+    // Replace the expanded category with collapsed content
+    const categoryContainer = expandedCategory.closest('div');
+    categoryContainer.outerHTML = collapsedHTML;
+    
+    // Re-add click handler for the new category link
+    const newCategoryLink = content.querySelector(`[data-category="${categoryName}"]`);
+    if (newCategoryLink) {
+      newCategoryLink.addEventListener('click', () => {
+        this.expandCategoryInSiteMap(categoryName, allPosts);
+      });
+    }
   }
 
 // Hide site map
