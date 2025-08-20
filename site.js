@@ -353,11 +353,8 @@ class SimpleBlog {
     // Warning color for cautions
     root.style.setProperty('--warning-color', '#ffc107');
     
-    // Menu colors for consistent styling
-    root.style.setProperty('--menu-bg', '#2d2d2d');
-    root.style.setProperty('--menu-fg', '#ffffff');
-    root.style.setProperty('--menu-border', '#555555');
-    root.style.setProperty('--menu-hover-bg', '#4a4a4a');
+    // Menu colors for consistent styling - use CSS variables from stylesheets
+    // These will be overridden by theme-specific CSS rules
     root.style.setProperty('--muted', '#888888');
     root.style.setProperty('--border', '#555555');
     
