@@ -2600,8 +2600,7 @@ class SimpleBlog {
     header.appendChild(closeBtn);
     
     // Emergency button test
-    console.log('🔍 Import button created:', importBtn);
-    console.log('🔍 Close button created:', closeBtn);
+
     console.log('🔍 Import button text:', importBtn.textContent);
     console.log('🔍 Close button text:', closeBtn.textContent);
     console.log('🔍 Import button type:', importBtn.type);
@@ -2618,26 +2617,7 @@ class SimpleBlog {
     console.log('🔍 Close button style.visibility:', importBtn.style.visibility);
     console.log('🔍 Import button style.pointerEvents:', closeBtn.style.pointerEvents);
     
-    // Emergency test - add onclick attributes as backup
-    importBtn.setAttribute('onclick', 'alert("Import button clicked via onclick attribute!"); console.log("Import via onclick");');
-    closeBtn.setAttribute('onclick', 'alert("Close button clicked via onclick attribute!"); console.log("Close via onclick");');
-    
-    console.log('🔍 Emergency onclick attributes added to buttons');
-    
-    // Emergency visual test - make buttons very obvious
-    importBtn.style.border = '3px solid red';
-    importBtn.style.background = 'yellow';
-    importBtn.style.color = 'black';
-    importBtn.style.fontSize = '16px';
-    importBtn.style.fontWeight = 'bold';
-    
-    closeBtn.style.border = '3px solid blue';
-    closeBtn.style.background = 'cyan';
-    closeBtn.style.color = 'black';
-    closeBtn.style.fontSize = '16px';
-    closeBtn.style.fontWeight = 'bold';
-    
-    console.log('🔍 Emergency visual styling applied - buttons should be VERY obvious now!');
+
     
     // Content area
     const content = document.createElement('div');
