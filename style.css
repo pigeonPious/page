@@ -183,14 +183,14 @@ body {
 /* Taskbar */
 .menu-bar {
   user-select: none;
-  background-color: transparent; /* Match the background color */
+  background-color: var(--bg); /* Match the main background color */
   border: none; /* Remove any borders */
   position: sticky;
   top: 0;
   z-index: 999;
   height: 24px;
   min-height: 0;
-  border-bottom: 1px solid #333; /* Slightly thicker separator matching text color */
+  border-bottom: 1px solid var(--border); /* Use theme border color */
 }
 
 .menu-bar-inner {
@@ -224,8 +224,8 @@ body {
 
 .menu-item {
   position: relative;
-  background: var(--menu-bg);
-  color: var(--menu-fg);
+  background: var(--bg);
+  color: var(--fg);
 }
 
 .menu-item > .label {
@@ -244,7 +244,7 @@ body {
   top: calc(100% + 4px);
   left: 0;
   min-width: 100px;
-  background: var(--menu-bg);
+  background: var(--bg);
   border: 1px solid var(--border);
   padding: 4px;
 }

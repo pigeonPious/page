@@ -109,7 +109,6 @@ class SimpleBlog {
             <div class="menu-dropdown">
               <a class="menu-entry" id="new-post" href="editor.html">New Post</a>
               <div class="menu-entry editor-only" id="open-in-github">Open in GitHub</div>
-              <div class="menu-entry admin-only" id="edit-post-button" style="display: none;">Edit Post</div>
             </div>
           </div>
           
@@ -2301,6 +2300,21 @@ class SimpleBlog {
     span.className = 'note-link';
     span.setAttribute('data-note', noteText);
     span.textContent = selectedText;
+    
+    // Check if note contains a URL and make base text clickable
+    const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
+    if (urlMatch) {
+      const url = urlMatch[1];
+      span.style.cursor = 'pointer';
+      span.style.color = 'var(--accent-color, #4a9eff)';
+      span.style.textDecoration = 'underline';
+      
+      // Add click handler to base text
+      span.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open(url, '_blank');
+      });
+    }
     
     // Replace selected text with span using the preserved range
     range.deleteContents();
@@ -5521,7 +5535,7 @@ class SimpleBlog {
     const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
     if (urlMatch) {
       const url = urlMatch[1];
-      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline; cursor: pointer;">${url}</span>`);
+      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline;">${url}</span>`);
       tooltip.style.cursor = 'pointer';
       tooltip.style.pointerEvents = 'auto';
       
@@ -5630,7 +5644,7 @@ class SimpleBlog {
     const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
     if (urlMatch) {
       const url = urlMatch[1];
-      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline; cursor: pointer;">${url}</span>`);
+      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline;">${url}</span>`);
       tooltip.style.cursor = 'pointer';
       tooltip.style.pointerEvents = 'auto';
       
