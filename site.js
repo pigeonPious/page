@@ -5361,10 +5361,8 @@ class SimpleBlog {
             const isCurrentPost = post.slug === currentSlug;
             const indent = '  ';
             treeHTML += `<div style="margin-left: 16px; margin-bottom: 2px;">`;
-            treeHTML += `<span style="cursor: pointer; ${isCurrentPost ? 'color: var(--accent-color); font-weight: bold;' : 'color: var(--fg);'}" `;
-            treeHTML += `onclick="window.loadPost('${post.slug}')">`;
+            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; ${isCurrentPost ? 'color: var(--accent-color); font-weight: bold;' : 'color: var(--fg);'}">`;
             treeHTML += `${indent}${post.title}`;
-            treeHTML += `</span>`;
             treeHTML += `</span>`;
             treeHTML += `</div>`;
           });
@@ -5381,8 +5379,7 @@ class SimpleBlog {
             const isCurrentPost = post.slug === currentSlug;
             const indent = '  ';
             treeHTML += `<div style="margin-left: 16px; margin-bottom: 2px;">`;
-            treeHTML += `<span style="cursor: pointer; ${isCurrentPost ? 'color: var(--accent-color); font-weight: bold;' : 'color: var(--fg);'}" `;
-            treeHTML += `onclick="window.loadPost('${post.slug}')">`;
+            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; ${isCurrentPost ? 'color: var(--accent-color); font-weight: bold;' : 'color: var(--fg);'}">`;
             treeHTML += `${indent}${post.title}`;
             treeHTML += `</span>`;
             treeHTML += `</div>`;
@@ -5391,6 +5388,16 @@ class SimpleBlog {
         }
         
         content.innerHTML = treeHTML;
+        
+        // Add click handlers for post links
+        const postLinks = content.querySelectorAll('.post-link');
+        postLinks.forEach(link => {
+          link.addEventListener('click', () => {
+            const slug = link.getAttribute('data-slug');
+            this.loadPost(slug);
+            this.hideSiteMap();
+          });
+        });
       })
       .catch(error => {
         console.error('Error loading posts for site map:', error);
