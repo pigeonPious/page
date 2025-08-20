@@ -3045,6 +3045,30 @@ class SimpleBlog {
     }
   }
 
+  // Helper function to sanitize content for safe publishing
+  sanitizeContent(content) {
+    if (!content) return '';
+    
+    console.log('🧹 Sanitizing content for publishing...');
+    
+    // Remove or replace problematic characters
+    let sanitized = content
+      // Replace smart quotes with regular quotes
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2018\u2019]/g, "'")
+      // Replace em dashes and en dashes with regular dashes
+      .replace(/[\u2013\u2014]/g, '-')
+      // Replace other problematic Unicode characters
+      .replace(/[\u2022\u2026]/g, '')
+      // Remove null characters
+      .replace(/\0/g, '')
+      // Remove other control characters except newlines and tabs
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    
+    console.log('🧹 Content sanitization complete');
+    return sanitized;
+  }
+
   showImagePositioningControls(imageContainer) {
     console.log('🔧 showImagePositioningControls called with:', imageContainer);
     
@@ -3435,13 +3459,32 @@ class SimpleBlog {
         currentSha = null;
       }
       
+      // Sanitize content to remove problematic characters
+      const sanitizedPostData = {
+        ...postData,
+        content: this.sanitizeContent(postData.content)
+      };
+      
       // Create post file content
-      const postContent = JSON.stringify(postData, null, 2);
+      const postContent = JSON.stringify(sanitizedPostData, null, 2);
+      
+      // Safely encode content to base64, handling special characters
+      let encodedContent;
+      try {
+        // First try standard btoa
+        encodedContent = btoa(postContent);
+      } catch (error) {
+        console.log('⚠️ Standard btoa failed, using UTF-8 safe encoding...');
+        // Fallback: convert to UTF-8 bytes then encode
+        encodedContent = btoa(unescape(encodeURIComponent(postContent)));
+      }
+      
+      console.log('📝 Content encoding successful, length:', encodedContent.length);
       
       // Publish directly to GitHub using GitHub API
       const requestBody = {
         message: commitMessage,
-        content: btoa(postContent), // Base64 encode content
+        content: encodedContent,
         branch: 'main'
       };
       
@@ -3498,15 +3541,17 @@ class SimpleBlog {
         const error = await response.json();
         console.error('❌ Failed to publish post:', error);
         
-        // Provide more specific error messages for common issues
-        let errorMessage = error.message || 'Unknown error';
-        if (error.message && error.message.includes('sha')) {
-          errorMessage = 'SHA missing or invalid. This usually happens when editing a post. Please try refreshing and editing again.';
-        } else if (error.message && error.message.includes('already exists')) {
-          errorMessage = 'A file with this name already exists. Please choose a different title or overwrite the existing post.';
-        }
-        
-        this.showMenuStyle1Message(`❌ Failed to publish post: ${errorMessage}`, 'error');
+              // Provide more specific error messages for common issues
+      let errorMessage = error.message || 'Unknown error';
+      if (error.message && error.message.includes('sha')) {
+        errorMessage = 'SHA missing or invalid. This usually happens when editing a post. Please try refreshing and editing again.';
+      } else if (error.message && error.message.includes('already exists')) {
+        errorMessage = 'A file with this name already exists. Please choose a different title or overwrite the existing post.';
+      } else if (error.message && error.message.includes('InvalidCharacterError')) {
+        errorMessage = 'Content contains invalid characters. This usually happens with special formatting or copied text. Please try editing the content and removing any unusual characters.';
+      }
+      
+      this.showMenuStyle1Message(`❌ Failed to publish post: ${errorMessage}`, 'error');
       }
       
     } catch (error) {
