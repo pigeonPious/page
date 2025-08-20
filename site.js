@@ -5266,7 +5266,7 @@ class SimpleBlog {
     siteMap.style.cssText = `
       position: fixed;
       top: 39px;
-      left: 52px;
+      left: 2px;
       background: transparent;
       padding: 8px;
       z-index: 1000;
@@ -5396,6 +5396,22 @@ class SimpleBlog {
     
     // Store reference
     this.currentSiteMap = siteMap;
+    
+    // Add resize listener to auto-close site map when window gets too narrow
+    this.siteMapResizeHandler = () => {
+      const windowWidth = window.innerWidth;
+      const siteMapWidth = 280; // Approximate width of site map content
+      const minContentWidth = 600; // Minimum width needed for main content
+      
+      if (windowWidth < (siteMapWidth + minContentWidth)) {
+        this.hideSiteMap();
+      }
+    };
+    
+    window.addEventListener('resize', this.siteMapResizeHandler);
+    
+    // Check initial window size
+    this.siteMapResizeHandler();
   }
   
   // Expand a category in the site map
@@ -5500,6 +5516,12 @@ class SimpleBlog {
 // Hide site map
 hideSiteMap() {
   if (this.currentSiteMap) {
+    // Remove resize listener
+    if (this.siteMapResizeHandler) {
+      window.removeEventListener('resize', this.siteMapResizeHandler);
+      this.siteMapResizeHandler = null;
+    }
+    
     this.currentSiteMap.remove();
     this.currentSiteMap = null;
   }
