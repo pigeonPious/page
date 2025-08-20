@@ -1127,10 +1127,7 @@ class SimpleBlog {
       };
       
       this.categoriesMouseLeaveHandler = () => {
-        if (openTimeout) {
-          clearTimeout(openTimeout);
-          openTimeout = null;
-        }
+        // No timeout needed for categories submenu
       };
       
       this.categoriesClickHandler = (e) => {
@@ -5614,7 +5611,8 @@ class SimpleBlog {
             const decodedContent = atob(indexData.content);
             const posts = JSON.parse(decodedContent);
             console.log('🔍 Site map: Loaded posts from GitHub:', posts.length);
-        // Group posts by all flags (not just devlog)
+            
+            // Group posts by all flags (not just devlog)
         const categories = {};
         posts.forEach(post => {
           if (post.keywords && post.keywords.trim()) {
