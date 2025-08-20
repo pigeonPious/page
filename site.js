@@ -140,6 +140,7 @@ class SimpleBlog {
               <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
               <div class="menu-separator"></div>
               <div class="menu-entry has-submenu" id="categories-menu" style="position: relative;">Categories ></div>
+              <div class="menu-entry" id="show-site-map">Site Map</div>
             </div>
           </div>
           
@@ -856,6 +857,12 @@ class SimpleBlog {
       this.loadRandomPost();
     });
 
+    // Site Map button
+    this.addClickHandler('#show-site-map', () => {
+      console.log('🗺️ Site Map button clicked');
+      this.showSiteMap();
+    });
+
     // Build indicator - no click handler needed, only changes on actual builds
     // this.addClickHandler('#build-indicator', () => {
     //   console.log('🔧 Build indicator clicked - incrementing build');
@@ -1532,6 +1539,9 @@ class SimpleBlog {
           console.log(`💾 Stored current post slug in localStorage: ${post.slug}`);
         }
         
+        // Hide site map when loading a new post
+        this.hideSiteMap();
+        
         console.log(`✅ Post loaded successfully: ${post.title}`);
         return post;
       } else {
@@ -1638,6 +1648,9 @@ class SimpleBlog {
     if (titleElement) titleElement.textContent = '# Blog';
     if (dateElement) dateElement.textContent = '';
     if (contentElement) contentElement.innerHTML = '<p>Welcome to the blog! Posts will appear here once loaded.</p>';
+    
+    // Hide site map when returning to default content
+    this.hideSiteMap();
     
     console.log('✅ Default content displayed');
   }
@@ -5239,6 +5252,170 @@ class SimpleBlog {
     
     console.log(`✅ Category window opened for ${category} with ${posts.length} posts`);
   }
+
+  // Show site map when viewing a post
+  showSiteMap() {
+    // Remove existing site map if present
+    this.hideSiteMap();
+    
+    // Get current post slug
+    const currentSlug = localStorage.getItem('current_post_slug');
+    
+    // Create site map container
+    const siteMap = document.createElement('div');
+    siteMap.id = 'site-map';
+    siteMap.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      padding: 16px;
+      overflow-y: auto;
+      z-index: 1000;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.4;
+    `;
+    
+    // Create header
+    const header = document.createElement('div');
+    header.style.cssText = `
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      font-weight: bold;
+      color: var(--fg);
+    `;
+    header.textContent = 'Site Map';
+    
+    // Create close button
+    const closeBtn = document.createElement('div');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--fg);
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    closeBtn.addEventListener('click', () => this.hideSiteMap());
+    
+    // Create content container
+    const content = document.createElement('div');
+    
+    // Fetch posts and build tree
+    fetch('posts/index.json')
+      .then(response => response.json())
+      .then(posts => {
+        // Group posts by category
+        const categories = {};
+        posts.forEach(post => {
+          if (post.keywords) {
+            const categoryMatch = post.keywords.match(/devlog:([^,]+)/);
+            if (categoryMatch) {
+              const category = categoryMatch[1].trim();
+              if (!categories[category]) {
+                categories[category] = [];
+              }
+              categories[category].push(post);
+            }
+          }
+        });
+        
+        // Build the tree structure
+        let treeHTML = '';
+        
+        // Show current post first if it exists
+        if (currentSlug) {
+          const currentPost = posts.find(p => p.slug === currentSlug);
+          if (currentPost) {
+            treeHTML += `<div style="margin-bottom: 16px; padding: 8px; background: var(--accent-color); border-radius: 3px;">`;
+            treeHTML += `<strong>Current: ${currentPost.title}</strong>`;
+            treeHTML += `</div>`;
+          }
+        }
+        
+        // Show all categories and posts
+        Object.keys(categories).sort().forEach(category => {
+          const postsInCategory = categories[category];
+          
+          // Check if current post is in this category
+          const isCurrentCategory = currentSlug && postsInCategory.some(p => p.slug === currentSlug);
+          
+          treeHTML += `<div style="margin-bottom: 12px;">`;
+          treeHTML += `<div style="font-weight: bold; color: var(--accent-color); margin-bottom: 4px;">`;
+          treeHTML += `${isCurrentCategory ? '▶ ' : '▶ '}${category}`;
+          treeHTML += `</div>`;
+          
+          // Show posts in category
+          postsInCategory.forEach(post => {
+            const isCurrentPost = post.slug === currentSlug;
+            const indent = '  ';
+            treeHTML += `<div style="margin-left: 16px; margin-bottom: 2px;">`;
+            treeHTML += `<span style="cursor: pointer; ${isCurrentPost ? 'color: var(--accent-color); font-weight: bold;' : 'color: var(--fg);'}" `;
+            treeHTML += `onclick="window.loadPost('${post.slug}')">`;
+            treeHTML += `${indent}${post.title}`;
+            treeHTML += `</span>`;
+            treeHTML += `</span>`;
+            treeHTML += `</div>`;
+          });
+          
+          treeHTML += `</div>`;
+        });
+        
+        // Show uncategorized posts
+        const uncategorized = posts.filter(post => !post.keywords || !post.keywords.match(/devlog:/));
+        if (uncategorized.length > 0) {
+          treeHTML += `<div style="margin-bottom: 12px;">`;
+          treeHTML += `<div style="font-weight: bold; color: var(--accent-color); margin-bottom: 4px;">▶ Uncategorized</div>`;
+          uncategorized.forEach(post => {
+            const isCurrentPost = post.slug === currentSlug;
+            const indent = '  ';
+            treeHTML += `<div style="margin-left: 16px; margin-bottom: 2px;">`;
+            treeHTML += `<span style="cursor: pointer; ${isCurrentPost ? 'color: var(--accent-color); font-weight: bold;' : 'color: var(--fg);'}" `;
+            treeHTML += `onclick="window.loadPost('${post.slug}')">`;
+            treeHTML += `${indent}${post.title}`;
+            treeHTML += `</span>`;
+            treeHTML += `</div>`;
+          });
+          treeHTML += `</div>`;
+        }
+        
+        content.innerHTML = treeHTML;
+      })
+      .catch(error => {
+        console.error('Error loading posts for site map:', error);
+        content.innerHTML = '<div style="color: var(--fg);">Error loading site map</div>';
+      });
+    
+    // Assemble the site map
+    siteMap.appendChild(header);
+    siteMap.appendChild(closeBtn);
+    siteMap.appendChild(content);
+    
+    // Add to page
+    document.body.appendChild(siteMap);
+    
+    // Store reference
+    this.currentSiteMap = siteMap;
+  }
+
+// Hide site map
+hideSiteMap() {
+  if (this.currentSiteMap) {
+    this.currentSiteMap.remove();
+    this.currentSiteMap = null;
+  }
+}
 
   showCategoriesSubmenu(menuElement) {
     console.log('📝 Showing categories submenu');
