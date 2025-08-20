@@ -198,8 +198,6 @@ class SimpleBlog {
               <div class="menu-entry" data-mode="light">Light</div>
               <div class="menu-entry" data-mode="custom">Custom…</div>
               <div class="menu-entry" data-mode="random">Random</div>
-              <div class="menu-separator"></div>
-              <div class="menu-entry" id="toggle-editor-mode">Raw Mode</div>
             </div>
           </div>
           
@@ -1193,14 +1191,15 @@ class SimpleBlog {
         categoryLabel.className = 'menu-entry category-label';
         categoryLabel.textContent = `└─ ${category}`;
         categoryLabel.style.cssText = `
-          padding: 2px 12px;
-          color: var(--accent-color, #4a9eff);
-          font-size: 11px;
-          font-weight: bold;
+          padding: 1px 12px;
+          color: var(--fg, #acada8);
+          font-size: 10px;
+          font-weight: normal;
           cursor: default;
           pointer-events: none;
-          margin-top: 8px;
-          margin-bottom: 2px;
+          margin-top: 4px;
+          margin-bottom: 1px;
+          opacity: 0.7;
         `;
         submenu.appendChild(categoryLabel);
         
@@ -1210,7 +1209,7 @@ class SimpleBlog {
           entry.className = 'menu-entry';
           entry.textContent = `   ├─ ${post.title || 'Untitled'}`;
           entry.style.cssText = `
-            padding: 2px 12px 2px 24px;
+            padding: 1px 12px 1px 20px;
             cursor: pointer; 
             color: var(--menu-fg, #fff);
             transition: background-color 0.15s ease;
@@ -1220,7 +1219,7 @@ class SimpleBlog {
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 200px;
-            font-size: 12px;
+            font-size: 11px;
           `;
           
           entry.title = `Click to load: ${post.title} (${post.slug})`;
@@ -1247,14 +1246,15 @@ class SimpleBlog {
         uncategorizedLabel.className = 'menu-entry category-label';
         uncategorizedLabel.textContent = `└─ Uncategorized`;
         uncategorizedLabel.style.cssText = `
-          padding: 2px 12px;
-          color: var(--accent-color, #4a9eff);
-          font-size: 11px;
-          font-weight: bold;
+          padding: 1px 12px;
+          color: var(--fg, #acada8);
+          font-size: 10px;
+          font-weight: normal;
           cursor: default;
           pointer-events: none;
-          margin-top: 8px;
-          margin-bottom: 2px;
+          margin-top: 4px;
+          margin-bottom: 1px;
+          opacity: 0.7;
         `;
         submenu.appendChild(uncategorizedLabel);
         
@@ -1264,7 +1264,7 @@ class SimpleBlog {
           entry.className = 'menu-entry';
           entry.textContent = `   ├─ ${post.title || 'Untitled'}`;
           entry.style.cssText = `
-            padding: 2px 12px 2px 24px;
+            padding: 1px 12px 1px 20px;
             cursor: pointer; 
             color: var(--menu-fg, #fff);
             transition: background-color 0.15s ease;
@@ -1274,7 +1274,7 @@ class SimpleBlog {
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 200px;
-            font-size: 12px;
+            font-size: 11px;
           `;
           
           entry.title = `Click to load: ${post.title} (${post.slug})`;
@@ -3805,7 +3805,8 @@ class SimpleBlog {
           if (duplicatePost.sha) {
             currentSha = duplicatePost.sha;
             console.log('✅ Using SHA from duplicate check:', currentSha);
-          } else if (duplicatePost.needsShaFetch) {
+          } else {
+            // Always try to fetch SHA for existing posts, even if duplicate check failed
             console.log('🔄 Need to fetch SHA for existing post...');
             try {
               const shaResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
@@ -5672,7 +5673,7 @@ class SimpleBlog {
           } else {
             // Show collapsed category with click to expand
             treeHTML += `<div style="margin-bottom: 4px;">`;
-            treeHTML += `<span class="category-link" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─${category} (${postsInCategory.length})</span>`;
+            treeHTML += `<span class="category-link" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─${category}</span>`;
             treeHTML += `</div>`;
           }
         });
@@ -6364,6 +6365,20 @@ hideSiteMap() {
         }
       } catch (localError) {
         // Local file doesn't exist
+      }
+      
+      // If we have posts in memory, check if any have this slug
+      if (this.posts && this.posts.length > 0) {
+        const memoryPost = this.posts.find(post => post.slug === slug);
+        if (memoryPost) {
+          console.log(`✅ Found existing post in memory: ${slug}`);
+          return {
+            slug: slug,
+            title: memoryPost.title || slug,
+            sha: null,
+            needsShaFetch: true
+          };
+        }
       }
       
       console.log(`✅ No existing post found locally: ${slug}`);

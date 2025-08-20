@@ -318,7 +318,7 @@ body {
   background: var(--menu-bg);
   border: 1px solid var(--border);
   padding: 4px;
-  z-index: 1000;
+  z-index: 10001;
 }
 
 .menu-entry.has-submenu:hover .menu-submenu {
