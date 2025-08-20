@@ -137,7 +137,7 @@ class SimpleBlog {
               <div class="menu-entry editor-only" id="make-note-button">Make Note</div>
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
               <div class="menu-separator"></div>
-              <div class="menu-entry" id="force-reindex-button">Force Reindex</div>
+              <div class="menu-entry admin-only" id="force-reindex-button">Force Reindex</div>
               <div class="menu-separator"></div>
 
               <div class="menu-entry blog-only" id="font-size-button">Font Size</div>
@@ -1444,24 +1444,37 @@ class SimpleBlog {
   async loadPostsForSubmenu(submenu) {
     try {
       const timestamp = Date.now();
-      const indexUrl = `posts/index.json?t=${timestamp}`;
+      const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
       const response = await fetch(indexUrl);
       
       if (response.ok) {
         const indexData = await response.json();
         let allPosts = [];
         
-        if (Array.isArray(indexData)) {
-          allPosts = indexData;
-        } else if (indexData.posts && Array.isArray(indexData.posts)) {
-          allPosts = indexData;
+        // GitHub API returns content in base64, need to decode
+        if (indexData.content && indexData.encoding === 'base64') {
+          try {
+            const decodedContent = atob(indexData.content);
+            const parsedData = JSON.parse(decodedContent);
+            
+            if (Array.isArray(parsedData)) {
+              allPosts = parsedData;
+            } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
+              allPosts = parsedData.posts;
+            }
+            
+            // Update local posts array to keep in sync
+            this.posts = allPosts;
+            
+            // Display posts in submenu
+            this.displayPostsInSubmenu(submenu, allPosts);
+          } catch (decodeError) {
+            console.error('❌ Error decoding GitHub content:', decodeError);
+            throw new Error('Failed to decode index content');
+          }
+        } else {
+          throw new Error('Unexpected GitHub API response format');
         }
-        
-        // Update local posts array to keep in sync
-        this.posts = allPosts;
-        
-        // Display posts in submenu
-        this.displayPostsInSubmenu(submenu, allPosts);
       } else {
         submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--muted, #888); font-style: italic;">Error loading posts</div>';
       }
@@ -1471,9 +1484,26 @@ class SimpleBlog {
     }
   }
   
-  // Force reindex all posts across the site
+  // Force reindex all posts across the site (admin only)
   async forceReindexPosts() {
     console.log('🔄 Force reindex started');
+    
+    // Check if user is admin
+    if (!this.isAdmin()) {
+      console.log('⚠️ Non-admin user attempted to force reindex');
+      const statusElement = document.getElementById('github-status');
+      if (statusElement) {
+        statusElement.textContent = 'Admin only';
+        statusElement.style.color = '#dc3545'; // Red
+        
+        // Reset status after 3 seconds
+        setTimeout(() => {
+          statusElement.textContent = 'not connected';
+          statusElement.style.color = '';
+        }, 3000);
+      }
+      return;
+    }
     
     try {
       // Clear cached posts
@@ -1488,44 +1518,58 @@ class SimpleBlog {
         statusElement.style.color = '#ffa500'; // Orange
       }
       
-      // Force reload posts with fresh timestamp
+      // Force reload posts from GitHub with fresh timestamp
       const timestamp = Date.now();
-      const indexUrl = `posts/index.json?t=${timestamp}`;
-      console.log('🔄 Loading fresh posts index:', indexUrl);
+      const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
+      console.log('🔄 Loading fresh posts index from GitHub:', indexUrl);
       
       const response = await fetch(indexUrl);
       if (response.ok) {
         const indexData = await response.json();
         let allPosts = [];
         
-        if (Array.isArray(indexData)) {
-          allPosts = indexData;
-        } else if (indexData.posts && Array.isArray(indexData.posts)) {
-          allPosts = indexData.posts;
+        // GitHub API returns content in base64, need to decode
+        if (indexData.content && indexData.encoding === 'base64') {
+          try {
+            const decodedContent = atob(indexData.content);
+            const parsedData = JSON.parse(decodedContent);
+            
+            if (Array.isArray(parsedData)) {
+              allPosts = parsedData;
+            } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
+              allPosts = parsedData.posts;
+            }
+            
+            // Update local posts array
+            this.posts = allPosts;
+            
+            // Cache the fresh posts
+            localStorage.setItem('posts', JSON.stringify(allPosts));
+            
+            console.log('✅ Reindex complete. Found', allPosts.length, 'posts');
+            
+            // Show success message
+            if (statusElement) {
+              statusElement.textContent = 'Reindexed!';
+              statusElement.style.color = '#28a745'; // Green
+              
+              // Reset status after 3 seconds
+              setTimeout(() => {
+                statusElement.textContent = originalStatus;
+                statusElement.style.color = '';
+              }, 3000);
+            }
+            
+            // Update any open submenus
+            this.updateOpenSubmenus();
+            
+          } catch (decodeError) {
+            console.error('❌ Error decoding GitHub content:', decodeError);
+            throw new Error('Failed to decode index content');
+          }
+        } else {
+          throw new Error('Unexpected GitHub API response format');
         }
-        
-        // Update local posts array
-        this.posts = allPosts;
-        
-        // Cache the fresh posts
-        localStorage.setItem('posts', JSON.stringify(allPosts));
-        
-        console.log('✅ Reindex complete. Found', allPosts.length, 'posts');
-        
-        // Show success message
-        if (statusElement) {
-          statusElement.textContent = 'Reindexed!';
-          statusElement.style.color = '#28a745'; // Green
-          
-          // Reset status after 3 seconds
-          setTimeout(() => {
-            statusElement.textContent = originalStatus;
-            statusElement.style.color = '';
-          }, 3000);
-        }
-        
-        // Update any open submenus
-        this.updateOpenSubmenus();
         
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -1627,23 +1671,38 @@ class SimpleBlog {
     console.log('🔍 loadPosts: Loading posts from index...');
     
     try {
-      // Load posts from the index file (much faster than scanning directory)
+      // Load posts from GitHub index (much faster than scanning directory)
       const timestamp = Date.now();
-      const indexUrl = `posts/index.json?t=${timestamp}`;
-      console.log('🔍 loadPosts: Loading posts index from:', indexUrl);
+      const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
+      console.log('🔍 loadPosts: Loading posts index from GitHub:', indexUrl);
       
       const response = await fetch(indexUrl);
       if (response.ok) {
         const indexData = await response.json();
-        console.log('🔍 loadPosts: Index data loaded:', indexData);
+        console.log('🔍 loadPosts: GitHub index data loaded:', indexData);
         
-        // Handle both array and object formats
-        if (Array.isArray(indexData)) {
-          this.posts = indexData;
-        } else if (indexData.posts && Array.isArray(indexData.posts)) {
-          this.posts = indexData.posts;
+        // GitHub API returns content in base64, need to decode
+        if (indexData.content && indexData.encoding === 'base64') {
+          try {
+            const decodedContent = atob(indexData.content);
+            const parsedData = JSON.parse(decodedContent);
+            console.log('🔍 loadPosts: Decoded index data:', parsedData);
+            
+            // Handle both array and object formats
+            if (Array.isArray(parsedData)) {
+              this.posts = parsedData;
+            } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
+              this.posts = parsedData.posts;
+            } else {
+              console.warn('⚠️ loadPosts: Unexpected index format:', parsedData);
+              this.posts = [];
+            }
+          } catch (decodeError) {
+            console.error('❌ Error decoding GitHub content:', decodeError);
+            this.posts = [];
+          }
         } else {
-          console.warn('⚠️ loadPosts: Unexpected index format:', indexData);
+          console.warn('⚠️ loadPosts: Unexpected GitHub API response format:', indexData);
           this.posts = [];
         }
         
@@ -5837,122 +5896,13 @@ hideSiteMap() {
     menuElement.addEventListener('mouseleave', categoriesMouseLeaveHandler);
   }
 
+  // Legacy function - now replaced by displayCategoriesInSubmenu
   async loadCategoriesForSubmenu(submenu) {
-    try {
-      // Load posts from index
-      let allPosts = [];
-      
-      const timestamp = Date.now();
-      const indexUrl = `posts/index.json?t=${timestamp}`;
-      console.log('🔍 Categories submenu: Loading posts from index:', indexUrl);
-      
-      const response = await fetch(indexUrl);
-      if (response.ok) {
-        const indexData = await response.json();
-        console.log('🔍 Categories submenu: Index data loaded:', indexData);
-        
-        // Handle both array and object formats
-        if (Array.isArray(indexData)) {
-          allPosts = indexData;
-        } else if (indexData.posts && Array.isArray(indexData.posts)) {
-          allPosts = indexData.posts;
-        }
-        
-        console.log('✅ Categories submenu: Posts loaded from index:', allPosts.length);
-        
-        // Clear loading indicator
-        submenu.innerHTML = '';
-        
-        // Filter for devlog posts and group by category
-        const devlogPosts = allPosts.filter(post => {
-          const postFlags = post.keywords || '';
-          return postFlags.includes('devlog');
-        });
-        
-        if (devlogPosts.length === 0) {
-          const noPostsEntry = document.createElement('div');
-          noPostsEntry.className = 'menu-entry';
-          noPostsEntry.textContent = 'No categories found';
-          noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
-          submenu.appendChild(noPostsEntry);
-          return;
-        }
-        
-        // Group posts by devlog subcategory
-        const devlogCategories = {};
-        devlogPosts.forEach(post => {
-          const postFlags = post.keywords || '';
-          const devlogFlag = postFlags.split(',').find(f => f.trim().startsWith('devlog:'));
-          
-          if (devlogFlag) {
-            // Extract just the category name after "devlog:" and before any comma
-            const category = devlogFlag.split(':')[1] || 'general';
-            let displayName = category.trim().split(',')[0].trim();
-            
-            // Capitalize first letter of the category name
-            if (displayName.length > 0) {
-              displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
-            }
-            
-            if (!devlogCategories[displayName]) {
-              devlogCategories[displayName] = [];
-            }
-            devlogCategories[displayName].push(post);
-          } else if (postFlags.includes('devlog')) {
-            // General devlog posts without subcategory
-            if (!devlogCategories['General']) {
-              devlogCategories['General'] = [];
-            }
-            devlogCategories['General'].push(post);
-          }
-        });
-        
-        // Create category entries
-        Object.keys(devlogCategories).forEach(category => {
-          const posts = devlogCategories[category];
-          
-          const categoryEntry = document.createElement('div');
-          categoryEntry.className = 'menu-entry';
-          categoryEntry.textContent = `${category} (${posts.length})`;
-          categoryEntry.style.cssText = `
-            padding: 8px 15px;
-            cursor: pointer;
-            color: var(--fg);
-            transition: background-color 0.15s ease;
-            border-radius: 3px;
-            margin: 1px 2px;
-          `;
-          
-          categoryEntry.title = `Click to see posts in: ${category}`;
-          
-          // Add hover effects
-          categoryEntry.addEventListener('mouseenter', () => {
-            categoryEntry.style.backgroundColor = 'var(--accent-color, #4a9eff)';
-            categoryEntry.style.color = 'white';
-          });
-          
-          categoryEntry.addEventListener('mouseleave', () => {
-            categoryEntry.style.backgroundColor = 'transparent';
-            categoryEntry.style.color = 'var(--fg)';
-          });
-          
-          // Add click handler to show category window
-          categoryEntry.addEventListener('click', () => {
-            this.showCategoryWindow(category, posts);
-          });
-          
-          submenu.appendChild(categoryEntry);
-        });
-        
-        console.log('✅ Categories submenu populated with', Object.keys(devlogCategories).length, 'categories');
-        
-      } else {
-        console.warn('⚠️ Categories submenu: Could not load index file:', response.status);
-        submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545);">Error loading categories</div>';
-      }
-    } catch (error) {
-      console.error('❌ Categories submenu: Error loading categories:', error);
-      submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545);">Error loading categories</div>';
+    console.log('📝 Using cached posts for categories submenu');
+    if (this.posts && this.posts.length > 0) {
+      this.displayCategoriesInSubmenu(submenu, this.posts);
+    } else {
+      submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--muted, #888); font-style: italic;">No posts available</div>';
     }
   }
 
