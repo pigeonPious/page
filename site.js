@@ -2898,7 +2898,7 @@ class SimpleBlog {
       margin-bottom: 12px;
       max-width: 200px;
       clear: both;
-      display: inline-block;
+      display: block;
     `;
     
     // Create image element
@@ -2931,45 +2931,31 @@ class SimpleBlog {
     // Add image to container
     imageContainer.appendChild(img);
     
-    // Check if we should insert into an existing row
-    const existingRow = this.findExistingImageRow(visualEditor);
+    // Insert the image as a block element, not inline
+    let inserted = false;
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      
+      // Check if selection is within the post content area
+      if (visualEditor.contains(range.commonAncestorContainer) || 
+          visualEditor === range.commonAncestorContainer) {
+        // Insert as a block element
+        const blockElement = document.createElement('div');
+        blockElement.appendChild(imageContainer);
+        range.insertNode(blockElement);
+        range.collapse(false);
+        inserted = true;
+        console.log('✅ Image inserted at cursor position as block');
+      }
+    }
     
-    if (existingRow) {
-      // Insert into existing row
-      existingRow.appendChild(imageContainer);
-      console.log('✅ Image inserted into existing row');
-    } else {
-      // Create new row
-      const rowContainer = document.createElement('div');
-      rowContainer.className = 'image-row';
-      rowContainer.style.cssText = `
-        clear: both;
-        margin-bottom: 16px;
-        overflow: hidden;
-      `;
-      rowContainer.appendChild(imageContainer);
-      
-      // Insert the row
-      let inserted = false;
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        
-        // Check if selection is within the post content area
-        if (visualEditor.contains(range.commonAncestorContainer) || 
-            visualEditor === range.commonAncestorContainer) {
-          range.insertNode(rowContainer);
-          range.collapse(false);
-          inserted = true;
-          console.log('✅ Image row inserted at cursor position');
-        }
-      }
-      
-      if (!inserted) {
-        // No selection, insert at the end of the post content
-        visualEditor.appendChild(rowContainer);
-        console.log('✅ Image row inserted at end of post');
-      }
+    if (!inserted) {
+      // No selection, insert at the end of the post content
+      const blockElement = document.createElement('div');
+      blockElement.appendChild(imageContainer);
+      visualEditor.appendChild(blockElement);
+      console.log('✅ Image inserted at end of post as block');
     }
     
     // Add positioning overlay functionality
@@ -2978,67 +2964,7 @@ class SimpleBlog {
     console.log('✅ Image inserted:', filename);
   }
 
-  findExistingImageRow(visualEditor) {
-    // Look for the most recent image row that can accept more images
-    const imageRows = visualEditor.querySelectorAll('.image-row');
-    
-    if (imageRows.length === 0) {
-      return null;
-    }
-    
-    // Get the last image row
-    const lastRow = imageRows[imageRows.length - 1];
-    
-    // Check if this row has space for more images
-    const imagesInRow = lastRow.querySelectorAll('.image-container');
-    const totalWidth = Array.from(imagesInRow).reduce((width, img) => {
-      return width + 200 + 16; // 200px image width + 16px margin
-    }, 0);
-    
-    // If row is less than 80% of editor width, it can accept more images
-    const editorWidth = visualEditor.offsetWidth;
-    if (totalWidth < editorWidth * 0.8) {
-      return lastRow;
-    }
-    
-    return null;
-  }
 
-  moveImageToRow(imageContainer) {
-    const visualEditor = document.getElementById('visualEditor');
-    if (!visualEditor) return;
-    
-    // Find existing row or create new one
-    let targetRow = this.findExistingImageRow(visualEditor);
-    
-    if (!targetRow) {
-      // Create new row
-      targetRow = document.createElement('div');
-      targetRow.className = 'image-row';
-      targetRow.style.cssText = `
-        clear: both;
-        margin-bottom: 16px;
-        overflow: hidden;
-      `;
-      
-      // Insert row before the image container
-      imageContainer.parentNode.insertBefore(targetRow, imageContainer);
-    }
-    
-    // Move image to row
-    targetRow.appendChild(imageContainer);
-    
-    // Update image styling for row mode
-    imageContainer.style.cssText = `
-      position: relative;
-      float: left;
-      margin-right: 16px;
-      margin-bottom: 12px;
-      max-width: 200px;
-      clear: none;
-      display: inline-block;
-    `;
-  }
 
   setupEditorDragAndDrop() {
     // Only setup once
@@ -3210,27 +3136,16 @@ class SimpleBlog {
     // Row positioning (inline, no clear)
     rowBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      
-      // Check if image is already in a row
-      const currentRow = imageContainer.closest('.image-row');
-      
-      if (currentRow) {
-        // Already in a row, just update styling
-        imageContainer.style.cssText = `
-          position: relative;
-          float: left;
-          margin-right: 16px;
-          margin-bottom: 12px;
-          max-width: 200px;
-          clear: none;
-          display: inline-block;
-        `;
-        console.log('✅ Image updated to row mode');
-      } else {
-        // Not in a row, move to or create a row
-        this.moveImageToRow(imageContainer);
-        console.log('✅ Image moved to row');
-      }
+      imageContainer.style.cssText = `
+        position: relative;
+        float: left;
+        margin-right: 16px;
+        margin-bottom: 12px;
+        max-width: 200px;
+        clear: none;
+        display: block;
+      `;
+      console.log('✅ Image positioned in row mode');
     });
     
     // Right positioning (float right)

@@ -1220,25 +1220,6 @@ body.custom-mode .console-output {
   clear: none;
 }
 
-/* Image row container */
-.visual-editor .image-row {
-  clear: both;
-  margin-bottom: 16px;
-  overflow: hidden;
-  display: block;
-}
-
-/* Ensure proper spacing in rows */
-.visual-editor .image-container[style*="clear: none"] + .image-container[style*="clear: none"] {
-  margin-left: 0;
-}
-
-/* Force inline display for row images */
-.visual-editor .image-row .image-container {
-  display: inline-block !important;
-  vertical-align: top;
-}
-
 /* Fix text wrapping issues */
 .visual-editor {
   overflow: visible; /* Allow content to flow naturally */
