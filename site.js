@@ -2320,9 +2320,6 @@ class SimpleBlog {
     
     console.log('✅ Image magazine opened');
   }
-
-
-    console.log('🔧 Setting up existing image magazine buttons...');
     
     // Get the existing buttons from HTML
     const importBtn = document.getElementById('import-image-btn');
@@ -2403,114 +2400,7 @@ class SimpleBlog {
     console.log('🔍 Buttons now have normal styling and hover effects');
   }
 
-  setupMagazineDrag() {
-    console.log('🔧 Setting up magazine drag functionality...');
-    
-    const magazine = document.getElementById('imageMagazine');
-    const header = magazine.querySelector('.image-magazine-header');
-    
-    if (!header) {
-      console.log('⚠️ Magazine header not found for drag setup');
-      return;
-    }
-    
-    // Add triple spacer line at the top as visual drag handle
-    const dragHandle = document.createElement('div');
-    dragHandle.style.cssText = `
-      height: 12px;
-      background: repeating-linear-gradient(
-        to bottom,
-        #444 0px,
-        #444 2px,
-        transparent 2px,
-        transparent 4px
-      );
-      margin-bottom: 8px;
-      cursor: move;
-      user-select: none;
-    `;
-    
-    // Insert drag handle at the top of the header
-    header.insertBefore(dragHandle, header.firstChild);
-    
-    // Make header draggable with improved event handling
-    let isDragging = false;
-    let startX, startY, startLeft, startTop;
-    
-    // Prevent text selection during drag
-    const preventSelection = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    };
-    
-    header.addEventListener('mousedown', (e) => {
-      console.log('🖱️ Mouse down on header - starting drag');
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      
-      // Get current position using getBoundingClientRect for accurate positioning
-      const rect = magazine.getBoundingClientRect();
-      startLeft = rect.left;
-      startTop = rect.top;
-      
-      header.style.cursor = 'grabbing';
-      
-      // Prevent text selection and other default behaviors
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Prevent text selection during drag
-      document.addEventListener('selectstart', preventSelection);
-      document.addEventListener('dragstart', preventSelection);
-      
-      return false;
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
-      // Prevent text selection during drag
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-      
-      // Update magazine position
-      const newLeft = startLeft + deltaX;
-      const newTop = startTop + deltaY;
-      
-      magazine.style.left = newLeft + 'px';
-      magazine.style.top = newTop + 'px';
-      magazine.style.transform = 'none'; // Remove center transform when dragging
-      
-      console.log('🖱️ Dragging magazine to:', { x: newLeft, y: newTop });
-    });
-    
-    document.addEventListener('mouseup', (e) => {
-      if (isDragging) {
-        console.log('🖱️ Mouse up - stopping drag');
-        isDragging = false;
-        header.style.cursor = 'move';
-        
-        // Remove text selection prevention
-        document.removeEventListener('selectstart', preventSelection);
-        document.removeEventListener('dragstart', preventSelection);
-      }
-    });
-    
-    // Set initial cursor style and prevent text selection
-    header.style.cursor = 'move';
-    header.style.userSelect = 'none';
-    header.style.webkitUserSelect = 'none';
-    header.style.mozUserSelect = 'none';
-    header.style.msUserSelect = 'none';
-    
-    console.log('✅ Magazine drag functionality setup complete');
-    console.log('🔍 Click and drag the header (including double lines) to move the magazine');
-  }
+
 
   createImageMagazine() {
     const magazine = document.createElement('div');
