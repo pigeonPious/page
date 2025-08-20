@@ -137,8 +137,14 @@ class SimpleBlog {
               <div class="menu-separator"></div>
               <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
-              <div class="menu-entry has-submenu" id="projects-menu" style="position: relative;">Projects ></div>
               <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
+            </div>
+          </div>
+          
+          <div class="menu-item" data-menu="projects">
+            <div class="label">Projects</div>
+            <div class="menu-dropdown" id="projects-dropdown">
+              <div class="menu-entry" id="projects-menu">Categories ></div>
             </div>
           </div>
           
@@ -967,6 +973,22 @@ class SimpleBlog {
       });
     };
     
+    // Close other main menus when one is opened
+    this.closeOtherMainMenus = (currentMenu) => {
+      const allMainMenus = ['navigation', 'projects', 'view', 'connect'];
+      allMainMenus.forEach(menuId => {
+        if (menuId !== currentMenu) {
+          const menu = document.querySelector(`[data-menu="${menuId}"]`);
+          if (menu) {
+            const dropdown = menu.querySelector('.menu-dropdown');
+            if (dropdown) {
+              dropdown.classList.remove('open');
+            }
+          }
+        }
+      });
+    };
+    
     // All posts submenu
     const allPostsMenu = document.getElementById('all-posts-menu');
     if (allPostsMenu) {
@@ -1010,45 +1032,32 @@ class SimpleBlog {
       console.warn('⚠️ All posts menu element not found');
     }
 
-    // Projects submenu - hover shows categories, click opens floating window
+    // Projects submenu - click shows categories
     const projectsMenu = document.getElementById('projects-menu');
     if (projectsMenu) {
       // Remove existing listeners to prevent duplication
-      projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
-      projectsMenu.removeEventListener('mouseleave', this.projectsMouseLeaveHandler);
+      projectsMenu.removeEventListener('click', this.projectsClickHandler);
       
-      let openTimeout = null;
-      
-      this.projectsMouseEnterHandler = () => {
-        console.log('📝 Projects submenu hovered');
-        if (openTimeout) {
-          clearTimeout(openTimeout);
-        }
-        openTimeout = setTimeout(() => {
-          // Close other level 1 menus first
-          this.closeOtherLevel1Menus('projects-menu');
-          
-          // Only create submenu if it doesn't already exist
-          const existingSubmenu = projectsMenu.querySelector('.submenu');
-          if (!existingSubmenu) {
-            console.log('📝 Creating new Projects submenu');
-            this.updateProjectsSubmenu(this.posts || []);
-          } else {
-            console.log('📝 Projects submenu already exists, not recreating');
-          }
-        }, 150); // Small delay to prevent accidental opening
-      };
-      
-      this.projectsMouseLeaveHandler = () => {
-        if (openTimeout) {
-          clearTimeout(openTimeout);
-          openTimeout = null;
+      this.projectsClickHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('📝 Projects menu clicked');
+        
+        // Close other level 1 menus first
+        this.closeOtherLevel1Menus('projects-menu');
+        
+        // Only create submenu if it doesn't already exist
+        const existingSubmenu = projectsMenu.querySelector('.submenu');
+        if (!existingSubmenu) {
+          console.log('📝 Creating new Projects submenu');
+          this.updateProjectsSubmenu(this.posts || []);
+        } else {
+          console.log('📝 Projects submenu already exists, not recreating');
         }
       };
       
-      projectsMenu.addEventListener('mouseenter', this.projectsMouseEnterHandler);
-      projectsMenu.addEventListener('mouseleave', this.projectsMouseLeaveHandler);
-      console.log('✅ Projects submenu hover handler attached');
+      projectsMenu.addEventListener('click', this.projectsClickHandler);
+      console.log('✅ Projects menu click handler attached');
     } else {
       console.warn('⚠️ Projects menu element not found');
     }
@@ -5568,8 +5577,8 @@ class SimpleBlog {
     }
     
     const projectsMenu = document.getElementById('projects-menu');
-    if (projectsMenu && this.projectsMouseEnterHandler) {
-      projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
+    if (projectsMenu && this.projectsClickHandler) {
+      projectsMenu.removeEventListener('click', this.projectsClickHandler);
     }
     
     // Remove global event listeners
