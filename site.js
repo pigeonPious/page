@@ -5096,9 +5096,9 @@ class SimpleBlog {
       transform: translate(-50%, -50%);
       background: var(--bg);
       border: 1px solid var(--border);
-      padding: 16px;
-      min-width: 300px;
-      max-width: 400px;
+      padding: 12px;
+      min-width: 250px;
+      max-width: 300px;
       max-height: 70vh;
       z-index: 10000;
       overflow-y: auto;
@@ -5113,8 +5113,8 @@ class SimpleBlog {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
       cursor: move;
     `;
@@ -5124,7 +5124,7 @@ class SimpleBlog {
     title.style.cssText = `
       margin: 0;
       color: var(--fg);
-      font-size: 16px;
+      font-size: 13px;
       font-weight: bold;
       text-transform: capitalize;
     `;
@@ -5134,10 +5134,10 @@ class SimpleBlog {
     closeButton.textContent = '×';
     closeButton.style.cssText = `
       cursor: pointer;
-      font-size: 20px;
+      font-size: 16px;
       color: var(--fg);
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -5168,20 +5168,17 @@ class SimpleBlog {
     postsList.style.cssText = `
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
     `;
     
     posts.forEach(post => {
       const postEntry = document.createElement('div');
       postEntry.className = 'post-entry';
       postEntry.style.cssText = `
-        padding: 8px 12px;
-        background: var(--bg);
+        padding: 4px 0;
         color: var(--fg);
-        border: 1px solid var(--border);
         cursor: pointer;
         transition: background-color 0.15s ease;
-        border-radius: 3px;
         font-size: 13px;
       `;
       
