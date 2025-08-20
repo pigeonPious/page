@@ -5302,6 +5302,11 @@ class SimpleBlog {
         // Build the tree structure
         let treeHTML = '';
         
+        // Add empty vertical lines above the tree to connect with star button
+        treeHTML += `<div style="margin-bottom: 2px;">|</div>`;
+        treeHTML += `<div style="margin-bottom: 2px;">|</div>`;
+        treeHTML += `<div style="margin-bottom: 2px;">|</div>`;
+        
         // Show all categories and posts
         Object.keys(categories).sort().forEach(category => {
           const postsInCategory = categories[category];
