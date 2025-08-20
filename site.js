@@ -5503,7 +5503,6 @@ class SimpleBlog {
       tooltip.style.cssText = `
         position: fixed;
         z-index: 1000;
-        pointer-events: none;
         background: var(--menu-bg);
         border: 1px solid var(--border);
         padding: 6px 8px;
@@ -5513,11 +5512,30 @@ class SimpleBlog {
         color: var(--menu-fg);
         display: none;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        cursor: default;
       `;
       document.body.appendChild(tooltip);
     }
     
-    tooltip.textContent = noteText;
+    // Check if note contains a URL
+    const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
+    if (urlMatch) {
+      const url = urlMatch[1];
+      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline; cursor: pointer;">${url}</span>`);
+      tooltip.style.cursor = 'pointer';
+      tooltip.style.pointerEvents = 'auto';
+      
+      // Add click handler to open URL
+      tooltip.onclick = () => {
+        window.open(url, '_blank');
+      };
+    } else {
+      tooltip.textContent = noteText;
+      tooltip.style.cursor = 'default';
+      tooltip.style.pointerEvents = 'none';
+      tooltip.onclick = null;
+    }
+    
     tooltip.style.display = 'block';
     
     // Position tooltip with boundary detection
@@ -5593,7 +5611,6 @@ class SimpleBlog {
       tooltip.style.cssText = `
         position: fixed;
         z-index: 1000;
-        pointer-events: none;
         background: var(--menu-bg);
         border: 1px solid var(--border);
         padding: 4px 6px;
@@ -5604,14 +5621,33 @@ class SimpleBlog {
         line-height: 1.3;
         white-space: pre-wrap;
         word-wrap: break-word;
+        cursor: default;
       `;
       document.body.appendChild(tooltip);
+    }
+    
+    // Check if note contains a URL
+    const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
+    if (urlMatch) {
+      const url = urlMatch[1];
+      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline; cursor: pointer;">${url}</span>`);
+      tooltip.style.cursor = 'pointer';
+      tooltip.style.pointerEvents = 'auto';
+      
+      // Add click handler to open URL
+      tooltip.onclick = () => {
+        window.open(url, '_blank');
+      };
+    } else {
+      tooltip.textContent = noteText;
+      tooltip.style.cursor = 'default';
+      tooltip.style.pointerEvents = 'none';
+      tooltip.onclick = null;
     }
     
     // Calculate width based on text length
     const textWidth = Math.min(noteText.length * 6, 100); // 6px per character, max 100px
     tooltip.style.width = `${textWidth}px`;
-    tooltip.textContent = noteText;
     tooltip.style.display = 'block';
     
     // Position tooltip with boundary detection (same as regular hover notes)
