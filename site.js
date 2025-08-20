@@ -27,6 +27,19 @@ class SimpleBlog {
     console.log('✅ Taskbar created');
     this.bindEvents();
     console.log('✅ Events bound');
+    
+    // Try to load cached posts first for immediate submenu access
+    const cachedPosts = localStorage.getItem('posts');
+    if (cachedPosts) {
+      try {
+        this.posts = JSON.parse(cachedPosts);
+        console.log('📚 Loaded', this.posts.length, 'cached posts for immediate submenu access');
+      } catch (error) {
+        console.warn('⚠️ Could not parse cached posts:', error);
+        localStorage.removeItem('posts');
+      }
+    }
+    
     // Load posts first, then handle URL parameters
     this.loadPosts().then(() => {
       console.log('✅ Posts loaded, now processing URL parameters');
@@ -123,6 +136,8 @@ class SimpleBlog {
               <div class="menu-entry disabled">Undo</div>
               <div class="menu-entry editor-only" id="make-note-button">Make Note</div>
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry" id="force-reindex-button">Force Reindex</div>
               <div class="menu-separator"></div>
 
               <div class="menu-entry blog-only" id="font-size-button">Font Size</div>
@@ -767,6 +782,12 @@ class SimpleBlog {
       this.captureSelectionAndMakeNote();
     });
     
+    // Force reindex button
+    this.addClickHandler('#force-reindex-button', () => {
+      console.log('🔄 Force reindex button clicked');
+      this.forceReindexPosts();
+    });
+    
     // Edit post button
     this.addClickHandler('#edit-post-button', () => {
       console.log('✏️ Edit post button clicked');
@@ -1136,6 +1157,234 @@ class SimpleBlog {
 
 
 
+  // Helper function to display posts in submenus
+  displayPostsInSubmenu(submenu, posts) {
+    // Clear any existing content
+    submenu.innerHTML = '';
+    
+    // Add invisible buffer zone around submenu for easier navigation
+    const bufferZone = document.createElement('div');
+    bufferZone.style.cssText = `
+      position: absolute;
+      left: -10px;
+      top: -10px;
+      right: -10px;
+      bottom: -10px;
+      z-index: 999;
+      pointer-events: none;
+    `;
+    submenu.appendChild(bufferZone);
+    
+    // Add post entries
+    if (posts && posts.length > 0) {
+      posts.forEach((post) => {
+        if (!post || !post.slug) {
+          return;
+        }
+        
+        const entry = document.createElement('div');
+        entry.className = 'menu-entry';
+        entry.textContent = post.title || 'Untitled';
+        entry.style.cssText = `
+          padding: 4px 12px; 
+          cursor: pointer; 
+          color: var(--menu-fg, #fff);
+          transition: background-color 0.15s ease;
+          border-radius: 3px;
+          margin: 0.25px 1px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 200px;
+        `;
+        
+        entry.title = `Click to load: ${post.title} (${post.slug})`;
+        
+        entry.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (window.location.pathname.includes('editor.html')) {
+            window.location.href = `index.html?post=${post.slug}`;
+          } else {
+            this.loadPost(post.slug);
+          }
+        });
+        
+        submenu.appendChild(entry);
+      });
+    } else {
+      const noPostsEntry = document.createElement('div');
+      noPostsEntry.className = 'menu-entry';
+      noPostsEntry.textContent = 'No posts found';
+      noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+      submenu.appendChild(noPostsEntry);
+    }
+  }
+  
+  // Helper function to display categories with hover submenus
+  displayCategoriesInSubmenu(submenu, posts) {
+    // Clear any existing content
+    submenu.innerHTML = '';
+    
+    // Add invisible buffer zone around submenu for easier navigation
+    const bufferZone = document.createElement('div');
+    bufferZone.style.cssText = `
+      position: absolute;
+      left: -10px;
+      top: -10px;
+      right: -10px;
+      bottom: -10px;
+      z-index: 999;
+      pointer-events: none;
+    `;
+    submenu.appendChild(bufferZone);
+    
+    // Filter for devlog posts and group by category
+    const devlogPosts = posts.filter(post => {
+      const postFlags = post.keywords || '';
+      return postFlags.includes('devlog');
+    });
+    
+    if (devlogPosts.length === 0) {
+      const noPostsEntry = document.createElement('div');
+      noPostsEntry.className = 'menu-entry';
+      noPostsEntry.textContent = 'No categories found';
+      noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+      submenu.appendChild(noPostsEntry);
+      return;
+    }
+    
+    // Group posts by devlog subcategory
+    const devlogCategories = {};
+    devlogPosts.forEach(post => {
+      const postFlags = post.keywords || '';
+      const devlogFlag = postFlags.split(',').find(f => f.trim().startsWith('devlog:'));
+      
+      if (devlogFlag) {
+        const category = devlogFlag.split(':')[1] || 'general';
+        let displayName = category.trim().split(',')[0].trim();
+        
+        // Capitalize first letter of the category name
+        if (displayName.length > 0) {
+          displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+        }
+        
+        if (!devlogCategories[displayName]) {
+          devlogCategories[displayName] = [];
+        }
+        devlogCategories[displayName].push(post);
+      }
+    });
+    
+    // Create category entries with hover submenus
+    Object.keys(devlogCategories).sort().forEach(category => {
+      const postsInCategory = devlogCategories[category];
+      
+      const categoryEntry = document.createElement('div');
+      categoryEntry.className = 'menu-entry has-submenu';
+      categoryEntry.textContent = `${category} (${postsInCategory.length})`;
+      categoryEntry.style.cssText = `
+        padding: 4px 12px; 
+        cursor: pointer; 
+        color: var(--menu-fg, #fff);
+        transition: background-color 0.15s ease;
+        border-radius: 3px;
+        margin: 0.25px 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+        position: relative;
+      `;
+      
+      // Create hover submenu for posts in this category
+      const postsSubmenu = document.createElement('div');
+      postsSubmenu.className = 'submenu';
+      postsSubmenu.style.cssText = `
+        position: absolute;
+        left: 100%;
+        top: 0;
+        background: var(--menu-bg, #333);
+        border: 1px solid var(--menu-border, #555);
+        padding: 1.25px 0;
+        min-width: 200px;
+        z-index: 1001;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+        display: none;
+      `;
+      
+      // Add post entries to the submenu
+      postsInCategory.forEach(post => {
+        const postEntry = document.createElement('div');
+        postEntry.className = 'menu-entry';
+        postEntry.textContent = post.title || 'Untitled';
+        postEntry.style.cssText = `
+          padding: 4px 12px; 
+          cursor: pointer; 
+          color: var(--menu-fg, #fff);
+          transition: background-color 0.15s ease;
+          border-radius: 3px;
+          margin: 0.25px 1px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 200px;
+        `;
+        
+        postEntry.title = `Click to load: ${post.title} (${post.slug})`;
+        
+        postEntry.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (window.location.pathname.includes('editor.html')) {
+            window.location.href = `index.html?post=${post.slug}`;
+          } else {
+            this.loadPost(post.slug);
+          }
+        });
+        
+        postsSubmenu.appendChild(postEntry);
+      });
+      
+      // Show submenu on hover
+      categoryEntry.addEventListener('mouseenter', () => {
+        postsSubmenu.style.display = 'block';
+      });
+      
+      categoryEntry.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+          if (!postsSubmenu.matches(':hover')) {
+            postsSubmenu.style.display = 'none';
+          }
+        }, 100);
+      });
+      
+      // Hide submenu when leaving posts submenu
+      postsSubmenu.addEventListener('mouseleave', () => {
+        postsSubmenu.style.display = 'none';
+      });
+      
+      // Add buffer zone to posts submenu
+      const postsBufferZone = document.createElement('div');
+      postsBufferZone.style.cssText = `
+        position: absolute;
+        left: -10px;
+        top: -10px;
+        right: -10px;
+        bottom: -10px;
+        z-index: 1000;
+        pointer-events: none;
+      `;
+      postsSubmenu.appendChild(postsBufferZone);
+      
+      categoryEntry.appendChild(postsSubmenu);
+      submenu.appendChild(categoryEntry);
+    });
+  }
+
   async showAllPostsSubmenu(menuElement) {
     // Create submenu for all posts
     const submenu = document.createElement('div');
@@ -1153,26 +1402,6 @@ class SimpleBlog {
       border-radius: 4px;
     `;
     
-    // Add invisible buffer zone around submenu for easier navigation
-    const bufferZone = document.createElement('div');
-    bufferZone.style.cssText = `
-      position: absolute;
-      left: -10px;
-      top: -10px;
-      right: -10px;
-      bottom: -10px;
-      z-index: 999;
-      pointer-events: none;
-    `;
-    submenu.appendChild(bufferZone);
-    
-    // Show loading indicator
-    const loadingEntry = document.createElement('div');
-    loadingEntry.className = 'menu-entry';
-    loadingEntry.textContent = 'Loading posts...';
-    loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
-    submenu.appendChild(loadingEntry);
-    
     // Remove existing submenu
     const existingSubmenu = menuElement.querySelector('.submenu');
     if (existingSubmenu) {
@@ -1182,167 +1411,22 @@ class SimpleBlog {
     // Add new submenu
     menuElement.appendChild(submenu);
     
-    try {
-      // Load posts from index (much faster than scanning directory)
-      let allPosts = [];
+    // Use cached posts if available, otherwise load
+    if (this.posts && this.posts.length > 0) {
+      this.displayPostsInSubmenu(submenu, this.posts);
+    } else {
+      // Show loading indicator
+      const loadingEntry = document.createElement('div');
+      loadingEntry.className = 'menu-entry';
+      loadingEntry.textContent = 'Loading posts...';
+      loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+      submenu.appendChild(loadingEntry);
       
-      const timestamp = Date.now();
-      const indexUrl = `posts/index.json?t=${timestamp}`;
-      console.log('🔍 All Posts submenu: Loading posts from index:', indexUrl);
-      
-      const response = await fetch(indexUrl);
-      if (response.ok) {
-        const indexData = await response.json();
-        console.log('🔍 All Posts submenu: Index data loaded:', indexData);
-        
-                          // Handle both array and object formats
-                  if (Array.isArray(indexData)) {
-                    allPosts = indexData;
-                  } else if (indexData.posts && Array.isArray(indexData.posts)) {
-                    allPosts = indexData.posts;
-                  }
-                  
-                  console.log('✅ All Posts submenu: Posts loaded from index:', allPosts.length);
-                  
-                  // Update local posts array to keep in sync
-                  this.posts = allPosts;
-                } else {
-                  console.warn('⚠️ All Posts submenu: Could not load index file:', response.status);
-                  // Fallback: use cached posts
-                  allPosts = this.posts;
-                }
-      
-      // Clear loading indicator
-      submenu.innerHTML = '';
-      
-      // Add post entries
-      if (allPosts.length > 0) {
-        console.log('🔍 MAXIMUM TROUBLESHOOTING: Creating post entries for', allPosts.length, 'posts');
-        console.log('🔍 Posts data:', allPosts);
-        
-        allPosts.forEach((post, index) => {
-          console.log(`🔍 Processing post ${index}:`, post);
-          
-          if (!post || !post.slug) {
-            console.warn('⚠️ Skipping invalid post:', post);
-            return;
-          }
-          
-          console.log(`🔍 Creating entry for post: ${post.title} (${post.slug})`);
-          
-          const entry = document.createElement('div');
-          entry.className = 'menu-entry';
-          entry.textContent = post.title || 'Untitled';
-          entry.style.cssText = `
-            padding: 4px 12px; 
-            cursor: pointer; 
-            color: var(--menu-fg, #fff);
-            transition: background-color 0.15s ease;
-            border-radius: 3px;
-            margin: 0.25px 1px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-          `;
-          
-          // Add unique ID for debugging
-          entry.id = `post-entry-${post.slug}`;
-          console.log(`🔍 Created entry element:`, entry);
-          
-          entry.title = `Click to load: ${post.title} (${post.slug})`;
-          
-          entry.addEventListener('click', (e) => {
-            console.log('🔍 MAXIMUM TROUBLESHOOTING: CLICK EVENT FIRED!');
-            console.log('🔍 Event details:', e);
-            console.log('🔍 Target element:', e.target);
-            console.log('🔍 Post data:', post);
-            
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('📖 Post selected:', post.title || 'Untitled', 'slug:', post.slug);
-            
-            // Check if we're in the editor
-            console.log('🔍 Current pathname:', window.location.pathname);
-            console.log('🔍 Current href:', window.location.href);
-            if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
-              console.log('📝 In editor - redirecting to main blog with post:', post.slug);
-              // Redirect to main blog with the selected post
-              window.location.href = `index.html?post=${post.slug}`;
-            } else {
-              console.log('🏠 On main blog - loading post normally:', post.slug);
-              // We're on the main blog, load post normally
-              console.log('🔍 About to call loadPost with slug:', post.slug);
-              console.log('🔍 this object:', this);
-              console.log('🔍 this.loadPost function:', this.loadPost);
-              console.log('🔍 typeof this.loadPost:', typeof this.loadPost);
-              
-              // Close menus first
-              console.log('🔍 Closing all menus...');
-              this.closeAllMenus();
-              console.log('🔍 Menus closed');
-              
-              // Then load the post
-              try {
-                console.log('🔍 Calling loadPost...');
-                const loadPromise = this.loadPost(post.slug);
-                console.log('🔍 loadPost returned promise:', loadPromise);
-                
-                if (loadPromise && typeof loadPromise.then === 'function') {
-                  loadPromise.then(() => {
-                    console.log('✅ Post loaded successfully:', post.slug);
-                  }).catch(error => {
-                    console.error('❌ Error loading post:', error);
-                  });
-                } else {
-                  console.error('❌ loadPost did not return a promise:', loadPromise);
-                }
-              } catch (error) {
-                console.error('❌ Error calling loadPost:', error);
-                console.error('❌ Error stack:', error.stack);
-              }
-            }
-          });
-          
-          entry.addEventListener('mouseenter', () => {
-            console.log(`🔍 Mouse enter on post entry: ${post.title}`);
-            entry.style.background = 'var(--menu-hover-bg, #555)';
-            entry.style.transform = 'translateX(2px)';
-          });
-          
-          entry.addEventListener('mouseleave', () => {
-            console.log(`🔍 Mouse leave on post entry: ${post.title}`);
-            entry.style.background = 'transparent';
-            entry.style.transform = 'translateX(0)';
-          });
-          
-          console.log(`🔍 Appending entry to submenu:`, entry);
-          submenu.appendChild(entry);
-          console.log(`🔍 Entry appended successfully`);
-        });
-        
-        console.log('🔍 MAXIMUM TROUBLESHOOTING: All post entries created and added to submenu');
-        console.log('🔍 Final submenu children count:', submenu.children.length);
-      } else {
-        const noPostsEntry = document.createElement('div');
-        noPostsEntry.className = 'menu-entry';
-        noPostsEntry.textContent = 'No posts found';
-        noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
-        submenu.appendChild(noPostsEntry);
-      }
-      
-    } catch (error) {
-      console.error('❌ Error loading posts for submenu:', error);
-      // Show error message
-      submenu.innerHTML = '';
-      const errorEntry = document.createElement('div');
-      errorEntry.className = 'menu-entry';
-      errorEntry.textContent = 'Error loading posts';
-      errorEntry.style.cssText = 'padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;';
-      submenu.appendChild(errorEntry);
+      // Load and display posts
+      this.loadPostsForSubmenu(submenu);
     }
     
-    // Remove submenu on mouse leave (ALL POSTS SUBMENU)
+    // Remove submenu on mouse leave
     const allPostsMouseLeaveHandler = () => {
       setTimeout(() => {
         if (submenu.parentNode) {
@@ -1354,6 +1438,130 @@ class SimpleBlog {
     // Remove any existing listener to prevent duplication
     menuElement.removeEventListener('mouseleave', allPostsMouseLeaveHandler);
     menuElement.addEventListener('mouseleave', allPostsMouseLeaveHandler);
+  }
+  
+  // Load posts for submenu (fallback when cache is empty)
+  async loadPostsForSubmenu(submenu) {
+    try {
+      const timestamp = Date.now();
+      const indexUrl = `posts/index.json?t=${timestamp}`;
+      const response = await fetch(indexUrl);
+      
+      if (response.ok) {
+        const indexData = await response.json();
+        let allPosts = [];
+        
+        if (Array.isArray(indexData)) {
+          allPosts = indexData;
+        } else if (indexData.posts && Array.isArray(indexData.posts)) {
+          allPosts = indexData;
+        }
+        
+        // Update local posts array to keep in sync
+        this.posts = allPosts;
+        
+        // Display posts in submenu
+        this.displayPostsInSubmenu(submenu, allPosts);
+      } else {
+        submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--muted, #888); font-style: italic;">Error loading posts</div>';
+      }
+    } catch (error) {
+      console.error('❌ Error loading posts for submenu:', error);
+      submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
+    }
+  }
+  
+  // Force reindex all posts across the site
+  async forceReindexPosts() {
+    console.log('🔄 Force reindex started');
+    
+    try {
+      // Clear cached posts
+      this.posts = null;
+      localStorage.removeItem('posts');
+      
+      // Show loading message
+      const statusElement = document.getElementById('github-status');
+      const originalStatus = statusElement ? statusElement.textContent : '';
+      if (statusElement) {
+        statusElement.textContent = 'Reindexing...';
+        statusElement.style.color = '#ffa500'; // Orange
+      }
+      
+      // Force reload posts with fresh timestamp
+      const timestamp = Date.now();
+      const indexUrl = `posts/index.json?t=${timestamp}`;
+      console.log('🔄 Loading fresh posts index:', indexUrl);
+      
+      const response = await fetch(indexUrl);
+      if (response.ok) {
+        const indexData = await response.json();
+        let allPosts = [];
+        
+        if (Array.isArray(indexData)) {
+          allPosts = indexData;
+        } else if (indexData.posts && Array.isArray(indexData.posts)) {
+          allPosts = indexData.posts;
+        }
+        
+        // Update local posts array
+        this.posts = allPosts;
+        
+        // Cache the fresh posts
+        localStorage.setItem('posts', JSON.stringify(allPosts));
+        
+        console.log('✅ Reindex complete. Found', allPosts.length, 'posts');
+        
+        // Show success message
+        if (statusElement) {
+          statusElement.textContent = 'Reindexed!';
+          statusElement.style.color = '#28a745'; // Green
+          
+          // Reset status after 3 seconds
+          setTimeout(() => {
+            statusElement.textContent = originalStatus;
+            statusElement.style.color = '';
+          }, 3000);
+        }
+        
+        // Update any open submenus
+        this.updateOpenSubmenus();
+        
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Force reindex failed:', error);
+      
+      // Show error message
+      const statusElement = document.getElementById('github-status');
+      if (statusElement) {
+        statusElement.textContent = 'Reindex failed';
+        statusElement.style.color = '#dc3545'; // Red
+        
+        // Reset status after 3 seconds
+        setTimeout(() => {
+          statusElement.textContent = originalStatus;
+          statusElement.style.color = '';
+        }, 3000);
+      }
+    }
+  }
+  
+  // Update any open submenus with fresh data
+  updateOpenSubmenus() {
+    // Update All Posts submenu if open
+    const allPostsSubmenu = document.querySelector('#all-posts-menu .submenu');
+    if (allPostsSubmenu && this.posts) {
+      this.displayPostsInSubmenu(allPostsSubmenu, this.posts);
+    }
+    
+    // Update Categories submenu if open
+    const categoriesSubmenu = document.querySelector('#categories-menu .submenu');
+    if (categoriesSubmenu && this.posts) {
+      this.displayCategoriesInSubmenu(categoriesSubmenu, this.posts);
+    }
   }
 
   async scanLocalPostsDirectory(allPosts) {
@@ -1440,6 +1648,9 @@ class SimpleBlog {
         }
         
         console.log('📚 loadPosts: Posts loaded from index:', this.posts.length);
+        
+        // Cache posts in localStorage for submenu use
+        localStorage.setItem('posts', JSON.stringify(this.posts));
         
         if (this.posts.length > 0) {
           // Sort by date and display the most recent
@@ -5588,13 +5799,6 @@ hideSiteMap() {
       border-radius: 4px;
     `;
     
-    // Show loading indicator
-    const loadingEntry = document.createElement('div');
-    loadingEntry.className = 'menu-entry';
-    loadingEntry.textContent = 'Loading categories...';
-    loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
-    submenu.appendChild(loadingEntry);
-    
     // Remove existing submenu
     const existingSubmenu = menuElement.querySelector('.submenu');
     if (existingSubmenu) {
@@ -5604,8 +5808,33 @@ hideSiteMap() {
     // Add new submenu
     menuElement.appendChild(submenu);
     
-    // Load and display categories
-    this.loadCategoriesForSubmenu(submenu);
+    // Use cached posts if available, otherwise load
+    if (this.posts && this.posts.length > 0) {
+      this.displayCategoriesInSubmenu(submenu, this.posts);
+    } else {
+      // Show loading indicator
+      const loadingEntry = document.createElement('div');
+      loadingEntry.className = 'menu-entry';
+      loadingEntry.textContent = 'Loading categories...';
+      loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+      submenu.appendChild(loadingEntry);
+      
+      // Load and display categories
+      this.loadCategoriesForSubmenu(submenu);
+    }
+    
+    // Remove submenu on mouse leave
+    const categoriesMouseLeaveHandler = () => {
+      setTimeout(() => {
+        if (submenu.parentNode) {
+          submenu.remove();
+        }
+      }, 100);
+    };
+    
+    // Remove any existing listener to prevent duplication
+    menuElement.removeEventListener('mouseleave', categoriesMouseLeaveHandler);
+    menuElement.addEventListener('mouseleave', categoriesMouseLeaveHandler);
   }
 
   async loadCategoriesForSubmenu(submenu) {
