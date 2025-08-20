@@ -2286,49 +2286,33 @@ class SimpleBlog {
     
     if (imagesBtn) {
       const btnRect = imagesBtn.getBoundingClientRect();
+      // Position magazine at button location, accounting for scroll
       initialX = (btnRect.left + btnRect.width / 2) + 'px';
       initialY = (btnRect.top + btnRect.height / 2) + 'px';
       console.log('🔍 Button position:', { left: btnRect.left, top: btnRect.top });
     }
     
-    // Use the existing image magazine from HTML
-    const magazine = document.getElementById('imageMagazine');
-    console.log('🔍 Existing magazine found:', !!magazine);
+    // Check if magazine already exists
+    let magazine = document.getElementById('imageMagazine');
     
-    if (!magazine) {
-      console.log('⚠️ No existing magazine found - this should not happen');
-      return;
+    if (magazine) {
+      // Remove existing magazine
+      magazine.remove();
     }
     
-    // Show magazine explicitly
-    console.log('🔍 Setting display to block...');
-    magazine.style.display = 'block';
-    magazine.classList.remove('hidden');
-    console.log('🔍 Magazine display style:', magazine.style.display);
-    console.log('🔍 Magazine classes:', magazine.className);
+    // Create new magazine
+    magazine = this.createImageMagazine();
+    document.body.appendChild(magazine);
     
-    // Position the magazine
-    magazine.style.visibility = 'visible';
-    magazine.style.opacity = '1';
+    // Position the magazine at the button location
     magazine.style.position = 'fixed';
-    magazine.style.top = initialY;
     magazine.style.left = initialX;
+    magazine.style.top = initialY;
     magazine.style.transform = 'translate(-50%, -50%)';
     magazine.style.zIndex = '10000';
-    magazine.style.width = '100px'; // Reduced width by 75%
-    magazine.style.height = '500px'; // Keep height
-    magazine.style.minWidth = '100px'; // Force min width
-    magazine.style.minHeight = '500px'; // Force min height
     
     console.log('🔍 Magazine positioned at:', { x: initialX, y: initialY });
-    console.log('🔍 Magazine inline styles applied');
-    console.log('🔍 Magazine computed position:', magazine.getBoundingClientRect());
-    
-    // Setup the existing buttons
-    this.setupImageMagazineButtons();
-    
-    // Setup drag functionality for the magazine
-    this.setupMagazineDrag();
+    console.log('🔍 Magazine created and positioned');
     
     // Load images from assets folder
     console.log('🔍 Loading images...');
@@ -2337,7 +2321,7 @@ class SimpleBlog {
     console.log('✅ Image magazine opened');
   }
 
-  setupImageMagazineButtons() {
+
     console.log('🔧 Setting up existing image magazine buttons...');
     
     // Get the existing buttons from HTML
@@ -2546,6 +2530,7 @@ class SimpleBlog {
       flex-direction: column;
       overflow: hidden;
       box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      cursor: move;
     `;
     
     // Header with import button
@@ -2562,18 +2547,23 @@ class SimpleBlog {
       user-select: none;
     `;
     
-    // Make header draggable
+    // Make entire magazine draggable
     let isDragging = false;
     let startX, startY, startLeft, startTop;
     
-    header.addEventListener('mousedown', (e) => {
+    magazine.addEventListener('mousedown', (e) => {
+      // Don't start drag if clicking on buttons or interactive elements
+      if (e.target.tagName === 'BUTTON' || e.target.classList.contains('image-magazine-btn')) {
+        return;
+      }
+      
       isDragging = true;
       startX = e.clientX;
       startY = e.clientY;
       const rect = magazine.getBoundingClientRect();
       startLeft = rect.left;
       startTop = rect.top;
-      header.style.cursor = 'grabbing';
+      magazine.style.cursor = 'grabbing';
       e.preventDefault();
     });
     
@@ -2591,7 +2581,7 @@ class SimpleBlog {
     document.addEventListener('mouseup', () => {
       if (isDragging) {
         isDragging = false;
-        header.style.cursor = 'move';
+        magazine.style.cursor = 'move';
       }
     });
     
