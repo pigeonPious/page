@@ -287,17 +287,9 @@ class SimpleBlog {
 
   async validateGitHubToken() {
     try {
-      const githubConfig = localStorage.getItem('githubConfig');
-      if (!githubConfig) {
-        alert('No GitHub config found in localStorage');
-        return;
-      }
-      
-      const config = JSON.parse(githubConfig);
-      const token = config.token;
-      
+      const token = localStorage.getItem('github_token');
       if (!token) {
-        alert('No GitHub token found in config');
+        alert('No GitHub token found in localStorage');
         return;
       }
       
@@ -3517,15 +3509,7 @@ class SimpleBlog {
 
   async updatePostsIndex(postData) {
     try {
-      const githubConfig = localStorage.getItem('githubConfig');
-      if (!githubConfig) {
-        console.warn('⚠️ updatePostsIndex: No GitHub config found');
-        return false;
-      }
-      
-      const config = JSON.parse(githubConfig);
-      const token = config.token;
-      
+      const token = localStorage.getItem('github_token');
       if (!token) {
         console.warn('⚠️ updatePostsIndex: No GitHub token found');
         return false;
@@ -3658,15 +3642,10 @@ class SimpleBlog {
 
   async checkAuthentication() {
     try {
-      const githubConfig = localStorage.getItem('githubConfig');
-      if (!githubConfig) {
-        return false;
-      }
-      
-      const config = JSON.parse(githubConfig);
-      const token = config.token;
-      
+      // Check for token in the standard location
+      const token = localStorage.getItem('github_token');
       if (!token) {
+        console.log('🔐 No GitHub token found in localStorage');
         return false;
       }
       
@@ -3680,25 +3659,26 @@ class SimpleBlog {
       if (response.ok) {
         const userData = await response.json();
         // Check if user is the admin (pigeonPious)
-        return userData.login === 'pigeonPious';
+        const isAdmin = userData.login === 'pigeonPious';
+        console.log(`🔐 Authentication check: ${isAdmin ? 'SUCCESS' : 'FAILED'} - User: ${userData.login}`);
+        return isAdmin;
+      } else {
+        console.log(`🔐 Token validation failed with status: ${response.status}`);
+        // Token might be expired, remove it
+        localStorage.removeItem('github_token');
+        return false;
       }
     } catch (error) {
       console.error('❌ Error checking authentication:', error);
+      // On error, remove the token to force re-authentication
+      localStorage.removeItem('github_token');
+      return false;
     }
-    return false;
   }
 
   async deletePost(slug) {
     try {
-      const githubConfig = localStorage.getItem('githubConfig');
-      if (!githubConfig) {
-        console.warn('⚠️ deletePost: No GitHub config found');
-        return false;
-      }
-      
-      const config = JSON.parse(githubConfig);
-      const token = config.token;
-      
+      const token = localStorage.getItem('github_token');
       if (!token) {
         console.warn('⚠️ deletePost: No GitHub token found');
         return false;
@@ -3756,15 +3736,7 @@ class SimpleBlog {
 
   async removePostFromIndex(slug) {
     try {
-      const githubConfig = localStorage.getItem('githubConfig');
-      if (!githubConfig) {
-        console.warn('⚠️ removePostFromIndex: No GitHub config found');
-        return false;
-      }
-      
-      const config = JSON.parse(githubConfig);
-      const token = config.token;
-      
+      const token = localStorage.getItem('github_token');
       if (!token) {
         console.warn('⚠️ removePostFromIndex: No GitHub token found');
         return false;
@@ -5840,9 +5812,17 @@ class SimpleBlog {
   async saveDraft() {
     console.log('💾 Saving draft...');
     
+    // Check authentication first
+    const isAuthenticated = await this.checkAuthentication();
+    if (!isAuthenticated) {
+      this.showMenuStyle1Message('GitHub authentication required to save drafts', 'error');
+      this.showGitHubLogin();
+      return;
+    }
+    
     const token = localStorage.getItem('github_token');
     if (!token) {
-      this.showMenuStyle1Message('GitHub connection required to save drafts', 'error');
+      this.showMenuStyle1Message('GitHub token not found', 'error');
       return;
     }
     
@@ -5882,9 +5862,11 @@ class SimpleBlog {
     
     try {
       // Save to GitHub in drafts folder
-      const repo = localStorage.getItem('github_repo') || 'pigeonPious/page';
+      const repo = 'pigeonPious/page'; // Hardcoded for now
       const filename = `draft-${slug}-${Date.now()}.json`;
       const path = `drafts/${filename}`;
+      
+      console.log('💾 Saving draft to:', path);
       
       const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
         method: 'PUT',
@@ -5902,12 +5884,14 @@ class SimpleBlog {
         console.log('✅ Draft saved successfully');
         this.showMenuStyle1Message('Draft saved successfully!', 'success');
       } else {
-        throw new Error(`HTTP ${response.status}`);
+        const errorData = await response.json();
+        console.error('❌ Draft save failed:', response.status, errorData);
+        throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
       }
       
     } catch (error) {
       console.error('❌ Error saving draft:', error);
-      this.showMenuStyle1Message('Error saving draft. Please check your connection.', 'error');
+      this.showMenuStyle1Message(`Error saving draft: ${error.message}`, 'error');
     }
   }
 
