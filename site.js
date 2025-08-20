@@ -138,6 +138,8 @@ class SimpleBlog {
               <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
               <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry has-submenu" id="categories-menu" style="position: relative;">Categories ></div>
             </div>
           </div>
           
@@ -1041,6 +1043,28 @@ class SimpleBlog {
       console.log('✅ All posts submenu handler attached');
     } else {
       console.warn('⚠️ All posts menu element not found');
+    }
+
+    // Categories submenu - show all available categories
+    const categoriesMenu = document.getElementById('categories-menu');
+    if (categoriesMenu) {
+      this.categoriesMouseEnterHandler = () => {
+        console.log('📝 Categories menu hovered');
+        this.showCategoriesSubmenu(categoriesMenu);
+      };
+      
+      this.categoriesMouseLeaveHandler = () => {
+        if (openTimeout) {
+          clearTimeout(openTimeout);
+          openTimeout = null;
+        }
+      };
+      
+      categoriesMenu.addEventListener('mouseenter', this.categoriesMouseEnterHandler);
+      categoriesMenu.addEventListener('mouseleave', this.categoriesMouseLeaveHandler);
+      console.log('✅ Categories submenu handler attached');
+    } else {
+      console.warn('⚠️ Categories menu element not found');
     }
 
     // Projects submenu - now handled by updateProjectsSubmenu
@@ -4870,7 +4894,7 @@ class SimpleBlog {
       
       // Add click handler to show posts
       categoryEntry.addEventListener('click', () => {
-        this.showDevlogPostsWindow(category, posts);
+        this.showCategoryWindow(category, posts);
       });
       
       categoriesList.appendChild(categoryEntry);
@@ -5051,6 +5075,330 @@ class SimpleBlog {
     document.addEventListener('keydown', closeOnEscape);
     
     console.log(`✅ Devlog posts window opened for ${category} with ${posts.length} posts`);
+  }
+
+  showCategoryWindow(category, posts) {
+    console.log(`📋 Opening category window for ${category} with ${posts.length} posts`);
+    
+    // Remove any existing category window
+    const existingWindow = document.getElementById('category-window');
+    if (existingWindow) {
+      existingWindow.remove();
+    }
+    
+    // Create the category window in menu style 1
+    const window = document.createElement('div');
+    window.id = 'category-window';
+    window.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 16px;
+      min-width: 300px;
+      max-width: 400px;
+      max-height: 70vh;
+      z-index: 10000;
+      overflow-y: auto;
+      font-family: inherit;
+      cursor: move;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    `;
+    
+    // Create header with title and close button
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      cursor: move;
+    `;
+    
+    const title = document.createElement('div');
+    title.textContent = `${category.charAt(0).toUpperCase() + category.slice(1)} Posts`;
+    title.style.cssText = `
+      margin: 0;
+      color: var(--fg);
+      font-size: 16px;
+      font-weight: bold;
+      text-transform: capitalize;
+    `;
+    
+    const closeButton = document.createElement('div');
+    closeButton.className = 'close-button';
+    closeButton.textContent = '×';
+    closeButton.style.cssText = `
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--fg);
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: color 0.15s ease;
+    `;
+    
+    // Add hover effect to close button
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.color = 'var(--danger-color, #dc3545)';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.color = 'var(--fg)';
+    });
+    
+    // Close window when close button is clicked
+    closeButton.addEventListener('click', () => {
+      window.remove();
+    });
+    
+    header.appendChild(title);
+    header.appendChild(closeButton);
+    window.appendChild(header);
+    
+    // Create posts list
+    const postsList = document.createElement('div');
+    postsList.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    `;
+    
+    posts.forEach(post => {
+      const postEntry = document.createElement('div');
+      postEntry.className = 'post-entry';
+      postEntry.style.cssText = `
+        padding: 8px 12px;
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+        border-radius: 3px;
+        font-size: 13px;
+      `;
+      
+      postEntry.textContent = post.title || post.slug;
+      postEntry.title = `Click to open: ${post.title || post.slug}`;
+      
+      // Add hover effects
+      postEntry.addEventListener('mouseenter', () => {
+        postEntry.style.backgroundColor = 'var(--accent-color, #4a9eff)';
+        postEntry.style.color = 'white';
+      });
+      
+      postEntry.addEventListener('mouseleave', () => {
+        postEntry.style.backgroundColor = 'var(--bg)';
+        postEntry.style.color = 'var(--fg)';
+      });
+      
+      // Add click handler to load post
+      postEntry.addEventListener('click', () => {
+        console.log(`📖 Loading post: ${post.title || post.slug}`);
+        
+        // Close the category window
+        window.remove();
+        
+        // Load the post
+        if (window.location.pathname.includes('editor.html')) {
+          window.location.href = `index.html?post=${post.slug}`;
+        } else {
+          this.loadPost(post.slug);
+        }
+      });
+      
+      postsList.appendChild(postEntry);
+    });
+    
+    window.appendChild(postsList);
+    
+    // Add to document
+    document.body.appendChild(window);
+    
+    // Make window draggable
+    this.makeWindowDraggable(window);
+    
+    // Close window on escape key
+    const closeOnEscape = (e) => {
+      if (e.key === 'Escape') {
+        window.remove();
+        document.removeEventListener('keydown', closeOnEscape);
+      }
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    
+    // Move window to left side of screen
+    setTimeout(() => {
+      window.style.left = '20px';
+      window.style.transform = 'none';
+    }, 100);
+    
+    console.log(`✅ Category window opened for ${category} with ${posts.length} posts`);
+  }
+
+  showCategoriesSubmenu(menuElement) {
+    console.log('📝 Showing categories submenu');
+    
+    // Create submenu for categories
+    const submenu = document.createElement('div');
+    submenu.className = 'submenu';
+    submenu.style.cssText = `
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 5px 0;
+      min-width: 200px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    `;
+    
+    // Show loading indicator
+    const loadingEntry = document.createElement('div');
+    loadingEntry.className = 'menu-entry';
+    loadingEntry.textContent = 'Loading categories...';
+    loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+    submenu.appendChild(loadingEntry);
+    
+    // Remove existing submenu
+    const existingSubmenu = menuElement.querySelector('.submenu');
+    if (existingSubmenu) {
+      existingSubmenu.remove();
+    }
+    
+    // Add new submenu
+    menuElement.appendChild(submenu);
+    
+    // Load and display categories
+    this.loadCategoriesForSubmenu(submenu);
+  }
+
+  async loadCategoriesForSubmenu(submenu) {
+    try {
+      // Load posts from index
+      let allPosts = [];
+      
+      const timestamp = Date.now();
+      const indexUrl = `posts/index.json?t=${timestamp}`;
+      console.log('🔍 Categories submenu: Loading posts from index:', indexUrl);
+      
+      const response = await fetch(indexUrl);
+      if (response.ok) {
+        const indexData = await response.json();
+        console.log('🔍 Categories submenu: Index data loaded:', indexData);
+        
+        // Handle both array and object formats
+        if (Array.isArray(indexData)) {
+          allPosts = indexData;
+        } else if (indexData.posts && Array.isArray(indexData.posts)) {
+          allPosts = indexData.posts;
+        }
+        
+        console.log('✅ Categories submenu: Posts loaded from index:', allPosts.length);
+        
+        // Clear loading indicator
+        submenu.innerHTML = '';
+        
+        // Filter for devlog posts and group by category
+        const devlogPosts = allPosts.filter(post => {
+          const postFlags = post.keywords || '';
+          return postFlags.includes('devlog');
+        });
+        
+        if (devlogPosts.length === 0) {
+          const noPostsEntry = document.createElement('div');
+          noPostsEntry.className = 'menu-entry';
+          noPostsEntry.textContent = 'No categories found';
+          noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+          submenu.appendChild(noPostsEntry);
+          return;
+        }
+        
+        // Group posts by devlog subcategory
+        const devlogCategories = {};
+        devlogPosts.forEach(post => {
+          const postFlags = post.keywords || '';
+          const devlogFlag = postFlags.split(',').find(f => f.trim().startsWith('devlog:'));
+          
+          if (devlogFlag) {
+            // Extract just the category name after "devlog:" and before any comma
+            const category = devlogFlag.split(':')[1] || 'general';
+            let displayName = category.trim().split(',')[0].trim();
+            
+            // Capitalize first letter of the category name
+            if (displayName.length > 0) {
+              displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
+            }
+            
+            if (!devlogCategories[displayName]) {
+              devlogCategories[displayName] = [];
+            }
+            devlogCategories[displayName].push(post);
+          } else if (postFlags.includes('devlog')) {
+            // General devlog posts without subcategory
+            if (!devlogCategories['General']) {
+              devlogCategories['General'] = [];
+            }
+            devlogCategories['General'].push(post);
+          }
+        });
+        
+        // Create category entries
+        Object.keys(devlogCategories).forEach(category => {
+          const posts = devlogCategories[category];
+          
+          const categoryEntry = document.createElement('div');
+          categoryEntry.className = 'menu-entry';
+          categoryEntry.textContent = `${category} (${posts.length})`;
+          categoryEntry.style.cssText = `
+            padding: 8px 15px;
+            cursor: pointer;
+            color: var(--fg);
+            transition: background-color 0.15s ease;
+            border-radius: 3px;
+            margin: 1px 2px;
+          `;
+          
+          categoryEntry.title = `Click to see posts in: ${category}`;
+          
+          // Add hover effects
+          categoryEntry.addEventListener('mouseenter', () => {
+            categoryEntry.style.backgroundColor = 'var(--accent-color, #4a9eff)';
+            categoryEntry.style.color = 'white';
+          });
+          
+          categoryEntry.addEventListener('mouseleave', () => {
+            categoryEntry.style.backgroundColor = 'transparent';
+            categoryEntry.style.color = 'var(--fg)';
+          });
+          
+          // Add click handler to show category window
+          categoryEntry.addEventListener('click', () => {
+            this.showCategoryWindow(category, posts);
+          });
+          
+          submenu.appendChild(categoryEntry);
+        });
+        
+        console.log('✅ Categories submenu populated with', Object.keys(devlogCategories).length, 'categories');
+        
+      } else {
+        console.warn('⚠️ Categories submenu: Could not load index file:', response.status);
+        submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545);">Error loading categories</div>';
+      }
+    } catch (error) {
+      console.error('❌ Categories submenu: Error loading categories:', error);
+      submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545);">Error loading categories</div>';
+    }
   }
 
   makeWindowDraggable(window) {
@@ -5653,6 +6001,11 @@ class SimpleBlog {
     const allPostsMenu = document.getElementById('all-posts-menu');
     if (allPostsMenu && this.allPostsMouseEnterHandler) {
       allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
+    }
+    
+    const categoriesMenu = document.getElementById('categories-menu');
+    if (categoriesMenu && this.categoriesMouseEnterHandler) {
+      categoriesMenu.removeEventListener('mouseenter', this.categoriesMouseEnterHandler);
     }
     
 
