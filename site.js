@@ -1455,6 +1455,9 @@ class SimpleBlog {
           
           // Don't create submenus on page load - only create them on hover
           console.log('🧭 loadPosts: Posts loaded, submenus will be created on hover');
+          
+          // Update projects menu to reflect current flags/categories
+          this.updateProjectsSubmenu(this.posts || []);
         } else {
           console.log('⚠️ loadPosts: No posts found in index');
           this.displayDefaultContent();
@@ -3069,6 +3072,17 @@ class SimpleBlog {
     return sanitized;
   }
 
+  // Function to refresh projects menu with current posts
+  refreshProjectsMenu() {
+    console.log('🔄 Refreshing projects menu...');
+    if (this.posts && this.posts.length > 0) {
+      this.updateProjectsSubmenu(this.posts);
+      console.log('✅ Projects menu refreshed');
+    } else {
+      console.log('⚠️ No posts available to refresh projects menu');
+    }
+  }
+
   showImagePositioningControls(imageContainer) {
     console.log('🔧 showImagePositioningControls called with:', imageContainer);
     
@@ -3528,6 +3542,9 @@ class SimpleBlog {
           // Refresh the posts list
           await this.loadPosts();
           
+          // Update the projects menu to reflect new flags/categories
+          this.updateProjectsSubmenu(this.posts || []);
+          
           this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`, 'success');
           
           // Redirect to the published post after a short delay
@@ -3643,20 +3660,20 @@ class SimpleBlog {
           // Handle regular edit - update existing entry
           const existingIndex = currentIndex.findIndex(post => post.slug === postData.slug);
           if (existingIndex !== -1) {
+            // Update existing entry
             currentIndex[existingIndex] = {
               slug: postData.slug,
               title: postData.title,
               date: postData.date,
               keywords: postData.keywords
             };
+            console.log('✅ Updated existing post in index:', postData.slug);
           } else {
-            // Fallback: add new entry if not found
-            currentIndex.unshift({
-              slug: postData.slug,
-              title: postData.title,
-              date: postData.date,
-              keywords: postData.keywords
-            });
+            // For edits, we should always find the existing post
+            // If not found, this indicates an error in the edit process
+            console.error('❌ Edit post not found in index:', postData.slug);
+            console.error('❌ Available slugs:', currentIndex.map(p => p.slug));
+            throw new Error(`Edit post '${postData.slug}' not found in posts index. This indicates a synchronization error.`);
           }
           
           // Update index file
