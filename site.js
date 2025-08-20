@@ -127,6 +127,22 @@ class SimpleBlog {
             </div>
           </div>
           
+          <div class="menu-item" data-menu="type">
+            <div class="label">Type</div>
+            <div class="menu-dropdown">
+              <div class="menu-entry editor-only" id="bold-text">Bold <span class="hotkey">Ctrl+B</span></div>
+              <div class="menu-entry editor-only" id="italic-text">Italic <span class="hotkey">Ctrl+I</span></div>
+              <div class="menu-entry editor-only" id="underline-text">Underline <span class="hotkey">Ctrl+U</span></div>
+              <div class="menu-entry editor-only" id="bullet-point">Bullet Point <span class="hotkey">Ctrl+L</span></div>
+              <div class="menu-entry editor-only" id="numbered-list">Numbered List <span class="hotkey">Ctrl+Shift+L</span></div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry editor-only" id="heading-1">Heading 1 <span class="hotkey">Ctrl+1</span></div>
+              <div class="menu-entry editor-only" id="heading-2">Heading 2 <span class="hotkey">Ctrl+2</span></div>
+              <div class="menu-entry editor-only" id="heading-3">Heading 3 <span class="hotkey">Ctrl+3</span></div>
+              <div class="menu-entry editor-only" id="quote-block">Quote Block <span class="hotkey">Ctrl+Q</span></div>
+            </div>
+          </div>
+          
           <div class="menu-item" data-menu="navigation">
             <div class="label">Navigation</div>
             <div class="menu-dropdown" id="navigation-dropdown">
@@ -404,6 +420,62 @@ class SimpleBlog {
         console.log('⌨️ Escape key pressed - closing menus');
         this.closeAllMenus();
       }
+      
+      // Text formatting keyboard shortcuts (only in editor)
+      if (document.getElementById('visualEditor')) {
+        if (e.ctrlKey && !e.shiftKey) {
+          switch (e.key.toLowerCase()) {
+            case 'b':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+B pressed - bold text');
+              this.formatText('bold');
+              break;
+            case 'i':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+I pressed - italic text');
+              this.formatText('italic');
+              break;
+            case 'u':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+U pressed - underline text');
+              this.formatText('underline');
+              break;
+            case 'l':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+L pressed - bullet point');
+              this.insertBulletPoint();
+              break;
+            case '1':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+1 pressed - heading 1');
+              this.formatText('h1');
+              break;
+            case '2':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+2 pressed - heading 2');
+              this.formatText('h2');
+              break;
+            case '3':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+3 pressed - heading 3');
+              this.formatText('h3');
+              break;
+            case 'q':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+Q pressed - quote block');
+              this.formatText('quote');
+              break;
+          }
+        } else if (e.ctrlKey && e.shiftKey) {
+          switch (e.key.toLowerCase()) {
+            case 'l':
+              e.preventDefault();
+              console.log('⌨️ Ctrl+Shift+L pressed - numbered list');
+              this.insertNumberedList();
+              break;
+          }
+        }
+      }
     };
     document.addEventListener('keydown', this.globalKeyHandler);
     
@@ -550,6 +622,19 @@ class SimpleBlog {
         -webkit-user-select: text !important;
         -moz-user-select: text !important;
         -ms-user-select: text !important;
+      }
+      
+      /* Hotkey styling for Type menu */
+      .hotkey {
+        color: var(--menu-fg, #888);
+        font-size: 11px;
+        font-family: monospace;
+        margin-left: 8px;
+        opacity: 0.7;
+      }
+      
+      .menu-entry:hover .hotkey {
+        opacity: 1;
       }
     `;
     document.head.appendChild(style);
@@ -797,6 +882,52 @@ class SimpleBlog {
       this.openCurrentPostInGitHub();
     });
 
+    // Type menu buttons
+    this.addClickHandler('#bold-text', () => {
+      console.log('🔤 Bold text button clicked');
+      this.formatText('bold');
+    });
+
+    this.addClickHandler('#italic-text', () => {
+      console.log('🔤 Italic text button clicked');
+      this.formatText('italic');
+    });
+
+    this.addClickHandler('#underline-text', () => {
+      console.log('🔤 Underline text button clicked');
+      this.formatText('underline');
+    });
+
+    this.addClickHandler('#bullet-point', () => {
+      console.log('🔤 Bullet point button clicked');
+      this.formatText('bullet');
+    });
+
+    this.addClickHandler('#numbered-list', () => {
+      console.log('🔤 Numbered list button clicked');
+      this.formatText('numbered');
+    });
+
+    this.addClickHandler('#heading-1', () => {
+      console.log('🔤 Heading 1 button clicked');
+      this.formatText('h1');
+    });
+
+    this.addClickHandler('#heading-2', () => {
+      console.log('🔤 Heading 2 button clicked');
+      this.formatText('h2');
+    });
+
+    this.addClickHandler('#heading-3', () => {
+      console.log('🔤 Heading 3 button clicked');
+      this.formatText('h3');
+    });
+
+    this.addClickHandler('#quote-block', () => {
+      console.log('🔤 Quote block button clicked');
+      this.formatText('quote');
+    });
+
     // Editor mode toggle (Raw/Preview)
     this.addClickHandler('#toggle-editor-mode', () => {
       console.log('📝 Editor mode toggle clicked');
@@ -975,7 +1106,7 @@ class SimpleBlog {
     
     // Close other main menus when one is opened
     this.closeOtherMainMenus = (currentMenu) => {
-      const allMainMenus = ['navigation', 'projects', 'view', 'connect'];
+      const allMainMenus = ['navigation', 'projects', 'view', 'connect', 'type'];
       allMainMenus.forEach(menuId => {
         if (menuId !== currentMenu) {
           const menu = document.querySelector(`[data-menu="${menuId}"]`);
@@ -4646,6 +4777,133 @@ class SimpleBlog {
     
     // Open in a new tab
     window.open(githubUrl, '_blank');
+  }
+
+  formatText(formatType) {
+    console.log(`🔤 Formatting text as: ${formatType}`);
+    
+    const editor = document.getElementById('visualEditor');
+    if (!editor) {
+      console.log('⚠️ Visual editor not found');
+      return;
+    }
+    
+    // Get current selection
+    const selection = window.getSelection();
+    if (!selection.rangeCount) {
+      console.log('⚠️ No text selected');
+      return;
+    }
+    
+    const range = selection.getRangeAt(0);
+    const selectedText = selection.toString();
+    
+    if (!selectedText) {
+      console.log('⚠️ No text selected for formatting');
+      return;
+    }
+    
+    let formattedElement;
+    
+    switch (formatType) {
+      case 'bold':
+        formattedElement = document.createElement('strong');
+        break;
+      case 'italic':
+        formattedElement = document.createElement('em');
+        break;
+      case 'underline':
+        formattedElement = document.createElement('u');
+        break;
+      case 'h1':
+        formattedElement = document.createElement('h1');
+        break;
+      case 'h2':
+        formattedElement = document.createElement('h2');
+        break;
+      case 'h3':
+        formattedElement = document.createElement('h3');
+        break;
+      case 'quote':
+        formattedElement = document.createElement('blockquote');
+        break;
+      case 'bullet':
+        // For bullet points, we need to handle line breaks differently
+        this.insertBulletPoint();
+        return;
+      case 'numbered':
+        // For numbered lists, we need to handle line breaks differently
+        this.insertNumberedList();
+        return;
+      default:
+        console.log('⚠️ Unknown format type:', formatType);
+        return;
+    }
+    
+    // Apply formatting
+    formattedElement.textContent = selectedText;
+    range.deleteContents();
+    range.insertNode(formattedElement);
+    
+    // Clear selection and focus editor
+    selection.removeAllRanges();
+    editor.focus();
+    
+    console.log(`✅ Text formatted as ${formatType}:`, selectedText);
+  }
+
+  insertBulletPoint() {
+    console.log('🔤 Inserting bullet point');
+    
+    const editor = document.getElementById('visualEditor');
+    if (!editor) return;
+    
+    // Get current cursor position
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    
+    // Create bullet point
+    const bulletPoint = document.createElement('div');
+    bulletPoint.innerHTML = '• ';
+    
+    // Insert at cursor position
+    range.insertNode(bulletPoint);
+    
+    // Move cursor after bullet point
+    range.setStartAfter(bulletPoint);
+    range.setEndAfter(bulletPoint);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    editor.focus();
+    console.log('✅ Bullet point inserted');
+  }
+
+  insertNumberedList() {
+    console.log('🔤 Inserting numbered list');
+    
+    const editor = document.getElementById('visualEditor');
+    if (!editor) return;
+    
+    // Get current cursor position
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    
+    // Create numbered list item
+    const listItem = document.createElement('div');
+    listItem.innerHTML = '1. ';
+    
+    // Insert at cursor position
+    range.insertNode(listItem);
+    
+    // Move cursor after list item
+    range.setStartAfter(listItem);
+    range.setEndAfter(listItem);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    editor.focus();
+    console.log('✅ Numbered list item inserted');
   }
 
   setPostFlags(flags) {
