@@ -4986,16 +4986,50 @@ class SimpleBlog {
     const isRawMode = visualEditor.classList.contains('raw-mode');
     
     if (isRawMode) {
-      // Switch to Preview mode
+      // Switch to Preview mode - restore original HTML
+      if (visualEditor.dataset.originalHtml) {
+        visualEditor.innerHTML = visualEditor.dataset.originalHtml;
+      }
       visualEditor.classList.remove('raw-mode');
       toggleBtn.textContent = 'Raw Mode';
       console.log('✅ Switched to Preview mode');
     } else {
-      // Switch to Raw mode
+      // Switch to Raw mode - save current HTML and show raw content
+      visualEditor.dataset.originalHtml = visualEditor.innerHTML;
+      
+      // Get the raw HTML content
+      let rawContent = visualEditor.innerHTML;
+      
+      // Format the HTML for better readability
+      rawContent = this.formatHTML(rawContent);
+      
+      // Set the content to show raw HTML
+      visualEditor.innerHTML = `<pre style="margin: 0; padding: 0; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; color: var(--fg); background: transparent;">${this.escapeHtml(rawContent)}</pre>`;
+      
       visualEditor.classList.add('raw-mode');
       toggleBtn.textContent = 'Preview Mode';
       console.log('✅ Switched to Raw mode');
     }
+  }
+
+  // Helper function to format HTML for better readability
+  formatHTML(html) {
+    // Add line breaks and indentation for better readability
+    return html
+      .replace(/></g, '>\n<')
+      .replace(/(<[^>]+>)/g, (match) => {
+        // Add indentation based on tag depth
+        const depth = (match.match(/<\//g) || []).length;
+        const indent = '  '.repeat(Math.max(0, depth));
+        return indent + match;
+      });
+  }
+
+  // Helper function to escape HTML for display
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   setupHoverNotes() {
