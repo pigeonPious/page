@@ -2938,12 +2938,20 @@ class SimpleBlog {
     }
     
     // Show positioning controls
-    this.showImagePositioningControls(imageContainer);
+    console.log('🔧 About to show positioning controls...');
+    try {
+      this.showImagePositioningControls(imageContainer);
+      console.log('✅ Positioning controls shown successfully');
+    } catch (error) {
+      console.error('❌ Error showing positioning controls:', error);
+    }
     
     console.log('✅ Image inserted:', filename);
   }
 
   showImagePositioningControls(imageContainer) {
+    console.log('🔧 showImagePositioningControls called with:', imageContainer);
+    
     // Create positioning controls window
     const controlsWindow = document.createElement('div');
     controlsWindow.className = 'image-positioning-controls';
@@ -3018,6 +3026,7 @@ class SimpleBlog {
     
     // Add to document
     document.body.appendChild(controlsWindow);
+    console.log('🔧 Controls window added to document');
     
     // Position controls near the image
     const imageRect = imageContainer.getBoundingClientRect();
