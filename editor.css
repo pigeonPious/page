@@ -1212,12 +1212,7 @@ body.custom-mode .console-output {
   clear: both;
 }
 
-.visual-editor .image-container[style*="float: none"] {
-  float: none;
-  margin: 0 auto 16px auto;
-  text-align: center;
-  clear: both;
-}
+/* Center positioning removed - now only left/right available */
 
 /* Fix text wrapping issues */
 .visual-editor {
@@ -1250,24 +1245,4 @@ body.custom-mode .console-output {
   margin-bottom: 1em;
 }
 
-/* Ensure text flows around images properly */
-.visual-editor .image-container[style*="float: left"] {
-  float: left;
-  margin-right: 16px;
-  margin-bottom: 12px;
-  clear: both;
-}
-
-.visual-editor .image-container[style*="float: right"] {
-  float: right;
-  margin-left: 16px;
-  margin-bottom: 12px;
-  clear: both;
-}
-
-.visual-editor .image-container[style*="float: none"] {
-  float: none;
-  margin: 0 auto 16px auto;
-  text-align: center;
-  clear: both;
-}
+/* Ensure text flows around images properly - duplicates removed */

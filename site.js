@@ -3013,6 +3013,70 @@ class SimpleBlog {
     console.log('✅ Editor drag and drop setup complete');
   }
 
+  makeImageDraggable(imageContainer) {
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    
+    // Make the image container draggable
+    imageContainer.style.cursor = 'move';
+    
+    // Add drag handle functionality to the entire image container
+    imageContainer.addEventListener('mousedown', (e) => {
+      // Don't start drag if clicking on positioning buttons
+      if (e.target.classList.contains('pos-btn')) {
+        return;
+      }
+      
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      
+      // Get current position
+      const rect = imageContainer.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
+      
+      imageContainer.style.cursor = 'grabbing';
+      imageContainer.style.opacity = '0.8';
+      
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      e.preventDefault();
+      
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      // Update image position
+      const newLeft = startLeft + deltaX;
+      const newTop = startTop + deltaY;
+      
+      // Apply new position
+      imageContainer.style.position = 'absolute';
+      imageContainer.style.left = newLeft + 'px';
+      imageContainer.style.top = newTop + 'px';
+      imageContainer.style.zIndex = '1000';
+      
+      // Remove float and margins when dragging
+      imageContainer.style.float = 'none';
+      imageContainer.style.margin = '0';
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        imageContainer.style.cursor = 'move';
+        imageContainer.style.opacity = '1';
+        
+        console.log('✅ Image repositioned');
+      }
+    });
+  }
+
   addImagePositioningOverlay(imageContainer) {
     // Create positioning overlay
     const overlay = document.createElement('div');
@@ -3036,60 +3100,47 @@ class SimpleBlog {
     
     overlay.innerHTML = `
       <button class="pos-btn pos-left" style="
-        background: var(--accent);
-        color: var(--btn-text-color);
+        background: transparent;
+        color: var(--accent);
         border: none;
-        border-radius: 0;
         padding: 6px 10px;
-        font-size: 14px;
+        font-size: 16px;
         font-weight: bold;
         cursor: pointer;
         font-family: inherit;
         transition: all 0.2s ease;
         pointer-events: auto;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
       ">&lt;</button>
-      <button class="pos-btn pos-center" style="
-        background: var(--accent);
-        color: var(--btn-text-color);
-        border: none;
-        border-radius: 0;
-        padding: 6px 10px;
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-        font-family: inherit;
-        transition: all 0.2s ease;
-        pointer-events: auto;
-      ">|</button>
       <button class="pos-btn pos-right" style="
-        background: var(--accent);
-        color: var(--btn-text-color);
+        background: transparent;
+        color: var(--accent);
         border: none;
-        border-radius: 0;
         padding: 6px 10px;
-        font-size: 14px;
+        font-size: 16px;
         font-weight: bold;
         cursor: pointer;
         font-family: inherit;
         transition: all 0.2s ease;
         pointer-events: auto;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
       ">&gt;</button>
       <button class="pos-btn pos-delete" style="
         position: absolute;
         top: 4px;
         right: 4px;
-        background: var(--danger-color);
-        color: var(--btn-text-color);
+        background: transparent;
+        color: var(--danger-color);
         border: none;
-        border-radius: 0;
         padding: 4px 6px;
-        font-size: 12px;
+        font-size: 16px;
         font-weight: bold;
         cursor: pointer;
         font-family: inherit;
         transition: all 0.2s ease;
         pointer-events: auto;
         line-height: 1;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
       ">×</button>
     `;
     
@@ -3111,7 +3162,6 @@ class SimpleBlog {
     
     // Add click handlers for positioning
     const leftBtn = overlay.querySelector('.pos-left');
-    const centerBtn = overlay.querySelector('.pos-center');
     const rightBtn = overlay.querySelector('.pos-right');
     const deleteBtn = overlay.querySelector('.pos-delete');
     
@@ -3127,20 +3177,6 @@ class SimpleBlog {
         clear: both;
       `;
       console.log('✅ Image positioned left');
-    });
-    
-    // Center positioning (centered, no float)
-    centerBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      imageContainer.style.cssText = `
-        position: relative;
-        float: none;
-        margin: 0 auto 16px auto;
-        max-width: 200px;
-        clear: both;
-        text-align: center;
-      `;
-      console.log('✅ Image positioned center');
     });
     
     // Right positioning (float right)
@@ -3168,6 +3204,9 @@ class SimpleBlog {
     
     // Setup drag and drop for the visual editor if not already done
     this.setupEditorDragAndDrop();
+    
+    // Make image draggable for repositioning
+    this.makeImageDraggable(imageContainer);
   }
 
   showImagePositioningControls(imageContainer) {
