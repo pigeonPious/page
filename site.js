@@ -14,7 +14,7 @@ class SimpleBlog {
     
     // Initialize handler references to prevent memory leaks
     this.allPostsMouseEnterHandler = null;
-    this.projectsMouseEnterHandler = null;
+
     
     console.log('🔍 About to call init()...');
     this.init();
@@ -1043,26 +1043,10 @@ class SimpleBlog {
       console.warn('⚠️ All posts menu element not found');
     }
 
-    // Projects submenu - click shows categories
+    // Projects submenu - now handled by updateProjectsSubmenu
     const projectsMenu = document.getElementById('projects-menu');
     if (projectsMenu) {
-      // Remove existing listeners to prevent duplication
-      projectsMenu.removeEventListener('click', this.projectsClickHandler);
-      
-      // Projects menu now shows categories on hover
-      this.projectsMouseEnterHandler = () => {
-        console.log('📝 Projects menu hovered');
-        this.showProjectsCategories(this.posts || []);
-      };
-      
-      projectsMenu.addEventListener('mouseenter', this.projectsMouseEnterHandler);
-      
-      // Also populate categories immediately if posts are available
-      if (this.posts && this.posts.length > 0) {
-        this.showProjectsCategories(this.posts);
-      }
-      
-      console.log('✅ Projects menu hover handler attached');
+      console.log('✅ Projects menu found - will be populated by updateProjectsSubmenu');
     } else {
       console.warn('⚠️ Projects menu element not found');
     }
@@ -1070,194 +1054,9 @@ class SimpleBlog {
     console.log('✅ Submenus setup complete with menu hierarchy management');
   }
 
-  showProjectsCategories(posts) {
-    console.log('📝 Showing projects categories with submenus');
-    
-    const projectsDropdown = document.getElementById('projects-dropdown');
-    if (!projectsDropdown) {
-      console.warn('⚠️ Projects dropdown not found');
-      return;
-    }
-    
-    // Clear existing content
-    projectsDropdown.innerHTML = '';
-    
-    if (!posts || posts.length === 0) {
-      const noPostsEntry = document.createElement('div');
-      noPostsEntry.className = 'menu-entry';
-      noPostsEntry.textContent = 'No posts found';
-      noPostsEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
-      projectsDropdown.appendChild(noPostsEntry);
-      return;
-    }
-    
-    // Extract unique categories from posts
-    const categories = [...new Set(posts.map(post => post.keywords || 'general'))];
-    console.log('📝 Found categories:', categories);
-    
-    // Create category entries with submenus
-    categories.forEach(category => {
-      const categoryEntry = document.createElement('div');
-      categoryEntry.className = 'menu-entry has-submenu';
-      categoryEntry.textContent = `${category} >`;
-      categoryEntry.style.cssText = `
-        padding: 8px 15px;
-        cursor: pointer;
-        color: var(--menu-fg, #fff);
-        transition: background-color 0.15s ease;
-        border-radius: 3px;
-        margin: 1px 2px;
-        position: relative;
-      `;
-      
-      categoryEntry.title = `Hover to see posts in: ${category}`;
-      
-      // Add hover effects
-      categoryEntry.addEventListener('mouseenter', () => {
-        categoryEntry.style.background = 'var(--menu-hover-bg, #555)';
-        categoryEntry.style.transform = 'translateX(2px)';
-        
-        // Show submenu with posts
-        this.showCategorySubmenu(categoryEntry, category, posts);
-      });
-      
-      categoryEntry.addEventListener('mouseleave', () => {
-        categoryEntry.style.background = 'transparent';
-        categoryEntry.style.transform = 'translateX(0)';
-        
-        // Hide submenu after a delay
-        setTimeout(() => {
-          const submenu = categoryEntry.querySelector('.submenu');
-          if (submenu) {
-            submenu.remove();
-          }
-        }, 150);
-      });
-      
-      projectsDropdown.appendChild(categoryEntry);
-    });
-    
-    console.log('✅ Projects categories with submenus displayed');
-  }
 
-  showCategorySubmenu(categoryElement, category, allPosts) {
-    console.log(`📝 Showing submenu for category: ${category}`);
-    
-    // Remove existing submenu if any
-    const existingSubmenu = categoryElement.querySelector('.submenu');
-    if (existingSubmenu) {
-      existingSubmenu.remove();
-    }
-    
-    // Filter posts by category
-    const categoryPosts = allPosts.filter(post => (post.keywords || 'general') === category);
-    console.log(`📝 Found ${categoryPosts.length} posts in category: ${category}`);
-    
-    // Create submenu
-    const submenu = document.createElement('div');
-    submenu.className = 'submenu';
-    submenu.style.cssText = `
-      position: absolute;
-      left: 100%;
-      top: 0;
-      background: var(--menu-bg, #333);
-      border: 1px solid var(--menu-border, #555);
-      padding: 1.25px 0;
-      min-width: 200px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      border-radius: 4px;
-    `;
-    
-    // Add invisible buffer zone around submenu for easier navigation
-    const bufferZone = document.createElement('div');
-    bufferZone.style.cssText = `
-      position: absolute;
-      left: -10px;
-      top: -10px;
-      right: -10px;
-      bottom: -10px;
-      z-index: 999;
-      pointer-events: none;
-    `;
-    submenu.appendChild(bufferZone);
-    
-    // Add post entries
-    if (categoryPosts.length > 0) {
-      categoryPosts.forEach(post => {
-        const postEntry = document.createElement('div');
-        postEntry.className = 'menu-entry';
-        postEntry.textContent = post.title || 'Untitled';
-        postEntry.style.cssText = `
-          padding: 4px 12px;
-          cursor: pointer;
-          color: var(--menu-fg, #fff);
-          transition: background-color 0.15s ease;
-          border-radius: 3px;
-          margin: 0.25px 1px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-        `;
-        
-        postEntry.title = `Click to load: ${post.title}`;
-        
-        postEntry.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log(`📖 Loading post: ${post.title}`);
-          
-          // Close all menus
-          this.closeAllMenus();
-          
-          // Load the post
-          if (window.location.pathname.includes('editor.html')) {
-            window.location.href = `index.html?post=${post.slug}`;
-          } else {
-            this.loadPost(post.slug);
-          }
-        });
-        
-        postEntry.addEventListener('mouseenter', () => {
-          postEntry.style.background = 'var(--menu-hover-bg, #555)';
-          postEntry.style.transform = 'translateX(2px)';
-        });
-        
-        postEntry.addEventListener('mouseleave', () => {
-          postEntry.style.background = 'transparent';
-          postEntry.style.transform = 'translateX(0)';
-        });
-        
-        submenu.appendChild(postEntry);
-      });
-    } else {
-      const noPostsEntry = document.createElement('div');
-      noPostsEntry.className = 'menu-entry';
-      noPostsEntry.textContent = 'No posts found';
-      noPostsEntry.style.cssText = 'padding: 4px 12px; color: var(--muted, #888); font-style: italic;';
-      submenu.appendChild(noPostsEntry);
-    }
-    
-    // Add submenu to category element
-    categoryElement.appendChild(submenu);
-    
-    // Add mouseenter/mouseleave to submenu to keep it open
-    submenu.addEventListener('mouseenter', () => {
-      // Keep submenu open when hovering over it
-    });
-    
-    submenu.addEventListener('mouseleave', () => {
-      // Remove submenu when mouse leaves
-      setTimeout(() => {
-        if (submenu.parentNode) {
-          submenu.remove();
-        }
-      }, 150);
-    });
-    
-    console.log(`✅ Submenu created for category: ${category}`);
-  }
+
+
 
   async showAllPostsSubmenu(menuElement) {
     // Create submenu for all posts
@@ -5856,11 +5655,7 @@ class SimpleBlog {
       allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
     }
     
-    const projectsMenu = document.getElementById('projects-menu');
-    if (projectsMenu) {
-      // Remove hover handler (projects menu now uses hover instead of click)
-      projectsMenu.removeEventListener('mouseenter', this.projectsMouseEnterHandler);
-    }
+
     
     // Remove global event listeners
     document.removeEventListener('click', this.globalClickHandler);
