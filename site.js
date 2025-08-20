@@ -5265,8 +5265,8 @@ class SimpleBlog {
     siteMap.id = 'site-map';
     siteMap.style.cssText = `
       position: fixed;
-      top: 60px;
-      left: 20px;
+      top: 45px;
+      left: 12px;
       background: transparent;
       padding: 8px;
       z-index: 1000;
