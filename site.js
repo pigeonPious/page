@@ -5419,7 +5419,7 @@ class SimpleBlog {
     // Create expanded category HTML
     let expandedHTML = '';
     expandedHTML += `<div style="margin-bottom: 6px;">`;
-    expandedHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─${categoryName}</div>`;
+    expandedHTML += `<span class="expanded-category-header" data-category="${categoryName}" style="cursor: pointer; pointer-events: auto; font-weight: bold; margin-bottom: 1px;">└─${categoryName}</span>`;
     
     // Show posts in category
     categoryPosts.forEach(post => {
@@ -5446,6 +5446,14 @@ class SimpleBlog {
         // Don't close site map - keep it open
       });
     });
+    
+    // Add click handler for the new expanded category header
+    const newCategoryHeader = this.currentSiteMap.querySelector(`[data-category="${categoryName}"]`);
+    if (newCategoryHeader) {
+      newCategoryHeader.addEventListener('click', () => {
+        this.collapseCategoryInSiteMap(categoryName, allPosts);
+      });
+    }
   }
   
   // Collapse a category in the site map
