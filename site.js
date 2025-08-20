@@ -5265,7 +5265,7 @@ class SimpleBlog {
     siteMap.id = 'site-map';
     siteMap.style.cssText = `
       position: fixed;
-      top: 45px;
+      top: 39px;
       left: 12px;
       background: transparent;
       padding: 8px;
@@ -5303,7 +5303,6 @@ class SimpleBlog {
         let treeHTML = '';
         
         // Add empty vertical lines above the tree to connect with star button
-        treeHTML += `<div style="margin-bottom: 2px;">|</div>`;
         treeHTML += `<div style="margin-bottom: 2px;">|</div>`;
         treeHTML += `<div style="margin-bottom: 2px;">|</div>`;
         
