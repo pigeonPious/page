@@ -2278,6 +2278,11 @@ class SimpleBlog {
     console.log('🔍 Loading images...');
     this.loadImagesToMagazine();
     
+    // Fix any existing images that might be missing overlays
+    setTimeout(() => {
+      this.fixMissingImageOverlays();
+    }, 200);
+    
     console.log('✅ Image magazine opened');
   }
 
@@ -2763,8 +2768,16 @@ class SimpleBlog {
       console.log('✅ Image inserted at end of post as block');
     }
     
-    // Add positioning overlay functionality
+    // Add positioning overlay functionality with retry mechanism
     this.addImagePositioningOverlay(imageContainer);
+    
+    // Verify overlay was added, retry if needed
+    setTimeout(() => {
+      if (!imageContainer.querySelector('.image-position-overlay')) {
+        console.log('⚠️ Overlay not found, retrying...');
+        this.addImagePositioningOverlay(imageContainer);
+      }
+    }, 100);
     
     console.log('✅ Image inserted:', filename);
   }
@@ -2823,6 +2836,14 @@ class SimpleBlog {
 
 
   addImagePositioningOverlay(imageContainer) {
+    console.log('🔧 Adding positioning overlay to image container:', imageContainer);
+    
+    // Ensure the image container is properly set up
+    if (!imageContainer || !imageContainer.appendChild) {
+      console.error('❌ Invalid image container for overlay:', imageContainer);
+      return;
+    }
+    
     // Create positioning overlay
     const overlay = document.createElement('div');
     overlay.className = 'image-position-overlay';
@@ -2902,20 +2923,36 @@ class SimpleBlog {
       ">×</button>
     `;
     
-    // Add overlay to image container
+    // Ensure image container has relative positioning
     imageContainer.style.position = 'relative';
-    imageContainer.appendChild(overlay);
+    
+    // Add overlay to image container
+    try {
+      imageContainer.appendChild(overlay);
+      console.log('✅ Overlay appended successfully');
+    } catch (error) {
+      console.error('❌ Failed to append overlay:', error);
+      return;
+    }
+    
+    // Verify overlay was added
+    if (!imageContainer.querySelector('.image-position-overlay')) {
+      console.error('❌ Overlay not found after append');
+      return;
+    }
     
     // Show overlay on mouseenter
     imageContainer.addEventListener('mouseenter', () => {
       overlay.style.opacity = '1';
       overlay.style.pointerEvents = 'auto';
+      console.log('🖱️ Overlay shown on mouseenter');
     });
     
     // Hide overlay on mouseleave
     imageContainer.addEventListener('mouseleave', () => {
       overlay.style.opacity = '0';
       overlay.style.pointerEvents = 'none';
+      console.log('🖱️ Overlay hidden on mouseleave');
     });
     
     // Add click handlers for positioning
@@ -2923,6 +2960,12 @@ class SimpleBlog {
     const rowBtn = overlay.querySelector('.pos-row');
     const rightBtn = overlay.querySelector('.pos-right');
     const deleteBtn = overlay.querySelector('.pos-delete');
+    
+    // Verify all buttons were found
+    if (!leftBtn || !rowBtn || !rightBtn || !deleteBtn) {
+      console.error('❌ Some positioning buttons not found:', { leftBtn, rowBtn, rightBtn, deleteBtn });
+      return;
+    }
     
     // Left positioning (float left)
     leftBtn.addEventListener('click', (e) => {
@@ -2981,6 +3024,33 @@ class SimpleBlog {
     
     // Setup drag and drop for the visual editor if not already done
     this.setupEditorDragAndDrop();
+    
+    console.log('✅ Image positioning overlay setup complete');
+  }
+
+  // Function to check and fix any images missing overlays
+  fixMissingImageOverlays() {
+    console.log('🔧 Checking for images missing overlays...');
+    
+    const visualEditor = document.getElementById('visualEditor');
+    if (!visualEditor) return;
+    
+    const imageContainers = visualEditor.querySelectorAll('.image-container');
+    let fixedCount = 0;
+    
+    imageContainers.forEach(container => {
+      if (!container.querySelector('.image-position-overlay')) {
+        console.log('⚠️ Found image container without overlay, fixing...');
+        this.addImagePositioningOverlay(container);
+        fixedCount++;
+      }
+    });
+    
+    if (fixedCount > 0) {
+      console.log(`✅ Fixed ${fixedCount} missing image overlays`);
+    } else {
+      console.log('✅ All image overlays are present');
+    }
   }
 
   showImagePositioningControls(imageContainer) {
@@ -5400,6 +5470,11 @@ class SimpleBlog {
       if (contentField && editPost.content) {
         contentField.innerHTML = editPost.content;
         console.log('📝 Content populated:', editPost.content);
+        
+        // Fix any images that might be missing overlays after loading content
+        setTimeout(() => {
+          this.fixMissingImageOverlays();
+        }, 300);
       }
       
       // Set flags if available
