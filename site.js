@@ -151,6 +151,8 @@ class SimpleBlog {
               <div class="menu-entry" data-mode="random">Random</div>
               <div class="menu-separator"></div>
               <div class="menu-entry" id="toggle-console">Console</div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry" id="toggle-editor-mode">Raw Mode</div>
             </div>
           </div>
           
@@ -810,6 +812,12 @@ class SimpleBlog {
     this.addClickHandler('#toggle-console', () => {
       console.log('🖥️ Console toggle clicked');
       this.toggleConsole();
+    });
+
+    // Editor mode toggle (Raw/Preview)
+    this.addClickHandler('#toggle-editor-mode', () => {
+      console.log('📝 Editor mode toggle clicked');
+      this.toggleEditorMode();
     });
 
     // GitHub connect button (old - will be removed from menu)
@@ -2677,11 +2685,11 @@ class SimpleBlog {
       item.style.cssText = `
         width: 84px;
         height: 84px;
-        border: 1px solid #444;
+        border: 1px solid var(--border);
         overflow: hidden;
         cursor: pointer;
         transition: transform 0.2s;
-        background: #2a2a2a;
+        background: transparent;
         position: relative;
         margin: 0 auto;
       `;
@@ -5007,6 +5015,39 @@ class SimpleBlog {
 
   toggleConsole() {
     console.log('Console toggle - implement as needed');
+  }
+
+  toggleEditorMode() {
+    console.log('📝 Toggling editor mode...');
+    
+    // Get the toggle button
+    const toggleBtn = document.getElementById('toggle-editor-mode');
+    if (!toggleBtn) {
+      console.error('❌ Toggle button not found');
+      return;
+    }
+    
+    // Get the visual editor
+    const visualEditor = document.getElementById('visual-editor');
+    if (!visualEditor) {
+      console.error('❌ Visual editor not found');
+      return;
+    }
+    
+    // Check current mode
+    const isRawMode = visualEditor.classList.contains('raw-mode');
+    
+    if (isRawMode) {
+      // Switch to Preview mode
+      visualEditor.classList.remove('raw-mode');
+      toggleBtn.textContent = 'Raw Mode';
+      console.log('✅ Switched to Preview mode');
+    } else {
+      // Switch to Raw mode
+      visualEditor.classList.add('raw-mode');
+      toggleBtn.textContent = 'Preview Mode';
+      console.log('✅ Switched to Raw mode');
+    }
   }
 
   setupHoverNotes() {

@@ -1256,3 +1256,32 @@ body.custom-mode .console-output {
 }
 
 /* Ensure text flows around images properly - duplicates removed */
+
+/* Raw Mode Styling */
+.visual-editor.raw-mode {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  background: var(--bg);
+  color: var(--fg);
+  padding: 16px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.visual-editor.raw-mode img,
+.visual-editor.raw-mode .image-container,
+.visual-editor.raw-mode .image-position-overlay {
+  display: none !important;
+}
+
+.visual-editor.raw-mode .note-link {
+  color: var(--link);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.visual-editor.raw-mode .note-link:hover {
+  color: var(--accent);
+}

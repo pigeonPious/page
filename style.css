@@ -23,7 +23,7 @@ body.light-mode {
   --sidebar-bg: #eaeaea;
   --sidebar-fg: #232323;
   --accent: #3a7bd5;
-  --menu-bg: var(--bg);
+  --menu-bg: #ffffff;
   --menu-fg: #232323;
   --border: #cccccc;
   --muted: #666666;
@@ -41,7 +41,7 @@ body.dark-mode {
   --sidebar-bg: #232323;
   --sidebar-fg: #acada8;
   --accent: #c7c9c3;
-  --menu-bg: var(--bg);
+  --menu-bg: #1a1a1a;
   --menu-fg: #acada8;
   --border: #343235;
   --muted: #6a696c;
