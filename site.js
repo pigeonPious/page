@@ -47,6 +47,11 @@ class SimpleBlog {
         console.log(`🔗 Loading post from URL hash: ${hashSlug}`);
         this.loadPost(hashSlug);
       }
+      
+      // Show site map by default after posts are loaded
+      setTimeout(() => {
+        this.showSiteMap();
+      }, 500);
     }).catch(error => {
       console.error('❌ Error loading posts:', error);
     });
@@ -5334,16 +5339,6 @@ class SimpleBlog {
         // Build the tree structure
         let treeHTML = '';
         
-        // Show current post first if it exists
-        if (currentSlug) {
-          const currentPost = posts.find(p => p.slug === currentSlug);
-          if (currentPost) {
-            treeHTML += `<div style="margin-bottom: 16px; padding: 8px; background: var(--accent-color); border-radius: 3px;">`;
-            treeHTML += `<strong>Current: ${currentPost.title}</strong>`;
-            treeHTML += `</div>`;
-          }
-        }
-        
         // Show all categories and posts
         Object.keys(categories).sort().forEach(category => {
           const postsInCategory = categories[category];
@@ -5351,18 +5346,17 @@ class SimpleBlog {
           // Check if current post is in this category
           const isCurrentCategory = currentSlug && postsInCategory.some(p => p.slug === currentSlug);
           
-          treeHTML += `<div style="margin-bottom: 12px;">`;
-          treeHTML += `<div style="font-weight: bold; color: var(--accent-color); margin-bottom: 4px;">`;
-          treeHTML += `${isCurrentCategory ? '▶ ' : '▶ '}${category}`;
+          treeHTML += `<div style="margin-bottom: 8px;">`;
+          treeHTML += `<div style="font-weight: bold; margin-bottom: 2px;">`;
+          treeHTML += `|-${category}`;
           treeHTML += `</div>`;
           
           // Show posts in category
           postsInCategory.forEach(post => {
             const isCurrentPost = post.slug === currentSlug;
-            const indent = '  ';
-            treeHTML += `<div style="margin-left: 16px; margin-bottom: 2px;">`;
-            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; ${isCurrentPost ? 'color: var(--accent-color); font-weight: bold;' : 'color: var(--fg);'}">`;
-            treeHTML += `${indent}${post.title}`;
+            treeHTML += `<div style="margin-left: 16px; margin-bottom: 1px;">`;
+            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
+            treeHTML += `|       | >${post.title}`;
             treeHTML += `</span>`;
             treeHTML += `</div>`;
           });
@@ -5373,14 +5367,13 @@ class SimpleBlog {
         // Show uncategorized posts
         const uncategorized = posts.filter(post => !post.keywords || !post.keywords.match(/devlog:/));
         if (uncategorized.length > 0) {
-          treeHTML += `<div style="margin-bottom: 12px;">`;
-          treeHTML += `<div style="font-weight: bold; color: var(--accent-color); margin-bottom: 4px;">▶ Uncategorized</div>`;
+          treeHTML += `<div style="margin-bottom: 8px;">`;
+          treeHTML += `<div style="font-weight: bold; margin-bottom: 2px;">|-Uncategorized</div>`;
           uncategorized.forEach(post => {
             const isCurrentPost = post.slug === currentSlug;
-            const indent = '  ';
-            treeHTML += `<div style="margin-left: 16px; margin-bottom: 2px;">`;
-            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; ${isCurrentPost ? 'color: var(--accent-color); font-weight: bold;' : 'color: var(--fg);'}">`;
-            treeHTML += `${indent}${post.title}`;
+            treeHTML += `<div style="margin-left: 16px; margin-bottom: 1px;">`;
+            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
+            treeHTML += `|       | >${post.title}`;
             treeHTML += `</span>`;
             treeHTML += `</div>`;
           });
