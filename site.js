@@ -1020,6 +1020,7 @@ class SimpleBlog {
       // Remove existing listeners to prevent duplication
       allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
       allPostsMenu.removeEventListener('mouseleave', this.allPostsMouseLeaveHandler);
+      allPostsMenu.removeEventListener('click', this.allPostsClickHandler);
       
       let openTimeout = null;
       
@@ -1050,8 +1051,26 @@ class SimpleBlog {
         }
       };
       
+      this.allPostsClickHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('📚 All posts submenu clicked');
+        
+        // Close other level 1 menus first
+        this.closeOtherLevel1Menus('all-posts-menu');
+        
+        // Toggle submenu - close if open, open if closed
+        const existingSubmenu = allPostsMenu.querySelector('.submenu');
+        if (existingSubmenu) {
+          existingSubmenu.remove();
+        } else {
+          this.showAllPostsSubmenu(allPostsMenu);
+        }
+      };
+      
       allPostsMenu.addEventListener('mouseenter', this.allPostsMouseEnterHandler);
       allPostsMenu.addEventListener('mouseleave', this.allPostsMouseLeaveHandler);
+      allPostsMenu.addEventListener('click', this.allPostsClickHandler);
       console.log('✅ All posts submenu handler attached');
     } else {
       console.warn('⚠️ All posts menu element not found');
@@ -1060,6 +1079,11 @@ class SimpleBlog {
     // Categories submenu - show all available categories
     const categoriesMenu = document.getElementById('categories-menu');
     if (categoriesMenu) {
+      // Remove existing listeners to prevent duplication
+      categoriesMenu.removeEventListener('mouseenter', this.categoriesMouseEnterHandler);
+      categoriesMenu.removeEventListener('mouseleave', this.categoriesMouseLeaveHandler);
+      categoriesMenu.removeEventListener('click', this.categoriesClickHandler);
+      
       this.categoriesMouseEnterHandler = () => {
         console.log('📝 Categories menu hovered');
         this.showCategoriesSubmenu(categoriesMenu);
@@ -1072,8 +1096,26 @@ class SimpleBlog {
         }
       };
       
+      this.categoriesClickHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('📝 Categories menu clicked');
+        
+        // Close other level 1 menus first
+        this.closeOtherLevel1Menus('categories-menu');
+        
+        // Toggle submenu - close if open, open if closed
+        const existingSubmenu = categoriesMenu.querySelector('.submenu');
+        if (existingSubmenu) {
+          existingSubmenu.remove();
+        } else {
+          this.showCategoriesSubmenu(categoriesMenu);
+        }
+      };
+      
       categoriesMenu.addEventListener('mouseenter', this.categoriesMouseEnterHandler);
       categoriesMenu.addEventListener('mouseleave', this.categoriesMouseLeaveHandler);
+      categoriesMenu.addEventListener('click', this.categoriesClickHandler);
       console.log('✅ Categories submenu handler attached');
     } else {
       console.warn('⚠️ Categories menu element not found');
