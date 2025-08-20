@@ -1240,13 +1240,32 @@ class SimpleBlog {
     `;
     submenu.appendChild(bufferZone);
     
-    // Filter for devlog posts and group by category
-    const devlogPosts = posts.filter(post => {
+    // Group posts by all flags (not just devlog)
+    const categories = {};
+    
+    posts.forEach(post => {
       const postFlags = post.keywords || '';
-      return postFlags.includes('devlog');
+      if (postFlags.trim()) {
+        // Split flags by comma and process each one
+        const flags = postFlags.split(',').map(f => f.trim()).filter(f => f.length > 0);
+        
+        flags.forEach(flag => {
+          // Capitalize first letter of the flag
+          let displayName = flag.charAt(0).toUpperCase() + flag.slice(1).toLowerCase();
+          
+          if (!categories[displayName]) {
+            categories[displayName] = [];
+          }
+          
+          // Only add post if it's not already in this category
+          if (!categories[displayName].find(p => p.slug === post.slug)) {
+            categories[displayName].push(post);
+          }
+        });
+      }
     });
     
-    if (devlogPosts.length === 0) {
+    if (Object.keys(categories).length === 0) {
       const noPostsEntry = document.createElement('div');
       noPostsEntry.className = 'menu-entry';
       noPostsEntry.textContent = 'No categories found';
@@ -1255,31 +1274,9 @@ class SimpleBlog {
       return;
     }
     
-    // Group posts by devlog subcategory
-    const devlogCategories = {};
-    devlogPosts.forEach(post => {
-      const postFlags = post.keywords || '';
-      const devlogFlag = postFlags.split(',').find(f => f.trim().startsWith('devlog:'));
-      
-      if (devlogFlag) {
-        const category = devlogFlag.split(':')[1] || 'general';
-        let displayName = category.trim().split(',')[0].trim();
-        
-        // Capitalize first letter of the category name
-        if (displayName.length > 0) {
-          displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
-        }
-        
-        if (!devlogCategories[displayName]) {
-          devlogCategories[displayName] = [];
-        }
-        devlogCategories[displayName].push(post);
-      }
-    });
-    
     // Create category entries with hover submenus
-    Object.keys(devlogCategories).sort().forEach(category => {
-      const postsInCategory = devlogCategories[category];
+    Object.keys(categories).sort().forEach(category => {
+      const postsInCategory = categories[category];
       
       const categoryEntry = document.createElement('div');
       categoryEntry.className = 'menu-entry has-submenu';
@@ -3784,7 +3781,7 @@ class SimpleBlog {
       console.log('🔐 Authentication successful, proceeding with publish...');
       
       // Get current flags from the editor (not from potentially stale currentPostFlags)
-      const flagsInput = document.getElementById('postFlags');
+      const flagsInput = document.getElementById('keywords-input');
       const currentFlags = flagsInput ? flagsInput.value.trim() : '';
       const finalFlags = currentFlags || 'general';
       
@@ -5592,22 +5589,36 @@ class SimpleBlog {
     // Create content container
     const content = document.createElement('div');
     
-    // Fetch posts and build tree
-    fetch('posts/index.json')
+    // Fetch posts from GitHub and build tree
+    fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json')
       .then(response => response.json())
-      .then(posts => {
-        // Group posts by category
+      .then(indexData => {
+        // GitHub API returns content in base64, need to decode
+        if (indexData.content && indexData.encoding === 'base64') {
+          try {
+            const decodedContent = atob(indexData.content);
+            const posts = JSON.parse(decodedContent);
+            console.log('🔍 Site map: Loaded posts from GitHub:', posts.length);
+        // Group posts by all flags (not just devlog)
         const categories = {};
         posts.forEach(post => {
-          if (post.keywords) {
-            const categoryMatch = post.keywords.match(/devlog:([^,]+)/);
-            if (categoryMatch) {
-              const category = categoryMatch[1].trim();
-              if (!categories[category]) {
-                categories[category] = [];
+          if (post.keywords && post.keywords.trim()) {
+            // Split flags by comma and process each one
+            const flags = post.keywords.split(',').map(f => f.trim()).filter(f => f.length > 0);
+            
+            flags.forEach(flag => {
+              // Capitalize first letter of the flag
+              let displayName = flag.charAt(0).toUpperCase() + flag.slice(1).toLowerCase();
+              
+              if (!categories[displayName]) {
+                categories[displayName] = [];
               }
-              categories[category].push(post);
-            }
+              
+              // Only add post if it's not already in this category
+              if (!categories[displayName].find(p => p.slug === post.slug)) {
+                categories[displayName].push(post);
+              }
+            });
           }
         });
         
@@ -5650,7 +5661,7 @@ class SimpleBlog {
         });
         
         // Show uncategorized posts (always expanded)
-        const uncategorized = posts.filter(post => !post.keywords || !post.keywords.match(/devlog:/));
+        const uncategorized = posts.filter(post => !post.keywords || !post.keywords.trim());
         if (uncategorized.length > 0) {
           treeHTML += `<div style="margin-bottom: 6px;">`;
           treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
@@ -5694,6 +5705,15 @@ class SimpleBlog {
             this.collapseCategoryInSiteMap(category, posts);
           });
         });
+        
+          } catch (decodeError) {
+            console.error('❌ Error decoding GitHub content for site map:', decodeError);
+            content.innerHTML = '<div style="color: var(--fg);">Error decoding site map data</div>';
+          }
+        } else {
+          console.error('❌ Unexpected GitHub API response format for site map');
+          content.innerHTML = '<div style="color: var(--fg);">Error loading site map</div>';
+        }
       })
       .catch(error => {
         console.error('Error loading posts for site map:', error);
@@ -5737,13 +5757,14 @@ class SimpleBlog {
     const categoryLink = content.querySelector(`[data-category="${categoryName}"]`);
     if (!categoryLink) return;
     
-    // Get posts for this category
+    // Get posts for this category using new flag-based logic
     const categoryPosts = allPosts.filter(post => {
-      if (post.keywords) {
-        const categoryMatch = post.keywords.match(/devlog:([^,]+)/);
-        if (categoryMatch) {
-          return categoryMatch[1].trim() === categoryName;
-        }
+      if (post.keywords && post.keywords.trim()) {
+        const flags = post.keywords.split(',').map(f => f.trim()).filter(f => f.length > 0);
+        return flags.some(flag => {
+          const displayName = flag.charAt(0).toUpperCase() + flag.slice(1).toLowerCase();
+          return displayName === categoryName;
+        });
       }
       return false;
     });
@@ -6462,6 +6483,14 @@ hideSiteMap() {
       if (editPost.keywords) {
         this.currentPostFlags = editPost.keywords;
         localStorage.setItem('current_post_flags', editPost.keywords);
+        
+        // Populate the flags input field
+        const flagsInput = document.getElementById('keywords-input');
+        if (flagsInput) {
+          flagsInput.value = editPost.keywords;
+          console.log('📝 Flags input field populated:', editPost.keywords);
+        }
+        
         console.log('📝 Flags set:', editPost.keywords);
       }
       
