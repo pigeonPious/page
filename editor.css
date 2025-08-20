@@ -1187,6 +1187,16 @@ body.custom-mode .console-output {
   transform: translateY(-1px);
 }
 
+/* Image positioning overlay */
+.image-position-overlay {
+  font-family: inherit;
+}
+
+.image-position-overlay .pos-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
 /* Ensure proper text flow around positioned images */
 .visual-editor .image-container[style*="float: left"] {
   float: left;

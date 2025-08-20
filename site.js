@@ -2937,16 +2937,137 @@ class SimpleBlog {
       console.log('✅ Image inserted at end of post');
     }
     
-    // Show positioning controls
-    console.log('🔧 About to show positioning controls...');
-    try {
-      this.showImagePositioningControls(imageContainer);
-      console.log('✅ Positioning controls shown successfully');
-    } catch (error) {
-      console.error('❌ Error showing positioning controls:', error);
-    }
+    // Add positioning overlay functionality
+    this.addImagePositioningOverlay(imageContainer);
     
     console.log('✅ Image inserted:', filename);
+  }
+
+  addImagePositioningOverlay(imageContainer) {
+    // Create positioning overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'image-position-overlay';
+    overlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 1000;
+      pointer-events: none;
+    `;
+    
+    overlay.innerHTML = `
+      <button class="pos-btn pos-left" style="
+        background: var(--accent);
+        color: var(--btn-text-color);
+        border: none;
+        border-radius: 0;
+        padding: 6px 10px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        pointer-events: auto;
+      ">&lt;</button>
+      <button class="pos-btn pos-center" style="
+        background: var(--accent);
+        color: var(--btn-text-color);
+        border: none;
+        border-radius: 0;
+        padding: 6px 10px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        pointer-events: auto;
+      ">|</button>
+      <button class="pos-btn pos-right" style="
+        background: var(--accent);
+        color: var(--btn-text-color);
+        border: none;
+        border-radius: 0;
+        padding: 6px 10px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        pointer-events: auto;
+      ">&gt;</button>
+    `;
+    
+    // Add overlay to image container
+    imageContainer.style.position = 'relative';
+    imageContainer.appendChild(overlay);
+    
+    // Show overlay on mouseenter
+    imageContainer.addEventListener('mouseenter', () => {
+      overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
+    });
+    
+    // Hide overlay on mouseleave
+    imageContainer.addEventListener('mouseleave', () => {
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+    });
+    
+    // Add click handlers for positioning
+    const leftBtn = overlay.querySelector('.pos-left');
+    const centerBtn = overlay.querySelector('.pos-center');
+    const rightBtn = overlay.querySelector('.pos-right');
+    
+    // Left positioning (float left)
+    leftBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      imageContainer.style.cssText = `
+        position: relative;
+        float: left;
+        margin-right: 16px;
+        margin-bottom: 12px;
+        max-width: 200px;
+        clear: both;
+      `;
+      console.log('✅ Image positioned left');
+    });
+    
+    // Center positioning (centered, no float)
+    centerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      imageContainer.style.cssText = `
+        position: relative;
+        float: none;
+        margin: 0 auto 16px auto;
+        max-width: 200px;
+        clear: both;
+        text-align: center;
+      `;
+      console.log('✅ Image positioned center');
+    });
+    
+    // Right positioning (float right)
+    rightBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      imageContainer.style.cssText = `
+        position: relative;
+        float: right;
+        margin-left: 16px;
+        margin-bottom: 12px;
+        max-width: 200px;
+        clear: both;
+      `;
+      console.log('✅ Image positioned right');
+    });
   }
 
   showImagePositioningControls(imageContainer) {
