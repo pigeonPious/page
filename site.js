@@ -2417,7 +2417,7 @@ class SimpleBlog {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 400px;
+      width: 120px;
       height: 500px;
       background: var(--bg);
       border: 1px solid var(--border);
@@ -2482,22 +2482,19 @@ class SimpleBlog {
     });
     
     const importBtn = document.createElement('button');
-    importBtn.textContent = '📁 Import';
+    importBtn.textContent = 'Import';
     importBtn.type = 'button';
     importBtn.style.cssText = `
       font-weight: bold;
-      color: #fff;
+      color: var(--fg);
       cursor: pointer;
       font-size: 12px;
       padding: 4px 8px;
-      background: #555;
-      border-radius: 3px;
-      transition: background 0.2s;
-      z-index: 10001;
-      position: relative;
-      border: 1px solid #666;
+      background: transparent;
+      border: none;
       outline: none;
       font-family: inherit;
+      transition: color 0.2s;
     `;
     
     // Multiple event listeners for maximum compatibility
@@ -2522,37 +2519,25 @@ class SimpleBlog {
       this.importImages();
     });
     
-    importBtn.addEventListener('mouseenter', () => { 
-      console.log('📁 Import button hover enter');
-      importBtn.style.background = '#666'; 
-    });
-    importBtn.addEventListener('mouseleave', () => { 
-      console.log('📁 Import button hover leave');
-      importBtn.style.background = '#555'; 
-    });
+
     
     const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕';
+    closeBtn.textContent = '×';
     closeBtn.type = 'button';
     closeBtn.style.cssText = `
-      color: #fff;
+      color: var(--fg);
       cursor: pointer;
       font-size: 16px;
       font-weight: bold;
       padding: 4px 8px;
-      background: #555;
-      border-radius: 3px;
-      transition: background 0.2s;
-      z-index: 10001;
-      position: relative;
-      border: 1px solid #666;
+      background: transparent;
+      border: none;
       min-width: 20px;
       text-align: center;
       outline: none;
       font-family: inherit;
+      transition: color 0.2s;
     `;
-    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.background = '#666'; });
-    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.background = '#555'; });
     // Multiple event listeners for maximum compatibility
     closeBtn.addEventListener('click', (e) => {
       console.log('🔴 Close button CLICKED via click event!');
@@ -2625,10 +2610,10 @@ class SimpleBlog {
     content.style.cssText = `
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
+      padding: 6px;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 6px;
+      gap: 4px;
       align-content: start;
     `;
     
