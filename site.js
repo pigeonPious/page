@@ -5028,7 +5028,7 @@ class SimpleBlog {
     }
     
     // Get the visual editor
-    const visualEditor = document.getElementById('visual-editor');
+    const visualEditor = document.getElementById('visualEditor');
     if (!visualEditor) {
       console.error('❌ Visual editor not found');
       return;
