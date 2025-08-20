@@ -61,6 +61,22 @@ class SimpleBlog {
         this.loadPost(hashSlug);
       }
       
+      // Check for stored current post (for page reloads)
+      if (!postSlug && !hashSlug) {
+        const storedCurrentPost = localStorage.getItem('current_post_slug');
+        if (storedCurrentPost) {
+          console.log(`🔄 Reloading with stored current post: ${storedCurrentPost}`);
+          this.loadPost(storedCurrentPost);
+        } else {
+          // No stored post, no URL params - load most recent post
+          if (this.posts && this.posts.length > 0) {
+            const mostRecent = this.posts[0]; // Already sorted by date
+            console.log(`📚 No stored post, loading most recent: ${mostRecent.title}`);
+            this.loadPost(mostRecent.slug);
+          }
+        }
+      }
+      
       // Show site map by default after posts are loaded
       setTimeout(() => {
         this.showSiteMap();
@@ -1709,11 +1725,10 @@ class SimpleBlog {
         localStorage.setItem('posts', JSON.stringify(this.posts));
         
         if (this.posts.length > 0) {
-          // Sort by date and display the most recent
+          // Sort by date for reference, but don't auto-load most recent
+          // (let the init function decide which post to load)
           this.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
-          const mostRecent = this.posts[0];
-          console.log('📚 loadPosts: Displaying most recent post:', mostRecent);
-          await this.loadPost(mostRecent.slug);
+          console.log('📚 loadPosts: Posts sorted by date, ready for loading');
           
           // Don't create submenus on page load - only create them on hover
           console.log('🧭 loadPosts: Posts loaded, submenus will be created on hover');
