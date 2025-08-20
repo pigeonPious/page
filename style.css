@@ -202,6 +202,36 @@ body {
   height: 100%;
 }
 
+/* Responsive taskbar - reduce spacing on narrow windows */
+@media (max-width: 1200px) {
+  .menu-bar-inner {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .menu-bar-inner {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 800px) {
+  .menu-bar-inner {
+    gap: 6px;
+  }
+  
+  /* Hide File and Edit buttons on very narrow windows */
+  .menu-item[data-menu="file"],
+  .menu-item[data-menu="edit"] {
+    display: none;
+  }
+  
+  /* Hide PiousPigeon label on very narrow windows */
+  .pigeon-label {
+    display: none;
+  }
+}
+
 .taskbar-status {
   font-size: 12px;
   color: var(--muted);
