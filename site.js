@@ -3092,6 +3092,124 @@ class SimpleBlog {
     }
   }
 
+  // Function to rebuild the entire posts index from actual GitHub files
+  async rebuildPostsIndexFromGitHub() {
+    console.log('🔄 Rebuilding posts index from actual GitHub files...');
+    
+    try {
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        console.error('❌ No GitHub token found for index rebuild');
+        return false;
+      }
+      
+      // Get the list of all files in the posts directory
+      const postsResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts', {
+        headers: {
+          'Authorization': `token ${token}`,
+        }
+      });
+      
+      if (!postsResponse.ok) {
+        console.error('❌ Failed to fetch posts directory:', postsResponse.status);
+        return false;
+      }
+      
+      const postsDirectory = await postsResponse.json();
+      console.log('📁 Found posts directory contents:', postsDirectory.length, 'items');
+      
+      // Filter for JSON files (actual posts, not index.json)
+      const postFiles = postsDirectory.filter(item => 
+        item.type === 'file' && 
+        item.name.endsWith('.json') && 
+        item.name !== 'index.json'
+      );
+      
+      console.log('📄 Found post files:', postFiles.length);
+      
+      // Build new index by reading each post file
+      const newIndex = [];
+      
+      for (const postFile of postFiles) {
+        try {
+          const postResponse = await fetch(postFile.url, {
+            headers: {
+              'Authorization': `token ${token}`,
+            }
+          });
+          
+          if (postResponse.ok) {
+            const postData = await postResponse.json();
+            const postContent = JSON.parse(atob(postData.content));
+            
+            // Extract metadata for index
+            const indexEntry = {
+              slug: postContent.slug,
+              title: postContent.title,
+              date: postContent.date,
+              keywords: postContent.keywords || 'general'
+            };
+            
+            newIndex.push(indexEntry);
+            console.log('✅ Added to index:', indexEntry.title);
+          } else {
+            console.warn('⚠️ Could not read post file:', postFile.name, postResponse.status);
+          }
+        } catch (error) {
+          console.error('❌ Error reading post file:', postFile.name, error);
+        }
+      }
+      
+      // Sort by date (newest first)
+      newIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      console.log('📊 New index built with', newIndex.length, 'posts');
+      
+      // Get current index file to get its SHA
+      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+        headers: {
+          'Authorization': `token ${token}`,
+        }
+      });
+      
+      if (!indexResponse.ok) {
+        console.error('❌ Could not fetch current index file:', indexResponse.status);
+        return false;
+      }
+      
+      const indexData = await indexResponse.json();
+      
+      // Update the index file with the new data
+      const updateResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: 'Rebuild posts index from actual files - ensure perfect synchronization',
+          content: btoa(JSON.stringify(newIndex, null, 2)),
+          sha: indexData.sha,
+          branch: 'main'
+        })
+      });
+      
+      if (updateResponse.ok) {
+        console.log('✅ Posts index rebuilt and updated successfully');
+        // Update local posts array
+        this.posts = newIndex;
+        return true;
+      } else {
+        console.error('❌ Failed to update index file:', updateResponse.status);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error rebuilding posts index:', error);
+      return false;
+    }
+  }
+
   showImagePositioningControls(imageContainer) {
     console.log('🔧 showImagePositioningControls called with:', imageContainer);
     
@@ -3387,12 +3505,20 @@ class SimpleBlog {
       }
       console.log('🔐 Authentication successful, proceeding with publish...');
       
+      // Get current flags from the editor (not from potentially stale currentPostFlags)
+      const flagsInput = document.getElementById('postFlags');
+      const currentFlags = flagsInput ? flagsInput.value.trim() : '';
+      const finalFlags = currentFlags || 'general';
+      
+      console.log('🏷️ Current flags from editor:', currentFlags);
+      console.log('🏷️ Final flags for post:', finalFlags);
+      
       // Create post data
       const postData = {
         slug: title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
         title: title,
         date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
-        keywords: this.currentPostFlags || 'general',
+        keywords: finalFlags,
         content: content
       };
       
@@ -3538,30 +3664,31 @@ class SimpleBlog {
       if (response.ok) {
         console.log('✅ Post published successfully to GitHub');
         
-        // Update posts index
-        const indexUpdated = await this.updatePostsIndex(postData);
+        // Rebuild the entire posts index from actual GitHub files to ensure perfect synchronization
+        console.log('🔄 Rebuilding posts index from actual GitHub files...');
+        const indexRebuilt = await this.rebuildPostsIndexFromGitHub();
         
-        if (indexUpdated) {
+        if (indexRebuilt) {
           // Clear edit data after successful publish
           if (isEdit) {
             localStorage.removeItem('editPostData');
             console.log('🧹 Edit data cleared after successful publish');
           }
           
-          // Refresh the posts list
+          // Refresh the posts list with the newly rebuilt index
           await this.loadPosts();
           
           // Update the projects menu to reflect new flags/categories
           this.updateProjectsSubmenu(this.posts || []);
           
-          this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!`, 'success');
+          this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nIndex has been rebuilt to ensure perfect synchronization.`, 'success');
           
           // Redirect to the published post after a short delay
           setTimeout(() => {
             window.location.href = `index.html?post=${postData.slug}`;
           }, 3000);
         } else {
-          this.showMenuStyle1Message('⚠️ Post published but index update failed. Navigation may not show the new post.', 'warning');
+          this.showMenuStyle1Message('⚠️ Post published but index rebuild failed. Please refresh the page to see updated navigation.', 'warning');
         }
       } else {
         const error = await response.json();
