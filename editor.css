@@ -1120,8 +1120,8 @@ body.custom-mode .console-output {
 
 /* Magazine-style image display in editor */
 .visual-editor img {
-  max-width: 200px;
-  height: auto;
+  width: 200px;
+  height: 200px;
   border: 1px solid var(--border);
   border-radius: 0;
   margin: 0;
@@ -1133,6 +1133,8 @@ body.custom-mode .console-output {
   margin-bottom: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  object-fit: cover;
+  object-position: center;
 }
 
 .visual-editor img:hover {
@@ -1243,6 +1245,8 @@ body.custom-mode .console-output {
   display: block;
   clear: both;
   margin-bottom: 1em; /* Add space below images */
+  width: 200px;
+  height: 200px;
 }
 
 /* Make sure image containers don't interfere with text flow */

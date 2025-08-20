@@ -2896,7 +2896,8 @@ class SimpleBlog {
       float: left;
       margin-right: 16px;
       margin-bottom: 12px;
-      max-width: 200px;
+      width: 200px;
+      height: 200px;
       clear: both;
       display: block;
     `;
@@ -3127,7 +3128,8 @@ class SimpleBlog {
         float: left;
         margin-right: 16px;
         margin-bottom: 12px;
-        max-width: 200px;
+        width: 200px;
+        height: 200px;
         clear: both;
       `;
       console.log('✅ Image positioned left');
@@ -3141,11 +3143,12 @@ class SimpleBlog {
         float: left;
         margin-right: 16px;
         margin-bottom: 12px;
-        max-width: 200px;
+        width: 200px;
+        height: 200px;
         clear: none;
         display: block;
       `;
-      console.log('✅ Image positioned in row mode');
+      console.log('✅ Image positioned left');
     });
     
     // Right positioning (float right)
@@ -3156,7 +3159,8 @@ class SimpleBlog {
         float: right;
         margin-left: 16px;
         margin-bottom: 12px;
-        max-width: 200px;
+        width: 200px;
+        height: 200px;
         clear: both;
       `;
       console.log('✅ Image positioned right');
