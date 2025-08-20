@@ -237,10 +237,12 @@ body {
 
 .center-content {
   width: calc(100vw - calc(var(--unit) * 6));
+  max-width: calc(var(--unit) * 6);
   min-width: calc(var(--unit) * 3);
   background: var(--bg);
   color: var(--fg);
   box-sizing: border-box;
+  margin: 0 auto;
 }
 
 .editor-sidebar {
@@ -259,6 +261,7 @@ body {
   
   .center-content {
     width: 100%;
+    max-width: calc(var(--unit) * 6);
     min-width: 300px;
   }
   

@@ -1075,8 +1075,8 @@ class SimpleBlog {
       top: 0;
       background: var(--menu-bg, #333);
       border: 1px solid var(--menu-border, #555);
-      padding: 5px 0;
-      min-width: 150px;
+      padding: 1.25px 0;
+      min-width: 200px;
       z-index: 1000;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       border-radius: 4px;
@@ -1163,12 +1163,16 @@ class SimpleBlog {
           entry.className = 'menu-entry';
           entry.textContent = post.title || 'Untitled';
           entry.style.cssText = `
-            padding: 8px 15px; 
+            padding: 4px 12px; 
             cursor: pointer; 
             color: var(--menu-fg, #fff);
             transition: background-color 0.15s ease;
             border-radius: 3px;
-            margin: 1px 2px;
+            margin: 0.25px 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
           `;
           
           // Add unique ID for debugging
