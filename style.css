@@ -401,7 +401,7 @@ body {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  min-width: 100px;
+  min-width: max-content; /* Let the dropdown size to its content */
   background: var(--bg);
   border: 1px solid var(--border);
   padding: 4px;
@@ -421,6 +421,7 @@ body {
   text-decoration: none;
   color: var(--fg);
   font-style: normal !important;
+  white-space: nowrap; /* Prevent text from wrapping */
 }
 
 .menu-entry:hover {
