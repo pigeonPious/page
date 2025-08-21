@@ -3742,17 +3742,6 @@ class SimpleBlog {
       console.log('🏷️ Current flags from editor:', currentFlags);
       console.log('🏷️ Final flags for post:', finalFlags);
       
-      // Create post data
-      const postData = {
-        slug: title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
-        title: title,
-        date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
-        keywords: finalFlags,
-        content: content
-      };
-      
-      console.log('📝 Post data prepared:', postData);
-      
       // Check if this is an edit (check for existing post data)
       const editData = localStorage.getItem('editPostData');
       let isEdit = false;
@@ -3789,8 +3778,19 @@ class SimpleBlog {
         }
       }
       
-      // Check for duplicate posts (if not editing the same post)
-      if (!isEdit || postData.slug !== originalSlug) {
+      // Create post data - use original slug for edits, new slug for new posts
+      const postData = {
+        slug: isEdit ? originalSlug : title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
+        title: title,
+        date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
+        keywords: finalFlags,
+        content: content
+      };
+      
+      console.log('📝 Post data prepared:', postData);
+      
+      // Check for duplicate posts (only for new posts, not edits)
+      if (!isEdit) {
         const duplicatePost = await this.checkForDuplicatePost(postData.slug);
         if (duplicatePost) {
           console.log('⚠️ Duplicate post detected:', duplicatePost);
@@ -3826,35 +3826,8 @@ class SimpleBlog {
       
       // Token already retrieved at function start
       
-      // Handle slug changes during edits
-      if (isEdit && originalSlug !== postData.slug) {
-        console.log('🔄 Slug changed during edit, deleting old file first');
-        
-        // Delete the old file
-        if (currentSha) {
-          const deleteResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `token ${githubToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: `Delete old post file (slug changed): ${originalSlug}`,
-              sha: currentSha,
-              branch: 'main'
-            })
-          });
-          
-          if (deleteResponse.ok) {
-            console.log('✅ Old post file deleted successfully');
-          } else {
-            console.warn('⚠️ Failed to delete old post file:', deleteResponse.status);
-          }
-        }
-        
-        // Reset SHA since we're creating a new file
-        currentSha = null;
-      }
+      // For edits, we always use the original slug, so no slug change handling needed
+      // The post will be updated in place with the new content, title, and flags
       
       // Sanitize content to remove problematic characters
       const sanitizedPostData = {
