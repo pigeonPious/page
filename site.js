@@ -7751,7 +7751,10 @@ class SimpleBlog {
         // Add click handlers for post links
         const postLinks = content.querySelectorAll('.post-link');
         postLinks.forEach(link => {
-          link.addEventListener('click', () => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const slug = link.getAttribute('data-slug');
             
             if (window.location.pathname.includes('editor.html')) {
@@ -8556,20 +8559,7 @@ hideSiteMap() {
   async loadEditDataForPost(slug) {
     console.log(`📝 Loading edit data for post: ${slug}`);
     
-    try {
-      // Try to load from local file first (faster)
-      const localResponse = await fetch(`posts/${slug}.json`);
-      if (localResponse.ok) {
-        const postData = await localResponse.json();
-        console.log(`✅ Loaded post data from local: ${postData.title}`);
-        this.populateEditorWithPost(postData);
-        return;
-      }
-    } catch (localError) {
-      console.log('🔄 Local file not found, trying GitHub...');
-    }
-    
-    // Fallback to GitHub API
+    // Try GitHub API first (preferred source)
     try {
       const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`);
       if (response.ok) {
@@ -8583,7 +8573,20 @@ hideSiteMap() {
         }
       }
     } catch (githubError) {
-      console.error('❌ Failed to load post from GitHub:', githubError);
+      console.log('🔄 GitHub API failed, trying local...');
+    }
+    
+    // Fallback to local file if GitHub fails
+    try {
+      const localResponse = await fetch(`posts/${slug}.json`);
+      if (localResponse.ok) {
+        const postData = await localResponse.json();
+        console.log(`✅ Loaded post data from local: ${postData.title}`);
+        this.populateEditorWithPost(postData);
+        return;
+      }
+    } catch (localError) {
+      console.log('🔄 Local file not found');
     }
     
     console.error('❌ Could not load post data for editing');
