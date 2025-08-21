@@ -1309,20 +1309,18 @@ class SimpleBlog {
     // Add new submenu
     menuElement.appendChild(submenu);
     
-    // Use cached posts if available, otherwise load
-    if (this.posts && this.posts.length > 0) {
-      this.displayPostsInSubmenu(submenu, this.posts);
-    } else {
-      // Show loading indicator
-      const loadingEntry = document.createElement('div');
-      loadingEntry.className = 'menu-entry';
-      loadingEntry.textContent = 'Loading posts...';
-      loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
-      submenu.appendChild(loadingEntry);
-      
-      // Load and display posts
-      this.loadPostsForSubmenu(submenu);
-    }
+    // Always load fresh posts to ensure we have the latest data
+    console.log('🔍 Sitemap: Force loading fresh posts...');
+    
+    // Show loading indicator
+    const loadingEntry = document.createElement('div');
+    loadingEntry.className = 'menu-entry';
+    loadingEntry.textContent = 'Loading posts...';
+    loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
+    submenu.appendChild(loadingEntry);
+    
+    // Load and display posts
+    this.loadPostsForSubmenu(submenu);
     
     // Remove submenu on mouse leave
     const allPostsMouseLeaveHandler = () => {
