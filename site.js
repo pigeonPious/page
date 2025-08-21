@@ -3432,7 +3432,7 @@ class SimpleBlog {
       this.printToConsole('Console ready. Commands require admin access.');
     }
     
-    console.log('✅ Console opened');
+    console.log('Console opened');
   }
 
   createConsole() {
@@ -3908,7 +3908,7 @@ class SimpleBlog {
       
       this.printToConsole(`Found ${projects.length} project(s):`);
       projects.forEach((project, index) => {
-        this.printToConsole(`  ${index + 1}. ${project.label} → ${project.url}`);
+        this.printToConsole(`  ${index + 1}. ${project.title} → ${project.url}`);
       });
       
     } catch (error) {
