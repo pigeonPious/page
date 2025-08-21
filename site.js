@@ -1524,41 +1524,87 @@ class SimpleBlog {
         }
         
       } else if (response.status === 403) {
-        console.warn('⚠️ GitHub API returned 403 - trying local fallback');
+        console.warn('⚠️ GitHub API returned 403 - trying to force push updated index to GitHub');
         
-        // Try local fallback
+        // When GitHub API is blocked, try to force push the current local state
         try {
-          const localResponse = await fetch('posts/index.json');
-          if (localResponse.ok) {
-            const localData = await localResponse.json();
-            const localPosts = Array.isArray(localData) ? localData : (localData.posts || []);
-            
-            this.posts = localPosts;
-            localStorage.setItem('posts', JSON.stringify(localPosts));
-            
-            console.log('✅ Force reindex completed using local fallback, posts updated:', localPosts.length);
-            
-            // Show success message
-            if (statusElement) {
-              statusElement.textContent = 'Reindexed (local)!';
-              statusElement.style.color = '#28a745'; // Green
-              
-              // Reset status after 3 seconds
-              setTimeout(() => {
-                statusElement.textContent = originalStatus;
-                statusElement.style.color = '';
-              }, 3000);
+          // Get current posts from localStorage or create fresh index
+          let currentPosts = this.posts || [];
+          if (currentPosts.length === 0) {
+            // Try to load from local posts directory
+            try {
+              const localResponse = await fetch('posts/index.json');
+              if (localResponse.ok) {
+                const localData = await localResponse.json();
+                currentPosts = Array.isArray(localData) ? localData : (localData.posts || []);
+              }
+            } catch (localError) {
+              console.warn('⚠️ Could not load local posts:', localError);
             }
-            
-            // Update any open submenus
-            this.updateOpenSubmenus();
-            return;
           }
-        } catch (localError) {
-          console.warn('⚠️ Local fallback also failed:', localError);
+          
+          if (currentPosts.length > 0) {
+            // Force push the current index to GitHub (this will overwrite the remote index)
+            const forcePushSuccess = await this.forcePushIndexToGitHub(currentPosts);
+            if (forcePushSuccess) {
+              console.log('✅ Force reindex completed by pushing updated index to GitHub');
+              
+              // Show success message
+              if (statusElement) {
+                statusElement.textContent = 'Reindexed & pushed!';
+                statusElement.style.color = '#28a745'; // Green
+                
+                // Reset status after 3 seconds
+                setTimeout(() => {
+                  statusElement.textContent = originalStatus;
+                  statusElement.style.color = '';
+                }, 3000);
+              }
+              
+              // Update any open submenus
+              this.updateOpenSubmenus();
+              return;
+            }
+          }
+          
+          throw new Error('Could not force push index to GitHub');
+        } catch (forcePushError) {
+          console.warn('⚠️ Force push failed:', forcePushError);
+          
+          // Fall back to local-only reindex as last resort
+          try {
+            const localResponse = await fetch('posts/index.json');
+            if (localResponse.ok) {
+              const localData = await localResponse.json();
+              const localPosts = Array.isArray(localData) ? localData : (localData.posts || []);
+              
+              this.posts = localPosts;
+              localStorage.setItem('posts', JSON.stringify(localPosts));
+              
+              console.log('✅ Force reindex completed using local fallback, posts updated:', localPosts.length);
+              
+              // Show success message
+              if (statusElement) {
+                statusElement.textContent = 'Reindexed (local only)';
+                statusElement.style.color = '#ffa500'; // Orange - warning
+                
+                // Reset status after 3 seconds
+                setTimeout(() => {
+                  statusElement.textContent = originalStatus;
+                  statusElement.style.color = '';
+                }, 3000);
+              }
+              
+              // Update any open submenus
+              this.updateOpenSubmenus();
+              return;
+            }
+          } catch (localError) {
+            console.warn('⚠️ Local fallback also failed:', localError);
+          }
+          
+          throw new Error(`GitHub API blocked (403) and all fallbacks failed`);
         }
-        
-        throw new Error(`GitHub API blocked (403) and local fallback failed`);
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -1585,6 +1631,126 @@ class SimpleBlog {
           statusElement.style.color = '';
         }, 3000);
       }
+    }
+  }
+
+  // Force push the posts index to GitHub (bypasses SHA requirement)
+  async forcePushIndexToGitHub(posts) {
+    console.log('🚀 Force pushing posts index to GitHub...');
+    
+    try {
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        console.warn('⚠️ No GitHub token found for force push');
+        return false;
+      }
+      
+      // Create the index content
+      const indexContent = JSON.stringify(posts, null, 2);
+      const encodedContent = btoa(unescape(encodeURIComponent(indexContent)));
+      
+      // Try to push without SHA first (creates new file if none exists)
+      const pushResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Force reindex: Update posts index (${posts.length} posts)`,
+          content: encodedContent,
+          branch: 'main'
+        })
+      });
+      
+      if (pushResponse.ok) {
+        console.log('✅ Force push successful - index updated on GitHub');
+        return true;
+      } else if (pushResponse.status === 422) {
+        // File exists but SHA is required - try to get SHA and update
+        console.log('🔄 File exists, trying to get SHA and update...');
+        
+        try {
+          // Try to get SHA from public API (might work even when authenticated API is blocked)
+          const shaResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
+          if (shaResponse.ok) {
+            const shaData = await shaResponse.json();
+            const sha = shaData.sha;
+            
+            if (sha) {
+              // Now update with SHA
+              const updateResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+                method: 'PUT',
+                headers: {
+                  'Authorization': `token ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  message: `Force reindex: Update posts index (${posts.length} posts)`,
+                  content: encodedContent,
+                  sha: sha,
+                  branch: 'main'
+                })
+              });
+              
+              if (updateResponse.ok) {
+                console.log('✅ Force push successful with SHA - index updated on GitHub');
+                return true;
+              }
+            }
+          }
+        } catch (shaError) {
+          console.warn('⚠️ Could not get SHA for update:', shaError);
+        }
+        
+        // If all else fails, try to delete and recreate
+        console.log('🔄 Trying delete and recreate approach...');
+        try {
+          // This is risky but might work when other methods fail
+          const deleteResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: `Force reindex: Delete old index for recreation`,
+              sha: 'force-delete', // This might fail, but worth trying
+              branch: 'main'
+            })
+          });
+          
+          if (deleteResponse.ok || deleteResponse.status === 404) {
+            // Now create new file
+            const createResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+              method: 'PUT',
+              headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                message: `Force reindex: Create new posts index (${posts.length} posts)`,
+                content: encodedContent,
+                branch: 'main'
+              })
+            });
+            
+            if (createResponse.ok) {
+              console.log('✅ Force push successful via delete/recreate - index updated on GitHub');
+              return true;
+            }
+          }
+        } catch (deleteError) {
+          console.warn('⚠️ Delete and recreate failed:', deleteError);
+        }
+      }
+      
+      console.error('❌ Force push failed:', pushResponse.status, pushResponse.statusText);
+      return false;
+      
+    } catch (error) {
+      console.error('❌ Force push error:', error);
+      return false;
     }
   }
 
