@@ -98,6 +98,18 @@ body.custom-mode {
   font-size: 12px;
 }
 
+/* Global link styling - make all links italic and underlined */
+a {
+  color: var(--link);
+  text-decoration: underline;
+  font-style: italic;
+}
+
+a:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
 #customColorMenu input[type="range"] {
   width: 100px;
   margin: 0 8px 0 0;
@@ -484,10 +496,21 @@ body {
   position: relative;
 }
 
+/* When note-link contains a URL, make it look clickable */
+.note-link[data-note*="http"] {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.note-link[data-note*="http"]:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
 #hoverNote {
   position: fixed;
   z-index: 1000;
-  pointer-events: none;
   background: var(--bg);
   border: 1px solid var(--border);
   padding: 6px 8px;

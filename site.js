@@ -2673,9 +2673,6 @@ class SimpleBlog {
     const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
     if (urlMatch) {
       const url = urlMatch[1];
-      span.style.cursor = 'pointer';
-      span.style.color = 'var(--accent-color, #4a9eff)';
-      span.style.textDecoration = 'underline';
       
       // Add click handler to base text
       span.addEventListener('click', (e) => {
@@ -6814,7 +6811,7 @@ hideSiteMap() {
     const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
     if (urlMatch) {
       const url = urlMatch[1];
-      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline;">${url}</span>`);
+      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline; cursor: pointer;">${url}</span>`);
       tooltip.style.cursor = 'pointer';
       tooltip.style.pointerEvents = 'auto';
       
@@ -6822,11 +6819,17 @@ hideSiteMap() {
       tooltip.onclick = () => {
         window.open(url, '_blank');
       };
+      
+      // Add visual indication that tooltip is clickable
+      tooltip.style.borderColor = 'var(--accent)';
+      tooltip.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
     } else {
       tooltip.textContent = noteText;
       tooltip.style.cursor = 'default';
       tooltip.style.pointerEvents = 'none';
       tooltip.onclick = null;
+      tooltip.style.borderColor = 'var(--border)';
+      tooltip.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
     }
     
     tooltip.style.display = 'block';
@@ -6923,7 +6926,7 @@ hideSiteMap() {
     const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
     if (urlMatch) {
       const url = urlMatch[1];
-      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline;">${url}</span>`);
+      tooltip.innerHTML = noteText.replace(url, `<span style="color: var(--accent-color, #4a9eff); text-decoration: underline; cursor: pointer;">${url}</span>`);
       tooltip.style.cursor = 'pointer';
       tooltip.style.pointerEvents = 'auto';
       
@@ -6931,11 +6934,17 @@ hideSiteMap() {
       tooltip.onclick = () => {
         window.open(url, '_blank');
       };
+      
+      // Add visual indication that tooltip is clickable
+      tooltip.style.borderColor = 'var(--accent)';
+      tooltip.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
     } else {
       tooltip.textContent = noteText;
       tooltip.style.cursor = 'default';
       tooltip.style.pointerEvents = 'none';
       tooltip.onclick = null;
+      tooltip.style.borderColor = 'var(--border)';
+      tooltip.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
     }
     
     // Calculate width based on text length
