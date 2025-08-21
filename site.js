@@ -4859,7 +4859,7 @@ class SimpleBlog {
     localStorage.setItem('github_oauth_state', state);
     
     // OAuth app configuration
-    const clientId = 'Iv1.8a0b0b0b0b0b0b0b'; // Replace with your actual OAuth app client ID
+    const clientId = 'Ov23lipy3P5oIGByWrzJ'; // Replace with your actual OAuth app client ID
     const redirectUri = encodeURIComponent('https://piouspigeon.com/functions/auth-callback.html');
     const scope = 'repo';
     

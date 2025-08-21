@@ -11,7 +11,19 @@
 4. Click "Register application"
 5. **Copy the Client ID** (you'll need this)
 
-## 2. Configure Environment Variables
+**⚠️ Important**: For client-side OAuth, you do NOT need to set a client secret.
+
+## 2. Update Client ID in Code
+
+1. **Copy your Client ID** from the OAuth app you just created
+2. **Update the client ID** in `site.js` around line 4790:
+   ```javascript
+   const clientId = 'YOUR_ACTUAL_CLIENT_ID_HERE'; // Replace this
+   ```
+3. **Update the client ID** in `functions/auth-callback.html` around line 95:
+   ```javascript
+   client_id: 'YOUR_ACTUAL_CLIENT_ID_HERE', // Replace this
+   ```
 
 The OAuth app will use these settings:
 - **Client ID**: From step 1
@@ -29,6 +41,8 @@ Once implemented, the flow will be:
 ## Notes
 
 - This replaces Personal Access Token authentication
+- **Client-side OAuth** - No server functions needed
+- Works with any hosting (GitHub Pages, Vercel, Netlify, etc.)
 - Provides higher rate limits (15k vs 5k requests/hour)
 - More stable and reliable than PATs
 - Official GitHub authentication method
