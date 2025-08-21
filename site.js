@@ -77,14 +77,17 @@ class SimpleBlog {
         }
       }
       
-          // Show site map by default after posts are loaded (only in blog mode)
-    if (!window.location.pathname.includes('editor.html')) {
-      setTimeout(() => {
-        this.showSiteMap();
-      }, 500);
-    } else {
-      console.log('🗺️ Site map not shown (editor mode)');
-    }
+      // Show site map by default after posts are loaded (only in blog mode)
+      if (!window.location.pathname.includes('editor.html')) {
+        setTimeout(() => {
+          this.showSiteMap();
+        }, 500);
+      } else {
+        console.log('🗺️ Site map not shown (editor mode)');
+      }
+      
+      // Load and display projects in menu
+      this.loadAndDisplayProjects();
     }).catch(error => {
       console.error('❌ Error loading posts:', error);
     });
@@ -3633,10 +3636,25 @@ class SimpleBlog {
       return;
     }
     
+    // Check if we're in project mode
+    if (this.projectMode) {
+      this.handleProjectModeInput(command);
+      return;
+    }
+    
+    // Check if we're waiting for project link input
+    if (this.addProjectLinkState) {
+      this.handleProjectLinkInput(command);
+      return;
+    }
+    
+    // Handle main console commands
     if (command === '?' || command === 'help') {
       this.showHelp();
     } else if (command === 'link') {
       this.startAddProjectLink();
+    } else if (command === 'project') {
+      this.enterProjectMode();
     } else {
       this.printToConsole(`Unknown command: ${command}`);
     }
@@ -3652,7 +3670,20 @@ class SimpleBlog {
     this.printToConsole('Available commands:');
     this.printToConsole('  ? or help - Show this help');
     this.printToConsole('  link - Add a new project link');
+    this.printToConsole('  project - Enter project mode for advanced project management');
     this.printToConsole('');
+  }
+
+  enterProjectMode() {
+    // Check admin access
+    if (!this.isAdmin()) {
+      this.printToConsole('admin only');
+      return;
+    }
+    
+    this.projectMode = true;
+    this.printToConsole('Entered project mode');
+    this.printToConsole('Type "help" for available commands or "escape" to exit');
   }
 
   startAddProjectLink() {
@@ -3697,6 +3728,65 @@ class SimpleBlog {
     }
   }
 
+  // New project mode console handler
+  async handleProjectModeInput(input) {
+    if (!this.isAdmin()) {
+      this.printToConsole('admin only');
+      this.exitProjectMode();
+      return;
+    }
+
+    const command = input.trim().toLowerCase();
+    
+    if (command === 'escape' || command === 'exit' || command === 'quit') {
+      this.exitProjectMode();
+      return;
+    }
+    
+    if (command === 'add') {
+      this.startAddProjectLink();
+      return;
+    }
+    
+    if (command.startsWith('delete ')) {
+      const label = input.substring(7).trim(); // Remove "delete " prefix
+      if (label) {
+        await this.deleteProject(label);
+      } else {
+        this.printToConsole('Usage: delete LINK LABEL HERE');
+      }
+      return;
+    }
+    
+    if (command === 'list') {
+      await this.listProjects();
+      return;
+    }
+    
+    if (command === 'help' || command === '?') {
+      this.showProjectModeHelp();
+      return;
+    }
+    
+    this.printToConsole(`Unknown command: ${input}`);
+    this.printToConsole('Type "help" for available commands or "escape" to exit project mode');
+  }
+
+  exitProjectMode() {
+    this.projectMode = false;
+    this.printToConsole('Exited project mode');
+    this.printToConsole('Type "project" to re-enter project mode');
+  }
+
+  showProjectModeHelp() {
+    this.printToConsole('Project Mode Commands:');
+    this.printToConsole('  add - Add new project link');
+    this.printToConsole('  delete LINK LABEL HERE - Delete specified project');
+    this.printToConsole('  list - Show all current projects');
+    this.printToConsole('  help or ? - Show this help');
+    this.printToConsole('  escape/exit/quit - Exit project mode');
+  }
+
   async addProjectLink(label, url) {
     try {
       this.printToConsole('Adding project link...');
@@ -3723,10 +3813,70 @@ class SimpleBlog {
       // Save back to GitHub
       await this.saveProjectsToGitHub(projects);
       
+      // Update the projects menu
+      this.updateProjectsMenu(projects);
+      
       this.printToConsole(`✅ Project link "${label}" added successfully!`);
       
     } catch (error) {
       console.error('❌ Error adding project link:', error);
+      this.printToConsole(`Error: ${error.message}`);
+    }
+  }
+
+  async deleteProject(label) {
+    try {
+      this.printToConsole(`Deleting project: ${label}`);
+      
+      // Get GitHub token
+      const tokenInfo = this.getCurrentToken();
+      if (!tokenInfo) {
+        this.printToConsole('Error: GitHub authentication required');
+        return;
+      }
+      
+      // Load existing projects
+      const projects = await this.loadProjectsFromGitHub();
+      
+      // Find and remove the project
+      const projectIndex = projects.findIndex(p => p.label.toLowerCase() === label.toLowerCase());
+      if (projectIndex === -1) {
+        this.printToConsole(`❌ Project "${label}" not found`);
+        return;
+      }
+      
+      const deletedProject = projects.splice(projectIndex, 1)[0];
+      
+      // Save back to GitHub
+      await this.saveProjectsToGitHub(projects);
+      
+      // Update the projects menu
+      this.updateProjectsMenu(projects);
+      
+      this.printToConsole(`✅ Project "${deletedProject.label}" deleted successfully!`);
+      
+    } catch (error) {
+      console.error('❌ Error deleting project:', error);
+      this.printToConsole(`Error: ${error.message}`);
+    }
+  }
+
+  async listProjects() {
+    try {
+      const projects = await this.loadProjectsFromGitHub();
+      
+      if (projects.length === 0) {
+        this.printToConsole('No projects found');
+        return;
+      }
+      
+      this.printToConsole(`Found ${projects.length} project(s):`);
+      projects.forEach((project, index) => {
+        this.printToConsole(`  ${index + 1}. ${project.label} → ${project.url}`);
+      });
+      
+    } catch (error) {
+      console.error('❌ Error listing projects:', error);
       this.printToConsole(`Error: ${error.message}`);
     }
   }
@@ -7003,6 +7153,75 @@ class SimpleBlog {
     projectsMenu.appendChild(categoriesList);
     
     console.log('✅ Projects submenu updated with simple category list');
+  }
+
+  updateProjectsMenu(projects) {
+    const projectsDropdown = document.getElementById('projects-dropdown');
+    if (!projectsDropdown) return;
+    
+    // Clear existing content except Linktree
+    const linktreeEntry = projectsDropdown.querySelector('a[href*="linktr.ee"]');
+    projectsDropdown.innerHTML = '';
+    
+    // Keep Linktree if it exists
+    if (linktreeEntry) {
+      projectsDropdown.appendChild(linktreeEntry);
+      projectsDropdown.appendChild(document.createElement('div')).className = 'menu-separator';
+    }
+    
+    // Add projects
+    if (projects && projects.length > 0) {
+      projects.forEach(project => {
+        const entry = document.createElement('div');
+        entry.className = 'menu-entry';
+        entry.textContent = project.label;
+        entry.style.cssText = `
+          padding: 1px 12px 1px 20px;
+          cursor: pointer;
+          color: var(--menu-fg, #fff);
+          transition: background-color 0.15s ease;
+          border-radius: 3px;
+          margin: 0.25px 1px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 200px;
+          font-size: 11px;
+        `;
+        
+        entry.title = `Click to visit: ${project.url}`;
+        
+        entry.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          window.open(project.url, '_blank');
+        });
+        
+        projectsDropdown.appendChild(entry);
+      });
+    } else {
+      // Show message if no projects
+      const noProjects = document.createElement('div');
+      noProjects.textContent = 'No projects yet';
+      noProjects.style.cssText = `
+        padding: 8px 15px;
+        color: var(--muted, #888);
+        font-style: italic;
+        text-align: center;
+      `;
+      projectsDropdown.appendChild(noProjects);
+    }
+  }
+
+  async loadAndDisplayProjects() {
+    try {
+      console.log('🔍 Loading projects for menu display...');
+      const projects = await this.loadProjectsFromGitHub();
+      this.updateProjectsMenu(projects);
+      console.log('✅ Projects menu updated with', projects.length, 'projects');
+    } catch (error) {
+      console.error('❌ Error loading projects for menu:', error);
+    }
   }
 
   showDevlogPostsWindow(category, posts) {
