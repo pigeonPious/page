@@ -4858,15 +4858,15 @@ class SimpleBlog {
     const state = Math.random().toString(36).substring(7);
     localStorage.setItem('github_oauth_state', state);
     
-    // OAuth app configuration
+    // OAuth app configuration - using implicit flow for client-side
     const clientId = 'Ov23lipy3P5oIGByWrzJ'; // Replace with your actual OAuth app client ID
     const redirectUri = encodeURIComponent('https://piouspigeon.com/functions/auth-callback.html');
     const scope = 'repo';
     
-    // Build OAuth URL
-    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
+    // Build OAuth URL with response_type=token for implicit flow
+    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}&response_type=token`;
     
-    console.log('🔐 Redirecting to GitHub OAuth:', oauthUrl);
+    console.log('🔐 Redirecting to GitHub OAuth (implicit flow):', oauthUrl);
     
     // Close modal and redirect
     const modal = document.getElementById('githubLoginModal');

@@ -93,35 +93,18 @@
             }
             
             try {
-                // Exchange code for access token using GitHub's OAuth flow
-                const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        client_id: 'Ov23lipy3P5oIGByWrzJ',
-                        code: code,
-                        redirect_uri: 'https://piouspigeon.com/functions/auth-callback.html'
-                    })
-                });
-                
-                if (!tokenResponse.ok) {
-                    throw new Error(`GitHub token exchange failed: ${tokenResponse.status}`);
-                }
-                
-                const tokenData = await tokenResponse.json();
-                
-                if (tokenData.error) {
-                    throw new Error(`GitHub error: ${tokenData.error_description || tokenData.error}`);
-                }
-                
-                const accessToken = tokenData.access_token;
+                // For client-side OAuth, we need to use the implicit flow
+                // The access token should come directly in the URL fragment
+                const urlParams = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = urlParams.get('access_token');
+                const tokenType = urlParams.get('token_type');
+                const scope = urlParams.get('scope');
                 
                 if (!accessToken) {
-                    throw new Error('No access token received from GitHub');
+                    throw new Error('No access token received from GitHub. Please try logging in again.');
                 }
+                
+                console.log('🔐 Received OAuth token from GitHub');
                 
                 // Get user information using the access token
                 const userResponse = await fetch('https://api.github.com/user', {
@@ -141,6 +124,8 @@
                 if (userData.login !== 'pigeonPious') {
                     throw new Error('Access denied. Only pigeonPious can access this blog editor.');
                 }
+                
+                console.log(`✅ Authenticated as: ${userData.login}`);
                 
                 // Store the access token
                 localStorage.setItem('github_oauth_token', accessToken);

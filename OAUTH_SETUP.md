@@ -11,7 +11,9 @@
 4. Click "Register application"
 5. **Copy the Client ID** (you'll need this)
 
-**⚠️ Important**: For client-side OAuth, you do NOT need to set a client secret.
+**⚠️ Important**: 
+- For client-side OAuth, you do NOT need to set a client secret
+- We use the **implicit flow** (`response_type=token`) which works entirely in the browser
 
 ## 2. Update Client ID in Code
 
@@ -36,12 +38,15 @@ Once implemented, the flow will be:
 1. Click "Login with GitHub" 
 2. Redirect to GitHub authorization
 3. Authorize the app
-4. Return to your blog with full access
+4. **GitHub redirects back with access token in URL fragment**
+5. **Token is extracted and stored automatically**
+6. Return to your blog with full access
 
 ## Notes
 
 - This replaces Personal Access Token authentication
-- **Client-side OAuth** - No server functions needed
+- **Client-side OAuth with implicit flow** - No server functions needed
+- **No CORS issues** - works entirely in the browser
 - Works with any hosting (GitHub Pages, Vercel, Netlify, etc.)
 - Provides higher rate limits (15k vs 5k requests/hour)
 - More stable and reliable than PATs
