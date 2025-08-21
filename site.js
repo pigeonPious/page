@@ -3734,12 +3734,11 @@ class SimpleBlog {
       }
       console.log('🔐 Authentication successful, proceeding with publish...');
       
-      // Get current flags from the editor (not from potentially stale currentPostFlags)
-      const flagsInput = document.getElementById('keywords-input');
-      const currentFlags = flagsInput ? flagsInput.value.trim() : '';
-      const finalFlags = currentFlags || 'general';
+      // Get current flags from localStorage (more reliable than DOM)
+      const currentFlags = localStorage.getItem('current_post_flags') || '';
+      const finalFlags = currentFlags.trim() || 'general';
       
-      console.log('🏷️ Current flags from editor:', currentFlags);
+      console.log('🏷️ Current flags from localStorage:', currentFlags);
       console.log('🏷️ Final flags for post:', finalFlags);
       
       // Check if this is an edit (check for existing post data)
