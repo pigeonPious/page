@@ -1464,7 +1464,7 @@ class SimpleBlog {
       
       // Show loading message
       const statusElement = document.getElementById('github-status');
-      const originalStatus = statusElement ? statusElement.textContent : '';
+      const originalStatus = statusElement ? statusElement.textContent : 'not connected';
       if (statusElement) {
         statusElement.textContent = 'Reindexing...';
         statusElement.style.color = '#ffa500'; // Orange
@@ -1523,6 +1523,42 @@ class SimpleBlog {
           throw new Error('Unexpected GitHub API response format');
         }
         
+      } else if (response.status === 403) {
+        console.warn('⚠️ GitHub API returned 403 - trying local fallback');
+        
+        // Try local fallback
+        try {
+          const localResponse = await fetch('posts/index.json');
+          if (localResponse.ok) {
+            const localData = await localResponse.json();
+            const localPosts = Array.isArray(localData) ? localData : (localData.posts || []);
+            
+            this.posts = localPosts;
+            localStorage.setItem('posts', JSON.stringify(localPosts));
+            
+            console.log('✅ Force reindex completed using local fallback, posts updated:', localPosts.length);
+            
+            // Show success message
+            if (statusElement) {
+              statusElement.textContent = 'Reindexed (local)!';
+              statusElement.style.color = '#28a745'; // Green
+              
+              // Reset status after 3 seconds
+              setTimeout(() => {
+                statusElement.textContent = originalStatus;
+                statusElement.style.color = '';
+              }, 3000);
+            }
+            
+            // Update any open submenus
+            this.updateOpenSubmenus();
+            return;
+          }
+        } catch (localError) {
+          console.warn('⚠️ Local fallback also failed:', localError);
+        }
+        
+        throw new Error(`GitHub API blocked (403) and local fallback failed`);
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -1533,7 +1569,14 @@ class SimpleBlog {
       // Show error message
       const statusElement = document.getElementById('github-status');
       if (statusElement) {
-        statusElement.textContent = 'Reindex failed';
+        let errorMessage = 'Reindex failed';
+        if (error.message && error.message.includes('403')) {
+          errorMessage = 'API blocked - try later';
+        } else if (error.message && error.message.includes('local fallback failed')) {
+          errorMessage = 'Both sources failed';
+        }
+        
+        statusElement.textContent = errorMessage;
         statusElement.style.color = '#dc3545'; // Red
         
         // Reset status after 3 seconds
