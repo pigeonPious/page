@@ -2170,7 +2170,101 @@ class SimpleBlog {
     console.log('🔍 Setting up hover notes...');
     this.setupHoverNotes();
     
+    // Add navigation controls
+    this.addPostNavigation(post);
+    
     console.log('✅ Post displayed successfully:', post.title);
+  }
+
+  addPostNavigation(currentPost) {
+    if (!currentPost || !this.posts || this.posts.length === 0) return;
+    
+    const contentElement = document.getElementById('post-content');
+    if (!contentElement) return;
+    
+    // Find current post index
+    const currentIndex = this.posts.findIndex(post => post.slug === currentPost.slug);
+    if (currentIndex === -1) return;
+    
+    // Get current post categories
+    const currentCategories = currentPost.keywords ? 
+      currentPost.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0) : [];
+    
+    // Find next and previous posts
+    let nextPost = null;
+    let prevPost = null;
+    
+    // First try to find posts in the same category
+    if (currentCategories.length > 0) {
+      const categoryPosts = this.posts.filter(post => {
+        if (!post.keywords) return false;
+        const postCategories = post.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+        return postCategories.some(cat => currentCategories.includes(cat));
+      });
+      
+      if (categoryPosts.length > 1) {
+        const categoryIndex = categoryPosts.findIndex(post => post.slug === currentPost.slug);
+        if (categoryIndex > 0) {
+          prevPost = categoryPosts[categoryIndex - 1];
+        }
+        if (categoryIndex < categoryPosts.length - 1) {
+          nextPost = categoryPosts[categoryIndex + 1];
+          console.log('🔍 Next post in category:', nextPost.title);
+        }
+      }
+    }
+    
+    // If no category navigation found, use chronological navigation
+    if (!nextPost && !prevPost) {
+      if (currentIndex > 0) {
+        prevPost = this.posts[currentIndex - 1];
+      }
+      if (currentIndex < this.posts.length - 1) {
+        nextPost = this.posts[currentIndex + 1];
+      }
+    }
+    
+    // Create navigation container
+    const navContainer = document.createElement('div');
+    navContainer.className = 'post-navigation';
+    navContainer.style.cssText = `
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.4;
+    `;
+    
+    // Add previous post link
+    if (prevPost) {
+      const prevLink = document.createElement('div');
+      prevLink.innerHTML = `<a href="#" class="nav-link prev-link" data-slug="${prevPost.slug}">_previous</a>`;
+      prevLink.style.cssText = 'margin-bottom: 8px;';
+      navContainer.appendChild(prevLink);
+      
+      // Add click handler
+      prevLink.querySelector('.prev-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        this.loadPost(prevPost.slug);
+      });
+    }
+    
+    // Add next post link
+    if (nextPost) {
+      const nextLink = document.createElement('div');
+      nextLink.innerHTML = `<a href="#" class="nav-link next-link" data-slug="${nextPost.slug}">_next</a>`;
+      navContainer.appendChild(nextLink);
+      
+      // Add click handler
+      nextLink.querySelector('.next-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        this.loadPost(nextPost.slug);
+      });
+    }
+    
+    // Add navigation to content
+    contentElement.appendChild(navContainer);
   }
 
   displayDefaultContent() {

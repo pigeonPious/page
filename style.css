@@ -153,6 +153,28 @@ a:hover {
   opacity: var(--show-bottom-fade, 0);
 }
 
+/* Post navigation styling */
+.post-navigation {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.post-navigation .nav-link {
+  color: var(--link);
+  text-decoration: underline;
+  font-style: italic;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.post-navigation .nav-link:hover {
+  opacity: 0.8;
+}
+
 #customColorMenu input[type="range"] {
   width: 100px;
   margin: 0 8px 0 0;
