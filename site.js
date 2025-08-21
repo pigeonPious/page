@@ -4833,6 +4833,68 @@ class SimpleBlog {
     const token = tokenInput.value.trim();
     
     if (!token) {
+      alert('Please enter a GitHub token');
+      return;
+    }
+    
+    // Test the token with multiple API calls to check permissions
+    console.log('🔐 Testing GitHub token permissions...');
+    
+    try {
+      // Test 1: Basic user info (should work)
+      const userResponse = await fetch('https://api.github.com/user', {
+        headers: { 'Authorization': `token ${token}` }
+      });
+      
+      if (!userResponse.ok) {
+        throw new Error(`Token validation failed: ${userResponse.status}`);
+      }
+      
+      const userData = await userResponse.json();
+      console.log('✅ Token validated for user:', userData.login);
+      
+      // Test 2: Repository access (should work for posting)
+      const repoResponse = await fetch('https://api.github.com/repos/pigeonPious/page', {
+        headers: { 'Authorization': `token ${token}` }
+      });
+      
+      if (!repoResponse.ok) {
+        throw new Error(`Repository access failed: ${repoResponse.status}`);
+      }
+      
+      console.log('✅ Repository access confirmed');
+      
+      // Test 3: Read access to index (this is failing)
+      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+        headers: { 'Authorization': `token ${token}` }
+      });
+      
+      if (indexResponse.ok) {
+        console.log('✅ Read access confirmed');
+      } else {
+        console.warn('⚠️ Read access limited:', indexResponse.status);
+        // This explains why force reindex is failing!
+      }
+      
+      // Store the token
+      localStorage.setItem('github_token', token);
+      localStorage.setItem('github_user', userData.login);
+      
+      // Close modal and show success
+      const modal = document.getElementById('githubLoginModal');
+      if (modal) document.body.removeChild(modal);
+      
+      this.showMenuStyle1Message(`✅ Authenticated as ${userData.login}`, 'success');
+      
+      // Refresh the page to update authentication state
+      setTimeout(() => location.reload(), 1500);
+      
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      alert(`Authentication failed: ${error.message}\n\nPlease check your token has the correct permissions.`);
+    }
+    
+    if (!token) {
       alert('Please enter a GitHub token.');
       return;
     }
