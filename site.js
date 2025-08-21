@@ -1351,9 +1351,14 @@ class SimpleBlog {
         border: 1px solid var(--menu-border, #555);
         padding: 1.25px 0;
         min-width: 200px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+        overflow-x: hidden;
         z-index: 10001;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         border-radius: 4px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--muted, #888) transparent;
       `;
     
     // Remove existing submenu
@@ -6736,9 +6741,14 @@ class SimpleBlog {
       border: 1px solid var(--menu-border, #555);
       padding: 5px 0;
       min-width: 250px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      overflow-x: hidden;
       z-index: 1000;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       border-radius: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--muted, #888) transparent;
     `;
     
     // Add invisible buffer zone around submenu for easier navigation

@@ -198,6 +198,24 @@ a:hover {
   background: var(--accent);
 }
 
+/* Custom scrollbar styling for submenus */
+.submenu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.submenu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.submenu::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 3px;
+}
+
+.submenu::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
 #customColorMenu input[type="range"] {
   width: 100px;
   margin: 0 8px 0 0;
