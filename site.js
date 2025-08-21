@@ -1544,6 +1544,58 @@ class SimpleBlog {
       }
     }
   }
+
+  // Fast reindex for just the current/new post
+  async fastReindexCurrentPost() {
+    console.log('⚡ Fast reindex for current post');
+    
+    try {
+      // Get current post data from editor
+      const postTitle = document.getElementById('postTitle')?.value || '';
+      const postContent = document.getElementById('visualEditor')?.innerHTML || '';
+      const currentFlags = localStorage.getItem('current_post_flags') || '';
+      
+      if (!postTitle.trim()) {
+        console.log('⚠️ No title found for fast reindex');
+        return;
+      }
+      
+      // Create a temporary post object for the current post
+      const currentPost = {
+        slug: postTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
+        title: postTitle,
+        date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
+        keywords: currentFlags,
+        content: postContent
+      };
+      
+      // Update local posts array
+      if (!this.posts) this.posts = [];
+      
+      // Find if this post already exists
+      const existingIndex = this.posts.findIndex(p => p.slug === currentPost.slug);
+      if (existingIndex >= 0) {
+        // Update existing post
+        this.posts[existingIndex] = { ...this.posts[existingIndex], ...currentPost };
+        console.log('✅ Updated existing post in local index');
+      } else {
+        // Add new post
+        this.posts.unshift(currentPost); // Add to beginning
+        console.log('✅ Added new post to local index');
+      }
+      
+      // Update localStorage cache
+      localStorage.setItem('posts', JSON.stringify(this.posts));
+      
+      // Update any open submenus
+      this.updateOpenSubmenus();
+      
+      console.log('⚡ Fast reindex completed for:', currentPost.title);
+      
+    } catch (error) {
+      console.error('❌ Fast reindex error:', error);
+    }
+  }
   
   // Update any open submenus with fresh data
   updateOpenSubmenus() {
@@ -3970,8 +4022,8 @@ class SimpleBlog {
             console.log('🧹 Edit data cleared after successful publish');
           }
           
-          // Refresh the posts list with the newly rebuilt index
-          await this.loadPosts();
+          // Fast reindex just the current post instead of full reload
+          await this.fastReindexCurrentPost();
           
           // Update the projects menu to reflect new flags/categories
           this.updateProjectsSubmenu(this.posts || []);
@@ -4193,6 +4245,16 @@ class SimpleBlog {
       localStorage.removeItem('github_token');
       return false;
     }
+  }
+
+  // Helper method to check if current user is admin
+  isAdmin() {
+    const githubToken = localStorage.getItem('github_token');
+    if (!githubToken) return false;
+    
+    // For now, we'll use a simple check - you can enhance this later
+    // This assumes the user is authenticated if they have a token
+    return true;
   }
 
   async deletePost(slug) {
