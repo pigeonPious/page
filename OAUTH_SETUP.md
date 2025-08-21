@@ -1,53 +1,44 @@
-# GitHub OAuth App Setup
+# GitHub Personal Access Token Setup
 
-## 1. Create OAuth App on GitHub
+## 1. Create Personal Access Token on GitHub
 
-1. Go to [GitHub Settings > Developer settings > OAuth Apps](https://github.com/settings/developers)
-2. Click "New OAuth App"
+1. Go to [GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)](https://github.com/settings/tokens)
+2. Click "Generate new token (classic)"
 3. Fill in the details:
-   - **Application name**: `PiousPigeon Blog Editor`
-   - **Homepage URL**: `https://piouspigeon.com`
-   - **Authorization callback URL**: `https://piouspigeon.com/oauth-callback.html`
-4. Click "Register application"
-5. **Copy the Client ID** (you'll need this)
+   - **Note**: `PiousPigeon Blog Editor`
+   - **Expiration**: `No expiration` (or at least 1 year)
+   - **Scopes**: Check `repo` (full repository access)
+4. Click "Generate token"
+5. **Copy the token** (starts with `ghp_`) - you won't see it again!
 
-**⚠️ Important**: 
-- For client-side OAuth, you do NOT need to set a client secret
-- We use the **web application flow** which redirects to GitHub and back
+## 2. Use the Token
 
-## 2. Update Client ID in Code
+1. **Copy your Personal Access Token** from step 1
+2. **Click "Login with GitHub"** in your blog editor
+3. **Paste the token** into the input field
+4. **Click "Authenticate"** to complete login
 
-1. **Copy your Client ID** from the OAuth app you just created
-2. **Update the client ID** in `site.js` around line 4790:
-   ```javascript
-   const clientId = 'YOUR_ACTUAL_CLIENT_ID_HERE'; // Replace this
-   ```
-3. **Update the client ID** in the device flow functions (around line 4800):
-   ```javascript
-   client_id: 'YOUR_ACTUAL_CLIENT_ID_HERE', // Replace this
-   ```
+The token provides:
+- **Full repository access** to your blog
+- **Higher rate limits** than unauthenticated requests
+- **Secure access** to publish and edit posts
 
-The OAuth app will use these settings:
-- **Client ID**: From step 1
-- **Redirect URI**: `https://piouspigeon.com/functions/auth-callback.html`
-- **Scope**: `repo` (for full repository access)
-
-## 3. Test the OAuth Flow
+## 3. Test the Authentication
 
 Once implemented, the flow will be:
 1. Click "Login with GitHub" 
-2. **Redirect to GitHub** authorization page
-3. **Authorize the app** on GitHub
-4. **GitHub redirects back** to your callback page
-5. **Token is exchanged and stored** automatically
-6. **Redirect to editor** with full access
+2. **Enhanced modal appears** with token input
+3. **Paste your Personal Access Token** into the field
+4. **Click "Authenticate"** to verify the token
+5. **Token is stored securely** in localStorage
+6. **Full access** to blog editor
 
 ## Notes
 
-- This replaces Personal Access Token authentication
-- **Client-side OAuth with web application flow** - No server functions needed
-- **Standard OAuth flow** - redirects to GitHub and back
+- **Simple and reliable** - no complex OAuth flows
+- **No server functions needed** - works entirely client-side
+- **No CORS issues** - direct GitHub API calls
 - Works with any hosting (GitHub Pages, Vercel, Netlify, etc.)
-- Provides higher rate limits (15k vs 5k requests/hour)
-- More stable and reliable than PATs
-- Official GitHub authentication method
+- **Secure token storage** in browser localStorage
+- **Higher rate limits** than unauthenticated requests
+- **Official GitHub method** for personal access

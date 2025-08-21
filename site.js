@@ -4850,31 +4850,121 @@ class SimpleBlog {
     });
   }
 
-  // Initiate OAuth flow using web application flow (redirect-based)
+  // Enhanced Personal Access Token authentication
   initiateOAuth() {
-    console.log('🚀 Initiating GitHub OAuth web application flow...');
+    console.log('🔐 Showing enhanced GitHub token input...');
     
-    // Generate OAuth state for security
-    const state = Math.random().toString(36).substring(7);
-    localStorage.setItem('github_oauth_state', state);
+    // Create enhanced login modal
+    const modal = document.createElement('div');
+    modal.id = 'githubLoginModal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
     
-    // OAuth app configuration
-    const clientId = 'Ov23lipy3P5oIGByWrzJ';
-    const redirectUri = encodeURIComponent('https://piouspigeon.com/oauth-callback.html');
-    const scope = 'repo';
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: var(--menu-bg);
+      border: 1px solid var(--border);
+      padding: 30px;
+      max-width: 500px;
+      text-align: center;
+    `;
     
-    // Build OAuth URL for web application flow
-    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
+    content.innerHTML = `
+      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">🔐 GitHub Personal Access Token</h3>
+      <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
+      
+      <div style="margin-bottom: 20px; padding: 15px; background: var(--bg); border-radius: 6px; text-align: left;">
+        <p style="margin: 0 0 10px 0; color: var(--muted, #888); font-size: 12px;"><strong>Token Requirements:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; color: var(--muted, #888); font-size: 12px;">
+          <li>Scope: <code>repo</code> (full repository access)</li>
+          <li>Expiration: Set to "No expiration" or at least 1 year</li>
+          <li>Note: "PiousPigeon Blog Editor"</li>
+        </ul>
+      </div>
+      
+      <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--fg);
+        font-family: monospace;
+        font-size: 14px;
+        border-radius: 6px;
+      ">
+      
+      <div style="margin-bottom: 20px;">
+        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 14px;">
+          🔗 Create token at github.com/settings/tokens
+        </a>
+      </div>
+      
+      <button id="githubLoginBtn" style="
+        background: #24292e;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-right: 10px;
+        width: 100%;
+        margin-bottom: 10px;
+      ">🔐 Authenticate</button>
+      
+      <button id="closeLoginModal" style="
+        background: transparent;
+        color: var(--menu-fg);
+        border: 1px solid var(--border);
+        padding: 8px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+      ">Cancel</button>
+    `;
     
-    console.log('🔐 Redirecting to GitHub OAuth:', oauthUrl);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
     
-    // Close modal and redirect
-    const modal = document.getElementById('githubLoginModal');
-    if (modal) document.body.removeChild(modal);
+    // Focus on input
+    const tokenInput = document.getElementById('githubTokenInput');
+    tokenInput.focus();
     
-    // Redirect to GitHub OAuth
-    window.location.href = oauthUrl;
+    // Add event listeners
+    document.getElementById('githubLoginBtn').addEventListener('click', () => {
+      this.authenticateWithToken();
+    });
+    
+    document.getElementById('closeLoginModal').addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+    
+    // Handle Enter key
+    tokenInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.authenticateWithToken();
+      }
+    });
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
   }
+
+
 
   async authenticateWithToken() {
     const tokenInput = document.getElementById('githubTokenInput');
