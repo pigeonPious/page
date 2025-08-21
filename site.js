@@ -211,6 +211,13 @@ class SimpleBlog {
             </div>
           </div>
           
+          <div class="menu-item" data-menu="console">
+            <div class="label">Console</div>
+            <div class="menu-dropdown">
+              <div class="menu-entry" id="open-console-btn">Open Console</div>
+            </div>
+          </div>
+          
           <div class="menu-item" data-menu="connect">
             <div class="label">Share</div>
             <div class="menu-dropdown">
@@ -862,6 +869,11 @@ class SimpleBlog {
   this.addClickHandler('#keywords-btn', () => {
     console.log('🏷️ Flags button clicked');
     this.showFlagsModal();
+  });
+
+  this.addClickHandler('#open-console-btn', () => {
+    console.log('🖥️ Console button clicked');
+    this.showConsole();
   });
 
     // Open in GitHub button
@@ -3333,6 +3345,538 @@ class SimpleBlog {
     } catch (error) {
       console.error('❌ Error deleting draft:', error);
       alert('Failed to delete draft: ' + error.message);
+    }
+  }
+
+  // Console Interface
+  showConsole() {
+    console.log('🖥️ Opening console...');
+    
+    // Check if user is authenticated as admin
+    if (!this.isAdmin()) {
+      alert('Console access requires GitHub admin authentication.');
+      return;
+    }
+    
+    // Check if console already exists
+    let consoleWindow = document.getElementById('consoleWindow');
+    
+    if (consoleWindow) {
+      // Remove existing console
+      consoleWindow.remove();
+    }
+    
+    // Create new console
+    consoleWindow = this.createConsole();
+    document.body.appendChild(consoleWindow);
+    
+    // Position console at bottom left of browser window
+    consoleWindow.style.position = 'fixed';
+    consoleWindow.style.left = '20px';
+    consoleWindow.style.bottom = '20px';
+    consoleWindow.style.zIndex = '10000';
+    
+    // Show the console
+    consoleWindow.style.display = 'flex';
+    
+    // Focus on input
+    const input = consoleWindow.querySelector('#consoleInput');
+    if (input) {
+      input.focus();
+    }
+    
+    // Print welcome message
+    this.printToConsole('Console ready. Type "?" for help.');
+    
+    console.log('✅ Console opened');
+  }
+
+  createConsole() {
+    const consoleWindow = document.createElement('div');
+    consoleWindow.id = 'consoleWindow';
+    consoleWindow.style.cssText = `
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      width: 500px;
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--fg);
+      cursor: move;
+    `;
+    
+    // Header with close button
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg);
+      color: var(--fg);
+      cursor: move;
+      user-select: none;
+    `;
+    
+    const title = document.createElement('span');
+    title.textContent = 'Console';
+    title.style.cssText = `
+      font-weight: normal;
+      font-size: 12px;
+    `;
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = `
+      background: none;
+      border: none;
+      color: var(--fg);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+    `;
+    
+    closeBtn.addEventListener('click', () => {
+      const consoleWindow = document.getElementById('consoleWindow');
+      if (consoleWindow) {
+        consoleWindow.remove();
+      }
+    });
+    
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    
+    // Output area
+    const output = document.createElement('div');
+    output.id = 'consoleOutput';
+    output.style.cssText = `
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      background: var(--bg);
+      border: none;
+      color: var(--fg);
+      font-family: monospace;
+      font-size: 11px;
+      line-height: 1.3;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    `;
+    
+    // Input area
+    const inputContainer = document.createElement('div');
+    inputContainer.style.cssText = `
+      display: flex;
+      align-items: center;
+      padding: 6px 8px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    `;
+    
+    const prompt = document.createElement('span');
+    prompt.textContent = '> ';
+    prompt.style.cssText = `
+      color: var(--fg);
+      margin-right: 6px;
+      user-select: none;
+    `;
+    
+    const input = document.createElement('input');
+    input.id = 'consoleInput';
+    input.type = 'text';
+    input.style.cssText = `
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--fg);
+      font-family: monospace;
+      font-size: 11px;
+      outline: none;
+    `;
+    
+    const cursor = document.createElement('span');
+    cursor.className = 'console-cursor';
+    cursor.textContent = '_';
+    cursor.style.cssText = `
+      color: var(--fg);
+      animation: blink 1s infinite;
+      margin-left: 2px;
+    `;
+    
+    // Add cursor animation if it doesn't exist
+    if (!document.getElementById('console-cursor-animation')) {
+      const style = document.createElement('style');
+      style.id = 'console-cursor-animation';
+      style.textContent = `
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    inputContainer.appendChild(prompt);
+    inputContainer.appendChild(input);
+    inputContainer.appendChild(cursor);
+    
+    // Make console draggable
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = consoleWindow.getBoundingClientRect();
+      startLeft = rect.left;
+      startTop = rect.top;
+      consoleWindow.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      consoleWindow.style.left = (startLeft + deltaX) + 'px';
+      consoleWindow.style.top = (startTop + deltaY) + 'px';
+      consoleWindow.style.bottom = 'auto';
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        consoleWindow.style.cursor = 'move';
+      }
+    });
+    
+    // Handle input
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const inputValue = input.value.trim();
+        if (inputValue) {
+          // Check admin access for all commands
+          if (!this.isAdmin()) {
+            this.printToConsole('admin only');
+            input.value = '';
+            return;
+          }
+          
+          if (this.addProjectLinkState) {
+            // Handle project link input flow
+            this.handleProjectLinkInput(inputValue);
+          } else {
+            // Handle regular commands
+            this.executeCommand(inputValue);
+          }
+          input.value = '';
+        }
+      } else if (e.key === 'Escape') {
+        if (this.addProjectLinkState) {
+          this.printToConsole('Cancelled.');
+          this.addProjectLinkState = null;
+          this.pendingProjectLink = {};
+        }
+        input.value = '';
+        input.blur();
+      }
+    });
+    
+    consoleWindow.appendChild(header);
+    consoleWindow.appendChild(output);
+    consoleWindow.appendChild(inputContainer);
+    
+    return consoleWindow;
+  }
+
+  printToConsole(message) {
+    const output = document.getElementById('consoleOutput');
+    if (!output) return;
+    
+    const line = document.createElement('div');
+    line.textContent = message;
+    line.style.cssText = `
+      margin-bottom: 2px;
+      color: var(--fg);
+    `;
+    
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+  }
+
+  executeCommand(command) {
+    console.log('🖥️ Executing command:', command);
+    
+    // Double-check admin access
+    if (!this.isAdmin()) {
+      this.printToConsole('admin only');
+      return;
+    }
+    
+    if (command === '?' || command === 'help') {
+      this.showHelp();
+    } else if (command === 'link') {
+      this.startAddProjectLink();
+    } else {
+      this.printToConsole(`Unknown command: ${command}`);
+    }
+  }
+
+  showHelp() {
+    // Check admin access
+    if (!this.isAdmin()) {
+      this.printToConsole('admin only');
+      return;
+    }
+    
+    this.printToConsole('Available commands:');
+    this.printToConsole('  ? or help - Show this help');
+    this.printToConsole('  link - Add a new project link');
+    this.printToConsole('');
+  }
+
+  startAddProjectLink() {
+    // Check admin access
+    if (!this.isAdmin()) {
+      this.printToConsole('admin only');
+      return;
+    }
+    
+    this.printToConsole('link:');
+    this.addProjectLinkState = 'waiting_for_link';
+    this.pendingProjectLink = {};
+  }
+
+  async handleProjectLinkInput(input) {
+    // Check admin access
+    if (!this.isAdmin()) {
+      this.printToConsole('admin only');
+      this.addProjectLinkState = null;
+      this.pendingProjectLink = {};
+      return;
+    }
+    
+    if (this.addProjectLinkState === 'waiting_for_link') {
+      this.pendingProjectLink.url = input;
+      this.printToConsole(`link: ${input}`);
+      this.printToConsole('label:');
+      this.addProjectLinkState = 'waiting_for_label';
+    } else if (this.addProjectLinkState === 'waiting_for_label') {
+      this.pendingProjectLink.label = input;
+      this.printToConsole(`label: ${input}`);
+      this.printToConsole(`Confirm: Add "${this.pendingProjectLink.label}" linking to "${this.pendingProjectLink.url}"? (y/n)`);
+      this.addProjectLinkState = 'waiting_for_confirmation';
+    } else if (this.addProjectLinkState === 'waiting_for_confirmation') {
+      if (input.toLowerCase() === 'y' || input.toLowerCase() === 'yes') {
+        await this.addProjectLink(this.pendingProjectLink.label, this.pendingProjectLink.url);
+      } else {
+        this.printToConsole('Cancelled.');
+      }
+      this.addProjectLinkState = null;
+      this.pendingProjectLink = {};
+    }
+  }
+
+  async addProjectLink(label, url) {
+    try {
+      this.printToConsole('Adding project link...');
+      
+      // Get GitHub token
+      const githubToken = this.getCurrentToken();
+      if (!githubToken) {
+        this.printToConsole('Error: GitHub authentication required');
+        return;
+      }
+      
+      // Load existing projects
+      const projects = await this.loadProjectsFromGitHub();
+      
+      // Add new project
+      const newProject = {
+        label: label,
+        url: url,
+        id: Date.now().toString()
+      };
+      
+      projects.push(newProject);
+      
+      // Save back to GitHub
+      await this.saveProjectsToGitHub(projects);
+      
+      // Update UI
+      this.updateProjectsMenu(projects);
+      
+      this.printToConsole(`✅ Project link "${label}" added successfully!`);
+      
+    } catch (error) {
+      console.error('❌ Error adding project link:', error);
+      this.printToConsole(`Error: ${error.message}`);
+    }
+  }
+
+  async loadProjectsFromGitHub() {
+    try {
+      const githubToken = this.getCurrentToken();
+      if (!githubToken) {
+        throw new Error('GitHub authentication required');
+      }
+      
+      // Try to load from projects.json file
+      const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/projects.json', {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const content = atob(data.content);
+        return JSON.parse(content);
+      } else if (response.status === 404) {
+        // File doesn't exist, return empty array
+        return [];
+      } else {
+        throw new Error(`GitHub API error: ${response.status}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error loading projects:', error);
+      return [];
+    }
+  }
+
+  async saveProjectsToGitHub(projects) {
+    try {
+      const githubToken = this.getCurrentToken();
+      if (!githubToken) {
+        throw new Error('GitHub authentication required');
+      }
+      
+      // Get current file info if it exists
+      let sha = null;
+      try {
+        const getResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/projects.json', {
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (getResponse.ok) {
+          const data = await getResponse.json();
+          sha = data.sha;
+        }
+      } catch (error) {
+        // File doesn't exist, that's fine
+      }
+      
+      // Prepare content
+      const content = JSON.stringify(projects, null, 2);
+      const encodedContent = btoa(content);
+      
+      // Create or update file
+      const method = sha ? 'PUT' : 'POST';
+      const url = 'https://api.github.com/repos/pigeonPious/page/contents/projects.json';
+      
+      const body = {
+        message: sha ? `Update projects: Add ${projects[projects.length - 1].label}` : 'Add projects.json',
+        content: encodedContent
+      };
+      
+      if (sha) {
+        body.sha = sha;
+      }
+      
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify(body)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save projects: ${response.status}`);
+      }
+      
+      console.log('✅ Projects saved to GitHub');
+      
+    } catch (error) {
+      console.error('❌ Error saving projects:', error);
+      throw error;
+    }
+  }
+
+  updateProjectsMenu(projects) {
+    const projectsDropdown = document.getElementById('projects-dropdown');
+    if (!projectsDropdown) return;
+    
+    // Find the projects menu entry
+    const projectsMenu = projectsDropdown.querySelector('#projects-menu');
+    if (!projectsMenu) return;
+    
+    // Clear existing content
+    projectsMenu.innerHTML = '';
+    
+    // Add projects
+    projects.forEach(project => {
+      const entry = document.createElement('div');
+      entry.className = 'menu-entry';
+      entry.textContent = project.label;
+      entry.style.cssText = `
+        padding: 1px 12px 1px 20px;
+        cursor: pointer;
+        color: var(--menu-fg, #fff);
+        transition: background-color 0.15s ease;
+        border-radius: 3px;
+        margin: 0.25px 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+        font-size: 11px;
+      `;
+      
+      entry.title = `Click to visit: ${project.url}`;
+      
+      entry.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(project.url, '_blank');
+      });
+      
+      projectsMenu.appendChild(entry);
+    });
+    
+    // Add separator and "No projects" message if empty
+    if (projects.length === 0) {
+      const noProjects = document.createElement('div');
+      noProjects.textContent = 'No projects yet';
+      noProjects.style.cssText = `
+        padding: 8px 15px;
+        color: var(--muted, #888);
+        font-style: italic;
+        text-align: center;
+      `;
+      projectsMenu.appendChild(noProjects);
     }
   }
 
