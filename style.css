@@ -175,9 +175,27 @@ a:hover {
   opacity: 0.8;
 }
 
-/* Hide editor sidebar buttons when admin is authenticated */
-.editor-sidebar .editor-tools-vertical.admin-authenticated {
+/* Hide editor sidebar buttons completely - now available in taskbar */
+.editor-sidebar .editor-tools-vertical {
   display: none;
+}
+
+/* Minimal scrollbar styling for image magazine */
+#imageGallery::-webkit-scrollbar {
+  width: 6px;
+}
+
+#imageGallery::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#imageGallery::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 3px;
+}
+
+#imageGallery::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 #customColorMenu input[type="range"] {

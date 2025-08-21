@@ -2840,19 +2840,6 @@ class SimpleBlog {
   showImagesModal() {
     console.log('🖼️ Opening image magazine...');
     
-    // Get the button position for initial placement
-    const imagesBtn = document.getElementById('images-btn');
-    let initialX = '50%';
-    let initialY = '50%';
-    
-    if (imagesBtn) {
-      const btnRect = imagesBtn.getBoundingClientRect();
-      // Position magazine at button location, accounting for scroll
-      initialX = (btnRect.left + btnRect.width / 2) + 'px';
-      initialY = (btnRect.top + btnRect.height / 2) + 'px';
-      console.log('🔍 Button position:', { left: btnRect.left, top: btnRect.top });
-    }
-    
     // Check if magazine already exists
     let magazine = document.getElementById('imageMagazine');
     
@@ -2865,11 +2852,23 @@ class SimpleBlog {
     magazine = this.createImageMagazine();
     document.body.appendChild(magazine);
     
-    // Position the magazine at the button location
+    // Position the magazine to the left of the text body in editor
+    const editorContent = document.querySelector('.editor-content') || document.querySelector('main');
+    let initialX = '20px';
+    let initialY = '60px'; // Below taskbar
+    
+    if (editorContent) {
+      const editorRect = editorContent.getBoundingClientRect();
+      // Position magazine to the left of editor content with small buffer
+      initialX = (editorRect.left - 140) + 'px'; // 120px width + 20px buffer
+      initialY = '60px'; // Below taskbar
+    }
+    
+    // Position the magazine
     magazine.style.position = 'fixed';
     magazine.style.left = initialX;
     magazine.style.top = initialY;
-    magazine.style.transform = 'translate(-50%, -50%)';
+    magazine.style.transform = 'none'; // No centering transform
     magazine.style.zIndex = '10000';
     
     // Show the magazine
@@ -3396,7 +3395,7 @@ class SimpleBlog {
     // Header with import button
     const header = document.createElement('div');
     header.style.cssText = `
-      padding: 8px 12px;
+      padding: 4px 8px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -3449,11 +3448,11 @@ class SimpleBlog {
     importBtn.textContent = 'Import';
     importBtn.type = 'button';
     importBtn.style.cssText = `
-      font-weight: bold;
+      font-weight: normal;
       color: var(--fg);
       cursor: pointer;
       font-size: 12px;
-      padding: 4px 8px;
+      padding: 2px 6px;
       background: transparent;
       border: none;
       outline: none;
@@ -3574,10 +3573,10 @@ class SimpleBlog {
     content.style.cssText = `
       flex: 1;
       overflow-y: auto;
-      padding: 6px;
+      padding: 4px;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 4px;
+      gap: 3px;
       align-content: start;
     `;
     
@@ -5921,15 +5920,7 @@ class SimpleBlog {
       publishBtn.title = isAuthenticated ? 'Publish post to GitHub' : 'GitHub authentication required';
     }
     
-    // Update editor sidebar buttons visibility based on authentication
-    const editorSidebar = document.querySelector('.editor-sidebar .editor-tools-vertical');
-    if (editorSidebar) {
-      if (isAuthenticated) {
-        editorSidebar.classList.add('admin-authenticated');
-      } else {
-        editorSidebar.classList.remove('admin-authenticated');
-      }
-    }
+
   }
 
   showFlagsModal() {
