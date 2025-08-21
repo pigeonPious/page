@@ -2893,19 +2893,6 @@ class SimpleBlog {
   showDraftsModal() {
     console.log('📁 Opening drafts modal...');
     
-    // Get the button position for initial placement
-    const draftsBtn = document.getElementById('open-draft-btn');
-    let initialX = '50%';
-    let initialY = '50%';
-    
-    if (draftsBtn) {
-      const btnRect = draftsBtn.getBoundingClientRect();
-      // Position modal at button location, accounting for scroll
-      initialX = (btnRect.left + btnRect.width / 2) + 'px';
-      initialY = (btnRect.top + btnRect.height / 2) + 'px';
-      console.log('🔍 Button position:', { left: btnRect.left, top: btnRect.top });
-    }
-    
     // Check if modal already exists
     let modal = document.getElementById('draftsModal');
     
@@ -2918,17 +2905,17 @@ class SimpleBlog {
     modal = this.createDraftsModal();
     document.body.appendChild(modal);
     
-    // Position the modal at the button location
+    // Position the modal in the center of the window
     modal.style.position = 'fixed';
-    modal.style.left = initialX;
-    modal.style.top = initialY;
+    modal.style.left = '50%';
+    modal.style.top = '50%';
     modal.style.transform = 'translate(-50%, -50%)';
     modal.style.zIndex = '10000';
     
     // Show the modal
     modal.style.display = 'flex';
     
-    console.log('🔍 Drafts modal positioned at:', { x: initialX, y: initialY });
+    console.log('🔍 Drafts modal positioned at center of window');
     console.log('🔍 Drafts modal created and positioned');
     
     // Load drafts from GitHub
@@ -3036,6 +3023,25 @@ class SimpleBlog {
         return;
       }
       
+      // Test token validity first
+      const testResponse = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (testResponse.status === 401) {
+        console.log('⚠️ Token expired or invalid, clearing authentication');
+        this.clearAuthentication();
+        this.displayDraftsError('GitHub token expired. Please re-authenticate.');
+        return;
+      }
+      
+      if (!testResponse.ok) {
+        throw new Error(`GitHub authentication failed: ${testResponse.status}`);
+      }
+      
       // Fetch drafts from GitHub
       const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/drafts', {
         headers: {
@@ -3043,6 +3049,13 @@ class SimpleBlog {
           'Accept': 'application/vnd.github.v3+json'
         }
       });
+      
+      if (response.status === 401) {
+        console.log('⚠️ Token expired when accessing drafts, clearing authentication');
+        this.clearAuthentication();
+        this.displayDraftsError('GitHub token expired. Please re-authenticate.');
+        return;
+      }
       
       if (!response.ok) {
         throw new Error(`GitHub API error: ${response.status}`);
@@ -3062,6 +3075,20 @@ class SimpleBlog {
       console.error('❌ Error loading drafts:', error);
       this.displayDraftsError('Failed to load drafts: ' + error.message);
     }
+  }
+
+  clearAuthentication() {
+    console.log('🔐 Clearing authentication...');
+    
+    // Remove tokens from localStorage
+    localStorage.removeItem('github_token');
+    localStorage.removeItem('github_oauth_token');
+    localStorage.removeItem('github_token_type');
+    
+    // Update UI to show not connected
+    this.updateAuthStatus(false);
+    
+    console.log('✅ Authentication cleared');
   }
 
   displayDrafts(drafts) {
@@ -3178,6 +3205,13 @@ class SimpleBlog {
         }
       });
       
+      if (response.status === 401) {
+        console.log('⚠️ Token expired when opening draft, clearing authentication');
+        this.clearAuthentication();
+        alert('GitHub token expired. Please re-authenticate.');
+        return;
+      }
+      
       if (!response.ok) {
         throw new Error(`Failed to fetch draft: ${response.status}`);
       }
@@ -3253,6 +3287,13 @@ class SimpleBlog {
         }
       });
       
+      if (getResponse.status === 401) {
+        console.log('⚠️ Token expired when deleting draft, clearing authentication');
+        this.clearAuthentication();
+        alert('GitHub token expired. Please re-authenticate.');
+        return;
+      }
+      
       if (!getResponse.ok) {
         throw new Error(`Failed to get draft info: ${getResponse.status}`);
       }
@@ -3272,6 +3313,13 @@ class SimpleBlog {
           sha: sha
         })
       });
+      
+      if (deleteResponse.status === 401) {
+        console.log('⚠️ Token expired when deleting draft, clearing authentication');
+        this.clearAuthentication();
+        alert('GitHub token expired. Please re-authenticate.');
+        return;
+      }
       
       if (!deleteResponse.ok) {
         throw new Error(`Failed to delete draft: ${deleteResponse.status}`);
