@@ -4422,8 +4422,22 @@ class SimpleBlog {
 
   async checkAuthentication() {
     try {
-      // Check for token in the standard location
-      const token = localStorage.getItem('github_token');
+      // Check for OAuth token first, then fall back to PAT
+      const oauthToken = localStorage.getItem('github_oauth_token');
+      const patToken = localStorage.getItem('github_token');
+      const tokenType = localStorage.getItem('github_token_type');
+      
+      let token = null;
+      let authMethod = null;
+      
+      if (oauthToken && tokenType === 'oauth') {
+        token = oauthToken;
+        authMethod = 'OAuth';
+      } else if (patToken) {
+        token = patToken;
+        authMethod = 'PAT';
+      }
+      
       if (!token) {
         console.log('🔐 No GitHub token found in localStorage');
         return false;
@@ -4440,39 +4454,70 @@ class SimpleBlog {
         const userData = await response.json();
         // Check if user is the admin (pigeonPious)
         const isAdmin = userData.login === 'pigeonPious';
-        console.log(`🔐 Authentication check: ${isAdmin ? 'SUCCESS' : 'FAILED'} - User: ${userData.login}`);
+        console.log(`🔐 Authentication check: ${isAdmin ? 'SUCCESS' : 'FAILED'} - User: ${userData.login} (${authMethod})`);
         return isAdmin;
       } else {
-        console.log(`🔐 Token validation failed with status: ${response.status}`);
+        console.log(`🔐 Token validation failed with status: ${response.status} (${authMethod})`);
         // Token might be expired, remove it
-        localStorage.removeItem('github_token');
+        if (authMethod === 'OAuth') {
+          localStorage.removeItem('github_oauth_token');
+          localStorage.removeItem('github_token_type');
+        } else {
+          localStorage.removeItem('github_token');
+        }
         return false;
       }
     } catch (error) {
       console.error('❌ Error checking authentication:', error);
       // On error, remove the token to force re-authentication
+      localStorage.removeItem('github_oauth_token');
       localStorage.removeItem('github_token');
+      localStorage.removeItem('github_token_type');
       return false;
     }
   }
 
   // Helper method to check if current user is admin
   isAdmin() {
-    const githubToken = localStorage.getItem('github_token');
-    if (!githubToken) return false;
+    // Check for OAuth token first, then fall back to PAT
+    const oauthToken = localStorage.getItem('github_oauth_token');
+    const patToken = localStorage.getItem('github_token');
+    const tokenType = localStorage.getItem('github_token_type');
     
-    // For now, we'll use a simple check - you can enhance this later
-    // This assumes the user is authenticated if they have a token
-    return true;
+    if (oauthToken && tokenType === 'oauth') {
+      return true; // OAuth tokens are more reliable
+    } else if (patToken) {
+      return true; // PAT fallback
+    }
+    
+    return false;
+  }
+
+  // Helper method to get the current authentication token (OAuth or PAT)
+  getCurrentToken() {
+    const oauthToken = localStorage.getItem('github_oauth_token');
+    const patToken = localStorage.getItem('github_token');
+    const tokenType = localStorage.getItem('github_token_type');
+    
+    if (oauthToken && tokenType === 'oauth') {
+      return { token: oauthToken, type: 'OAuth' };
+    } else if (patToken) {
+      return { token: patToken, type: 'PAT' };
+    }
+    
+    return null;
   }
 
   async deletePost(slug) {
     try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
+      const tokenInfo = this.getCurrentToken();
+      if (!tokenInfo) {
         console.warn('⚠️ deletePost: No GitHub token found');
         return false;
       }
+      
+      const token = tokenInfo.token;
+      console.log(`🗑️ deletePost: Using ${tokenInfo.type} token`);
       
       // First, get the current SHA of the post file
       const postResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`, {
@@ -4733,9 +4778,9 @@ class SimpleBlog {
   }
 
   showGitHubLogin() {
-    console.log('🔐 Showing GitHub token input...');
+    console.log('🔐 Showing GitHub OAuth login...');
     
-    // Create login modal in menu style 1
+    // Create OAuth login modal in menu style 1
     const modal = document.createElement('div');
     modal.id = 'githubLoginModal';
     modal.style.cssText = `
@@ -4761,32 +4806,20 @@ class SimpleBlog {
     `;
     
     content.innerHTML = `
-      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub Personal Access Token</h3>
-      <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
-      <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
-        width: 100%;
-        padding: 8px;
-        margin-bottom: 15px;
-        border: 1px solid var(--border);
-        background: var(--bg);
-        color: var(--fg);
-        font-family: monospace;
-      ">
-      <div style="margin-bottom: 15px;">
-        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 12px;">
-          Create token at github.com/settings/tokens (needs repo scope)
-        </a>
-      </div>
-      <button id="githubLoginBtn" style="
+      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub OAuth Login</h3>
+      <p style="color: var(--menu-fg); margin-bottom: 20px;">Click below to authenticate with GitHub using OAuth.</p>
+      <p style="color: var(--muted, #888); font-size: 12px; margin-bottom: 20px;">This provides higher rate limits and more reliable access.</p>
+      <button id="githubOAuthBtn" style="
         background: #24292e;
         color: white;
         border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
+        padding: 15px 30px;
+        border-radius: 6px;
         cursor: pointer;
-        font-size: 14px;
-        margin-right: 10px;
-      ">Authenticate</button>
+        font-size: 16px;
+        margin-bottom: 15px;
+        width: 100%;
+      ">🔐 Login with GitHub</button>
       <button id="closeLoginModal" style="
         background: transparent;
         color: var(--menu-fg);
@@ -4800,24 +4833,13 @@ class SimpleBlog {
     modal.appendChild(content);
     document.body.appendChild(modal);
     
-    // Focus on input
-    const tokenInput = document.getElementById('githubTokenInput');
-    tokenInput.focus();
-    
     // Add event listeners
-    document.getElementById('githubLoginBtn').addEventListener('click', () => {
-      this.authenticateWithToken();
+    document.getElementById('githubOAuthBtn').addEventListener('click', () => {
+      this.initiateOAuth();
     });
     
     document.getElementById('closeLoginModal').addEventListener('click', () => {
       document.body.removeChild(modal);
-    });
-    
-    // Handle Enter key
-    tokenInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        this.authenticateWithToken();
-      }
     });
     
     // Close on outside click
@@ -4826,6 +4848,32 @@ class SimpleBlog {
         document.body.removeChild(modal);
       }
     });
+  }
+
+  // Initiate OAuth flow
+  initiateOAuth() {
+    console.log('🚀 Initiating GitHub OAuth flow...');
+    
+    // Generate OAuth state for security
+    const state = Math.random().toString(36).substring(7);
+    localStorage.setItem('github_oauth_state', state);
+    
+    // OAuth app configuration
+    const clientId = 'Iv1.8a0b0b0b0b0b0b0b'; // Replace with your actual OAuth app client ID
+    const redirectUri = encodeURIComponent('https://piouspigeon.com/functions/auth-callback.html');
+    const scope = 'repo';
+    
+    // Build OAuth URL
+    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
+    
+    console.log('🔐 Redirecting to GitHub OAuth:', oauthUrl);
+    
+    // Close modal and redirect
+    const modal = document.getElementById('githubLoginModal');
+    if (modal) document.body.removeChild(modal);
+    
+    // Redirect to GitHub OAuth
+    window.location.href = oauthUrl;
   }
 
   async authenticateWithToken() {
