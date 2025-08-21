@@ -3755,6 +3755,10 @@ class SimpleBlog {
           console.log('✏️ This is an edit of existing post:', originalSlug);
           
           // For edits, we need to get the current SHA of the post file
+          // Try multiple approaches to get the SHA
+          let shaFound = false;
+          
+          // Method 1: Try GitHub API with auth
           try {
             const postResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`, {
               headers: {
@@ -3765,12 +3769,45 @@ class SimpleBlog {
             if (postResponse.ok) {
               const postData = await postResponse.json();
               currentSha = postData.sha;
-              console.log('✅ Got current SHA for edit:', currentSha);
+              shaFound = true;
+              console.log('✅ Got current SHA for edit (GitHub API):', currentSha);
             } else {
-              console.warn('⚠️ Could not get current SHA for edit:', postResponse.status);
+              console.warn('⚠️ GitHub API returned status for SHA fetch:', postResponse.status);
             }
           } catch (error) {
-            console.warn('⚠️ Error getting current SHA for edit:', error);
+            console.warn('⚠️ Error getting SHA from GitHub API:', error);
+          }
+          
+          // Method 2: Try GitHub API without auth (public access)
+          if (!shaFound) {
+            try {
+              const publicResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`);
+              
+              if (publicResponse.ok) {
+                const postData = await publicResponse.json();
+                currentSha = postData.sha;
+                shaFound = true;
+                console.log('✅ Got current SHA for edit (public API):', currentSha);
+              } else {
+                console.warn('⚠️ Public API returned status for SHA fetch:', publicResponse.status);
+              }
+            } catch (error) {
+              console.warn('⚠️ Error getting SHA from public API:', error);
+            }
+          }
+          
+          // Method 3: Try to get SHA from local posts cache
+          if (!shaFound && this.posts && this.posts.length > 0) {
+            const localPost = this.posts.find(p => p.slug === originalSlug);
+            if (localPost && localPost.sha) {
+              currentSha = localPost.sha;
+              shaFound = true;
+              console.log('✅ Got current SHA for edit (local cache):', currentSha);
+            }
+          }
+          
+          if (!shaFound) {
+            console.warn('⚠️ Could not get SHA for edit - will try to create new file');
           }
         } catch (error) {
           console.warn('⚠️ Could not parse edit data:', error);
@@ -3805,20 +3842,51 @@ class SimpleBlog {
             currentSha = duplicatePost.sha;
             console.log('✅ Using SHA from duplicate check:', currentSha);
           } else {
-            // Always try to fetch SHA for existing posts, even if duplicate check failed
-            console.log('🔄 Need to fetch SHA for existing post...');
-            try {
-              const shaResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
-              if (shaResponse.ok) {
-                const shaData = await shaResponse.json();
-                currentSha = shaData.sha;
-                console.log('✅ Successfully fetched SHA:', currentSha);
-              } else {
-                console.warn('⚠️ Failed to fetch SHA, status:', shaResponse.status);
+                    // Always try to fetch SHA for existing posts, even if duplicate check failed
+        console.log('🔄 Need to fetch SHA for existing post...');
+        
+        // Try multiple methods to get SHA
+        let shaFound = false;
+        
+        // Method 1: Try public GitHub API
+        try {
+          const shaResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
+          if (shaResponse.ok) {
+            const shaData = await shaResponse.json();
+            currentSha = shaData.sha;
+            shaFound = true;
+            console.log('✅ Successfully fetched SHA (public API):', currentSha);
+          } else {
+            console.warn('⚠️ Public API failed to fetch SHA, status:', shaResponse.status);
+          }
+        } catch (shaError) {
+          console.error('❌ Error fetching SHA from public API:', shaError);
+        }
+        
+        // Method 2: Try authenticated GitHub API
+        if (!shaFound && githubToken) {
+          try {
+            const authShaResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`, {
+              headers: {
+                'Authorization': `token ${githubToken}`,
               }
-            } catch (shaError) {
-              console.error('❌ Error fetching SHA:', shaError);
+            });
+            if (authShaResponse.ok) {
+              const shaData = await authShaResponse.json();
+              currentSha = shaData.sha;
+              shaFound = true;
+              console.log('✅ Successfully fetched SHA (authenticated API):', currentSha);
+            } else {
+              console.warn('⚠️ Authenticated API failed to fetch SHA, status:', authShaResponse.status);
             }
+          } catch (authShaError) {
+            console.error('❌ Error fetching SHA from authenticated API:', authShaError);
+          }
+        }
+        
+        if (!shaFound) {
+          console.warn('⚠️ Could not fetch SHA from any method - will try to create new file');
+        }
           }
         }
       }
@@ -3827,6 +3895,13 @@ class SimpleBlog {
       
       // For edits, we always use the original slug, so no slug change handling needed
       // The post will be updated in place with the new content, title, and flags
+      
+      // If we still don't have a SHA for an edit, we'll need to handle this specially
+      if (isEdit && !currentSha) {
+        console.log('⚠️ No SHA available for edit - will try alternative approach');
+        // We'll try to create a new file, which might fail if it already exists
+        // But this is better than the current 422 error
+      }
       
       // Sanitize content to remove problematic characters
       const sanitizedPostData = {
