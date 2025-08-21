@@ -7230,6 +7230,77 @@ hideSiteMap() {
       throw error;
     }
   }
+
+  // GitHub Authentication Methods
+  async checkAndUpdateAuthStatus() {
+    console.log('🔐 Checking GitHub authentication status...');
+    
+    const authStatus = document.getElementById('auth-status');
+    if (!authStatus) {
+      console.log('⚠️ Auth status element not found');
+      return;
+    }
+    
+    try {
+      const tokenInfo = this.getCurrentToken();
+      if (tokenInfo && tokenInfo.token) {
+        // Test token validity
+        const response = await fetch('https://api.github.com/user', {
+          headers: {
+            'Authorization': `token ${tokenInfo.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          this.updateAuthStatus(true, userData.login);
+        } else {
+          console.log('⚠️ Token invalid, clearing authentication');
+          this.clearAuthentication();
+          this.updateAuthStatus(false);
+        }
+      } else {
+        this.updateAuthStatus(false);
+      }
+    } catch (error) {
+      console.error('❌ Error checking auth status:', error);
+      this.updateAuthStatus(false);
+    }
+  }
+
+  getCurrentToken() {
+    const token = localStorage.getItem('github_token') || localStorage.getItem('github_oauth_token');
+    const tokenType = localStorage.getItem('github_token_type') || 'token';
+    
+    if (token) {
+      return { token, type: tokenType };
+    }
+    
+    return null;
+  }
+
+  updateAuthStatus(isAuthenticated, username = null) {
+    const authStatus = document.getElementById('auth-status');
+    if (!authStatus) return;
+    
+    if (isAuthenticated && username) {
+      authStatus.textContent = `_${username}`;
+      authStatus.style.color = 'var(--success-color, #28a745)';
+      authStatus.title = `Connected to GitHub as ${username}`;
+      console.log(`✅ Auth status updated: connected as ${username}`);
+    } else {
+      authStatus.textContent = 'not connected';
+      authStatus.style.color = 'var(--muted, #888)';
+      authStatus.title = 'Not connected to GitHub';
+      console.log('❌ Auth status updated: not connected');
+    }
+  }
+
+  isAdmin() {
+    const tokenInfo = this.getCurrentToken();
+    return tokenInfo && tokenInfo.token;
+  }
 }
 
 // Initialize when DOM is ready
