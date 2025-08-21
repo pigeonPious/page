@@ -331,55 +331,9 @@ class SimpleBlog {
   
   // Function to increment build word (called automatically on new builds)
   incrementBuildWord() {
-    console.log('🔧 Incrementing build word for new build...');
-    
-    // Get current build counter
-    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
-    const newCounter = currentCounter + 1;
-    
-    // Update build counter
-    localStorage.setItem('buildCounter', newCounter.toString());
-    
-    // Update build word display
-    const buildWordElement = document.getElementById('build-word');
-    if (buildWordElement) {
-      buildWordElement.textContent = `build-${newCounter}`;
-    }
-    
-    console.log(`🔧 Build word incremented from ${currentCounter} to ${newCounter}`);
-    console.log('✅ Build word updated successfully');
+    // This function is no longer used as build words are static
+    return;
   }
-
-  async validateGitHubToken() {
-    try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        alert('No GitHub token found in localStorage');
-        return;
-      }
-      
-      console.log('🔐 Testing GitHub token...');
-      const response = await fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        alert(`GitHub token is valid! Logged in as: ${userData.login}`);
-        console.log('✅ GitHub token valid:', userData);
-      } else {
-        alert(`GitHub token is invalid! Status: ${response.status}`);
-        console.log('❌ GitHub token invalid:', response.status, response.statusText);
-      }
-    } catch (error) {
-      alert(`Error testing GitHub token: ${error.message}`);
-      console.error('❌ Error testing GitHub token:', error);
-    }
-  }
-
-
 
   setupCSSVariables() {
     console.log('🎨 Setting up CSS variables...');
@@ -938,21 +892,6 @@ class SimpleBlog {
       this.showSiteMap();
     });
 
-    // Build indicator - no click handler needed, only changes on actual builds
-    // this.addClickHandler('#build-indicator', () => {
-    //   console.log('🔧 Build indicator clicked - incrementing build');
-    //   this.incrementBuildWord();
-    // });
-    
-
-    
-
-    
-    this.addClickHandler('#test-github-token', () => {
-      console.log('🔐 Test GitHub token button clicked');
-      this.validateGitHubToken();
-    });
-    
     // Social sharing buttons
     this.addClickHandler('#bluesky-share', () => {
       console.log('🔵 Bluesky share button clicked');
@@ -2199,6 +2138,11 @@ class SimpleBlog {
     console.log('✅ Post displayed successfully:', post.title);
   }
   addPostNavigation(currentPost) {
+    // Post navigation is only for the main blog view, not the editor
+    if (window.location.pathname.includes('editor.html')) {
+      return;
+    }
+    
     if (!currentPost || !this.posts || this.posts.length === 0) return;
     
     const contentElement = document.getElementById('post-content');
@@ -7046,131 +6990,6 @@ class SimpleBlog {
     console.log('✅ All Posts submenu updated with grouped posts:', Object.keys(groupedPosts).length, 'categories +', generalPosts.length, 'general posts');
   }
 
-  updateProjectsSubmenu(allPosts) {
-    // This method is no longer used - projects menu is now static
-    return;
-    console.log('📋 Updating Projects submenu');
-    
-    // Find the projects dropdown container
-    const projectsDropdown = document.querySelector('#projects-dropdown');
-    if (!projectsDropdown) {
-      console.log('⚠️ Projects dropdown not found');
-      return;
-    }
-    
-    // Find the projects menu item (the "Loading..." element)
-    const projectsMenu = document.querySelector('#projects-menu');
-    if (!projectsMenu) {
-      console.log('⚠️ Projects menu not found');
-      return;
-    }
-    
-    // Filter for devlog posts
-    console.log('📋 All posts for projects menu:', allPosts);
-    const devlogPosts = allPosts.filter(post => {
-      const postFlags = post.keywords || '';
-      const hasDevlog = postFlags.includes('devlog');
-      console.log(`📋 Post "${post.title}" has keywords: "${postFlags}", devlog: ${hasDevlog}`);
-      return hasDevlog;
-    });
-    
-    console.log('📋 Devlog posts found:', devlogPosts);
-    
-    if (devlogPosts.length === 0) {
-      console.log('📋 No devlog posts found');
-      projectsMenu.textContent = 'No projects found';
-      return;
-    }
-    
-    // Group posts by devlog subcategory
-    const devlogCategories = {};
-    devlogPosts.forEach(post => {
-      const postFlags = post.keywords || '';
-      const devlogFlag = postFlags.split(',').find(f => f.trim().startsWith('devlog:'));
-      
-      console.log(`📋 Processing post "${post.title}":`);
-      console.log(`  - Keywords: "${postFlags}"`);
-      console.log(`  - Devlog flag found: "${devlogFlag}"`);
-      
-      if (devlogFlag) {
-        // Extract just the category name after "devlog:" and before any comma
-        const category = devlogFlag.split(':')[1] || 'general';
-        // Clean up category name for display - take everything before the first comma
-        let displayName = category.trim().split(',')[0].trim();
-        
-        // Capitalize first letter of the category name
-        if (displayName.length > 0) {
-          displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
-        }
-        
-        console.log(`  - Category: "${category}" -> Display name: "${displayName}"`);
-        
-        if (!devlogCategories[displayName]) {
-          devlogCategories[displayName] = [];
-        }
-        devlogCategories[displayName].push(post);
-      } else if (postFlags.includes('devlog')) {
-        // General devlog posts without subcategory
-        console.log(`  - General devlog post (no subcategory)`);
-        if (!devlogCategories['General']) {
-          devlogCategories['General'] = [];
-        }
-        devlogCategories['General'].push(post);
-      }
-    });
-    
-    console.log('📋 Final devlog categories:', devlogCategories);
-    
-    // Create simple list of project categories
-    const categoriesList = document.createElement('div');
-    categoriesList.className = 'project-categories';
-    categoriesList.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    `;
-    
-    // Add category entries
-    Object.keys(devlogCategories).forEach(category => {
-      const posts = devlogCategories[category];
-      
-      // Create category entry
-      const categoryEntry = document.createElement('div');
-      categoryEntry.className = 'menu-entry project-category';
-      categoryEntry.textContent = `${category} >`;
-      categoryEntry.style.cssText = `
-        padding: 3px 6px;
-        cursor: pointer;
-        color: var(--fg);
-        font-size: 12px;
-        transition: background-color 0.15s ease;
-        text-transform: capitalize;
-      `;
-      
-      // Add hover effect
-      categoryEntry.addEventListener('mouseenter', () => {
-        categoryEntry.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-      });
-      
-      categoryEntry.addEventListener('mouseleave', () => {
-        categoryEntry.style.backgroundColor = 'transparent';
-      });
-      
-      // Add click handler to show posts
-      categoryEntry.addEventListener('click', () => {
-        this.showCategoryWindow(category, posts);
-      });
-      
-      categoriesList.appendChild(categoryEntry);
-    });
-    
-    // Replace the "Loading..." text with the project categories
-    projectsMenu.innerHTML = '';
-    projectsMenu.appendChild(categoriesList);
-    
-    console.log('✅ Projects submenu updated with simple category list');
-  }
-
   updateProjectsMenu(projects) {
     const projectsDropdown = document.getElementById('projects-dropdown');
     if (!projectsDropdown) return;
@@ -7231,176 +7050,6 @@ class SimpleBlog {
     } catch (error) {
       console.error('❌ Error loading projects for menu:', error);
     }
-  }
-
-  showDevlogPostsWindow(category, posts) {
-    console.log(`📋 Opening devlog posts window for category: ${category} with ${posts.length} posts`);
-    
-    // Remove any existing devlog window
-    const existingWindow = document.getElementById('devlog-posts-window');
-    if (existingWindow) {
-      existingWindow.remove();
-    }
-    
-    // Create the floating window in menu style 1
-    const window = document.createElement('div');
-    window.id = 'devlog-posts-window';
-    window.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--menu-bg, #333);
-      border: 1px solid var(--border, #555);
-      padding: 16px;
-      min-width: 350px;
-      max-width: 500px;
-      max-height: 70vh;
-      z-index: 10000;
-      overflow-y: auto;
-      font-family: inherit;
-      cursor: move;
-    `;
-    
-    // Create header with title and close button
-    const header = document.createElement('div');
-    header.style.cssText = `
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border, #555);
-      cursor: move;
-    `;
-    
-    const title = document.createElement('div');
-    title.textContent = `${category.charAt(0).toUpperCase() + category.slice(1)} Posts`;
-    title.style.cssText = `
-      margin: 0;
-      color: var(--menu-fg, #fff);
-      font-size: 16px;
-      font-weight: bold;
-      text-transform: capitalize;
-    `;
-    
-    const closeButton = document.createElement('div');
-    closeButton.className = 'close-button';
-    closeButton.textContent = '×';
-    closeButton.style.cssText = `
-      cursor: pointer;
-      font-size: 20px;
-      color: var(--menu-fg, #fff);
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-      transition: color 0.15s ease;
-    `;
-    
-    // Add hover effect to close button
-    closeButton.addEventListener('mouseenter', () => {
-      closeButton.style.color = 'var(--danger-color, #dc3545)';
-    });
-    
-    closeButton.addEventListener('mouseleave', () => {
-      closeButton.style.color = 'var(--menu-fg, #fff)';
-    });
-    
-    // Close window when close button is clicked
-    closeButton.addEventListener('click', () => {
-      window.remove();
-    });
-    
-    header.appendChild(title);
-    header.appendChild(closeButton);
-    window.appendChild(header);
-    
-    // Create posts list
-    const postsList = document.createElement('div');
-    postsList.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    `;
-    
-    posts.forEach(post => {
-      const postEntry = document.createElement('div');
-      postEntry.className = 'post-entry';
-      postEntry.style.cssText = `
-        padding: 10px 12px;
-        background: var(--menu-bg, #333);
-        border: 1px solid var(--border, #555);
-        cursor: pointer;
-        transition: background-color 0.15s ease;
-        color: var(--menu-fg, #fff);
-        font-size: 13px;
-        line-height: 1.3;
-      `;
-      
-      const postTitle = document.createElement('div');
-      postTitle.textContent = post.title || post.slug;
-      postTitle.style.cssText = `
-        font-weight: normal;
-        margin-bottom: 2px;
-      `;
-      
-      const postDate = document.createElement('div');
-      postDate.textContent = post.date || 'No date';
-      postDate.style.cssText = `
-        color: var(--muted, #888);
-        font-size: 11px;
-        font-style: italic;
-      `;
-      
-      postEntry.appendChild(postTitle);
-      postEntry.appendChild(postDate);
-      
-      // Add hover effect
-      postEntry.addEventListener('mouseenter', () => {
-        postEntry.style.background = 'var(--menu-hover-bg, #555)';
-      });
-      
-      postEntry.addEventListener('mouseleave', () => {
-        postEntry.style.background = 'var(--menu-bg, #333)';
-      });
-      
-      // Add click handler to load post
-      postEntry.addEventListener('click', () => {
-        // Check if we're in the editor
-        if (window.location.pathname.includes('editor.html')) {
-          // Redirect to main blog with the selected post
-          window.location.href = `index.html?post=${post.slug}`;
-        } else {
-          // We're on the main blog, load post normally
-          this.loadPost(post.slug);
-          window.remove();
-        }
-      });
-      
-      postsList.appendChild(postEntry);
-    });
-    
-    window.appendChild(postsList);
-    
-    // Add to document
-    document.body.appendChild(window);
-    
-    // Make entire window draggable (not just header)
-    this.makeWindowDraggable(window);
-    
-    // Close window on escape key
-    const closeOnEscape = (e) => {
-      if (e.key === 'Escape') {
-        window.remove();
-        document.removeEventListener('keydown', closeOnEscape);
-      }
-    };
-    document.addEventListener('keydown', closeOnEscape);
-    
-    console.log(`✅ Devlog posts window opened for ${category} with ${posts.length} posts`);
   }
 
   showCategoryWindow(category, posts) {
@@ -7831,7 +7480,6 @@ class SimpleBlog {
     
 
   }
-  
   // Expand a category in the site map
   expandCategoryInSiteMap(categoryName, allPosts) {
     if (!this.currentSiteMap) return;
@@ -8618,7 +8266,6 @@ hideSiteMap() {
     localStorage.setItem('current_post_slug', postData.slug);
     console.log(`✅ Editor populated with post: ${postData.title}`);
   }
-
   loadEditData() {
     console.log('📝 Checking for edit data...');
     
@@ -8723,32 +8370,7 @@ hideSiteMap() {
     }
   }
 
-  // Cleanup method to prevent memory leaks
-  destroy() {
-    console.log('🧹 Cleaning up SimpleBlog...');
-    
-    // Remove event listeners
-    const allPostsMenu = document.getElementById('all-posts-menu');
-    if (allPostsMenu && this.allPostsMouseEnterHandler) {
-      allPostsMenu.removeEventListener('mouseenter', this.allPostsMouseEnterHandler);
-    }
-    
-    const categoriesMenu = document.getElementById('categories-menu');
-    if (categoriesMenu && this.categoriesMouseEnterHandler) {
-      categoriesMenu.removeEventListener('mouseenter', this.categoriesMouseEnterHandler);
-    }
-    
-
-    
-    // Remove global event listeners
-    document.removeEventListener('click', this.globalClickHandler);
-    document.removeEventListener('keydown', this.globalKeyHandler);
-    
-    console.log('✅ Cleanup complete');
-  }
   // ========== NEW EDIT MENU FUNCTIONS ==========
-
-
 
   showFontSizeWindow() {
     console.log('🔤 Opening font size window...');
@@ -8913,8 +8535,6 @@ hideSiteMap() {
     
     console.log(`✅ Font size set to ${currentSize}px`);
   }
-
-
 
   showDraftManager() {
     console.log('📝 Opening draft manager...');
@@ -9091,8 +8711,6 @@ hideSiteMap() {
       this.showMenuStyle1Message(`Error saving draft: ${error.message}`, 'error');
     }
   }
-
-
 
   async loadDrafts() {
     // Implementation for loading and displaying drafts
