@@ -147,6 +147,7 @@ class SimpleBlog {
             <div class="menu-dropdown">
               <a class="menu-entry" id="new-post" href="editor.html">New Post</a>
               <div class="menu-entry editor-only" id="open-in-github">Open in GitHub</div>
+              <div class="menu-entry editor-only admin-only" id="open-draft-btn">Open Draft</div>
               <div class="menu-separator"></div>
               <div class="menu-entry editor-only admin-only" id="import-btn">Import</div>
               <div class="menu-entry editor-only admin-only" id="export-btn">Export</div>
@@ -848,15 +849,20 @@ class SimpleBlog {
       console.log('🔍 showImagesModal called');
     });
 
-    this.addClickHandler('#publish-btn', () => {
-      console.log('📢 Publish button clicked');
-      this.showPublishModal();
-    });
+      this.addClickHandler('#publish-btn', () => {
+    console.log('📢 Publish button clicked');
+    this.showPublishModal();
+  });
 
-    this.addClickHandler('#keywords-btn', () => {
-      console.log('🏷️ Flags button clicked');
-      this.showFlagsModal();
-    });
+  this.addClickHandler('#open-draft-btn', () => {
+    console.log('📁 Open Draft button clicked');
+    this.showDraftsModal();
+  });
+
+  this.addClickHandler('#keywords-btn', () => {
+    console.log('🏷️ Flags button clicked');
+    this.showFlagsModal();
+  });
 
     // Open in GitHub button
     this.addClickHandler('#open-in-github', () => {
@@ -2883,6 +2889,404 @@ class SimpleBlog {
     }, 200);
     
     console.log('✅ Image magazine opened');
+  }
+
+  showDraftsModal() {
+    console.log('📁 Opening drafts modal...');
+    
+    // Get the button position for initial placement
+    const draftsBtn = document.getElementById('open-draft-btn');
+    let initialX = '50%';
+    let initialY = '50%';
+    
+    if (draftsBtn) {
+      const btnRect = draftsBtn.getBoundingClientRect();
+      // Position modal at button location, accounting for scroll
+      initialX = (btnRect.left + btnRect.width / 2) + 'px';
+      initialY = (btnRect.top + btnRect.height / 2) + 'px';
+      console.log('🔍 Button position:', { left: btnRect.left, top: btnRect.top });
+    }
+    
+    // Check if modal already exists
+    let modal = document.getElementById('draftsModal');
+    
+    if (modal) {
+      // Remove existing modal
+      modal.remove();
+    }
+    
+    // Create new modal
+    modal = this.createDraftsModal();
+    document.body.appendChild(modal);
+    
+    // Position the modal at the button location
+    modal.style.position = 'fixed';
+    modal.style.left = initialX;
+    modal.style.top = initialY;
+    modal.style.transform = 'translate(-50%, -50%)';
+    modal.style.zIndex = '10000';
+    
+    // Show the modal
+    modal.style.display = 'flex';
+    
+    console.log('🔍 Drafts modal positioned at:', { x: initialX, y: initialY });
+    console.log('🔍 Drafts modal created and positioned');
+    
+    // Load drafts from GitHub
+    this.loadDraftsFromGitHub();
+    
+    console.log('✅ Drafts modal opened');
+  }
+
+  createDraftsModal() {
+    const modal = document.createElement('div');
+    modal.id = 'draftsModal';
+    modal.style.cssText = `
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 20px;
+      min-width: 400px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--fg);
+    `;
+    
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = 'Drafts';
+    title.style.cssText = `
+      margin: 0;
+      font-size: 16px;
+      font-weight: normal;
+      color: var(--fg);
+    `;
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '×';
+    closeBtn.style.cssText = `
+      background: none;
+      border: none;
+      color: var(--fg);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+    `;
+    
+    closeBtn.addEventListener('click', () => {
+      const modal = document.getElementById('draftsModal');
+      if (modal) {
+        modal.remove();
+      }
+    });
+    
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    
+    // Content container
+    const content = document.createElement('div');
+    content.id = 'draftsContent';
+    content.style.cssText = `
+      min-height: 100px;
+    `;
+    
+    // Loading indicator
+    const loading = document.createElement('div');
+    loading.textContent = 'Loading drafts...';
+    loading.style.cssText = `
+      text-align: center;
+      color: var(--muted);
+      padding: 20px;
+    `;
+    content.appendChild(loading);
+    
+    modal.appendChild(header);
+    modal.appendChild(content);
+    
+    return modal;
+  }
+
+  async loadDraftsFromGitHub() {
+    try {
+      console.log('🔍 Loading drafts from GitHub...');
+      
+      // Get GitHub token
+      const githubToken = this.getCurrentToken();
+      if (!githubToken) {
+        this.displayDraftsError('GitHub authentication required');
+        return;
+      }
+      
+      // Fetch drafts from GitHub
+      const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/drafts', {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status}`);
+      }
+      
+      const drafts = await response.json();
+      console.log('✅ Drafts loaded from GitHub:', drafts);
+      
+      // Filter for JSON files and display them
+      const jsonDrafts = drafts.filter(item => 
+        item.type === 'file' && item.name.endsWith('.json')
+      );
+      
+      this.displayDrafts(jsonDrafts);
+      
+    } catch (error) {
+      console.error('❌ Error loading drafts:', error);
+      this.displayDraftsError('Failed to load drafts: ' + error.message);
+    }
+  }
+
+  displayDrafts(drafts) {
+    const content = document.getElementById('draftsContent');
+    if (!content) return;
+    
+    if (drafts.length === 0) {
+      content.innerHTML = '<div style="text-align: center; color: var(--muted); padding: 20px;">No drafts found</div>';
+      return;
+    }
+    
+    // Clear loading indicator
+    content.innerHTML = '';
+    
+    // Create drafts list
+    drafts.forEach(draft => {
+      const draftItem = document.createElement('div');
+      draftItem.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      `;
+      
+      draftItem.addEventListener('mouseenter', () => {
+        draftItem.style.backgroundColor = 'var(--sidebar-bg)';
+      });
+      
+      draftItem.addEventListener('mouseleave', () => {
+        draftItem.style.backgroundColor = 'transparent';
+      });
+      
+      // Draft name (clickable to open)
+      const draftName = document.createElement('span');
+      draftName.textContent = draft.name.replace('.json', '');
+      draftName.style.cssText = `
+        flex: 1;
+        cursor: pointer;
+      `;
+      
+      // Delete button (X)
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: var(--danger-color);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px 8px;
+        margin-left: 12px;
+        border-radius: 2px;
+        transition: background-color 0.2s ease;
+      `;
+      
+      deleteBtn.addEventListener('mouseenter', () => {
+        deleteBtn.style.backgroundColor = 'var(--danger-color)';
+        deleteBtn.style.color = 'white';
+      });
+      
+      deleteBtn.addEventListener('mouseleave', () => {
+        deleteBtn.style.backgroundColor = 'transparent';
+        deleteBtn.style.color = 'var(--danger-color)';
+      });
+      
+      // Add click handlers
+      draftName.addEventListener('click', () => {
+        this.openDraft(draft.name);
+      });
+      
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteDraft(draft.name);
+      });
+      
+      draftItem.appendChild(draftName);
+      draftItem.appendChild(deleteBtn);
+      content.appendChild(draftItem);
+    });
+  }
+
+  displayDraftsError(message) {
+    const content = document.getElementById('draftsContent');
+    if (!content) return;
+    
+    content.innerHTML = `
+      <div style="text-align: center; color: var(--danger-color); padding: 20px;">
+        ${message}
+      </div>
+    `;
+  }
+
+  async openDraft(draftName) {
+    try {
+      console.log('📁 Opening draft:', draftName);
+      
+      // Get GitHub token
+      const githubToken = this.getCurrentToken();
+      if (!githubToken) {
+        alert('GitHub authentication required');
+        return;
+      }
+      
+      // Fetch draft content from GitHub
+      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/drafts/${draftName}`, {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch draft: ${response.status}`);
+      }
+      
+      const draftData = await response.json();
+      const content = atob(draftData.content); // Decode base64 content
+      const draft = JSON.parse(content);
+      
+      console.log('✅ Draft loaded:', draft);
+      
+      // Populate editor with draft content
+      this.populateEditorWithDraft(draft);
+      
+      // Close the drafts modal
+      const modal = document.getElementById('draftsModal');
+      if (modal) {
+        modal.remove();
+      }
+      
+    } catch (error) {
+      console.error('❌ Error opening draft:', error);
+      alert('Failed to open draft: ' + error.message);
+    }
+  }
+
+  populateEditorWithDraft(draft) {
+    // Populate title
+    const titleInput = document.getElementById('postTitle');
+    if (titleInput && draft.title) {
+      titleInput.value = draft.title;
+    }
+    
+    // Populate content
+    const contentEditor = document.getElementById('visualEditor');
+    if (contentEditor && draft.content) {
+      contentEditor.innerHTML = draft.content;
+    }
+    
+    // Populate flags/keywords
+    if (draft.keywords) {
+      localStorage.setItem('current_post_flags', draft.keywords);
+    }
+    
+    // Store draft slug for potential overwriting
+    if (draft.slug) {
+      localStorage.setItem('current_draft_slug', draft.slug);
+    }
+    
+    console.log('✅ Editor populated with draft content');
+  }
+
+  async deleteDraft(draftName) {
+    // Show confirmation dialog
+    if (!confirm(`Are you sure you want to delete the draft "${draftName}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      console.log('🗑️ Deleting draft:', draftName);
+      
+      // Get GitHub token
+      const githubToken = this.getCurrentToken();
+      if (!githubToken) {
+        alert('GitHub authentication required');
+        return;
+      }
+      
+      // First get the file to get its SHA
+      const getResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/drafts/${draftName}`, {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (!getResponse.ok) {
+        throw new Error(`Failed to get draft info: ${getResponse.status}`);
+      }
+      
+      const draftInfo = await getResponse.json();
+      const sha = draftInfo.sha;
+      
+      // Delete the file
+      const deleteResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/drafts/${draftName}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify({
+          message: `Delete draft: ${draftName}`,
+          sha: sha
+        })
+      });
+      
+      if (!deleteResponse.ok) {
+        throw new Error(`Failed to delete draft: ${deleteResponse.status}`);
+      }
+      
+      console.log('✅ Draft deleted successfully');
+      
+      // Refresh the drafts list
+      this.loadDraftsFromGitHub();
+      
+    } catch (error) {
+      console.error('❌ Error deleting draft:', error);
+      alert('Failed to delete draft: ' + error.message);
+    }
   }
 
   // This function is no longer needed but keeping for compatibility
