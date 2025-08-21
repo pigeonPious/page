@@ -184,9 +184,8 @@ class SimpleBlog {
           <div class="menu-item" data-menu="navigation">
             <div class="label">Navigation</div>
             <div class="menu-dropdown" id="navigation-dropdown">
-              <a class="menu-entry" href="index.html">Blog</a>
-              <a class="menu-entry" href="#">About</a>
-              <a class="menu-entry" href="#">Contact</a>
+              <div class="menu-entry" id="about-btn">About</div>
+              <div class="menu-entry" id="contact-btn">Contact</div>
               <div class="menu-separator"></div>
               <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
@@ -238,8 +237,9 @@ class SimpleBlog {
 
 
         
-        <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: default; user-select: none;" data-note="Welcome to my Blog!">
+        <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: default; user-select: none;">
           <span id="github-connect-underscore" style="color: #fff; cursor: pointer; margin-right: 2px;">_</span>PiousPigeon
+          <span id="logout-btn" style="color: var(--muted); cursor: pointer; margin-left: 8px; display: none;">logout</span>
         </div>
         </div>
       </div>
@@ -248,9 +248,42 @@ class SimpleBlog {
     // Insert at the beginning of body
     document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
     console.log('✅ Taskbar created');
+    
+    // Bind events after taskbar is in the DOM
+    this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
+    this.bindEventListener(document.getElementById('contact-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('contact'); });
+    this.bindEventListener(document.getElementById('logout-btn'), 'click', () => { this.logout(); });
   }
-  
-  
+
+  // Helper Methods
+  bindEventListener(element, event, handler) {
+    if (element) {
+      element.addEventListener(event, handler);
+    }
+  }
+
+  // Logout functionality
+  logout() {
+    console.log('Logging out...');
+    localStorage.removeItem('github_token');
+    localStorage.removeItem('github_oauth_token');
+    localStorage.removeItem('github_token_type');
+    
+    // Hide logout button
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.style.display = 'none';
+    }
+    
+    // Update GitHub status
+    const underscore = document.getElementById('github-connect-underscore');
+    if (underscore) {
+      underscore.textContent = '_';
+      underscore.style.color = '#fff';
+    }
+    
+    console.log('Logged out successfully');
+  }
 
   clearBuildCache() {
     console.log('🧹 MAXIMUM TROUBLESHOOTING: clearBuildCache called!');
@@ -1231,7 +1264,7 @@ class SimpleBlog {
         submenu.appendChild(categoryLabel);
         
         // Add posts in this category
-        postsInCategory.forEach((post) => {
+        postsInCategory.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach((post) => {
           const entry = document.createElement('div');
           entry.className = 'menu-entry';
           entry.textContent = `   ├─ ${post.title || 'Untitled'}`;
@@ -1286,7 +1319,7 @@ class SimpleBlog {
         submenu.appendChild(uncategorizedLabel);
         
         // Add uncategorized posts
-        uncategorized.forEach((post) => {
+        uncategorized.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach((post) => {
           const entry = document.createElement('div');
           entry.className = 'menu-entry';
           entry.textContent = `   ├─ ${post.title || 'Untitled'}`;
@@ -3380,13 +3413,9 @@ class SimpleBlog {
 
   // Console Interface
   showConsole() {
-    console.log('🖥️ Opening console...');
+    console.log('Opening console...');
     
-    // Check if user is authenticated as admin
-    if (!this.isAdmin()) {
-      alert('Console access requires GitHub admin authentication.');
-      return;
-    }
+    // Allow console to open for everyone, but check admin for commands
     
     // Check if console already exists
     let consoleWindow = document.getElementById('consoleWindow');
@@ -3415,8 +3444,12 @@ class SimpleBlog {
       input.focus();
     }
     
-    // Print welcome message
-    this.printToConsole('Console ready. Type "?" for help.');
+    // Print welcome message based on admin status
+    if (this.isAdmin()) {
+      this.printToConsole('Console ready. Type "?" for help.');
+    } else {
+      this.printToConsole('Console ready. Commands require admin access.');
+    }
     
     console.log('✅ Console opened');
   }
@@ -4283,7 +4316,7 @@ class SimpleBlog {
     console.log('🔍 Import button style.display:', importBtn.style.display);
     console.log('🔍 Close button style.display:', closeBtn.style.display);
     console.log('🔍 Import button style.visibility:', importBtn.style.visibility);
-    console.log('🔍 Close button style.visibility:', importBtn.style.visibility);
+    console.log('🔍 Close button style.visibility:', closeBtn.style.visibility);
     console.log('🔍 Import button style.pointerEvents:', closeBtn.style.pointerEvents);
     
 
@@ -6872,7 +6905,7 @@ class SimpleBlog {
     submenu.appendChild(bufferZone);
     
     // Add devlog category groups first
-    Object.keys(groupedPosts).forEach(category => {
+    Object.keys(groupedPosts).sort().forEach(category => {
       const posts = groupedPosts[category];
       
       // Add category separator with label
@@ -6893,51 +6926,51 @@ class SimpleBlog {
       categorySeparator.textContent = category;
       submenu.appendChild(categorySeparator);
       
-              // Add posts in this category
-        posts.forEach(post => {
-          const postEntry = document.createElement('div');
-          postEntry.className = 'menu-entry';
-          postEntry.textContent = post.title || post.slug;
-          postEntry.style.cssText = `
-            padding: 8px 12px 8px 20px;
-            cursor: pointer;
-            color: var(--menu-fg, #fff);
-            font-size: 13px;
-            border-bottom: 1px solid var(--border, #555);
-            background: var(--menu-bg, #333);
-            transition: background-color 0.15s ease, transform 0.15s ease;
-            border-radius: 2px;
-          `;
-          
-          postEntry.addEventListener('click', () => {
-            // Check if we're in the editor
-            console.log('🔍 Current pathname:', window.location.pathname);
-            console.log('🔍 Current href:', window.location.href);
-            if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
-              console.log('📝 In editor - redirecting to main blog with post:', post.slug);
-              // Redirect to main blog with the selected post
-              window.location.href = `index.html?post=${post.slug}`;
-            } else {
-              console.log('🏠 On main blog - loading post normally:', post.slug);
-              // We're on the main blog, load post normally
-              this.loadPost(post.slug);
-              this.closeAllMenus();
-            }
-          });
-          
-          // Add hover effects
-          postEntry.addEventListener('mouseenter', () => {
-            postEntry.style.background = 'var(--menu-hover-bg, #555)';
-            postEntry.style.transform = 'translateX(2px)';
-          });
-          
-          postEntry.addEventListener('mouseleave', () => {
-            postEntry.style.background = 'var(--menu-bg, #333)';
-            postEntry.style.transform = 'translateX(0)';
-          });
-          
-          submenu.appendChild(postEntry);
+      // Add posts in this category
+      posts.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
+        const postEntry = document.createElement('div');
+        postEntry.className = 'menu-entry';
+        postEntry.textContent = post.title || post.slug;
+        postEntry.style.cssText = `
+          padding: 8px 12px 8px 20px;
+          cursor: pointer;
+          color: var(--menu-fg, #fff);
+          font-size: 13px;
+          border-bottom: 1px solid var(--border, #555);
+          background: var(--menu-bg, #333);
+          transition: background-color 0.15s ease, transform 0.15s ease;
+          border-radius: 2px;
+        `;
+        
+        postEntry.addEventListener('click', () => {
+          // Check if we're in the editor
+          console.log('🔍 Current pathname:', window.location.pathname);
+          console.log('🔍 Current href:', window.location.href);
+          if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
+            console.log('📝 In editor - redirecting to main blog with post:', post.slug);
+            // Redirect to main blog with the selected post
+            window.location.href = `index.html?post=${post.slug}`;
+          } else {
+            console.log('🏠 On main blog - loading post normally:', post.slug);
+            // We're on the main blog, load post normally
+            this.loadPost(post.slug);
+            this.closeAllMenus();
+          }
         });
+        
+        // Add hover effects
+        postEntry.addEventListener('mouseenter', () => {
+          postEntry.style.background = 'var(--menu-hover-bg, #555)';
+          postEntry.style.transform = 'translateX(2px)';
+        });
+        
+        postEntry.addEventListener('mouseleave', () => {
+          postEntry.style.background = 'var(--menu-bg, #333)';
+          postEntry.style.transform = 'translateX(0)';
+        });
+        
+        submenu.appendChild(postEntry);
+      });
     });
     
     // Add general posts at the end (if any)
@@ -6961,7 +6994,7 @@ class SimpleBlog {
       submenu.appendChild(generalSeparator);
       
       // Add general posts
-      generalPosts.forEach(post => {
+      generalPosts.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
         const postEntry = document.createElement('div');
         postEntry.className = 'menu-entry';
         postEntry.textContent = post.title || post.slug;
@@ -7700,7 +7733,7 @@ class SimpleBlog {
             treeHTML += `<span class="expanded-category-header" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold; margin-bottom: 1px;">└─${category}</span>`;
             
             // Show posts in category
-            postsInCategory.forEach(post => {
+            postsInCategory.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
               const isCurrentPost = post.slug === currentSlug;
               treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
               treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
@@ -7723,7 +7756,7 @@ class SimpleBlog {
         if (uncategorized.length > 0) {
           treeHTML += `<div style="margin-bottom: 6px;">`;
           treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
-          uncategorized.forEach(post => {
+          uncategorized.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
             const isCurrentPost = post.slug === currentSlug;
             treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
             treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
@@ -7861,7 +7894,7 @@ class SimpleBlog {
     expandedHTML += `<span class="expanded-category-header" data-category="${categoryName}" style="cursor: pointer; pointer-events: auto; font-weight: bold; margin-bottom: 1px;">└─${categoryName}</span>`;
     
     // Show posts in category
-    categoryPosts.forEach(post => {
+    categoryPosts.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
       const isCurrentPost = post.slug === currentSlug;
       expandedHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
       expandedHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
