@@ -233,10 +233,12 @@ class SimpleBlog {
           <!-- Status Indicators -->
           ${!isEditor ? `
           <div class="taskbar-status">
+            <span class="site-title">PiousPigeon</span>
             <span id="auth-status" title="GitHub connection status"></span>
           </div>
           ` : ''}
           <div class="taskbar-status editor-only">
+            <span class="site-title">PiousPigeon</span>
             <span id="connection-status" title="Connection Status"></span>
             <span id="action-status" title="Action Status"></span>
           </div>
