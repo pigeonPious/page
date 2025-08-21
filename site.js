@@ -197,7 +197,7 @@ class SimpleBlog {
             <div class="menu-dropdown" id="projects-dropdown">
               <a class="menu-entry" href="https://linktr.ee/PiousPigeon" target="_blank">Linktree</a>
               <div class="menu-separator"></div>
-              <div class="menu-entry" id="projects-menu">Loading...</div>
+              <div class="menu-entry" id="projects-menu">Use console to add projects</div>
             </div>
           </div>
           
@@ -1054,7 +1054,7 @@ class SimpleBlog {
     
     // Global menu manager - ensures only one menu open at each level
     this.closeOtherLevel1Menus = (currentMenu) => {
-      const allLevel1Menus = ['all-posts-menu', 'projects-menu'];
+      const allLevel1Menus = ['all-posts-menu'];
       allLevel1Menus.forEach(menuId => {
         if (menuId !== currentMenu) {
           const menu = document.getElementById(menuId);
@@ -1149,13 +1149,7 @@ class SimpleBlog {
 
 
 
-    // Projects submenu - now handled by updateProjectsSubmenu
-    const projectsMenu = document.getElementById('projects-menu');
-    if (projectsMenu) {
-      console.log('✅ Projects menu found - will be populated by updateProjectsSubmenu');
-    } else {
-      console.warn('⚠️ Projects menu element not found');
-    }
+
     
     console.log('✅ Submenus setup complete with menu hierarchy management');
   }
@@ -1971,8 +1965,7 @@ class SimpleBlog {
           // Don't create submenus on page load - only create them on hover
           console.log('🧭 loadPosts: Posts loaded, submenus will be created on hover');
           
-          // Update projects menu to reflect current flags/categories
-          this.updateProjectsSubmenu(this.posts || []);
+
         } else {
           console.log('⚠️ loadPosts: No posts found in index');
           this.displayDefaultContent();
@@ -2261,6 +2254,7 @@ class SimpleBlog {
     navContainer.style.cssText = `
       margin-top: 40px;
       padding-top: 20px;
+      padding-left: 0;
       border-top: 1px solid var(--border);
       font-family: monospace;
       line-height: 1.4;
@@ -2270,7 +2264,7 @@ class SimpleBlog {
     if (prevPost) {
       const prevLink = document.createElement('div');
       prevLink.innerHTML = `<a href="#" class="nav-link prev-link" data-slug="${prevPost.slug}">_previous</a>`;
-      prevLink.style.cssText = 'margin-bottom: 8px;';
+      prevLink.style.cssText = 'margin-bottom: 4px;';
       navContainer.appendChild(prevLink);
       
       // Add click handler
@@ -3731,8 +3725,7 @@ class SimpleBlog {
       // Save back to GitHub
       await this.saveProjectsToGitHub(projects);
       
-      // Update UI
-      this.updateProjectsMenu(projects);
+
       
       this.printToConsole(`✅ Project link "${label}" added successfully!`);
       
@@ -3846,60 +3839,7 @@ class SimpleBlog {
     }
   }
 
-  updateProjectsMenu(projects) {
-    const projectsDropdown = document.getElementById('projects-dropdown');
-    if (!projectsDropdown) return;
-    
-    // Find the projects menu entry
-    const projectsMenu = projectsDropdown.querySelector('#projects-menu');
-    if (!projectsMenu) return;
-    
-    // Clear existing content
-    projectsMenu.innerHTML = '';
-    
-    // Add projects
-    projects.forEach(project => {
-      const entry = document.createElement('div');
-      entry.className = 'menu-entry';
-      entry.textContent = project.label;
-      entry.style.cssText = `
-        padding: 1px 12px 1px 20px;
-        cursor: pointer;
-        color: var(--menu-fg, #fff);
-        transition: background-color 0.15s ease;
-        border-radius: 3px;
-        margin: 0.25px 1px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 200px;
-        font-size: 11px;
-      `;
-      
-      entry.title = `Click to visit: ${project.url}`;
-      
-      entry.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        window.open(project.url, '_blank');
-      });
-      
-      projectsMenu.appendChild(entry);
-    });
-    
-    // Add separator and "No projects" message if empty
-    if (projects.length === 0) {
-      const noProjects = document.createElement('div');
-      noProjects.textContent = 'No projects yet';
-      noProjects.style.cssText = `
-        padding: 8px 15px;
-        color: var(--muted, #888);
-        font-style: italic;
-        text-align: center;
-      `;
-      projectsMenu.appendChild(noProjects);
-    }
-  }
+
 
   // This function is no longer needed but keeping for compatibility
   setupImageMagazineButtons() {
@@ -4692,16 +4632,7 @@ class SimpleBlog {
     return sanitized;
   }
 
-  // Function to refresh projects menu with current posts
-  refreshProjectsMenu() {
-    console.log('🔄 Refreshing projects menu...');
-    if (this.posts && this.posts.length > 0) {
-      this.updateProjectsSubmenu(this.posts);
-      console.log('✅ Projects menu refreshed');
-    } else {
-      console.log('⚠️ No posts available to refresh projects menu');
-    }
-  }
+
 
   // Function to update posts index incrementally (much more efficient)
   async updatePostsIndexIncrementally(postData, isEdit) {
@@ -5445,8 +5376,7 @@ class SimpleBlog {
             console.log('🧹 Edit data cleared after successful publish');
           }
           
-          // Update the projects menu to reflect new flags/categories
-          this.updateProjectsSubmenu(this.posts || []);
+
           
           this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nIndex updated efficiently with minimal API calls.`, 'success');
           
@@ -6698,8 +6628,7 @@ class SimpleBlog {
     // Update All Posts submenu
     this.updateAllPostsSubmenu(allPosts);
     
-    // Update Projects submenu
-    this.updateProjectsSubmenu(allPosts);
+
     
     console.log('✅ Navigation menu fully updated');
   }
@@ -6956,6 +6885,8 @@ class SimpleBlog {
   }
 
   updateProjectsSubmenu(allPosts) {
+    // This method is no longer used - projects menu is now static
+    return;
     console.log('📋 Updating Projects submenu');
     
     // Find the projects dropdown container
