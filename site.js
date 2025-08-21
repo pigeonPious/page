@@ -251,10 +251,77 @@ class SimpleBlog {
     // Bind events after taskbar is in the DOM
     this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
     this.bindEventListener(document.getElementById('contact-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('contact'); });
-  }
-  
-  
+    }
 
+  // Helper Methods
+  bindEventListener(element, event, handler) {
+    if (element) {
+      element.addEventListener(event, handler);
+    }
+  }
+
+  addClickHandler(selector, handler) {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.addEventListener('click', handler);
+    }
+  }
+
+  // Modal Methods
+  showPublishModal() {
+    console.log('📢 Opening publish modal...');
+    // Basic publish functionality - you can expand this later
+    const title = document.getElementById('postTitle')?.value || 'Untitled';
+    const content = document.getElementById('postContent')?.innerHTML || '';
+    
+    if (!content.trim()) {
+      alert('Please add some content before publishing.');
+      return;
+    }
+    
+    if (confirm(`Publish "${title}"?`)) {
+      this.publishPost();
+    }
+  }
+
+  showFlagsModal() {
+    console.log('🏷️ Opening flags modal...');
+    // Basic flags functionality - you can expand this later
+    const currentFlags = this.currentPostFlags || '';
+    const newFlags = prompt('Enter flags (comma-separated):', currentFlags);
+    
+    if (newFlags !== null) {
+      this.currentPostFlags = newFlags;
+      localStorage.setItem('current_post_flags', newFlags);
+      
+      // Update the flags input field if it exists
+      const flagsInput = document.getElementById('keywords-input');
+      if (flagsInput) {
+        flagsInput.value = newFlags;
+      }
+      
+      console.log('✅ Flags updated:', newFlags);
+    }
+  }
+
+  publishPost() {
+    console.log('📢 Publishing post...');
+    // Basic publish implementation - you can expand this later
+    const title = document.getElementById('postTitle')?.value || 'Untitled';
+    const content = document.getElementById('postContent')?.innerHTML || '';
+    const flags = this.currentPostFlags || '';
+    
+    if (!content.trim()) {
+      alert('Please add some content before publishing.');
+      return;
+    }
+    
+    // For now, just show a success message
+    alert(`Post "${title}" published successfully!`);
+    console.log('✅ Post published:', { title, content, flags });
+  }
+
+  
   clearBuildCache() {
     console.log('🧹 MAXIMUM TROUBLESHOOTING: clearBuildCache called!');
     console.log('🧹 localStorage before clearing:', Object.keys(localStorage));
