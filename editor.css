@@ -271,11 +271,7 @@ body {
     padding-left: 0;
   }
   
-  .editor-tools-vertical {
-    flex-direction: row;
-    justify-content: center;
-    gap: 20px;
-  }
+
 }
 
 .editor-main-column {
@@ -310,42 +306,7 @@ body {
   font-weight: normal;
 }
 
-/* Simplified tool buttons */
-.editor-tools-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
 
-.tool-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--fg);
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: color 0.2s;
-  user-select: none;
-}
-
-.tool-button:hover {
-  color: var(--accent);
-}
-
-.tool-value {
-  display: block;
-  font-size: 10px;
-  font-weight: normal;
-  text-transform: none;
-  letter-spacing: normal;
-  opacity: 0.6;
-  margin-top: 2px;
-}
 
 .editor-main {
   min-height: calc(100vh - 150px);

@@ -188,10 +188,7 @@ a:hover {
   margin: 20px 0;
 }
 
-/* Hide editor sidebar buttons completely - now available in taskbar */
-.editor-sidebar .editor-tools-vertical {
-  display: none;
-}
+
 
 /* Minimal scrollbar styling for image magazine */
 #imageGallery::-webkit-scrollbar {
