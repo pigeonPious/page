@@ -196,8 +196,6 @@ class SimpleBlog {
             <div class="label">Projects</div>
             <div class="menu-dropdown" id="projects-dropdown">
               <a class="menu-entry" href="https://linktr.ee/PiousPigeon" target="_blank">Linktree</a>
-              <div class="menu-separator"></div>
-              <div class="menu-entry" id="projects-menu">Use console to add projects</div>
             </div>
           </div>
           
@@ -3704,8 +3702,8 @@ class SimpleBlog {
       this.printToConsole('Adding project link...');
       
       // Get GitHub token
-      const githubToken = this.getCurrentToken();
-      if (!githubToken) {
+      const tokenInfo = this.getCurrentToken();
+      if (!tokenInfo) {
         this.printToConsole('Error: GitHub authentication required');
         return;
       }
@@ -3724,8 +3722,6 @@ class SimpleBlog {
       
       // Save back to GitHub
       await this.saveProjectsToGitHub(projects);
-      
-
       
       this.printToConsole(`✅ Project link "${label}" added successfully!`);
       
