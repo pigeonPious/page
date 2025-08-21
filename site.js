@@ -791,7 +791,6 @@ class SimpleBlog {
     
     console.log('📝 Selection preservation handlers added');
   }
-
   setupButtonEvents() {
     console.log('🔧 Setting up button events...');
     
@@ -1468,7 +1467,6 @@ class SimpleBlog {
       }
     }
   }
-  
   // Force reindex all posts across the site (admin only)
   async forceReindexPosts() {
     console.log('🔄 Force reindex started');
@@ -2200,7 +2198,6 @@ class SimpleBlog {
     
     console.log('✅ Post displayed successfully:', post.title);
   }
-
   addPostNavigation(currentPost) {
     if (!currentPost || !this.posts || this.posts.length === 0) return;
     
@@ -2969,7 +2966,6 @@ class SimpleBlog {
     
     console.log('✅ Drafts modal opened');
   }
-
   createDraftsModal() {
     const modal = document.createElement('div');
     modal.id = 'draftsModal';
@@ -3754,7 +3750,6 @@ class SimpleBlog {
       this.pendingProjectLink = {};
     }
   }
-
   // New project mode console handler
   async handleProjectModeInput(input) {
     if (!this.isAdmin()) {
@@ -4509,9 +4504,6 @@ class SimpleBlog {
     
     console.log('✅ Image inserted:', filename);
   }
-
-
-
   setupEditorDragAndDrop() {
     // Only setup once
     if (this.editorDragAndDropSetup) return;
@@ -5289,7 +5281,6 @@ class SimpleBlog {
       document.addEventListener('click', outsideClick);
     }, 100);
   }
-
   async publishPostToGitHub(title, content, commitMessage) {
     console.log('🚀 Publishing to GitHub:', { title, commitMessage });
     
@@ -6090,7 +6081,6 @@ class SimpleBlog {
       this.showMenuStyle1Message('Error sharing to Twitter. Please try again.', 'error');
     }
   }
-
   showGitHubLogin() {
     console.log('🔐 Showing GitHub OAuth login...');
     
@@ -6805,7 +6795,6 @@ class SimpleBlog {
     
     console.log('✅ Navigation menu fully updated');
   }
-
   updateAllPostsSubmenu(allPosts) {
     console.log('📚 Updating All Posts submenu with', allPosts.length, 'posts');
     
@@ -7576,7 +7565,6 @@ class SimpleBlog {
     
     console.log(`✅ Category window opened for ${category} with ${posts.length} posts`);
   }
-
   // Show site map when viewing a post
   showSiteMap() {
     // Remove existing site map if present
@@ -7891,10 +7879,24 @@ class SimpleBlog {
     // Re-add click handlers for the new post links
     const newPostLinks = this.currentSiteMap.querySelectorAll('.post-link');
     newPostLinks.forEach(link => {
-      link.addEventListener('click', () => {
+      // First, remove any existing listeners to avoid duplicates
+      link.replaceWith(link.cloneNode(true));
+    });
+    
+    // Now, get the fresh links and add the correct listener
+    const freshPostLinks = this.currentSiteMap.querySelectorAll('.post-link');
+    freshPostLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         const slug = link.getAttribute('data-slug');
-        this.loadPost(slug);
-        // Don't close site map - keep it open
+        if (window.location.pathname.includes('editor.html')) {
+          console.log(`📝 Editor mode: Loading post ${slug} for editing from expanded category`);
+          this.loadEditDataForPost(slug);
+        } else {
+          this.loadPost(slug);
+        }
       });
     });
     
@@ -7957,11 +7959,6 @@ hideSiteMap() {
     this.currentSiteMap = null;
   }
 }
-
-
-
-
-
   makeWindowDraggable(window) {
     let isDragging = false;
     let startX, startY, startLeft, startTop;
@@ -8749,7 +8746,6 @@ hideSiteMap() {
     
     console.log('✅ Cleanup complete');
   }
-
   // ========== NEW EDIT MENU FUNCTIONS ==========
 
 
