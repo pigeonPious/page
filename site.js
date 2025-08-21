@@ -239,7 +239,7 @@ class SimpleBlog {
           <div class="taskbar-status editor-only">
             <span id="connection-status" title="Connection Status"></span>
             <span id="action-status" title="Action Status"></span>
-          </div>
+        </div>
         </div>
       </div>
     `;
@@ -247,10 +247,6 @@ class SimpleBlog {
     // Insert at the beginning of body
     document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
     console.log('✅ Taskbar created');
-
-    // Bind events after taskbar is in the DOM
-    this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
-    this.bindEventListener(document.getElementById('contact-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('contact'); });
   }
   
   
@@ -889,9 +885,17 @@ class SimpleBlog {
       this.loadRandomPost();
     });
 
-    // Site Map button
+    this.addClickHandler('#about-btn', (e) => {
+      e.preventDefault();
+      this.loadPost('about');
+    });
+
+    this.addClickHandler('#contact-btn', (e) => {
+      e.preventDefault();
+      this.loadPost('contact');
+    });
+
     this.addClickHandler('#show-site-map', () => {
-      console.log('🗺️ Site Map button clicked');
       this.showSiteMap();
     });
     
@@ -6845,7 +6849,7 @@ hideSiteMap() {
     
     console.log('Font size window opened');
   }
-  
+
   adjustFontSize(action) {
     console.log(`Adjusting font size: ${action}`);
     
