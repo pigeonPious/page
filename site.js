@@ -158,6 +158,7 @@ class SimpleBlog {
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
               <div class="menu-separator"></div>
               <div class="menu-entry admin-only" id="force-reindex-button">Force Reindex</div>
+              <div class="menu-entry admin-only" id="check-rate-limit">Check Rate Limit</div>
               <div class="menu-separator"></div>
 
               <div class="menu-entry blog-only" id="font-size-button">Font Size</div>
@@ -802,6 +803,12 @@ class SimpleBlog {
     this.addClickHandler('#force-reindex-button', () => {
       console.log('🔄 Force reindex button clicked');
       this.forceReindexPosts();
+    });
+    
+    // Check rate limit button
+    this.addClickHandler('#check-rate-limit', () => {
+      console.log('📊 Check rate limit button clicked');
+      this.checkRateLimit();
     });
     
     // Edit post button
@@ -3582,9 +3589,101 @@ class SimpleBlog {
     }
   }
 
-  // Function to rebuild the entire posts index from actual GitHub files
+  // Function to update posts index incrementally (much more efficient)
+  async updatePostsIndexIncrementally(postData, isEdit) {
+    console.log('🔄 Updating posts index incrementally...');
+    
+    try {
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        console.error('❌ No GitHub token found for index update');
+        return false;
+      }
+      
+      // Get current index file to get its SHA
+      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+        headers: {
+          'Authorization': `token ${token}`,
+        }
+      });
+      
+      if (!indexResponse.ok) {
+        console.error('❌ Could not fetch current index file:', indexResponse.status);
+        return false;
+      }
+      
+      const indexData = await indexResponse.json();
+      const currentIndex = JSON.parse(atob(indexData.content));
+      
+      console.log('📊 Current index has', currentIndex.length, 'posts');
+      
+      // Create new index entry for this post
+      const newIndexEntry = {
+        slug: postData.slug,
+        title: postData.title,
+        date: postData.date,
+        keywords: postData.keywords || 'general'
+      };
+      
+      let updatedIndex;
+      
+      if (isEdit) {
+        // For edits: update existing entry
+        updatedIndex = currentIndex.map(post => 
+          post.slug === postData.slug ? newIndexEntry : post
+        );
+        console.log('✏️ Updated existing post in index:', postData.slug);
+      } else {
+        // For new posts: add to beginning (newest first)
+        updatedIndex = [newIndexEntry, ...currentIndex];
+        console.log('➕ Added new post to index:', postData.slug);
+      }
+      
+      // Sort by date (newest first)
+      updatedIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      // Update local posts array
+      this.posts = updatedIndex;
+      localStorage.setItem('posts', JSON.stringify(updatedIndex));
+      
+      // Update the index file on GitHub
+      const updateResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: isEdit ? 
+            `Update post in index: ${postData.title}` : 
+            `Add new post to index: ${postData.title}`,
+          content: btoa(JSON.stringify(updatedIndex, null, 2)),
+          sha: indexData.sha,
+          branch: 'main'
+        })
+      });
+      
+      if (updateResponse.ok) {
+        console.log('✅ Index updated successfully on GitHub');
+        return true;
+      } else {
+        console.error('❌ Failed to update index:', updateResponse.status);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error updating posts index:', error);
+      return false;
+    }
+  }
+
+  // Function to rebuild the entire posts index from actual GitHub files (kept for manual use)
+  // ⚠️ WARNING: This function makes N+3 API calls where N = number of posts
+  // Use only when you need to completely rebuild the index (e.g., after manual file changes)
+  // For normal post publishing, use updatePostsIndexIncrementally() instead
   async rebuildPostsIndexFromGitHub() {
     console.log('🔄 Rebuilding posts index from actual GitHub files...');
+    console.log('⚠️ This will make many API calls - use only when necessary!');
     
     try {
       const token = localStorage.getItem('github_token');
@@ -3616,6 +3715,7 @@ class SimpleBlog {
       );
       
       console.log('📄 Found post files:', postFiles.length);
+      console.log('⚠️ Will make', postFiles.length + 3, 'API calls total');
       
       // Build new index by reading each post file
       const newIndex = [];
@@ -4220,31 +4320,28 @@ class SimpleBlog {
       if (response.ok) {
         console.log('✅ Post published successfully to GitHub');
         
-        // Rebuild the entire posts index from actual GitHub files to ensure perfect synchronization
-        console.log('🔄 Rebuilding posts index from actual GitHub files...');
-        const indexRebuilt = await this.rebuildPostsIndexFromGitHub();
+        // Update the posts index incrementally instead of rebuilding from scratch
+        console.log('🔄 Updating posts index incrementally...');
+        const indexUpdated = await this.updatePostsIndexIncrementally(postData, isEdit);
         
-        if (indexRebuilt) {
+        if (indexUpdated) {
           // Clear edit data after successful publish
           if (isEdit) {
             localStorage.removeItem('editPostData');
             console.log('🧹 Edit data cleared after successful publish');
           }
           
-          // Fast reindex just the current post instead of full reload
-          await this.fastReindexCurrentPost();
-          
           // Update the projects menu to reflect new flags/categories
           this.updateProjectsSubmenu(this.posts || []);
           
-          this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nIndex has been rebuilt to ensure perfect synchronization.`, 'success');
+          this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nIndex updated efficiently with minimal API calls.`, 'success');
           
           // Redirect to the published post after a short delay
           setTimeout(() => {
             window.location.href = `index.html?post=${postData.slug}`;
           }, 3000);
         } else {
-          this.showMenuStyle1Message('⚠️ Post published but index rebuild failed. Please refresh the page to see updated navigation.', 'warning');
+          this.showMenuStyle1Message('⚠️ Post published but index update failed. Please refresh the page to see updated navigation.', 'warning');
         }
       } else {
         const error = await response.json();
@@ -4964,7 +5061,141 @@ class SimpleBlog {
     });
   }
 
+  // Check GitHub API rate limit status
+  async checkRateLimit() {
+    try {
+      const tokenInfo = this.getCurrentToken();
+      let headers = {
+        'Accept': 'application/vnd.github.v3+json'
+      };
+      
+      if (tokenInfo && tokenInfo.token) {
+        headers['Authorization'] = `token ${tokenInfo.token}`;
+      }
+      
+      const response = await fetch('https://api.github.com/rate_limit', { headers });
+      
+      if (response.ok) {
+        const rateLimitData = await response.json();
+        const core = rateLimitData.resources.core;
+        const search = rateLimitData.resources.search;
+        
+        console.log('📊 Rate Limit Status:', {
+          core: {
+            limit: core.limit,
+            remaining: core.remaining,
+            reset: new Date(core.reset * 1000).toLocaleString(),
+            used: core.used
+          },
+          search: {
+            limit: search.limit,
+            remaining: search.remaining,
+            reset: new Date(search.reset * 1000).toLocaleString(),
+            used: search.used
+          }
+        });
+        
+        // Show rate limit status in the UI
+        this.showRateLimitStatus(core, search);
+        
+        return { core, search };
+      } else {
+        console.warn('⚠️ Could not fetch rate limit info:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error checking rate limit:', error);
+      return null;
+    }
+  }
 
+  // Show rate limit status in the UI
+  showRateLimitStatus(core, search) {
+    // Find or create rate limit status element
+    let statusElement = document.getElementById('rate-limit-status');
+    if (!statusElement) {
+      statusElement = document.createElement('div');
+      statusElement.id = 'rate-limit-status';
+      statusElement.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--menu-bg, #333);
+        border: 1px solid var(--border, #555);
+        padding: 15px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--menu-fg, #fff);
+        z-index: 1000;
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      `;
+      document.body.appendChild(statusElement);
+    }
+    
+    // Calculate remaining percentage
+    const corePercent = Math.round((core.remaining / core.limit) * 100);
+    const searchPercent = Math.round((search.remaining / search.limit) * 100);
+    
+    // Determine color based on remaining requests
+    const getColor = (percent) => {
+      if (percent > 50) return '#28a745'; // Green
+      if (percent > 20) return '#ffc107'; // Yellow
+      return '#dc3545'; // Red
+    };
+    
+    const coreColor = getColor(corePercent);
+    const searchColor = getColor(searchPercent);
+    
+    // Format reset time
+    const resetTime = new Date(core.reset * 1000).toLocaleTimeString();
+    
+    statusElement.innerHTML = `
+      <div style="margin-bottom: 10px; font-weight: bold;">📊 GitHub API Rate Limit</div>
+      
+      <div style="margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+          <span>Core API:</span>
+          <span style="color: ${coreColor};">${core.remaining}/${core.limit}</span>
+        </div>
+        <div style="background: #444; height: 4px; border-radius: 2px;">
+          <div style="background: ${coreColor}; height: 100%; width: ${corePercent}%; border-radius: 2px;"></div>
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+          <span>Search API:</span>
+          <span style="color: ${coreColor};">${search.remaining}/${search.limit}</span>
+        </div>
+        <div style="background: #444; height: 4px; border-radius: 2px;">
+          <div style="background: ${searchColor}; height: 100%; width: ${searchPercent}%; border-radius: 2px;"></div>
+        </div>
+      </div>
+      
+      <div style="font-size: 11px; color: var(--muted, #888);">
+        Resets at: ${resetTime}
+      </div>
+      
+      <button onclick="this.parentElement.remove()" style="
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: none;
+        border: none;
+        color: var(--muted, #888);
+        cursor: pointer;
+        font-size: 14px;
+      ">×</button>
+    `;
+    
+    // Auto-hide after 10 seconds
+    setTimeout(() => {
+      if (statusElement && statusElement.parentElement) {
+        statusElement.remove();
+      }
+    }, 10000);
+  }
 
   async authenticateWithToken() {
     const tokenInput = document.getElementById('githubTokenInput');
