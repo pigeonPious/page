@@ -198,7 +198,7 @@ class SimpleBlog {
           <div class="menu-item" data-menu="projects">
             <div class="label">Projects</div>
             <div class="menu-dropdown" id="projects-dropdown">
-              <a class="menu-entry" href="https://linktr.ee/PiousPigeon" target="_blank">Linktree</a>
+      
             </div>
           </div>
           
@@ -2315,7 +2315,8 @@ class SimpleBlog {
     if (this.posts.length > 0) {
       const mostRecent = this.posts[0];
       if (mostRecent && mostRecent.slug) {
-        this.loadPost(mostRecent.slug);
+        // Navigate to blog view with this post
+        window.location.href = `index.html#${mostRecent.slug}`;
       } else {
         console.warn('⚠️ Most recent post missing slug');
         this.displayDefaultContent();
@@ -2331,7 +2332,8 @@ class SimpleBlog {
       const randomIndex = Math.floor(Math.random() * this.posts.length);
       const randomPost = this.posts[randomIndex];
       if (randomPost && randomPost.slug) {
-        this.loadPost(randomPost.slug);
+        // Navigate to blog view with this post
+        window.location.href = `index.html#${randomPost.slug}`;
       } else {
         console.warn('⚠️ Random post missing slug');
         this.displayDefaultContent();
@@ -2380,11 +2382,37 @@ class SimpleBlog {
         console.log('🎨 Custom theme restored from localStorage, not opening HSL picker');
       }
     } else if (mode === 'random') {
-      // Generate random theme
-      const h = Math.floor(Math.random() * 361);
-      const s = Math.floor(Math.random() * 41) + 30;
-      const l = Math.floor(Math.random() * 31) + 15;
-      const color = `hsl(${h},${s}%,${l}%)`;
+      // Check if we have saved random theme values
+      const savedRandomTheme = localStorage.getItem('ppPage_random_theme');
+      let h, s, l, color;
+      
+      if (savedRandomTheme) {
+        // Restore saved random theme
+        try {
+          const themeData = JSON.parse(savedRandomTheme);
+          h = themeData.h;
+          s = themeData.s;
+          l = themeData.l;
+          color = themeData.color;
+          console.log('🎲 Restored saved random theme:', color);
+        } catch (error) {
+          console.warn('⚠️ Could not parse saved random theme, generating new one');
+          // Fall through to generate new theme
+        }
+      }
+      
+      // Generate new random theme if none saved
+      if (!savedRandomTheme || !h || !s || !l || !color) {
+        h = Math.floor(Math.random() * 361);
+        s = Math.floor(Math.random() * 41) + 30;
+        l = Math.floor(Math.random() * 31) + 15;
+        color = `hsl(${h},${s}%,${l}%)`;
+        
+        // Save the random theme values
+        const themeData = { h, s, l, color };
+        localStorage.setItem('ppPage_random_theme', JSON.stringify(themeData));
+        console.log('🎲 Generated and saved new random theme:', color);
+      }
       
       // Calculate complementary colors for the random theme
       const bgColor = color;
@@ -2413,7 +2441,6 @@ class SimpleBlog {
       document.body.style.setProperty('--danger-color', '#dc3545');
       document.body.style.setProperty('--danger-hover-color', '#c82333');
       document.body.style.setProperty('--btn-text-color', fgColor);
-      console.log('🎲 Added random theme:', color);
     }
     
     // Update theme display
@@ -7159,15 +7186,8 @@ class SimpleBlog {
     const projectsDropdown = document.getElementById('projects-dropdown');
     if (!projectsDropdown) return;
     
-    // Clear existing content except Linktree
-    const linktreeEntry = projectsDropdown.querySelector('a[href*="linktr.ee"]');
+    // Clear existing content
     projectsDropdown.innerHTML = '';
-    
-    // Keep Linktree if it exists
-    if (linktreeEntry) {
-      projectsDropdown.appendChild(linktreeEntry);
-      projectsDropdown.appendChild(document.createElement('div')).className = 'menu-separator';
-    }
     
     // Add projects
     if (projects && projects.length > 0) {
