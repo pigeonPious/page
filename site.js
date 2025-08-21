@@ -1318,7 +1318,7 @@ class SimpleBlog {
         border: 1px solid var(--menu-border, #555);
         padding: 1.25px 0;
         min-width: 200px;
-        z-index: 10000;
+        z-index: 10001;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         border-radius: 4px;
       `;
@@ -5524,7 +5524,7 @@ class SimpleBlog {
       left: 2px;
       background: transparent;
       padding: 8px;
-      z-index: 1000;
+      z-index: 999;
       font-family: monospace;
       font-size: 11px;
       line-height: 1.2;
