@@ -5352,10 +5352,17 @@ class SimpleBlog {
       // Remove existing listeners to prevent duplication
       link.removeEventListener('mouseenter', this.showHoverNotePreview);
       link.removeEventListener('mouseleave', this.hideHoverNotePreview);
+      link.removeEventListener('click', this.handleHoverNoteClick);
       
       // Add hover event listeners
       link.addEventListener('mouseenter', (e) => this.showHoverNotePreview(e));
       link.addEventListener('mouseleave', () => this.hideHoverNotePreview());
+      
+      // Add click handler for existing hovernotes with URLs
+      const noteText = link.getAttribute('data-note');
+      if (noteText && noteText.match(/(https?:\/\/[^\s]+)/i)) {
+        link.addEventListener('click', (e) => this.handleHoverNoteClick(e));
+      }
     });
     
     console.log(`✅ Hover note preview setup for ${noteLinks.length} elements`);
@@ -6769,11 +6776,18 @@ hideSiteMap() {
       element.removeEventListener('mouseenter', this.showHoverNote);
       element.removeEventListener('mouseleave', this.hideHoverNote);
       element.removeEventListener('mousemove', this.updateHoverNotePosition);
+      element.removeEventListener('click', this.handleHoverNoteClick);
       
       // Add hover event listeners
       element.addEventListener('mouseenter', (e) => this.showHoverNote(e));
       element.addEventListener('mouseleave', () => this.hideHoverNote());
       element.addEventListener('mousemove', (e) => this.updateHoverNotePosition(e));
+      
+      // Add click handler for existing hovernotes with URLs
+      const noteText = element.getAttribute('data-note');
+      if (noteText && noteText.match(/(https?:\/\/[^\s]+)/i)) {
+        element.addEventListener('click', (e) => this.handleHoverNoteClick(e));
+      }
     });
     
     console.log(`✅ Hover notes setup for ${noteElements.length} elements`);
@@ -6890,6 +6904,21 @@ hideSiteMap() {
     const tooltip = document.getElementById('hoverNote');
     if (tooltip) {
       tooltip.style.display = 'none';
+    }
+  }
+
+  handleHoverNoteClick(event) {
+    const element = event.target;
+    const noteText = element.getAttribute('data-note');
+    
+    if (!noteText) return;
+    
+    // Check if note contains a URL
+    const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
+    if (urlMatch) {
+      const url = urlMatch[1];
+      console.log('🔗 Opening URL from hovernote:', url);
+      window.open(url, '_blank');
     }
   }
 
