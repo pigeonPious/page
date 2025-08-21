@@ -183,8 +183,9 @@ class SimpleBlog {
 
           
           <div class="menu-item" data-menu="navigation">
-            <div class="label" data-menu="navigate">Navigate</div>
+            <div class="label">Navigation</div>
             <div class="menu-dropdown" id="navigation-dropdown">
+              <a class="menu-entry" href="index.html">Blog</a>
               <a class="menu-entry" href="#" id="about-btn">About</a>
               <a class="menu-entry" href="#" id="contact-btn">Contact</a>
               <div class="menu-separator"></div>
@@ -238,7 +239,7 @@ class SimpleBlog {
           <div class="taskbar-status editor-only">
             <span id="connection-status" title="Connection Status"></span>
             <span id="action-status" title="Action Status"></span>
-        </div>
+          </div>
         </div>
       </div>
     `;
@@ -246,6 +247,10 @@ class SimpleBlog {
     // Insert at the beginning of body
     document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
     console.log('✅ Taskbar created');
+
+    // Bind events after taskbar is in the DOM
+    this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
+    this.bindEventListener(document.getElementById('contact-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('contact'); });
   }
   
   
@@ -884,17 +889,9 @@ class SimpleBlog {
       this.loadRandomPost();
     });
 
-    this.addClickHandler('#about-btn', (e) => {
-      e.preventDefault();
-      this.loadPost('about');
-    });
-
-    this.addClickHandler('#contact-btn', (e) => {
-      e.preventDefault();
-      this.loadPost('contact');
-    });
-
+    // Site Map button
     this.addClickHandler('#show-site-map', () => {
+      console.log('🗺️ Site Map button clicked');
       this.showSiteMap();
     });
     
@@ -6848,7 +6845,7 @@ hideSiteMap() {
     
     console.log('Font size window opened');
   }
-
+  
   adjustFontSize(action) {
     console.log(`Adjusting font size: ${action}`);
     
@@ -7070,236 +7067,6 @@ hideSiteMap() {
       document.body.style.fontSize = savedSize + 'px';
       console.log(`🔤 Font size restored to ${savedSize}px`);
     }
-  }
-
-  async addProjectLink(label, url) {
-    try {
-      this.printToConsole('Adding project link...');
-      
-      const tokenInfo = this.getCurrentToken();
-      if (!tokenInfo) {
-        this.printToConsole('Error: GitHub authentication required');
-        return;
-      }
-      
-      const projects = await this.loadProjectsFromGitHub();
-      
-      const newProject = {
-        label: label,
-        url: url,
-        id: Date.now().toString()
-      };
-      
-      projects.push(newProject);
-      
-      await this.saveProjectsToGitHub(projects);
-      
-      this.updateProjectsMenu(projects);
-      
-      this.printToConsole(`Project link "${label}" added successfully!`);
-      
-    } catch (error) {
-      console.error('Error adding project link:', error);
-      this.printToConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async deleteProject(label) {
-    try {
-      this.printToConsole(`Deleting project: ${label}`);
-      
-      const tokenInfo = this.getCurrentToken();
-      if (!tokenInfo) {
-        this.printToConsole('Error: GitHub authentication required');
-        return;
-      }
-      
-      const projects = await this.loadProjectsFromGitHub();
-      
-      const projectIndex = projects.findIndex(p => p.label.toLowerCase() === label.toLowerCase());
-      if (projectIndex === -1) {
-        this.printToConsole(`Project "${label}" not found`);
-        return;
-      }
-      
-      const deletedProject = projects.splice(projectIndex, 1)[0];
-      
-      await this.saveProjectsToGitHub(projects);
-      
-      this.updateProjectsMenu(projects);
-      
-      this.printToConsole(`Project "${deletedProject.label}" deleted successfully!`);
-      
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      this.printToConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async listProjects() {
-    try {
-      const projects = await this.loadProjectsFromGitHub();
-      
-      if (projects.length === 0) {
-        this.printToConsole('No projects found');
-        return;
-      }
-      
-      this.printToConsole(`Found ${projects.length} project(s):`);
-      projects.forEach((project, index) => {
-        this.printToConsole(`  ${index + 1}. ${project.label} → ${project.url}`);
-      });
-      
-    } catch (error) {
-      console.error('Error listing projects:', error);
-      this.printToConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async loadProjectsFromGitHub() {
-    try {
-      const response = await fetch('projects.json');
-      if (response.ok) {
-        return await response.json();
-      } else if (response.status === 404) {
-        console.log('projects.json not found, returning empty array');
-        return [];
-      } else {
-        throw new Error(`Error loading projects.json: ${response.status}`);
-      }
-    } catch (error) {
-      console.error('Error loading projects:', error);
-      return []; // Return empty array on any error
-    }
-  }
-
-  async saveProjectsToGitHub(projects) {
-    try {
-      const tokenInfo = this.getCurrentToken();
-      if (!tokenInfo) {
-        throw new Error('GitHub authentication required');
-      }
-      
-      const token = tokenInfo.token;
-      
-      let sha = null;
-      try {
-        const getResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/projects.json', {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-        
-        if (getResponse.ok) {
-          const data = await getResponse.json();
-          sha = data.sha;
-        }
-      } catch (error) {
-        console.log('projects.json not found, will create new file');
-      }
-      
-      const content = JSON.stringify(projects, null, 2);
-      const encodedContent = btoa(content);
-      
-      const url = 'https://api.github.com/repos/pigeonPious/page/contents/projects.json';
-      
-      const body = {
-        message: 'Update projects.json',
-        content: encodedContent,
-        sha: sha
-      };
-      
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify(body)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to save projects: ${response.status}`);
-      }
-      
-      console.log('Projects saved to GitHub');
-      
-    } catch (error) {
-      console.error('Error saving projects:', error);
-      throw error;
-    }
-  }
-
-  // GitHub Authentication Methods
-  async checkAndUpdateAuthStatus() {
-    console.log('🔐 Checking GitHub authentication status...');
-    
-    const authStatus = document.getElementById('auth-status');
-    if (!authStatus) {
-      console.log('⚠️ Auth status element not found');
-      return;
-    }
-    
-    try {
-      const tokenInfo = this.getCurrentToken();
-      if (tokenInfo && tokenInfo.token) {
-        // Test token validity
-        const response = await fetch('https://api.github.com/user', {
-          headers: {
-            'Authorization': `token ${tokenInfo.token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          this.updateAuthStatus(true, userData.login);
-        } else {
-          console.log('⚠️ Token invalid, clearing authentication');
-          this.clearAuthentication();
-          this.updateAuthStatus(false);
-        }
-      } else {
-        this.updateAuthStatus(false);
-      }
-    } catch (error) {
-      console.error('❌ Error checking auth status:', error);
-      this.updateAuthStatus(false);
-    }
-  }
-
-  getCurrentToken() {
-    const token = localStorage.getItem('github_token') || localStorage.getItem('github_oauth_token');
-    const tokenType = localStorage.getItem('github_token_type') || 'token';
-    
-    if (token) {
-      return { token, type: tokenType };
-    }
-    
-    return null;
-  }
-
-  updateAuthStatus(isAuthenticated, username = null) {
-    const authStatus = document.getElementById('auth-status');
-    if (!authStatus) return;
-    
-    if (isAuthenticated && username) {
-      authStatus.textContent = `_${username}`;
-      authStatus.style.color = 'var(--success-color, #28a745)';
-      authStatus.title = `Connected to GitHub as ${username}`;
-      console.log(`✅ Auth status updated: connected as ${username}`);
-    } else {
-      authStatus.textContent = 'not connected';
-      authStatus.style.color = 'var(--muted, #888)';
-      authStatus.title = 'Not connected to GitHub';
-      console.log('❌ Auth status updated: not connected');
-    }
-  }
-
-  isAdmin() {
-    const tokenInfo = this.getCurrentToken();
-    return tokenInfo && tokenInfo.token;
   }
 }
 
