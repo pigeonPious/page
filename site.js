@@ -4850,219 +4850,30 @@ class SimpleBlog {
     });
   }
 
-  // Initiate OAuth flow using device flow (no CORS issues)
-  async initiateOAuth() {
-    console.log('🚀 Initiating GitHub OAuth device flow...');
+  // Initiate OAuth flow using web application flow (redirect-based)
+  initiateOAuth() {
+    console.log('🚀 Initiating GitHub OAuth web application flow...');
     
-    try {
-      // Start device flow
-      const deviceResponse = await fetch('https://github.com/login/device/code', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: 'Ov23lipy3P5oIGByWrzJ',
-          scope: 'repo'
-        })
-      });
-      
-      if (!deviceResponse.ok) {
-        throw new Error(`Device flow failed: ${deviceResponse.status}`);
-      }
-      
-      const deviceData = await deviceResponse.json();
-      console.log('🔐 Device flow response:', deviceData);
-      
-      // Store device code for polling
-      localStorage.setItem('github_device_code', deviceData.device_code);
-      localStorage.setItem('github_user_code', deviceData.user_code);
-      localStorage.setItem('github_verification_uri', deviceData.verification_uri);
-      
-      // Show device flow modal
-      this.showDeviceFlowModal(deviceData);
-      
-    } catch (error) {
-      console.error('❌ Device flow error:', error);
-      alert('Failed to start OAuth flow. Please try again.');
-    }
-  }
-
-  // Show device flow modal
-  showDeviceFlowModal(deviceData) {
-    // Close existing modal if any
-    const existingModal = document.getElementById('githubLoginModal');
-    if (existingModal) document.body.removeChild(existingModal);
+    // Generate OAuth state for security
+    const state = Math.random().toString(36).substring(7);
+    localStorage.setItem('github_oauth_state', state);
     
-    // Create device flow modal
-    const modal = document.createElement('div');
-    modal.id = 'githubDeviceFlowModal';
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
+    // OAuth app configuration
+    const clientId = 'Ov23lipy3P5oIGByWrzJ';
+    const redirectUri = encodeURIComponent('https://piouspigeon.com/oauth-callback.html');
+    const scope = 'repo';
     
-    const content = document.createElement('div');
-    content.style.cssText = `
-      background: var(--menu-bg);
-      border: 1px solid var(--border);
-      padding: 30px;
-      max-width: 500px;
-      text-align: center;
-    `;
+    // Build OAuth URL for web application flow
+    const oauthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
     
-    content.innerHTML = `
-      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">🔐 GitHub Device Authorization</h3>
-      <p style="color: var(--menu-fg); margin-bottom: 20px;">To complete authentication, please visit GitHub and enter this code:</p>
-      
-      <div style="
-        background: var(--bg);
-        border: 2px solid var(--border);
-        padding: 20px;
-        margin: 20px 0;
-        border-radius: 8px;
-        font-family: monospace;
-        font-size: 24px;
-        font-weight: bold;
-        letter-spacing: 2px;
-        color: var(--fg);
-      ">${deviceData.user_code}</div>
-      
-      <p style="color: var(--muted, #888); font-size: 14px; margin-bottom: 20px;">
-        Or click the button below to open GitHub directly
-      </p>
-      
-      <button id="openGitHubBtn" style="
-        background: #24292e;
-        color: white;
-        border: none;
-        padding: 15px 30px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 16px;
-        margin-bottom: 15px;
-        width: 100%;
-      ">🔗 Open GitHub Authorization</button>
-      
-      <p style="color: var(--muted, #888); font-size: 12px; margin-bottom: 20px;">
-        This window will automatically detect when you've authorized the app
-      </p>
-      
-      <button id="closeDeviceModal" style="
-        background: transparent;
-        color: var(--menu-fg);
-        border: 1px solid var(--border);
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-      ">Cancel</button>
-    `;
+    console.log('🔐 Redirecting to GitHub OAuth:', oauthUrl);
     
-    modal.appendChild(content);
-    document.body.appendChild(modal);
+    // Close modal and redirect
+    const modal = document.getElementById('githubLoginModal');
+    if (modal) document.body.removeChild(modal);
     
-    // Add event listeners
-    document.getElementById('openGitHubBtn').addEventListener('click', () => {
-      window.open(deviceData.verification_uri, '_blank');
-      this.startPollingForToken();
-    });
-    
-    document.getElementById('closeDeviceModal').addEventListener('click', () => {
-      document.body.removeChild(modal);
-      localStorage.removeItem('github_device_code');
-      localStorage.removeItem('github_user_code');
-      localStorage.removeItem('github_verification_uri');
-    });
-    
-    // Close on outside click
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        document.body.removeChild(modal);
-        localStorage.removeItem('github_device_code');
-        localStorage.removeItem('github_user_code');
-        localStorage.removeItem('github_verification_uri');
-      }
-    });
-    
-    // Start polling automatically
-    this.startPollingForToken();
-  }
-
-  // Poll for token completion
-  async startPollingForToken() {
-    const deviceCode = localStorage.getItem('github_device_code');
-    if (!deviceCode) return;
-    
-    console.log('🔄 Starting token polling...');
-    
-    const pollInterval = setInterval(async () => {
-      try {
-        const pollResponse = await fetch('https://github.com/login/oauth/access_token', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            client_id: 'Ov23lipy3P5oIGByWrzJ',
-            device_code: deviceCode,
-            grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
-          })
-        });
-        
-        if (pollResponse.ok) {
-          const pollData = await pollResponse.json();
-          
-          if (pollData.access_token) {
-            console.log('✅ Token received!');
-            clearInterval(pollInterval);
-            
-            // Store the token
-            localStorage.setItem('github_oauth_token', pollData.access_token);
-            localStorage.setItem('github_token_type', 'oauth');
-            
-            // Clear device flow data
-            localStorage.removeItem('github_device_code');
-            localStorage.removeItem('github_user_code');
-            localStorage.removeItem('github_verification_uri');
-            
-            // Close modal and redirect to success
-            const modal = document.getElementById('githubDeviceFlowModal');
-            if (modal) document.body.removeChild(modal);
-            
-            // Show success and redirect to editor
-            alert('✅ GitHub authentication successful! Redirecting to editor...');
-            window.location.href = '/editor.html';
-            
-          } else if (pollData.error === 'authorization_pending') {
-            console.log('⏳ Authorization pending...');
-          } else if (pollData.error === 'slow_down') {
-            console.log('🐌 Rate limited, slowing down...');
-          } else {
-            console.log('❌ Poll error:', pollData.error);
-            clearInterval(pollInterval);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Poll error:', error);
-        clearInterval(pollInterval);
-      }
-    }, 5000); // Poll every 5 seconds
-    
-    // Stop polling after 10 minutes
-    setTimeout(() => {
-      clearInterval(pollInterval);
-      console.log('⏰ Polling timeout');
-    }, 600000);
+    // Redirect to GitHub OAuth
+    window.location.href = oauthUrl;
   }
 
   async authenticateWithToken() {
