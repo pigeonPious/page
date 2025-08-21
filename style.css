@@ -187,7 +187,7 @@ body {
   border: none; /* Remove any borders */
   position: sticky;
   top: 0;
-  z-index: 999;
+  z-index: 1000;
   height: 24px;
   min-height: 0;
   border-bottom: 1px solid var(--border); /* Use theme border color */
@@ -277,6 +277,7 @@ body {
   background: var(--bg);
   border: 1px solid var(--border);
   padding: 4px;
+  z-index: 10001;
 }
 
 .menu-item.open > .menu-dropdown {

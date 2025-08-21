@@ -5524,7 +5524,7 @@ class SimpleBlog {
       left: 2px;
       background: transparent;
       padding: 8px;
-      z-index: 999;
+      z-index: 100;
       font-family: monospace;
       font-size: 11px;
       line-height: 1.2;
