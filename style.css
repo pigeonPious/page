@@ -183,7 +183,7 @@ a:hover {
 /* Ensure navigation container is visible */
 .post-navigation {
   background: var(--bg);
-  padding: 20px;
+  padding: 20px 0;
   border-radius: 4px;
   margin: 20px 0;
 }
