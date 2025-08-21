@@ -316,7 +316,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 1000;
-  height: 24px;
+  height: 22px; /* Reduced height */
   min-height: 0;
   border-bottom: 1px solid var(--border); /* Use theme border color */
 }
@@ -325,7 +325,7 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 1px 10px;
+  padding: 0 10px; /* Reduced vertical padding */
   font-size: 12px;
   height: 100%;
 }
@@ -387,7 +387,7 @@ body {
 }
 
 .menu-item > .label {
-  padding: 1px 3px;
+  padding: 0 3px; /* Reduced vertical padding */
   cursor: default;
 }
 
@@ -399,12 +399,12 @@ body {
 .menu-dropdown {
   display: none;
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 2px); /* Reduced distance */
   left: 0;
   min-width: max-content; /* Let the dropdown size to its content */
   background: var(--bg);
   border: 1px solid var(--border);
-  padding: 4px;
+  padding: 2px; /* Reduced padding */
   z-index: 10001;
 }
 
@@ -416,7 +416,7 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 3px 6px;
+  padding: 2px 6px; /* Reduced vertical padding */
   cursor: pointer;
   text-decoration: none;
   color: var(--fg);
@@ -436,7 +436,7 @@ body {
 .menu-separator {
   height: 1px;
   background: var(--border);
-  margin: 4px 0;
+  margin: 2px 0; /* Reduced margin */
 }
 
 /* Submenu styles */

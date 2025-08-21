@@ -5418,30 +5418,14 @@ Available Commands:
     // Add projects
     if (projects && projects.length > 0) {
       projects.forEach(project => {
-        const entry = document.createElement('div');
+        const entry = document.createElement('a'); // Use an anchor tag for consistency
         entry.className = 'menu-entry';
+        entry.href = project.url;
+        entry.target = '_blank'; // Open in a new tab
         entry.textContent = project.label;
-        entry.style.cssText = `
-          padding: 1px 12px 1px 20px;
-          cursor: pointer;
-          color: var(--menu-fg, #fff);
-          transition: background-color 0.15s ease;
-          border-radius: 3px;
-          margin: 0.25px 1px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-          font-size: 11px;
-        `;
-        
         entry.title = `Click to visit: ${project.url}`;
         
-        entry.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          window.open(project.url, '_blank');
-        });
+        // Let the CSS handle the styling, just add the class
         
         projectsDropdown.appendChild(entry);
       });
@@ -5724,73 +5708,49 @@ Available Commands:
     // Load posts and build site map
     loadPostsForSiteMap().then(posts => {
             
-            // Group posts by all flags (not just devlog)
-        const categories = {};
-        posts.forEach(post => {
-          if (post.keywords && post.keywords.trim()) {
-            // Split flags by comma and process each one
-            const flags = post.keywords.split(',').map(f => f.trim()).filter(f => f.length > 0);
-            
-            flags.forEach(flag => {
-              // Capitalize first letter of the flag
-              let displayName = flag.charAt(0).toUpperCase() + flag.slice(1).toLowerCase();
-              
-              if (!categories[displayName]) {
-                categories[displayName] = [];
-              }
-              
-              // Only add post if it's not already in this category
-              if (!categories[displayName].find(p => p.slug === post.slug)) {
-                categories[displayName].push(post);
-              }
-            });
-          }
-        });
+      // Separate About and Contact pages
+      const aboutPost = posts.find(p => p.slug === 'about');
+      const contactPost = posts.find(p => p.slug === 'contact');
+      const otherPosts = posts.filter(p => p.slug !== 'about' && p.slug !== 'contact');
+
+      // Group posts by all flags (not just devlog)
+      const categories = {};
+      otherPosts.forEach(post => {
+        if (post.keywords && post.keywords.trim()) {
+          // ... existing code ...
+        }
+      });
+      
+      // Build the tree structure
+      let treeHTML = '';
+      
+      // Manually add About and Contact at the top
+      if (aboutPost) {
+        const isCurrentPost = aboutPost.slug === currentSlug;
+        treeHTML += `<div style="margin-bottom: 1px;"><span class="post-link" data-slug="${aboutPost.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">├─${aboutPost.title}</span></div>`;
+      }
+      if (contactPost) {
+        const isCurrentPost = contactPost.slug === currentSlug;
+        treeHTML += `<div style="margin-bottom: 1px;"><span class="post-link" data-slug="${contactPost.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">├─${contactPost.title}</span></div>`;
+      }
+      if (aboutPost || contactPost) {
+        treeHTML += `<div style="margin: 4px 0; border-top: 1px solid var(--border);"></div>`; // Separator
+      }
+      
+      // Show all categories and posts
+      Object.keys(categories).sort().forEach(category => {
+        const postsInCategory = categories[category];
         
-        // Build the tree structure
-        let treeHTML = '';
+        // Check if current post is in this category
+        const isCurrentCategory = currentSlug && postsInCategory.some(p => p.slug === currentSlug);
         
-        // Add empty vertical lines above the tree to connect with star button
-        treeHTML += `<div style="margin-bottom: 2px;">|</div>`;
-        treeHTML += `<div style="margin-bottom: 2px;">|</div>`;
-        
-        // Show all categories and posts
-        Object.keys(categories).sort().forEach(category => {
-          const postsInCategory = categories[category];
-          
-          // Check if current post is in this category
-          const isCurrentCategory = currentSlug && postsInCategory.some(p => p.slug === currentSlug);
-          
-          if (isCurrentCategory) {
-            // Show expanded category if current post is in it
-            treeHTML += `<div style="margin-bottom: 6px;">`;
-            treeHTML += `<span class="expanded-category-header" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold; margin-bottom: 1px;">└─${category}</span>`;
-            
-            // Show posts in category
-            postsInCategory.forEach(post => {
-              const isCurrentPost = post.slug === currentSlug;
-              treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
-              treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
-              treeHTML += `   ├─${post.title}`;
-              treeHTML += `</span>`;
-              treeHTML += `</div>`;
-            });
-            
-            treeHTML += `</div>`;
-          } else {
-            // Show collapsed category with click to expand
-            treeHTML += `<div style="margin-bottom: 4px;">`;
-            treeHTML += `<span class="category-link" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─${category}</span>`;
-            treeHTML += `</div>`;
-          }
-        });
-        
-        // Show uncategorized posts (always expanded)
-        const uncategorized = posts.filter(post => !post.keywords || !post.keywords.trim());
-        if (uncategorized.length > 0) {
+        if (isCurrentCategory) {
+          // Show expanded category if current post is in it
           treeHTML += `<div style="margin-bottom: 6px;">`;
-          treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
-          uncategorized.forEach(post => {
+          treeHTML += `<span class="expanded-category-header" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold; margin-bottom: 1px;">└─${category}</span>`;
+          
+          // Show posts in category
+          postsInCategory.forEach(post => {
             const isCurrentPost = post.slug === currentSlug;
             treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
             treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
@@ -5798,104 +5758,127 @@ Available Commands:
             treeHTML += `</span>`;
             treeHTML += `</div>`;
           });
+          
+          treeHTML += `</div>`;
+        } else {
+          // Show collapsed category with click to expand
+          treeHTML += `<div style="margin-bottom: 4px;">`;
+          treeHTML += `<span class="category-link" data-category="${category}" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─${category}</span>`;
           treeHTML += `</div>`;
         }
-        
-        content.innerHTML = treeHTML;
-        
-        // Add click handlers for post links
-        const postLinks = content.querySelectorAll('.post-link');
-        postLinks.forEach(link => {
-          link.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const slug = link.getAttribute('data-slug');
-            
-            if (window.location.pathname.includes('editor.html')) {
-              // In editor mode: populate the editor with this post
-              console.log(`📝 Editor mode: Loading post ${slug} for editing`);
-              this.loadEditDataForPost(slug);
-            } else {
-              // In blog mode: navigate to the post
-              console.log(`📖 Blog mode: Loading post ${slug} for viewing`);
-              this.loadPost(slug);
-            }
-            // Don't close site map - keep it open
-          });
-        });
-        
-        // Add click handlers for category links
-        const categoryLinks = content.querySelectorAll('.category-link');
-        categoryLinks.forEach(link => {
-          link.addEventListener('click', () => {
-            const category = link.getAttribute('data-category');
-            this.expandCategoryInSiteMap(category, posts);
-          });
-        });
-        
-        // Add click handlers for expanded category headers (to collapse)
-        const expandedCategoryHeaders = content.querySelectorAll('.expanded-category-header');
-        expandedCategoryHeaders.forEach(header => {
-          header.addEventListener('click', () => {
-            const category = header.getAttribute('data-category');
-            this.collapseCategoryInSiteMap(category, posts);
-          });
-        });
-        
-        // Add content to site map
-        siteMap.appendChild(content);
-        
-        // Add to page
-        document.body.appendChild(siteMap);
-        
-        // Store reference
-        this.currentSiteMap = siteMap;
-        
-        // Add scroll event listener to show scroll indicators
-        siteMap.addEventListener('scroll', () => {
-          const { scrollTop, scrollHeight, clientHeight } = siteMap;
-          
-          // Add/remove fade indicators based on scroll position
-          if (scrollTop > 0) {
-            siteMap.style.setProperty('--show-top-fade', '1');
-          } else {
-            siteMap.style.setProperty('--show-top-fade', '0');
-          }
-          
-          if (scrollTop < scrollHeight - clientHeight - 1) {
-            siteMap.style.setProperty('--show-bottom-fade', '1');
-          } else {
-            siteMap.style.setProperty('--show-bottom-fade', '0');
-          }
-        });
-        
-        // Add resize listener to auto-close site map when window gets too narrow
-        this.siteMapResizeHandler = () => {
-          const windowWidth = window.innerWidth;
-          const siteMapWidth = 280; // Approximate width of site map content
-          const minContentWidth = 600; // Minimum width needed for main content
-          
-          if (windowWidth < (siteMapWidth + minContentWidth)) {
-            this.hideSiteMap();
-          }
-        };
-        
-        window.addEventListener('resize', this.siteMapResizeHandler);
-        
-        // Check initial window size
-        this.siteMapResizeHandler();
-        
-      }).catch(error => {
-        console.error('Error loading posts for site map:', error);
-        content.innerHTML = '<div style="color: var(--fg);">Error loading site map</div>';
-        
-        // Still add the site map container even if loading failed
-        siteMap.appendChild(content);
-        document.body.appendChild(siteMap);
-        this.currentSiteMap = siteMap;
       });
-    
+      
+      // Show uncategorized posts (always expanded)
+      const uncategorized = posts.filter(post => !post.keywords || !post.keywords.trim());
+      if (uncategorized.length > 0) {
+        treeHTML += `<div style="margin-bottom: 6px;">`;
+        treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
+        uncategorized.forEach(post => {
+          const isCurrentPost = post.slug === currentSlug;
+          treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
+          treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
+          treeHTML += `   ├─${post.title}`;
+          treeHTML += `</span>`;
+          treeHTML += `</div>`;
+        });
+        treeHTML += `</div>`;
+      }
+      
+      content.innerHTML = treeHTML;
+      
+      // Add click handlers for post links
+      const postLinks = content.querySelectorAll('.post-link');
+      postLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const slug = link.getAttribute('data-slug');
+          
+          if (window.location.pathname.includes('editor.html')) {
+            // In editor mode: populate the editor with this post
+            console.log(`📝 Editor mode: Loading post ${slug} for editing`);
+            this.loadEditDataForPost(slug);
+          } else {
+            // In blog mode: navigate to the post
+            console.log(`📖 Blog mode: Loading post ${slug} for viewing`);
+            this.loadPost(slug);
+          }
+          // Don't close site map - keep it open
+        });
+      });
+      
+      // Add click handlers for category links
+      const categoryLinks = content.querySelectorAll('.category-link');
+      categoryLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          const category = link.getAttribute('data-category');
+          this.expandCategoryInSiteMap(category, posts);
+        });
+      });
+      
+      // Add click handlers for expanded category headers (to collapse)
+      const expandedCategoryHeaders = content.querySelectorAll('.expanded-category-header');
+      expandedCategoryHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+          const category = header.getAttribute('data-category');
+          this.collapseCategoryInSiteMap(category, posts);
+        });
+      });
+      
+      // Add content to site map
+      siteMap.appendChild(content);
+      
+      // Add to page
+      document.body.appendChild(siteMap);
+      
+      // Store reference
+      this.currentSiteMap = siteMap;
+      
+      // Add scroll event listener to show scroll indicators
+      siteMap.addEventListener('scroll', () => {
+        const { scrollTop, scrollHeight, clientHeight } = siteMap;
+        
+        // Add/remove fade indicators based on scroll position
+        if (scrollTop > 0) {
+          siteMap.style.setProperty('--show-top-fade', '1');
+        } else {
+          siteMap.style.setProperty('--show-top-fade', '0');
+        }
+        
+        if (scrollTop < scrollHeight - clientHeight - 1) {
+          siteMap.style.setProperty('--show-bottom-fade', '1');
+        } else {
+          siteMap.style.setProperty('--show-bottom-fade', '0');
+        }
+      });
+      
+      // Add resize listener to auto-close site map when window gets too narrow
+      this.siteMapResizeHandler = () => {
+        const windowWidth = window.innerWidth;
+        const siteMapWidth = 280; // Approximate width of site map content
+        const minContentWidth = 600; // Minimum width needed for main content
+        
+        if (windowWidth < (siteMapWidth + minContentWidth)) {
+          this.hideSiteMap();
+        }
+      };
+      
+      window.addEventListener('resize', this.siteMapResizeHandler);
+      
+      // Check initial window size
+      this.siteMapResizeHandler();
+      
+    }).catch(error => {
+      console.error('Error loading posts for site map:', error);
+      content.innerHTML = '<div style="color: var(--fg);">Error loading site map</div>';
+      
+      // Still add the site map container even if loading failed
+      siteMap.appendChild(content);
+      document.body.appendChild(siteMap);
+      this.currentSiteMap = siteMap;
+    });
+  
 
   }
   // Expand a category in the site map
@@ -7157,18 +7140,23 @@ hideSiteMap() {
   }
 
   async loadProjectsFromGitHub() {
+    console.log("Attempting to load projects.json");
     try {
       const response = await fetch('projects.json');
+      console.log("projects.json fetch response:", response);
       if (response.ok) {
-        return await response.json();
+        const projects = await response.json();
+        console.log("Successfully loaded projects:", projects);
+        return projects;
       } else if (response.status === 404) {
         console.log('projects.json not found, returning empty array');
         return [];
       } else {
+        console.error(`Error loading projects.json: ${response.status}`);
         throw new Error(`Error loading projects.json: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error loading projects:', error);
+      console.error('Error fetching or parsing projects.json:', error);
       return []; // Return empty array on any error
     }
   }
