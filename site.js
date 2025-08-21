@@ -6098,7 +6098,7 @@ class SimpleBlog {
   showGitHubLogin() {
     console.log('🔐 Showing GitHub OAuth login...');
     
-    // Create OAuth login modal in menu style 1
+    // Create OAuth login modal
     const modal = document.createElement('div');
     modal.id = 'githubLoginModal';
     modal.style.cssText = `
@@ -6124,17 +6124,17 @@ class SimpleBlog {
     `;
     
       content.innerHTML = `
-      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub OAuth Login</h3>
+        <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub OAuth Login</h3>
       <p style="color: var(--menu-fg); margin-bottom: 20px;">Click below to authenticate with GitHub using OAuth.</p>
       <p style="color: var(--muted, #888); font-size: 12px; margin-bottom: 20px;">This provides higher rate limits and more reliable access.</p>
       <button id="githubOAuthBtn" style="
         background: #24292e;
           color: white;
           border: none;
-        padding: 15px 30px;
-        border-radius: 6px;
+          padding: 15px 30px;
+          border-radius: 6px;
           cursor: pointer;
-        font-size: 16px;
+          font-size: 16px;
           margin-bottom: 15px;
           width: 100%;
       ">🔐 Login with GitHub</button>
@@ -6145,8 +6145,8 @@ class SimpleBlog {
           padding: 8px 16px;
           border-radius: 4px;
           cursor: pointer;
-      ">Cancel</button>
-    `;
+        ">Cancel</button>
+      `;
     
     modal.appendChild(content);
     document.body.appendChild(modal);
@@ -6199,7 +6199,7 @@ class SimpleBlog {
     
       content.innerHTML = `
       <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">🔐 GitHub Personal Access Token</h3>
-      <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
+        <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
       
       <div style="margin-bottom: 20px; padding: 15px; background: var(--bg); border-radius: 6px; text-align: left;">
         <p style="margin: 0 0 10px 0; color: var(--muted, #888); font-size: 12px;"><strong>Token Requirements:</strong></p>
@@ -6219,7 +6219,7 @@ class SimpleBlog {
           color: var(--fg);
           font-family: monospace;
           font-size: 14px;
-        border-radius: 6px;
+          border-radius: 6px;
         ">
         
         <div style="margin-bottom: 20px;">
@@ -6232,10 +6232,10 @@ class SimpleBlog {
           background: #24292e;
           color: white;
           border: none;
-        padding: 15px 30px;
-        border-radius: 6px;
+          padding: 15px 30px;
+          border-radius: 6px;
           cursor: pointer;
-        font-size: 16px;
+          font-size: 16px;
           margin-right: 10px;
           width: 100%;
           margin-bottom: 10px;
@@ -6265,7 +6265,7 @@ class SimpleBlog {
     
     document.getElementById('closeLoginModal').addEventListener('click', () => {
       document.body.removeChild(modal);
-    });
+      });
       
       // Handle Enter key
       tokenInput.addEventListener('keydown', (e) => {
@@ -6277,7 +6277,7 @@ class SimpleBlog {
     // Close on outside click
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        document.body.removeChild(modal);
+      document.body.removeChild(modal);
       }
     });
   }
@@ -6641,7 +6641,7 @@ class SimpleBlog {
       border: none;
       color: var(--menu-fg);
       font-size: 13px;
-      width: 100%;
+          width: 100%;
       outline: none;
       font-family: inherit;
     `;
