@@ -6310,10 +6310,19 @@ class SimpleBlog {
       line-height: 1.2;
       color: var(--fg);
       pointer-events: none;
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: var(--muted) transparent;
     `;
     
     // Create content container
     const content = document.createElement('div');
+    content.style.cssText = `
+      pointer-events: auto;
+      padding-right: 8px;
+    `;
     
     // Fetch posts from GitHub and build tree (with local fallback)
     const loadPostsForSiteMap = async () => {
@@ -6494,6 +6503,24 @@ class SimpleBlog {
         
         // Store reference
         this.currentSiteMap = siteMap;
+        
+        // Add scroll event listener to show scroll indicators
+        siteMap.addEventListener('scroll', () => {
+          const { scrollTop, scrollHeight, clientHeight } = siteMap;
+          
+          // Add/remove fade indicators based on scroll position
+          if (scrollTop > 0) {
+            siteMap.style.setProperty('--show-top-fade', '1');
+          } else {
+            siteMap.style.setProperty('--show-top-fade', '0');
+          }
+          
+          if (scrollTop < scrollHeight - clientHeight - 1) {
+            siteMap.style.setProperty('--show-bottom-fade', '1');
+          } else {
+            siteMap.style.setProperty('--show-bottom-fade', '0');
+          }
+        });
         
         // Add resize listener to auto-close site map when window gets too narrow
         this.siteMapResizeHandler = () => {
