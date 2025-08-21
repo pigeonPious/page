@@ -1175,8 +1175,8 @@ class SimpleBlog {
         `;
         submenu.appendChild(categoryLabel);
         
-        // Add posts in this category
-        postsInCategory.forEach((post) => {
+        // Add posts in this category (sorted alphabetically by title)
+        postsInCategory.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach((post) => {
           const entry = document.createElement('div');
           entry.className = 'menu-entry';
           entry.textContent = `   ├─ ${post.title || 'Untitled'}`;
@@ -1230,8 +1230,8 @@ class SimpleBlog {
         `;
         submenu.appendChild(uncategorizedLabel);
         
-        // Add uncategorized posts
-        uncategorized.forEach((post) => {
+        // Add uncategorized posts (sorted alphabetically by title)
+        uncategorized.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach((post) => {
           const entry = document.createElement('div');
           entry.className = 'menu-entry';
           entry.textContent = `   ├─ ${post.title || 'Untitled'}`;
