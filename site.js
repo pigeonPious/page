@@ -6719,7 +6719,10 @@ class SimpleBlog {
     // Store in localStorage for persistence
     localStorage.setItem('current_post_flags', flags);
     
-    // Update navigation menu with new flags
+    // Update the visual display of the flags in the editor UI
+    this.updateFlagsDisplay(flags);
+
+    // Update the navigation menu to reflect the new post categorization
     this.updateNavigationMenu(flagArray);
     
     console.log('✅ Post flags saved:', flags);
@@ -8265,6 +8268,14 @@ hideSiteMap() {
     // Store current post slug for editing
     localStorage.setItem('current_post_slug', postData.slug);
     console.log(`✅ Editor populated with post: ${postData.title}`);
+    this.updateFlagsDisplay(postData.keywords || '');
+  }
+
+  updateFlagsDisplay(flags) {
+    const flagsDisplay = document.getElementById('current-flags-display');
+    if (flagsDisplay) {
+      flagsDisplay.textContent = flags ? `flags: ${flags}` : '';
+    }
   }
   loadEditData() {
     console.log('📝 Checking for edit data...');

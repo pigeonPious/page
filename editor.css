@@ -266,7 +266,22 @@ body {
 }
 
 .editor-header {
-  margin-bottom: 10px;
+  margin-bottom: 2px;
+  position: relative;
+}
+
+.flags-display {
+  position: absolute;
+  top: -16px;
+  left: 2px;
+  font-size: 10px;
+  color: var(--muted);
+  font-family: monospace;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .title-input {
