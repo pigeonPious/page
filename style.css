@@ -159,20 +159,25 @@ a:hover {
   padding-top: 20px;
   border-top: 1px solid var(--border);
   font-family: monospace;
-  font-size: 12px;
+  font-size: 9px;
   line-height: 1.4;
 }
 
 .post-navigation .nav-link {
   color: var(--link);
-  text-decoration: underline;
-  font-style: italic;
+  text-decoration: none;
+  font-style: normal;
   cursor: pointer;
   transition: opacity 0.2s ease;
 }
 
 .post-navigation .nav-link:hover {
   opacity: 0.8;
+}
+
+/* Hide editor sidebar buttons when admin is authenticated */
+.editor-sidebar .editor-tools-vertical.admin-authenticated {
+  display: none;
 }
 
 #customColorMenu input[type="range"] {

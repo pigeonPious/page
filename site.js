@@ -147,6 +147,12 @@ class SimpleBlog {
             <div class="menu-dropdown">
               <a class="menu-entry" id="new-post" href="editor.html">New Post</a>
               <div class="menu-entry editor-only" id="open-in-github">Open in GitHub</div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry editor-only admin-only" id="import-btn">Import</div>
+              <div class="menu-entry editor-only admin-only" id="export-btn">Export</div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry editor-only admin-only" id="save-draft-btn">Save Draft</div>
+              <div class="menu-entry editor-only admin-only" id="publish-btn">Publish</div>
             </div>
           </div>
           
@@ -156,6 +162,8 @@ class SimpleBlog {
               <div class="menu-entry disabled">Undo</div>
               <div class="menu-entry editor-only" id="make-note-button">Make Note</div>
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
+              <div class="menu-entry editor-only admin-only" id="keywords-btn">Flags</div>
+              <div class="menu-entry editor-only admin-only" id="images-btn">Images</div>
               <div class="menu-separator"></div>
               <div class="menu-entry admin-only" id="force-reindex-button">Force Reindex</div>
               <div class="menu-entry admin-only" id="check-rate-limit">Check Rate Limit</div>
@@ -2232,7 +2240,6 @@ class SimpleBlog {
       padding-top: 20px;
       border-top: 1px solid var(--border);
       font-family: monospace;
-      font-size: 12px;
       line-height: 1.4;
     `;
     
@@ -5508,6 +5515,16 @@ class SimpleBlog {
     if (publishBtn) {
       publishBtn.style.opacity = isAuthenticated ? '1' : '0.5';
       publishBtn.title = isAuthenticated ? 'Publish post to GitHub' : 'GitHub authentication required';
+    }
+    
+    // Update editor sidebar buttons visibility based on authentication
+    const editorSidebar = document.querySelector('.editor-sidebar .editor-tools-vertical');
+    if (editorSidebar) {
+      if (isAuthenticated) {
+        editorSidebar.classList.add('admin-authenticated');
+      } else {
+        editorSidebar.classList.remove('admin-authenticated');
+      }
     }
   }
 
