@@ -2295,6 +2295,13 @@ class SimpleBlog {
     
     // Add navigation to content
     contentElement.appendChild(navContainer);
+    
+    // Debug: Log navigation creation
+    console.log('🧭 Navigation created:', {
+      prevPost: prevPost ? prevPost.slug : 'none',
+      nextPost: nextPost ? nextPost.slug : 'none',
+      navContainer: navContainer.outerHTML
+    });
   }
 
   displayDefaultContent() {
@@ -3737,15 +3744,19 @@ class SimpleBlog {
 
   async loadProjectsFromGitHub() {
     try {
-      const githubToken = this.getCurrentToken();
-      if (!githubToken) {
-        throw new Error('GitHub authentication required');
+      const tokenInfo = this.getCurrentToken();
+      if (!tokenInfo) {
+        console.warn('⚠️ loadProjectsFromGitHub: No GitHub token found');
+        return [];
       }
+      
+      const token = tokenInfo.token;
+      console.log(`🔍 loadProjectsFromGitHub: Using ${tokenInfo.type} token`);
       
       // Try to load from projects.json file
       const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/projects.json', {
         headers: {
-          'Authorization': `token ${githubToken}`,
+          'Authorization': `token ${token}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       });
@@ -3756,6 +3767,7 @@ class SimpleBlog {
         return JSON.parse(content);
       } else if (response.status === 404) {
         // File doesn't exist, return empty array
+        console.log('📝 projects.json not found, returning empty array');
         return [];
       } else {
         throw new Error(`GitHub API error: ${response.status}`);
@@ -3769,17 +3781,20 @@ class SimpleBlog {
 
   async saveProjectsToGitHub(projects) {
     try {
-      const githubToken = this.getCurrentToken();
-      if (!githubToken) {
+      const tokenInfo = this.getCurrentToken();
+      if (!tokenInfo) {
         throw new Error('GitHub authentication required');
       }
+      
+      const token = tokenInfo.token;
+      console.log(`💾 saveProjectsToGitHub: Using ${tokenInfo.type} token`);
       
       // Get current file info if it exists
       let sha = null;
       try {
         const getResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/projects.json', {
           headers: {
-            'Authorization': `token ${githubToken}`,
+            'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         });
@@ -3790,6 +3805,7 @@ class SimpleBlog {
         }
       } catch (error) {
         // File doesn't exist, that's fine
+        console.log('📝 projects.json not found, will create new file');
       }
       
       // Prepare content
@@ -3812,7 +3828,7 @@ class SimpleBlog {
       const response = await fetch(url, {
         method: method,
         headers: {
-          'Authorization': `token ${githubToken}`,
+          'Authorization': `token ${token}`,
           'Accept': 'application/vnd.github.v3+json'
         },
         body: JSON.stringify(body)

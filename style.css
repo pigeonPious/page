@@ -169,10 +169,23 @@ a:hover {
   font-style: normal;
   cursor: pointer;
   transition: opacity 0.2s ease;
+  display: block;
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .post-navigation .nav-link:hover {
   opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Ensure navigation container is visible */
+.post-navigation {
+  background: var(--bg);
+  padding: 20px;
+  border-radius: 4px;
+  margin: 20px 0;
 }
 
 /* Hide editor sidebar buttons completely - now available in taskbar */
