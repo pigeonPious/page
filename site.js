@@ -140,6 +140,7 @@ class SimpleBlog {
   }
 
   createTaskbar() {
+    const isEditor = window.location.pathname.includes('editor.html');
     const taskbarHTML = `
       <div class="menu-bar" id="main-taskbar">
         <div class="menu-bar-inner">
@@ -185,8 +186,8 @@ class SimpleBlog {
             <div class="label">Navigation</div>
             <div class="menu-dropdown" id="navigation-dropdown">
               <a class="menu-entry" href="index.html">Blog</a>
-              <a class="menu-entry" href="#">About</a>
-              <a class="menu-entry" href="#">Contact</a>
+              <a class="menu-entry" href="#" id="about-btn">About</a>
+              <a class="menu-entry" href="#" id="contact-btn">Contact</a>
               <div class="menu-separator"></div>
               <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
@@ -229,18 +230,16 @@ class SimpleBlog {
           
 
           
-          <div class="taskbar-status editor-only">
-            <span id="github-status">not connected</span>
+          <!-- Status Indicators -->
+          ${!isEditor ? `
+          <div class="taskbar-status">
+            <span id="auth-status" title="GitHub connection status"></span>
           </div>
-          
-
-          
-
-
-        
-        <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: default; user-select: none;" data-note="Welcome to my Blog!">
-          <span id="github-connect-underscore" style="color: #fff; cursor: pointer; margin-right: 2px;">_</span>PiousPigeon
-        </div>
+          ` : ''}
+          <div class="taskbar-status editor-only">
+            <span id="connection-status" title="Connection Status"></span>
+            <span id="action-status" title="Action Status"></span>
+          </div>
         </div>
       </div>
     `;
@@ -248,6 +247,10 @@ class SimpleBlog {
     // Insert at the beginning of body
     document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
     console.log('✅ Taskbar created');
+
+    // Bind events after taskbar is in the DOM
+    this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
+    this.bindEventListener(document.getElementById('contact-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('contact'); });
   }
   
   
@@ -332,8 +335,8 @@ class SimpleBlog {
   // Function to increment build word (called automatically on new builds)
   incrementBuildWord() {
     // This function is no longer used as build words are static
-    return;
-  }
+        return;
+      }
 
   setupCSSVariables() {
     console.log('🎨 Setting up CSS variables...');
@@ -891,7 +894,7 @@ class SimpleBlog {
       console.log('🗺️ Site Map button clicked');
       this.showSiteMap();
     });
-
+    
     // Social sharing buttons
     this.addClickHandler('#bluesky-share', () => {
       console.log('🔵 Bluesky share button clicked');
@@ -3620,1610 +3623,36 @@ class SimpleBlog {
       this.showHelp();
     } else if (command === 'link') {
       this.startAddProjectLink();
-    } else if (command === 'project') {
+    } else if (command === 'projects') {
       this.enterProjectMode();
+    } else if (command === 'reindex') {
+      this.forceReindex();
+    } else if (command === 'editor') {
+      window.location.href = 'editor.html';
+    } else if (command === 'recent') {
+      this.loadMostRecentPost();
+    } else if (command === 'random') {
+      this.loadRandomPost();
+    } else if (command === 'sitemap') {
+      this.showSiteMap();
+    } else if (command === 'theme') {
+      this.toggleThemeMenu();
+    } else if (command === 'font') {
+      this.toggleFontSizeMenu();
     } else {
       this.printToConsole(`Unknown command: ${command}`);
     }
   }
 
   showHelp() {
-    // Check admin access
-    if (!this.isAdmin()) {
-      this.printToConsole('admin only');
-      return;
-    }
-    
-    this.printToConsole('Available commands:');
-    this.printToConsole('  ? or help - Show this help');
-    this.printToConsole('  link - Add a new project link');
-    this.printToConsole('  project - Enter project mode for advanced project management');
-    this.printToConsole('');
-  }
-
-  enterProjectMode() {
-    // Check admin access
-    if (!this.isAdmin()) {
-      this.printToConsole('admin only');
-      return;
-    }
-    
-    this.projectMode = true;
-    this.printToConsole('Entered project mode');
-    this.printToConsole('Type "help" for available commands or "escape" to exit');
-  }
-
-  startAddProjectLink() {
-    // Check admin access
-    if (!this.isAdmin()) {
-      this.printToConsole('admin only');
-      return;
-    }
-    
-    this.printToConsole('link:');
-    this.addProjectLinkState = 'waiting_for_link';
-    this.pendingProjectLink = {};
-  }
-
-  async handleProjectLinkInput(input) {
-    // Check admin access
-    if (!this.isAdmin()) {
-      this.printToConsole('admin only');
-      this.addProjectLinkState = null;
-      this.pendingProjectLink = {};
-      return;
-    }
-    
-    if (this.addProjectLinkState === 'waiting_for_link') {
-      this.pendingProjectLink.url = input;
-      this.printToConsole(`link: ${input}`);
-      this.printToConsole('label:');
-      this.addProjectLinkState = 'waiting_for_label';
-    } else if (this.addProjectLinkState === 'waiting_for_label') {
-      this.pendingProjectLink.label = input;
-      this.printToConsole(`label: ${input}`);
-      this.printToConsole(`Confirm: Add "${this.pendingProjectLink.label}" linking to "${this.pendingProjectLink.url}"? (y/n)`);
-      this.addProjectLinkState = 'waiting_for_confirmation';
-    } else if (this.addProjectLinkState === 'waiting_for_confirmation') {
-      if (input.toLowerCase() === 'y' || input.toLowerCase() === 'yes') {
-        await this.addProjectLink(this.pendingProjectLink.label, this.pendingProjectLink.url);
-      } else {
-        this.printToConsole('Cancelled.');
-      }
-      this.addProjectLinkState = null;
-      this.pendingProjectLink = {};
-    }
-  }
-  // New project mode console handler
-  async handleProjectModeInput(input) {
-    if (!this.isAdmin()) {
-      this.printToConsole('admin only');
-      this.exitProjectMode();
-      return;
-    }
-
-    const command = input.trim().toLowerCase();
-    
-    if (command === 'escape' || command === 'exit' || command === 'quit') {
-      this.exitProjectMode();
-      return;
-    }
-    
-    if (command === 'add') {
-      this.startAddProjectLink();
-      return;
-    }
-    
-    if (command.startsWith('delete ')) {
-      const label = input.substring(7).trim(); // Remove "delete " prefix
-      if (label) {
-        await this.deleteProject(label);
-      } else {
-        this.printToConsole('Usage: delete LINK LABEL HERE');
-      }
-      return;
-    }
-    
-    if (command === 'list') {
-      await this.listProjects();
-      return;
-    }
-    
-    if (command === 'help' || command === '?') {
-      this.showProjectModeHelp();
-      return;
-    }
-    
-    this.printToConsole(`Unknown command: ${input}`);
-    this.printToConsole('Type "help" for available commands or "escape" to exit project mode');
-  }
-
-  exitProjectMode() {
-    this.projectMode = false;
-    this.printToConsole('Exited project mode');
-    this.printToConsole('Type "project" to re-enter project mode');
-  }
-
-  showProjectModeHelp() {
-    this.printToConsole('Project Mode Commands:');
-    this.printToConsole('  add - Add new project link');
-    this.printToConsole('  delete LINK LABEL HERE - Delete specified project');
-    this.printToConsole('  list - Show all current projects');
-    this.printToConsole('  help or ? - Show this help');
-    this.printToConsole('  escape/exit/quit - Exit project mode');
-  }
-
-  async addProjectLink(label, url) {
-    try {
-      this.printToConsole('Adding project link...');
-      
-      // Get GitHub token
-      const tokenInfo = this.getCurrentToken();
-      if (!tokenInfo) {
-        this.printToConsole('Error: GitHub authentication required');
-        return;
-      }
-      
-      // Load existing projects
-      const projects = await this.loadProjectsFromGitHub();
-      
-      // Add new project
-      const newProject = {
-        label: label,
-        url: url,
-        id: Date.now().toString()
-      };
-      
-      projects.push(newProject);
-      
-      // Save back to GitHub
-      await this.saveProjectsToGitHub(projects);
-      
-      // Update the projects menu
-      this.updateProjectsMenu(projects);
-      
-      this.printToConsole(`✅ Project link "${label}" added successfully!`);
-      
-    } catch (error) {
-      console.error('❌ Error adding project link:', error);
-      this.printToConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async deleteProject(label) {
-    try {
-      this.printToConsole(`Deleting project: ${label}`);
-      
-      // Get GitHub token
-      const tokenInfo = this.getCurrentToken();
-      if (!tokenInfo) {
-        this.printToConsole('Error: GitHub authentication required');
-        return;
-      }
-      
-      // Load existing projects
-      const projects = await this.loadProjectsFromGitHub();
-      
-      // Find and remove the project
-      const projectIndex = projects.findIndex(p => p.label.toLowerCase() === label.toLowerCase());
-      if (projectIndex === -1) {
-        this.printToConsole(`❌ Project "${label}" not found`);
-        return;
-      }
-      
-      const deletedProject = projects.splice(projectIndex, 1)[0];
-      
-      // Save back to GitHub
-      await this.saveProjectsToGitHub(projects);
-      
-      // Update the projects menu
-      this.updateProjectsMenu(projects);
-      
-      this.printToConsole(`✅ Project "${deletedProject.label}" deleted successfully!`);
-      
-    } catch (error) {
-      console.error('❌ Error deleting project:', error);
-      this.printToConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async listProjects() {
-    try {
-      const projects = await this.loadProjectsFromGitHub();
-      
-      if (projects.length === 0) {
-        this.printToConsole('No projects found');
-        return;
-      }
-      
-      this.printToConsole(`Found ${projects.length} project(s):`);
-      projects.forEach((project, index) => {
-        this.printToConsole(`  ${index + 1}. ${project.label} → ${project.url}`);
-      });
-      
-    } catch (error) {
-      console.error('❌ Error listing projects:', error);
-      this.printToConsole(`Error: ${error.message}`);
-    }
-  }
-
-  async loadProjectsFromGitHub() {
-    try {
-      const tokenInfo = this.getCurrentToken();
-      if (!tokenInfo) {
-        console.warn('⚠️ loadProjectsFromGitHub: No GitHub token found');
-        return [];
-      }
-      
-      const token = tokenInfo.token;
-      console.log(`🔍 loadProjectsFromGitHub: Using ${tokenInfo.type} token`);
-      
-      // Try to load from projects.json file
-      const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/projects.json', {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const content = atob(data.content);
-        return JSON.parse(content);
-      } else if (response.status === 404) {
-        // File doesn't exist, return empty array
-        console.log('📝 projects.json not found, returning empty array');
-        return [];
-      } else {
-        throw new Error(`GitHub API error: ${response.status}`);
-      }
-      
-    } catch (error) {
-      console.error('❌ Error loading projects:', error);
-      return [];
-    }
-  }
-
-  async saveProjectsToGitHub(projects) {
-    try {
-      const tokenInfo = this.getCurrentToken();
-      if (!tokenInfo) {
-        throw new Error('GitHub authentication required');
-      }
-      
-      const token = tokenInfo.token;
-      console.log(`💾 saveProjectsToGitHub: Using ${tokenInfo.type} token`);
-      
-      // Get current file info if it exists
-      let sha = null;
-      try {
-        const getResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/projects.json', {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-        
-        if (getResponse.ok) {
-          const data = await getResponse.json();
-          sha = data.sha;
-        }
-      } catch (error) {
-        // File doesn't exist, that's fine
-        console.log('📝 projects.json not found, will create new file');
-      }
-      
-      // Prepare content
-      const content = JSON.stringify(projects, null, 2);
-      const encodedContent = btoa(content);
-      
-      // Create or update file
-      const method = sha ? 'PUT' : 'POST';
-      const url = 'https://api.github.com/repos/pigeonPious/page/contents/projects.json';
-      
-      const body = {
-        message: sha ? `Update projects: Add ${projects[projects.length - 1].label}` : 'Add projects.json',
-        content: encodedContent
-      };
-      
-      if (sha) {
-        body.sha = sha;
-      }
-      
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify(body)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to save projects: ${response.status}`);
-      }
-      
-      console.log('✅ Projects saved to GitHub');
-      
-    } catch (error) {
-      console.error('❌ Error saving projects:', error);
-      throw error;
-    }
-  }
-
-
-
-  // This function is no longer needed but keeping for compatibility
-  setupImageMagazineButtons() {
-    // Get the existing buttons from HTML
-    const importBtn = document.getElementById('import-image-btn');
-    const closeBtn = document.getElementById('close-magazine-btn');
-    
-    console.log('🔍 Found import button:', !!importBtn);
-    console.log('🔍 Found close button:', !!closeBtn);
-    
-    if (!importBtn || !closeBtn) {
-      console.log('⚠️ Buttons not found - cannot setup functionality');
-      return;
-    }
-    
-    // Remove any existing event listeners
-    importBtn.replaceWith(importBtn.cloneNode(true));
-    closeBtn.replaceWith(closeBtn.cloneNode(true));
-    
-    // Get fresh references after cloning
-    const newImportBtn = document.getElementById('import-image-btn');
-    const newCloseBtn = document.getElementById('close-magazine-btn');
-    
-    // Setup import button
-    newImportBtn.addEventListener('click', (e) => {
-      console.log('📁 Import button CLICKED!');
-      e.stopPropagation();
-      e.preventDefault();
-      this.importImages();
-    });
-    
-    // Setup close button
-    newCloseBtn.addEventListener('click', (e) => {
-      console.log('🔴 Close button CLICKED!');
-      e.stopPropagation();
-      e.preventDefault();
-      
-      const magazine = document.getElementById('imageMagazine');
-      if (magazine) {
-        magazine.style.display = 'none';
-        magazine.classList.add('hidden');
-        console.log('✅ Magazine closed via close button');
-      }
-    });
-    
-    // Button style 1: Clean text-only buttons (no frame, no background)
-    newImportBtn.style.cssText = `
-      background: transparent;
-      color: #fff;
-      border: none;
-      font-weight: bold;
-      font-size: 12px;
-      padding: 4px 8px;
-      cursor: pointer;
-      transition: color 0.2s;
-      outline: none;
-    `;
-    
-    newCloseBtn.style.cssText = `
-      background: transparent;
-      color: #fff;
-      border: none;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 4px 8px;
-      cursor: pointer;
-      transition: color 0.2s;
-      outline: none;
-      min-width: 20px;
-      text-align: center;
-    `;
-    
-    // Add hover effects (color change only)
-    newImportBtn.addEventListener('mouseenter', () => { newImportBtn.style.color = '#ccc'; });
-    newImportBtn.addEventListener('mouseleave', () => { newImportBtn.style.color = '#fff'; });
-    newCloseBtn.addEventListener('mouseenter', () => { newCloseBtn.style.color = '#ccc'; });
-    newCloseBtn.addEventListener('mouseleave', () => { newCloseBtn.style.color = '#fff'; });
-    
-    console.log('✅ Image magazine buttons setup complete');
-    console.log('🔍 Buttons now have normal styling and hover effects');
-  }
-
-
-
-  createImageMagazine() {
-    const magazine = document.createElement('div');
-    magazine.id = 'imageMagazine';
-    magazine.className = 'image-magazine-only';
-    magazine.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 120px;
-      height: 500px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      cursor: move;
-    `;
-    
-    // Header with import button
-    const header = document.createElement('div');
-    header.style.cssText = `
-      padding: 4px 8px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg);
-      color: var(--fg);
-      cursor: move;
-      user-select: none;
-    `;
-    
-    // Make entire magazine draggable
-    let isDragging = false;
-    let startX, startY, startLeft, startTop;
-    
-    magazine.addEventListener('mousedown', (e) => {
-      // Don't start drag if clicking on buttons or interactive elements
-      if (e.target.tagName === 'BUTTON' || e.target.classList.contains('image-magazine-btn')) {
-        return;
-      }
-      
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      const rect = magazine.getBoundingClientRect();
-      startLeft = rect.left;
-      startTop = rect.top;
-      magazine.style.cursor = 'grabbing';
-      e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-      
-      magazine.style.left = (startLeft + deltaX) + 'px';
-      magazine.style.top = (startTop + deltaY) + 'px';
-      magazine.style.transform = 'none'; // Remove center transform when dragging
-    });
-    
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        magazine.style.cursor = 'move';
-      }
-    });
-    
-    const importBtn = document.createElement('button');
-    importBtn.textContent = 'Import';
-    importBtn.type = 'button';
-    importBtn.style.cssText = `
-      font-weight: normal;
-      color: var(--fg);
-      cursor: pointer;
-      font-size: 12px;
-      padding: 2px 6px;
-      background: transparent;
-      border: none;
-      outline: none;
-      font-family: inherit;
-      transition: color 0.2s;
-    `;
-    
-    // Multiple event listeners for maximum compatibility
-    importBtn.addEventListener('click', (e) => {
-      console.log('📁 Import button CLICKED via click event!');
-      e.stopPropagation();
-      e.preventDefault();
-      this.importImages();
-    });
-    
-    importBtn.addEventListener('mousedown', (e) => {
-      console.log('📁 Import button CLICKED via mousedown event!');
-      e.stopPropagation();
-      e.preventDefault();
-      this.importImages();
-    });
-    
-    importBtn.addEventListener('mouseup', (e) => {
-      console.log('📁 Import button CLICKED via mouseup event!');
-      e.stopPropagation();
-      e.preventDefault();
-      this.importImages();
-    });
-    
-
-    
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '×';
-    closeBtn.type = 'button';
-    closeBtn.style.cssText = `
-      color: var(--fg);
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      padding: 4px 8px;
-      background: transparent;
-      border: none;
-      min-width: 20px;
-      text-align: center;
-      outline: none;
-      font-family: inherit;
-      transition: color 0.2s;
-    `;
-    // Multiple event listeners for maximum compatibility
-    closeBtn.addEventListener('click', (e) => {
-      console.log('🔴 Close button CLICKED via click event!');
-      e.stopPropagation(); // Prevent event bubbling
-      e.preventDefault(); // Prevent any default button behavior
-      
-      // Force close the magazine
-      const magazineToClose = document.getElementById('imageMagazine');
-      if (magazineToClose) {
-        magazineToClose.style.display = 'none';
-        magazineToClose.classList.add('hidden');
-        console.log('✅ Magazine closed via close button');
-      } else {
-        console.log('⚠️ Magazine not found for closing');
-      }
-    });
-    
-    closeBtn.addEventListener('mousedown', (e) => {
-      console.log('🔴 Close button CLICKED via mousedown event!');
-      e.stopPropagation();
-      e.preventDefault();
-      
-      const magazineToClose = document.getElementById('imageMagazine');
-      if (magazineToClose) {
-        magazineToClose.style.display = 'none';
-        magazineToClose.classList.add('hidden');
-        console.log('✅ Magazine closed via close button (mousedown)');
-      }
-    });
-    
-    closeBtn.addEventListener('mouseup', (e) => {
-      console.log('🔴 Close button CLICKED via mouseup event!');
-      e.stopPropagation();
-      e.preventDefault();
-      
-      const magazineToClose = document.getElementById('imageMagazine');
-      if (magazineToClose) {
-        magazineToClose.style.display = 'none';
-        magazineToClose.classList.add('hidden');
-        console.log('✅ Magazine closed via close button (mouseup)');
-      }
-    });
-    
-    header.appendChild(importBtn);
-    header.appendChild(closeBtn);
-    
-    // Emergency button test
-
-    console.log('🔍 Import button text:', importBtn.textContent);
-    console.log('🔍 Close button text:', closeBtn.textContent);
-    console.log('🔍 Import button type:', importBtn.type);
-    console.log('🔍 Close button type:', closeBtn.type);
-    console.log('🔍 Import button tagName:', importBtn.tagName);
-    console.log('🔍 Close button tagName:', closeBtn.tagName);
-    
-    // Test button properties
-    console.log('🔍 Import button disabled:', importBtn.disabled);
-    console.log('🔍 Close button disabled:', closeBtn.disabled);
-    console.log('🔍 Import button style.display:', importBtn.style.display);
-    console.log('🔍 Close button style.display:', closeBtn.style.display);
-    console.log('🔍 Import button style.visibility:', importBtn.style.visibility);
-    console.log('🔍 Close button style.visibility:', importBtn.style.visibility);
-    console.log('🔍 Import button style.pointerEvents:', closeBtn.style.pointerEvents);
-    
-
-    
-    // Content area
-    const content = document.createElement('div');
-    content.id = 'imageGallery';
-    content.style.cssText = `
-      flex: 1;
-      overflow-y: auto;
-      padding: 4px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 3px;
-      align-content: start;
-    `;
-    
-    magazine.appendChild(header);
-    magazine.appendChild(content);
-    
-    console.log('🔍 About to append magazine to document.body...');
-    console.log('🔍 document.body exists:', !!document.body);
-    console.log('🔍 document.body children count:', document.body.children.length);
-    
-    document.body.appendChild(magazine);
-    
-    console.log('🔍 Magazine added to DOM:', magazine);
-    console.log('🔍 Magazine parent:', magazine.parentNode);
-    console.log('🔍 Magazine parent is body:', magazine.parentNode === document.body);
-    console.log('🔍 Magazine computed styles:', window.getComputedStyle(magazine));
-    console.log('🔍 Magazine offsetParent:', magazine.offsetParent);
-    console.log('🔍 Magazine offsetWidth/Height:', magazine.offsetWidth, magazine.offsetHeight);
-    
-    // Don't start hidden - let showImagesModal control visibility
-    return magazine;
-  }
-
-  loadImagesToMagazine() {
-    const gallery = document.getElementById('imageGallery');
-    if (!gallery) return;
-    
-    // Clear existing content
-    gallery.innerHTML = '';
-    
-    // List of images from assets folder
-    const images = [
-      '1755369444055-piousPigeon_logo_pp.png',
-      '1755383754213-piousPigeon_logo_pp-export.png',
-      '1755383767144-piousPigeon_logo_pp.png',
-      '1755383787427-pp-banner-export.png',
-      'sample.gif'
-    ];
-    
-    if (images.length === 0) {
-      const noImages = document.createElement('div');
-      noImages.style.cssText = `
-        grid-column: 1 / -1;
-        text-align: center;
-        color: #888;
-        padding: 20px 10px;
-        font-size: 12px;
-      `;
-      noImages.innerHTML = `
-        <p>No images found</p>
-        <p><small>Click Import to add images</small></p>
-      `;
-      gallery.appendChild(noImages);
-      return;
-    }
-    
-    // Create image items
-    images.forEach(filename => {
-      const item = document.createElement('div');
-      item.className = 'image-item';
-      item.style.cssText = `
-        width: 84px;
-        height: 84px;
-        border: 1px solid var(--border);
-        overflow: hidden;
-        cursor: pointer;
-        transition: transform 0.2s;
-        background: transparent;
-        position: relative;
-        margin: 0 auto;
-      `;
-      
-      const img = document.createElement('img');
-      img.src = `assets/${filename}`;
-      img.style.cssText = `
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      `;
-      
-      item.appendChild(img);
-      
-      // Double click to insert image
-      item.addEventListener('dblclick', () => this.insertImageToPost(filename));
-      
-      // Add drag and drop functionality
-      item.draggable = true;
-      item.addEventListener('dragstart', (e) => {
-        // Set both text data and image data for better compatibility
-        e.dataTransfer.setData('text/plain', filename);
-        e.dataTransfer.setData('text/html', `<img src="assets/${filename}" style="max-width: 200px; height: auto;">`);
-        e.dataTransfer.effectAllowed = 'copy';
-        item.style.opacity = '0.5';
-      });
-      
-      item.addEventListener('dragend', () => {
-        item.style.opacity = '1';
-      });
-      
-      // Hover effects
-      item.addEventListener('mouseenter', () => {
-        item.style.transform = 'scale(1.05)';
-      });
-      
-      item.addEventListener('mouseleave', () => {
-        item.style.transform = 'scale(1)';
-      });
-      
-      gallery.appendChild(item);
-    });
-  }
-
-  insertImageToPost(filename) {
-    console.log('🖼️ Inserting image:', filename);
-    
-    const visualEditor = document.getElementById('visualEditor');
-    if (!visualEditor) {
-      console.log('⚠️ Visual editor not found');
-      return;
-    }
-    
-    // Create magazine-style image container
-    const imageContainer = document.createElement('div');
-    imageContainer.className = 'image-container';
-    imageContainer.style.cssText = `
-      position: relative;
-      float: left;
-      margin-right: 16px;
-      margin-bottom: 12px;
-      width: 200px;
-      height: 200px;
-      clear: both;
-      display: block;
-    `;
-    
-    // Create image element
-    const img = document.createElement('img');
-    img.src = `assets/${filename}`;
-    img.style.cssText = `
-      width: 100%;
-      height: auto;
-      border: 1px solid var(--border);
-      border-radius: 0;
-      margin: 0;
-      padding: 0;
-      cursor: pointer;
-      display: block;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    `;
-    
-    // Add hover effects
-    img.addEventListener('mouseenter', () => {
-      img.style.transform = 'scale(1.02)';
-      img.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-    });
-    
-    img.addEventListener('mouseleave', () => {
-      img.style.transform = 'scale(1)';
-      img.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-    });
-    
-    // Add image to container
-    imageContainer.appendChild(img);
-    
-    // Insert the image as a block element, not inline
-    let inserted = false;
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      
-      // Check if selection is within the post content area
-      if (visualEditor.contains(range.commonAncestorContainer) || 
-          visualEditor === range.commonAncestorContainer) {
-        // Insert as a block element
-        const blockElement = document.createElement('div');
-        blockElement.appendChild(imageContainer);
-        range.insertNode(blockElement);
-        range.collapse(false);
-        inserted = true;
-        console.log('✅ Image inserted at cursor position as block');
-      }
-    }
-    
-    if (!inserted) {
-      // No selection, insert at the end of the post content
-      const blockElement = document.createElement('div');
-      blockElement.appendChild(imageContainer);
-      visualEditor.appendChild(blockElement);
-      console.log('✅ Image inserted at end of post as block');
-    }
-    
-    // Add positioning overlay functionality with retry mechanism
-    this.addImagePositioningOverlay(imageContainer);
-    
-    // Verify overlay was added, retry if needed
-    setTimeout(() => {
-      if (!imageContainer.querySelector('.image-position-overlay')) {
-        console.log('⚠️ Overlay not found, retrying...');
-        this.addImagePositioningOverlay(imageContainer);
-      }
-    }, 100);
-    
-    console.log('✅ Image inserted:', filename);
-  }
-  setupEditorDragAndDrop() {
-    // Only setup once
-    if (this.editorDragAndDropSetup) return;
-    this.editorDragAndDropSetup = true;
-    
-    const visualEditor = document.getElementById('visualEditor');
-    if (!visualEditor) return;
-    
-    // Prevent default drag behaviors
-    visualEditor.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-      visualEditor.classList.add('drag-over');
-    });
-    
-    visualEditor.addEventListener('dragleave', (e) => {
-      if (!visualEditor.contains(e.relatedTarget)) {
-        visualEditor.classList.remove('drag-over');
-      }
-    });
-    
-    visualEditor.addEventListener('drop', (e) => {
-      e.preventDefault();
-      visualEditor.classList.remove('drag-over');
-      
-      // Try to get HTML data first for better preview
-      let filename = e.dataTransfer.getData('text/html');
-      if (filename) {
-        // Extract filename from HTML if possible
-        const match = filename.match(/src="assets\/([^"]+)"/);
-        if (match) {
-          filename = match[1];
-        }
-      }
-      
-      // Fallback to text data
-      if (!filename) {
-        filename = e.dataTransfer.getData('text/plain');
-      }
-      
-      if (filename) {
-        console.log('🖼️ Dropped image:', filename);
-        this.insertImageToPost(filename);
-      }
-    });
-    
-    console.log('✅ Editor drag and drop setup complete');
-  }
-
-
-
-  addImagePositioningOverlay(imageContainer) {
-    console.log('🔧 Adding positioning overlay to image container:', imageContainer);
-    
-    // Ensure the image container is properly set up
-    if (!imageContainer || !imageContainer.appendChild) {
-      console.error('❌ Invalid image container for overlay:', imageContainer);
-      return;
-    }
-    
-    // Create positioning overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'image-position-overlay';
-    overlay.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-      z-index: 1000;
-      pointer-events: none;
-    `;
-    
-    overlay.innerHTML = `
-      <button class="pos-btn pos-left" style="
-        background: transparent;
-        color: var(--accent);
-        border: none;
-        padding: 6px 10px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        font-family: inherit;
-        transition: all 0.2s ease;
-        pointer-events: auto;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-      ">&lt;</button>
-      <button class="pos-btn pos-row" style="
-        background: transparent;
-        color: var(--accent);
-        border: none;
-        padding: 6px 10px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        font-family: inherit;
-        transition: all 0.2s ease;
-        pointer-events: auto;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-      ">—</button>
-      <button class="pos-btn pos-right" style="
-        background: transparent;
-        color: var(--accent);
-        border: none;
-        padding: 6px 10px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        font-family: inherit;
-        transition: all 0.2s ease;
-        pointer-events: auto;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-      ">&gt;</button>
-      <button class="pos-btn pos-delete" style="
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        background: transparent;
-        color: var(--danger-color);
-        border: none;
-        padding: 4px 6px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        font-family: inherit;
-        transition: all 0.2s ease;
-        pointer-events: auto;
-        line-height: 1;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-      ">×</button>
-    `;
-    
-    // Ensure image container has relative positioning
-    imageContainer.style.position = 'relative';
-    
-    // Add overlay to image container
-    try {
-      imageContainer.appendChild(overlay);
-      console.log('✅ Overlay appended successfully');
-    } catch (error) {
-      console.error('❌ Failed to append overlay:', error);
-      return;
-    }
-    
-    // Verify overlay was added
-    if (!imageContainer.querySelector('.image-position-overlay')) {
-      console.error('❌ Overlay not found after append');
-      return;
-    }
-    
-    // Show overlay on mouseenter
-    imageContainer.addEventListener('mouseenter', () => {
-      overlay.style.opacity = '1';
-      overlay.style.pointerEvents = 'auto';
-      console.log('🖱️ Overlay shown on mouseenter');
-    });
-    
-    // Hide overlay on mouseleave
-    imageContainer.addEventListener('mouseleave', () => {
-      overlay.style.opacity = '0';
-      overlay.style.pointerEvents = 'none';
-      console.log('🖱️ Overlay hidden on mouseleave');
-    });
-    
-    // Add click handlers for positioning
-    const leftBtn = overlay.querySelector('.pos-left');
-    const rowBtn = overlay.querySelector('.pos-row');
-    const rightBtn = overlay.querySelector('.pos-right');
-    const deleteBtn = overlay.querySelector('.pos-delete');
-    
-    // Verify all buttons were found
-    if (!leftBtn || !rowBtn || !rightBtn || !deleteBtn) {
-      console.error('❌ Some positioning buttons not found:', { leftBtn, rowBtn, rightBtn, deleteBtn });
-      return;
-    }
-    
-    // Left positioning (float left)
-    leftBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      imageContainer.style.cssText = `
-        position: relative;
-        float: left;
-        margin-right: 16px;
-        margin-bottom: 12px;
-        width: 200px;
-        height: 200px;
-        clear: both;
-      `;
-      console.log('✅ Image positioned left');
-    });
-    
-    // Row positioning (inline, no clear)
-    rowBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      imageContainer.style.cssText = `
-        position: relative;
-        float: left;
-        margin-right: 16px;
-        margin-bottom: 12px;
-        width: 200px;
-        height: 200px;
-        clear: none;
-        display: block;
-      `;
-      console.log('✅ Image positioned left');
-    });
-    
-    // Right positioning (float right)
-    rightBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      imageContainer.style.cssText = `
-        position: relative;
-        float: right;
-        margin-left: 16px;
-        margin-bottom: 12px;
-        width: 200px;
-        height: 200px;
-        clear: both;
-      `;
-      console.log('✅ Image positioned right');
-    });
-    
-    // Delete button functionality
-    deleteBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (confirm('Are you sure you want to delete this image?')) {
-        imageContainer.remove();
-        console.log('✅ Image deleted from post');
-      }
-    });
-    
-    // Setup drag and drop for the visual editor if not already done
-    this.setupEditorDragAndDrop();
-    
-    console.log('✅ Image positioning overlay setup complete');
-  }
-
-  // Function to check and fix any images missing overlays
-  fixMissingImageOverlays() {
-    console.log('🔧 Checking for images missing overlays...');
-    
-    const visualEditor = document.getElementById('visualEditor');
-    if (!visualEditor) return;
-    
-    const imageContainers = visualEditor.querySelectorAll('.image-container');
-    let fixedCount = 0;
-    
-    imageContainers.forEach(container => {
-      if (!container.querySelector('.image-position-overlay')) {
-        console.log('⚠️ Found image container without overlay, fixing...');
-        this.addImagePositioningOverlay(container);
-        fixedCount++;
-      }
-    });
-    
-    if (fixedCount > 0) {
-      console.log(`✅ Fixed ${fixedCount} missing image overlays`);
-    } else {
-      console.log('✅ All image overlays are present');
-    }
-  }
-
-  // Helper function to sanitize content for safe publishing
-  sanitizeContent(content) {
-    if (!content) return '';
-    
-    console.log('🧹 Sanitizing content for publishing...');
-    
-    // Remove or replace problematic characters
-    let sanitized = content
-      // Replace smart quotes with regular quotes
-      .replace(/[\u201C\u201D]/g, '"')
-      .replace(/[\u2018\u2019]/g, "'")
-      // Replace em dashes and en dashes with regular dashes
-      .replace(/[\u2013\u2014]/g, '-')
-      // Replace other problematic Unicode characters
-      .replace(/[\u2022\u2026]/g, '')
-      // Remove null characters
-      .replace(/\0/g, '')
-      // Remove other control characters except newlines and tabs
-      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-    
-    console.log('🧹 Content sanitization complete');
-    return sanitized;
-  }
-
-
-
-  // Function to update posts index incrementally (much more efficient)
-  async updatePostsIndexIncrementally(postData, isEdit) {
-    console.log('🔄 Updating posts index incrementally...');
-    
-    try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        console.error('❌ No GitHub token found for index update');
-        return false;
-      }
-      
-      // Get current index file to get its SHA
-      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (!indexResponse.ok) {
-        console.error('❌ Could not fetch current index file:', indexResponse.status);
-        return false;
-      }
-      
-      const indexData = await indexResponse.json();
-      const currentIndex = JSON.parse(atob(indexData.content));
-      
-      console.log('📊 Current index has', currentIndex.length, 'posts');
-      
-      // Create new index entry for this post
-      const newIndexEntry = {
-        slug: postData.slug,
-        title: postData.title,
-        date: postData.date,
-        keywords: postData.keywords || 'general'
-      };
-      
-      let updatedIndex;
-      
-      if (isEdit) {
-        // For edits: update existing entry
-        updatedIndex = currentIndex.map(post => 
-          post.slug === postData.slug ? newIndexEntry : post
-        );
-        console.log('✏️ Updated existing post in index:', postData.slug);
-      } else {
-        // For new posts: add to beginning (newest first)
-        updatedIndex = [newIndexEntry, ...currentIndex];
-        console.log('➕ Added new post to index:', postData.slug);
-      }
-      
-      // Sort by date (newest first)
-      updatedIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
-      
-      // Update local posts array
-      this.posts = updatedIndex;
-      localStorage.setItem('posts', JSON.stringify(updatedIndex));
-      
-      // Update the index file on GitHub
-      const updateResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: isEdit ? 
-            `Update post in index: ${postData.title}` : 
-            `Add new post to index: ${postData.title}`,
-          content: btoa(JSON.stringify(updatedIndex, null, 2)),
-          sha: indexData.sha,
-          branch: 'main'
-        })
-      });
-      
-      if (updateResponse.ok) {
-        console.log('✅ Index updated successfully on GitHub');
-        return true;
-      } else {
-        console.error('❌ Failed to update index:', updateResponse.status);
-        return false;
-      }
-      
-    } catch (error) {
-      console.error('❌ Error updating posts index:', error);
-      return false;
-    }
-  }
-
-  // Function to rebuild the entire posts index from actual GitHub files (kept for manual use)
-  // ⚠️ WARNING: This function makes N+3 API calls where N = number of posts
-  // Use only when you need to completely rebuild the index (e.g., after manual file changes)
-  // For normal post publishing, use updatePostsIndexIncrementally() instead
-  async rebuildPostsIndexFromGitHub() {
-    console.log('🔄 Rebuilding posts index from actual GitHub files...');
-    console.log('⚠️ This will make many API calls - use only when necessary!');
-    
-    try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        console.error('❌ No GitHub token found for index rebuild');
-        return false;
-      }
-      
-      // Get the list of all files in the posts directory
-      const postsResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (!postsResponse.ok) {
-        console.error('❌ Failed to fetch posts directory:', postsResponse.status);
-        return false;
-      }
-      
-      const postsDirectory = await postsResponse.json();
-      console.log('📁 Found posts directory contents:', postsDirectory.length, 'items');
-      
-      // Filter for JSON files (actual posts, not index.json)
-      const postFiles = postsDirectory.filter(item => 
-        item.type === 'file' && 
-        item.name.endsWith('.json') && 
-        item.name !== 'index.json'
-      );
-      
-      console.log('📄 Found post files:', postFiles.length);
-      console.log('⚠️ Will make', postFiles.length + 3, 'API calls total');
-      
-      // Build new index by reading each post file
-      const newIndex = [];
-      
-      for (const postFile of postFiles) {
-        try {
-          const postResponse = await fetch(postFile.url, {
-            headers: {
-              'Authorization': `token ${token}`,
-            }
-          });
-          
-          if (postResponse.ok) {
-            const postData = await postResponse.json();
-            const postContent = JSON.parse(atob(postData.content));
-            
-            // Extract metadata for index
-            const indexEntry = {
-              slug: postContent.slug,
-              title: postContent.title,
-              date: postContent.date,
-              keywords: postContent.keywords || 'general'
-            };
-            
-            newIndex.push(indexEntry);
-            console.log('✅ Added to index:', indexEntry.title);
-          } else {
-            console.warn('⚠️ Could not read post file:', postFile.name, postResponse.status);
-          }
-        } catch (error) {
-          console.error('❌ Error reading post file:', postFile.name, error);
-        }
-      }
-      
-      // Sort by date (newest first)
-      newIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
-      
-      console.log('📊 New index built with', newIndex.length, 'posts');
-      
-      // Get current index file to get its SHA
-      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (!indexResponse.ok) {
-        console.error('❌ Could not fetch current index file:', indexResponse.status);
-        return false;
-      }
-      
-      const indexData = await indexResponse.json();
-      
-      // Update the index file with the new data
-      const updateResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: 'Rebuild posts index from actual files - ensure perfect synchronization',
-          content: btoa(JSON.stringify(newIndex, null, 2)),
-          sha: indexData.sha,
-          branch: 'main'
-        })
-      });
-      
-      if (updateResponse.ok) {
-        console.log('✅ Posts index rebuilt and updated successfully');
-        // Update local posts array
-        this.posts = newIndex;
-        return true;
-      } else {
-        console.error('❌ Failed to update index file:', updateResponse.status);
-        return false;
-      }
-      
-    } catch (error) {
-      console.error('❌ Error rebuilding posts index:', error);
-      return false;
-    }
-  }
-
-  showImagePositioningControls(imageContainer) {
-    console.log('🔧 showImagePositioningControls called with:', imageContainer);
-    
-    // Create positioning controls window
-    const controlsWindow = document.createElement('div');
-    controlsWindow.className = 'image-positioning-controls';
-    controlsWindow.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 0;
-      padding: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 10001;
-      font-family: inherit;
-      min-width: 200px;
-      text-align: center;
-    `;
-    
-    controlsWindow.innerHTML = `
-      <div style="margin-bottom: 16px; font-weight: bold; color: var(--fg);">Image Position</div>
-      <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 16px;">
-        <button id="pos-left" style="
-          padding: 8px 12px;
-          background: var(--accent);
-          color: var(--btn-text-color);
-          border: none;
-          border-radius: 0;
-          cursor: pointer;
-          font-family: inherit;
-          font-size: 12px;
-          transition: background 0.2s;
-        ">Left</button>
-        <button id="pos-center" style="
-          padding: 8px 12px;
-          background: var(--accent);
-          color: var(--btn-text-color);
-          border: none;
-          border-radius: 0;
-          cursor: pointer;
-          font-family: inherit;
-          font-size: 12px;
-          transition: background 0.2s;
-        ">Center</button>
-        <button id="pos-right" style="
-          padding: 8px 12px;
-          background: var(--accent);
-          color: var(--btn-text-color);
-          border: none;
-          border-radius: 0;
-          cursor: pointer;
-          font-family: inherit;
-          font-size: 12px;
-          transition: background 0.2s;
-        ">Right</button>
-      </div>
-      <div style="font-size: 11px; color: var(--muted); margin-bottom: 12px;">
-        Choose how the image flows with text
-      </div>
-      <button id="pos-close" style="
-        padding: 6px 12px;
-        background: var(--muted);
-        color: var(--btn-text-color);
-        border: none;
-        border-radius: 0;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 11px;
-        transition: background 0.2s;
-      ">Close</button>
-    `;
-    
-    // Add to document
-    document.body.appendChild(controlsWindow);
-    console.log('🔧 Controls window added to document');
-    
-    // Position controls near the image
-    const imageRect = imageContainer.getBoundingClientRect();
-    controlsWindow.style.left = (imageRect.left + imageRect.width / 2) + 'px';
-    controlsWindow.style.top = (imageRect.top - 100) + 'px';
-    controlsWindow.style.transform = 'translateX(-50%)';
-    
-    // Add event listeners
-    const leftBtn = controlsWindow.querySelector('#pos-left');
-    const centerBtn = controlsWindow.querySelector('#pos-center');
-    const rightBtn = controlsWindow.querySelector('#pos-right');
-    const closeBtn = controlsWindow.querySelector('#pos-close');
-    
-    // Left positioning (default - float left)
-    leftBtn.addEventListener('click', () => {
-      imageContainer.style.cssText = `
-        float: left;
-        margin-right: 16px;
-        margin-bottom: 12px;
-        max-width: 200px;
-        clear: both;
-      `;
-      controlsWindow.remove();
-      console.log('✅ Image positioned left');
-    });
-    
-    // Center positioning (centered, no float)
-    centerBtn.addEventListener('click', () => {
-      imageContainer.style.cssText = `
-        float: none;
-        margin: 0 auto 16px auto;
-        max-width: 200px;
-        clear: both;
-        text-align: center;
-      `;
-      controlsWindow.remove();
-      console.log('✅ Image positioned center');
-    });
-    
-    // Right positioning (float right)
-    rightBtn.addEventListener('click', () => {
-      imageContainer.style.cssText = `
-        float: right;
-        margin-left: 16px;
-        margin-bottom: 12px;
-        max-width: 200px;
-        clear: both;
-      `;
-      controlsWindow.remove();
-      console.log('✅ Image positioned right');
-    });
-    
-    // Close button
-    closeBtn.addEventListener('click', () => {
-      controlsWindow.remove();
-      console.log('✅ Image positioning controls closed');
-    });
-    
-    // Close when clicking outside
-    const outsideClickHandler = (e) => {
-      if (!controlsWindow.contains(e.target) && !imageContainer.contains(e.target)) {
-        controlsWindow.remove();
-        document.removeEventListener('click', outsideClickHandler);
-      }
-    };
-    
-    // Delay adding the outside click handler to prevent immediate closure
-    setTimeout(() => {
-      document.addEventListener('click', outsideClickHandler);
-    }, 100);
-    
-    // Auto-close after 10 seconds
-    setTimeout(() => {
-      if (controlsWindow.parentNode) {
-        controlsWindow.remove();
-        document.removeEventListener('click', outsideClickHandler);
-      }
-    }, 10000);
-  }
-
-  importImages() {
-    console.log('📁 Importing images...');
-    
-    // Create file input
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = true;
-    input.style.display = 'none';
-    
-    input.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files);
-      if (files.length > 0) {
-        console.log(`📁 Processing ${files.length} image(s)...`);
-        
-        // For now, just show what would be imported
-        // In a real implementation, this would upload to GitHub
-        files.forEach(file => {
-          console.log(`📁 Would import: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
-        });
-        
-        alert(`Would import ${files.length} image(s) to assets folder.\n\nIn a real implementation, this would upload to your GitHub repository.`);
-      }
-      
-      // Cleanup
-      document.body.removeChild(input);
-    });
-    
-    document.body.appendChild(input);
-    input.click();
-  }
-
-  showPublishModal() {
-    console.log('📢 Publishing post to GitHub...');
-    
-    const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
-    const postContent = document.getElementById('visualEditor')?.innerHTML || '';
-    
-    if (!postTitle.trim() || !postContent.trim()) {
-      alert('Please add a title and content to publish.');
-      return;
-    }
-    
-    // Create menu style 1 input for commit message
-    const inputBox = document.createElement('div');
-    inputBox.className = 'menu-style-1-input';
-    inputBox.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--menu-bg);
-      border: 1px solid var(--border);
-      padding: 8px 12px;
-      z-index: 1000;
-      min-width: 300px;
-    `;
-    
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Commit message (optional)...';
-    input.style.cssText = `
-      background: transparent;
-      border: none;
-      color: var(--menu-fg);
-      font-size: 13px;
-      width: 100%;
-      outline: none;
-      font-family: inherit;
-    `;
-    
-    inputBox.appendChild(input);
-    document.body.appendChild(inputBox);
-    input.focus();
-    
-    // Handle input events
-    const handleInput = (e) => {
-      if (e.key === 'Enter') {
-        // Check if this is an edit to provide better default commit message
-        const editData = localStorage.getItem('editPostData');
-        let defaultMessage = `Publish: ${postTitle}`;
-        
-        if (editData) {
-          try {
-            const editPost = JSON.parse(editData);
-            defaultMessage = `Update post: ${postTitle}`;
-          } catch (error) {
-            console.warn('⚠️ Could not parse edit data for commit message:', error);
-          }
-        }
-        
-        const commitMessage = input.value.trim() || defaultMessage;
-        this.publishPostToGitHub(postTitle, postContent, commitMessage);
-        this.removeInputBox(inputBox);
-      } else if (e.key === 'Escape') {
-        this.removeInputBox(inputBox);
-      }
-    };
-    
-    input.addEventListener('keydown', handleInput);
-    
-    // Close on outside click
-    const outsideClick = (e) => {
-      if (!inputBox.contains(e.target)) {
-        this.removeInputBox(inputBox);
-        document.removeEventListener('click', outsideClick);
-      }
-    };
-    
-    setTimeout(() => {
-      document.addEventListener('click', outsideClick);
-    }, 100);
+    const helpText = `
+Available Commands:
+  ?              - Show this help message
+  projects       - Enter project management mode
+  clear          - Clear the console
+  exit           - Exit project management mode
+`;
+    this.printToConsole(helpText);
   }
   async publishPostToGitHub(title, content, commitMessage) {
     console.log('🚀 Publishing to GitHub:', { title, commitMessage });
@@ -5536,27 +3965,12 @@ class SimpleBlog {
     }
   }
 
-  async updatePostsIndex(postData) {
+  async updatePostsIndexIncrementally(postData, isEdit) {
     try {
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.warn('⚠️ updatePostsIndex: No GitHub token found');
+        console.warn('⚠️ updatePostsIndexIncrementally: No GitHub token found');
         return false;
-      }
-      
-      // Check if this is an edit
-      const editData = localStorage.getItem('editPostData');
-      let isEdit = false;
-      let originalSlug = '';
-      
-      if (editData) {
-        try {
-          const editPost = JSON.parse(editData);
-          originalSlug = editPost.slug;
-          isEdit = true;
-        } catch (error) {
-          console.warn('⚠️ Could not parse edit data:', error);
-        }
       }
       
       // Get current index
@@ -5570,9 +3984,9 @@ class SimpleBlog {
         const indexData = await indexResponse.json();
         const currentIndex = JSON.parse(atob(indexData.content));
         
-        if (isEdit && originalSlug !== postData.slug) {
+        if (isEdit && postData.slug !== currentIndex[0].slug) {
           // Handle slug change during edit - remove old entry and add new one
-          const filteredIndex = currentIndex.filter(post => post.slug !== originalSlug);
+          const filteredIndex = currentIndex.filter(post => post.slug !== postData.slug);
           filteredIndex.unshift({
             slug: postData.slug,
             title: postData.title,
@@ -5881,7 +4295,6 @@ class SimpleBlog {
       return false;
     }
   }
-
   shareToBluesky() {
     console.log('🔵 shareToBluesky: Starting Bluesky share...');
     
@@ -6671,7 +5084,6 @@ class SimpleBlog {
       document.addEventListener('click', outsideClick);
     }, 100);
   }
-
   openCurrentPostInGitHub() {
     console.log('🔗 Opening current post in GitHub...');
     
@@ -7546,7 +5958,7 @@ class SimpleBlog {
           console.log(`📝 Editor mode: Loading post ${slug} for editing from expanded category`);
           this.loadEditDataForPost(slug);
         } else {
-          this.loadPost(slug);
+        this.loadPost(slug);
         }
       });
     });
@@ -8280,12 +6692,6 @@ hideSiteMap() {
   loadEditData() {
     console.log('📝 Checking for edit data...');
     
-    // Hide site map when in editor mode
-    if (window.location.pathname.includes('editor.html')) {
-      this.hideSiteMap();
-      console.log('🗺️ Site map hidden (editor mode)');
-    }
-    
     const editData = localStorage.getItem('editPostData');
     if (!editData) {
       console.log('📝 No edit data found');
@@ -8326,11 +6732,6 @@ hideSiteMap() {
       if (contentField && editPost.content) {
         contentField.innerHTML = editPost.content;
         console.log('📝 Content populated:', editPost.content);
-        
-        // Fix any images that might be missing overlays after loading content
-        setTimeout(() => {
-          this.fixMissingImageOverlays();
-        }, 300);
       }
       
       // Set flags if available
@@ -8381,110 +6782,47 @@ hideSiteMap() {
     }
   }
 
-  // ========== NEW EDIT MENU FUNCTIONS ==========
-
   showFontSizeWindow() {
-    console.log('🔤 Opening font size window...');
+    console.log('Opening font size window...');
     
     // Check if window already exists
-    const existingWindow = document.getElementById('fontSizeWindow');
-    if (existingWindow) {
-      existingWindow.remove();
+    if (document.getElementById('fontSizeWindow')) {
+      return;
     }
     
-    // Get current font size
-    let currentSize = localStorage.getItem('fontSize') || '13';
-    currentSize = parseInt(currentSize);
-    
-    // Create menu style 2 window
     const fontWindow = document.createElement('div');
     fontWindow.id = 'fontSizeWindow';
     fontWindow.style.cssText = `
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      top: 60px; /* Position below taskbar */
+      right: 20px;
       background: var(--menu-bg);
       color: var(--menu-fg);
       border: 1px solid var(--border);
-      padding: 20px;
+      padding: 15px;
       z-index: 10000;
       font-family: monospace;
       font-size: 13px;
-      min-width: 200px;
       text-align: center;
       box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     `;
     
     fontWindow.innerHTML = `
-      <div style="margin-bottom: 15px; font-weight: bold;">Font Size</div>
-      <div style="margin-bottom: 15px;">Current: ${currentSize}px</div>
-      <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px;">
-        <button id="font-decrease" style="
-          background: var(--menu-bg);
-          color: var(--menu-fg);
-          border: 1px solid var(--border);
-          padding: 8px 16px;
-          cursor: pointer;
-          font-family: monospace;
-          font-size: 16px;
-          font-weight: bold;
-        ">-</button>
-        <button id="font-increase" style="
-          background: var(--menu-bg);
-          color: var(--menu-fg);
-          border: 1px solid var(--border);
-          padding: 8px 16px;
-          cursor: pointer;
-          font-family: monospace;
-          font-size: 16px;
-          font-weight: bold;
-        ">+</button>
-      </div>
-      <div style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">Press + or - keys</div>
-      <button id="font-close" style="
-        background: var(--menu-bg);
-        color: var(--menu-fg);
-        border: 1px solid var(--border);
-        padding: 6px 12px;
-        cursor: pointer;
-        font-family: monospace;
-        font-size: 11px;
-      ">Close</button>
+      <div style="font-weight: bold; margin-bottom: 10px;">Font Size</div>
+      <div>Use <kbd>+</kbd> and <kbd>-</kbd> keys to adjust</div>
+      <div style="font-size: 11px; color: var(--muted); margin-top: 10px;">(Esc or click outside to close)</div>
     `;
     
     document.body.appendChild(fontWindow);
-    
-    // Add button event listeners
-    const decreaseBtn = document.getElementById('font-decrease');
-    const increaseBtn = document.getElementById('font-increase');
-    const closeBtn = document.getElementById('font-close');
-    
-    decreaseBtn.addEventListener('click', () => {
-      this.adjustFontSize('smaller');
-      this.updateFontSizeDisplay();
-    });
-    
-    increaseBtn.addEventListener('click', () => {
-      this.adjustFontSize('larger');
-      this.updateFontSizeDisplay();
-    });
-    
-    closeBtn.addEventListener('click', () => {
-      fontWindow.remove();
-      document.removeEventListener('keydown', this.fontSizeKeyHandler);
-    });
     
     // Add keyboard support
     this.fontSizeKeyHandler = (e) => {
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
         this.adjustFontSize('larger');
-        this.updateFontSizeDisplay();
       } else if (e.key === '-') {
         e.preventDefault();
         this.adjustFontSize('smaller');
-        this.updateFontSizeDisplay();
       } else if (e.key === 'Escape') {
         fontWindow.remove();
         document.removeEventListener('keydown', this.fontSizeKeyHandler);
@@ -8505,19 +6843,11 @@ hideSiteMap() {
       document.addEventListener('click', outsideClick);
     }, 100);
     
-    console.log('✅ Font size window opened');
+    console.log('Font size window opened');
   }
   
-  updateFontSizeDisplay() {
-    const currentSize = localStorage.getItem('fontSize') || '13';
-    const sizeDisplay = document.querySelector('#fontSizeWindow div:nth-child(2)');
-    if (sizeDisplay) {
-      sizeDisplay.textContent = `Current: ${currentSize}px`;
-    }
-  }
-
   adjustFontSize(action) {
-    console.log(`🔤 Adjusting font size: ${action}`);
+    console.log(`Adjusting font size: ${action}`);
     
     const contentElement = document.getElementById('post-content');
     if (!contentElement) {

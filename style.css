@@ -420,10 +420,15 @@ body {
   cursor: pointer;
   text-decoration: none;
   color: var(--fg);
+  font-style: normal !important;
 }
 
 .menu-entry:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.menu-entry a {
+  font-style: normal !important;
 }
 
 /* Menu separator */

@@ -1,5 +1,17 @@
 [
   {
+    "slug": "about",
+    "title": "About",
+    "date": "2024-07-25T12:00:00Z",
+    "keywords": "about, info"
+  },
+  {
+    "slug": "contact",
+    "title": "Contact",
+    "date": "2024-07-25T12:00:01Z",
+    "keywords": "contact, info"
+  },
+  {
     "slug": "testing-testing",
     "title": "testing testing",
     "date": "2025-08-21",
