@@ -804,7 +804,7 @@ class SimpleBlog {
     // Force reindex button
     this.addClickHandler('#force-reindex-button', () => {
       console.log('🔄 Force reindex button clicked');
-      this.forceReindexPosts();
+      this.forceReindexPostsImproved();
     });
     
     // Check rate limit button
@@ -1644,6 +1644,221 @@ class SimpleBlog {
           statusElement.textContent = originalStatus;
           statusElement.style.color = '';
         }, 3000);
+      }
+    }
+  }
+
+  // Improved force reindex function that actually works
+  async forceReindexPostsImproved() {
+    console.log('🔄 Improved force reindex started');
+    
+    // Check if user is admin
+    if (!this.isAdmin()) {
+      console.log('⚠️ Non-admin user attempted to force reindex');
+      this.printToConsole('❌ Admin only - you need to be authenticated with GitHub');
+      return;
+    }
+    
+    try {
+      this.printToConsole('🔄 Starting improved force reindex...');
+      
+      // Clear cached posts
+      this.posts = null;
+      localStorage.removeItem('posts');
+      
+      // First, try to scan the local posts directory to see what files actually exist
+      console.log('🔍 Scanning local posts directory...');
+      this.printToConsole('🔍 Scanning local posts directory...');
+      
+      // Try to load the local index.json first
+      let localPosts = [];
+      try {
+        const localResponse = await fetch('posts/index.json');
+        if (localResponse.ok) {
+          const localData = await localResponse.json();
+          localPosts = Array.isArray(localData) ? localData : (localData.posts || []);
+          console.log('📁 Found local index.json with', localPosts.length, 'posts');
+          this.printToConsole(`📁 Found local index.json with ${localPosts.length} posts`);
+        }
+      } catch (localError) {
+        console.warn('⚠️ Could not load local index.json:', localError);
+        this.printToConsole('⚠️ Could not load local index.json');
+      }
+      
+      // If no local index.json, try to scan the posts directory directly
+      if (localPosts.length === 0) {
+        console.log('🔍 No local index.json found, scanning posts directory...');
+        this.printToConsole('🔍 No local index.json found, scanning posts directory...');
+        
+        try {
+          // Try to fetch the posts directory listing
+          const postsResponse = await fetch('posts/');
+          if (postsResponse.ok) {
+            const postsText = await postsResponse.text();
+            
+            // Parse the directory listing to find .json files
+            const jsonFiles = postsText.match(/href="([^"]+\.json)"/g);
+            if (jsonFiles) {
+              const postFiles = jsonFiles
+                .map(href => href.match(/href="([^"]+)"/)[1])
+                .filter(file => file !== 'index.json' && file.endsWith('.json'));
+              
+              console.log('📁 Found', postFiles.length, 'post files in directory');
+              this.printToConsole(`📁 Found ${postFiles.length} post files in directory`);
+              
+              // Load each post file to build the index
+              localPosts = [];
+              for (const postFile of postFiles) {
+                try {
+                  const postResponse = await fetch(`posts/${postFile}`);
+                  if (postResponse.ok) {
+                    const postData = await postResponse.json();
+                    if (postData && postData.title) {
+                      localPosts.push({
+                        title: postData.title,
+                        filename: postFile,
+                        date: postData.date || new Date().toISOString(),
+                        tags: postData.tags || []
+                      });
+                    }
+                  }
+                } catch (postError) {
+                  console.warn('⚠️ Could not load post file:', postFile, postError);
+                }
+              }
+              
+              console.log('📁 Built local index from', localPosts.length, 'post files');
+              this.printToConsole(`📁 Built local index from ${localPosts.length} post files`);
+            }
+          }
+        } catch (dirError) {
+          console.warn('⚠️ Could not scan posts directory:', dirError);
+          this.printToConsole('⚠️ Could not scan posts directory');
+        }
+      }
+      
+      // Now try to get fresh data from GitHub
+      console.log('🔄 Attempting to fetch fresh posts from GitHub...');
+      this.printToConsole('🔄 Attempting to fetch fresh posts from GitHub...');
+      
+      const timestamp = Date.now();
+      const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
+      
+      const response = await fetch(indexUrl);
+      if (response.ok) {
+        const indexData = await response.json();
+        let allPosts = [];
+        
+        // GitHub API returns content in base64, need to decode
+        if (indexData.content && indexData.encoding === 'base64') {
+          try {
+            const decodedContent = atob(indexData.content);
+            const parsedData = JSON.parse(decodedContent);
+            
+            if (Array.isArray(parsedData)) {
+              allPosts = parsedData;
+            } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
+              allPosts = parsedData.posts;
+            }
+            
+            console.log('✅ GitHub API returned', allPosts.length, 'posts');
+            this.printToConsole(`✅ GitHub API returned ${allPosts.length} posts`);
+            
+          } catch (decodeError) {
+            console.error('❌ Error decoding GitHub content:', decodeError);
+            this.printToConsole('❌ Error decoding GitHub content');
+            throw new Error('Failed to decode index content');
+          }
+        } else {
+          throw new Error('Unexpected GitHub API response format');
+        }
+        
+        // Update local posts array
+        this.posts = allPosts;
+        
+        // Cache the fresh posts
+        localStorage.setItem('posts', JSON.stringify(allPosts));
+        
+        console.log('✅ Reindex complete. Found', allPosts.length, 'posts');
+        this.printToConsole(`✅ Reindex complete. Found ${allPosts.length} posts`);
+        
+        // Update any open submenus
+        this.updateOpenSubmenus();
+        
+        // Force refresh the site map if it's open
+        if (this.currentSiteMap) {
+          console.log('🗺️ Refreshing open site map...');
+          this.printToConsole('🗺️ Refreshing open site map...');
+          this.hideSiteMap();
+          this.showSiteMap();
+        }
+        
+        return;
+        
+      } else if (response.status === 403) {
+        console.log('⚠️ GitHub API returned 403 - using local posts as fallback');
+        this.printToConsole('⚠️ GitHub API blocked (403) - using local posts as fallback');
+        
+        // Use local posts when GitHub API is blocked
+        if (localPosts.length > 0) {
+          this.posts = localPosts;
+          localStorage.setItem('posts', JSON.stringify(localPosts));
+          
+          console.log('✅ Reindex completed using local posts:', localPosts.length);
+          this.printToConsole(`✅ Reindex completed using local posts: ${localPosts.length}`);
+          
+          // Try to save the rebuilt index back to the posts directory
+          try {
+            const indexContent = JSON.stringify(localPosts, null, 2);
+            const blob = new Blob([indexContent], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create a download link to save the index.json
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.json';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('💾 Index.json download initiated');
+            this.printToConsole('💾 Index.json download initiated - save this to posts/ directory');
+          } catch (saveError) {
+            console.warn('⚠️ Could not save index.json:', saveError);
+            this.printToConsole('⚠️ Could not save index.json automatically');
+          }
+          
+          // Update any open submenus
+          this.updateOpenSubmenus();
+          
+          // Force refresh the site map if it's open
+          if (this.currentSiteMap) {
+            console.log('🗺️ Refreshing open site map...');
+            this.printToConsole('🗺️ Refreshing open site map...');
+            this.hideSiteMap();
+            this.showSiteMap();
+          }
+          
+          return;
+        } else {
+          throw new Error('No local posts found and GitHub API blocked');
+        }
+        
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Force reindex failed:', error);
+      this.printToConsole(`❌ Force reindex failed: ${error.message}`);
+      
+      // Try to use whatever posts we have as last resort
+      if (this.posts && this.posts.length > 0) {
+        console.log('🔄 Using existing posts as fallback');
+        this.printToConsole('🔄 Using existing posts as fallback');
+        this.updateOpenSubmenus();
       }
     }
   }
@@ -3922,7 +4137,7 @@ class SimpleBlog {
     } else if (command === 'posts') {
       this.showPostsInfo();
     } else if (command === 'force-reindex') {
-      this.forceReindex();
+      this.forceReindexPostsImproved();
     } else if (command === 'check-rate-limit') {
       this.checkRateLimit();
     } else if (command === 'logout') {
@@ -4573,7 +4788,33 @@ class SimpleBlog {
       }
     });
     
+    // Add refresh button
+    const refreshBtn = document.createElement('button');
+    refreshBtn.textContent = '↻';
+    refreshBtn.type = 'button';
+    refreshBtn.title = 'Refresh images';
+    refreshBtn.style.cssText = `
+      font-weight: normal;
+      color: var(--fg);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 6px;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: inherit;
+      transition: color 0.2s;
+    `;
+    
+    refreshBtn.addEventListener('click', (e) => {
+      console.log('🔄 Refresh button clicked');
+      e.stopPropagation();
+      e.preventDefault();
+      this.loadImagesToMagazine();
+    });
+    
     header.appendChild(importBtn);
+    header.appendChild(refreshBtn);
     header.appendChild(closeBtn);
     
     // Emergency button test
@@ -4629,95 +4870,184 @@ class SimpleBlog {
     return magazine;
   }
 
-  loadImagesToMagazine() {
+  async loadImagesToMagazine() {
     const gallery = document.getElementById('imageGallery');
     if (!gallery) return;
     
     // Clear existing content
     gallery.innerHTML = '';
     
-    // List of images from assets folder
-    const images = [
-      '1755369444055-piousPigeon_logo_pp.png',
-      '1755383754213-piousPigeon_logo_pp-export.png',
-      '1755383767144-piousPigeon_logo_pp.png',
-      '1755383787427-pp-banner-export.png',
-      'sample.gif'
-    ];
+    // Show loading state
+    const loading = document.createElement('div');
+    loading.style.cssText = `
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #888;
+      padding: 20px 10px;
+      font-size: 12px;
+    `;
+    loading.innerHTML = `
+      <p>Loading images...</p>
+    `;
+    gallery.appendChild(loading);
     
-    if (images.length === 0) {
-      const noImages = document.createElement('div');
-      noImages.style.cssText = `
+    try {
+      // Try to get the actual assets directory listing from GitHub
+      const assetsUrl = 'https://api.github.com/repos/pigeonPious/page/contents/assets';
+      const response = await fetch(assetsUrl);
+      
+      let images = [];
+      
+      if (response.ok) {
+        const assetsData = await response.json();
+        
+        // Filter for image files
+        images = assetsData
+          .filter(item => item.type === 'file' && this.isImageFile(item.name))
+          .map(item => item.name);
+        
+        console.log('📁 Found', images.length, 'images in assets folder:', images);
+      } else if (response.status === 403) {
+        // GitHub API blocked, try to scan local assets folder
+        console.log('⚠️ GitHub API blocked, scanning local assets...');
+        images = await this.scanLocalAssetsFolder();
+      } else {
+        console.warn('⚠️ Could not fetch assets from GitHub:', response.status);
+        // Fallback to local scanning
+        images = await this.scanLocalAssetsFolder();
+      }
+      
+      // Clear loading state
+      gallery.innerHTML = '';
+      
+      if (images.length === 0) {
+        const noImages = document.createElement('div');
+        noImages.style.cssText = `
+          grid-column: 1 / -1;
+          text-align: center;
+          color: #888;
+          padding: 20px 10px;
+          font-size: 12px;
+        `;
+        noImages.innerHTML = `
+          <p>No images found</p>
+          <p><small>Click Import to add images</small></p>
+        `;
+        gallery.appendChild(noImages);
+        return;
+      }
+    
+          // Create image items
+      images.forEach(filename => {
+        const item = document.createElement('div');
+        item.className = 'image-item';
+        item.style.cssText = `
+          width: 84px;
+          height: 84px;
+          border: 1px solid var(--border);
+          overflow: hidden;
+          cursor: pointer;
+          transition: transform 0.2s;
+          background: transparent;
+          position: relative;
+          margin: 0 auto;
+        `;
+        
+        const img = document.createElement('img');
+        img.src = `assets/${filename}`;
+        img.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        `;
+        
+        item.appendChild(img);
+        
+        // Double click to insert image
+        item.addEventListener('dblclick', () => this.insertImageToPost(filename));
+        
+        // Add drag and drop functionality
+        item.draggable = true;
+        item.addEventListener('dragstart', (e) => {
+          // Set both text data and image data for better compatibility
+          e.dataTransfer.setData('text/plain', filename);
+          e.dataTransfer.setData('text/html', `<img src="assets/${filename}" style="max-width: 200px; height: auto;">`);
+          e.dataTransfer.effectAllowed = 'copy';
+          item.style.opacity = '0.5';
+        });
+        
+        item.addEventListener('dragend', () => {
+          item.style.opacity = '1';
+        });
+        
+        // Hover effects
+        item.addEventListener('mouseenter', () => {
+          item.style.transform = 'scale(1.05)';
+        });
+        
+        item.addEventListener('mouseleave', () => {
+          item.style.transform = 'scale(1)';
+        });
+        
+        gallery.appendChild(item);
+      });
+      
+    } catch (error) {
+      console.error('❌ Error loading images:', error);
+      
+      // Clear loading state and show error
+      gallery.innerHTML = '';
+      const errorDiv = document.createElement('div');
+      errorDiv.style.cssText = `
         grid-column: 1 / -1;
         text-align: center;
-        color: #888;
+        color: #dc3545;
         padding: 20px 10px;
         font-size: 12px;
       `;
-      noImages.innerHTML = `
-        <p>No images found</p>
-        <p><small>Click Import to add images</small></p>
+      errorDiv.innerHTML = `
+        <p>Error loading images</p>
+        <p><small>${error.message}</small></p>
       `;
-      gallery.appendChild(noImages);
-      return;
+      gallery.appendChild(errorDiv);
+    }
+  }
+  
+  // Helper function to check if a file is an image
+  isImageFile(filename) {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+    const lowerFilename = filename.toLowerCase();
+    return imageExtensions.some(ext => lowerFilename.endsWith(ext));
+  }
+  
+  // Scan local assets folder for images
+  async scanLocalAssetsFolder() {
+    try {
+      // Try to fetch the local assets directory
+      const response = await fetch('assets/');
+      if (response.ok) {
+        const html = await response.text();
+        
+        // Parse the directory listing to find image files
+        const imageFiles = html.match(/href="([^"]+\.(jpg|jpeg|png|gif|webp|svg|bmp))"/gi);
+        if (imageFiles) {
+          const images = imageFiles
+            .map(href => href.match(/href="([^"]+)"/i)[1])
+            .filter(file => this.isImageFile(file));
+          
+          console.log('📁 Found', images.length, 'images in local assets folder:', images);
+          return images;
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not scan local assets folder:', error);
     }
     
-    // Create image items
-    images.forEach(filename => {
-      const item = document.createElement('div');
-      item.className = 'image-item';
-      item.style.cssText = `
-        width: 84px;
-        height: 84px;
-        border: 1px solid var(--border);
-        overflow: hidden;
-        cursor: pointer;
-        transition: transform 0.2s;
-        background: transparent;
-        position: relative;
-        margin: 0 auto;
-      `;
-      
-      const img = document.createElement('img');
-      img.src = `assets/${filename}`;
-      img.style.cssText = `
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      `;
-      
-      item.appendChild(img);
-      
-      // Double click to insert image
-      item.addEventListener('dblclick', () => this.insertImageToPost(filename));
-      
-      // Add drag and drop functionality
-      item.draggable = true;
-      item.addEventListener('dragstart', (e) => {
-        // Set both text data and image data for better compatibility
-        e.dataTransfer.setData('text/plain', filename);
-        e.dataTransfer.setData('text/html', `<img src="assets/${filename}" style="max-width: 200px; height: auto;">`);
-        e.dataTransfer.effectAllowed = 'copy';
-        item.style.opacity = '0.5';
-      });
-      
-      item.addEventListener('dragend', () => {
-        item.style.opacity = '1';
-      });
-      
-      // Hover effects
-      item.addEventListener('mouseenter', () => {
-        item.style.transform = 'scale(1.05)';
-      });
-      
-      item.addEventListener('mouseleave', () => {
-        item.style.transform = 'scale(1)';
-      });
-      
-      gallery.appendChild(item);
-    });
+    // Fallback to empty array
+    return [];
   }
+  
   insertImageToPost(filename) {
     console.log('🖼️ Inserting image:', filename);
     
@@ -5475,8 +5805,15 @@ class SimpleBlog {
     }, 10000);
   }
 
-  importImages() {
+  async importImages() {
     console.log('📁 Importing images...');
+    
+    // Check if user is authenticated
+    if (!this.isAdmin()) {
+      console.log('⚠️ Non-admin user attempted to import images');
+      alert('You need to be authenticated with GitHub to import images.');
+      return;
+    }
     
     // Create file input
     const input = document.createElement('input');
@@ -5485,18 +5822,78 @@ class SimpleBlog {
     input.multiple = true;
     input.style.display = 'none';
     
-    input.addEventListener('change', (e) => {
+    input.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
       if (files.length > 0) {
         console.log(`📁 Processing ${files.length} image(s)...`);
         
-        // For now, just show what would be imported
-        // In a real implementation, this would upload to GitHub
-        files.forEach(file => {
-          console.log(`📁 Would import: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
-        });
+        // Show progress
+        const progressDiv = document.createElement('div');
+        progressDiv.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: var(--menu-bg);
+          border: 1px solid var(--border);
+          padding: 20px;
+          z-index: 10001;
+          min-width: 300px;
+          text-align: center;
+        `;
+        progressDiv.innerHTML = `
+          <p>Uploading ${files.length} image(s)...</p>
+          <div id="upload-progress"></div>
+        `;
+        document.body.appendChild(progressDiv);
         
-        alert(`Would import ${files.length} image(s) to assets folder.\n\nIn a real implementation, this would upload to your GitHub repository.`);
+        try {
+          let successCount = 0;
+          let errorCount = 0;
+          
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const progressText = `Uploading ${i + 1}/${files.length}: ${file.name}`;
+            document.getElementById('upload-progress').textContent = progressText;
+            
+            try {
+              const success = await this.uploadImageToGitHub(file);
+              if (success) {
+                successCount++;
+                console.log(`✅ Successfully uploaded: ${file.name}`);
+              } else {
+                errorCount++;
+                console.error(`❌ Failed to upload: ${file.name}`);
+              }
+            } catch (error) {
+              errorCount++;
+              console.error(`❌ Error uploading ${file.name}:`, error);
+            }
+          }
+          
+          // Show results
+          progressDiv.innerHTML = `
+            <p>Upload complete!</p>
+            <p>✅ ${successCount} successful</p>
+            <p>❌ ${errorCount} failed</p>
+            <button onclick="this.parentElement.remove()">Close</button>
+          `;
+          
+          // Refresh the image magazine
+          if (successCount > 0) {
+            setTimeout(() => {
+              this.loadImagesToMagazine();
+            }, 1000);
+          }
+          
+        } catch (error) {
+          console.error('❌ Error during batch upload:', error);
+          progressDiv.innerHTML = `
+            <p>Upload failed!</p>
+            <p style="color: #dc3545;">${error.message}</p>
+            <button onclick="this.parentElement.remove()">Close</button>
+          `;
+        }
       }
       
       // Cleanup
@@ -5505,6 +5902,94 @@ class SimpleBlog {
     
     document.body.appendChild(input);
     input.click();
+  }
+  
+  // Upload a single image to GitHub
+  async uploadImageToGitHub(file) {
+    try {
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        throw new Error('No GitHub token found');
+      }
+      
+      // Convert file to base64
+      const base64 = await this.fileToBase64(file);
+      
+      // Create the upload URL
+      const uploadUrl = `https://api.github.com/repos/pigeonPious/page/contents/assets/${file.name}`;
+      
+      // Upload the file
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Add image: ${file.name}`,
+          content: base64,
+          branch: 'main'
+        })
+      });
+      
+      if (response.ok) {
+        console.log(`✅ Successfully uploaded ${file.name} to GitHub`);
+        return true;
+      } else if (response.status === 422) {
+        // File already exists, try to update it
+        console.log(`🔄 File ${file.name} already exists, updating...`);
+        
+        // Get the current SHA
+        const shaResponse = await fetch(uploadUrl);
+        if (shaResponse.ok) {
+          const shaData = await shaResponse.json();
+          const sha = shaData.sha;
+          
+          // Update with SHA
+          const updateResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: `Update image: ${file.name}`,
+              content: base64,
+              sha: sha,
+              branch: 'main'
+            })
+          });
+          
+          if (updateResponse.ok) {
+            console.log(`✅ Successfully updated ${file.name} on GitHub`);
+            return true;
+          } else {
+            throw new Error(`Failed to update ${file.name}: ${updateResponse.status}`);
+          }
+        } else {
+          throw new Error(`Could not get SHA for ${file.name}`);
+        }
+      } else {
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Error uploading ${file.name}:`, error);
+      throw error;
+    }
+  }
+  
+  // Convert file to base64
+  fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
+    });
   }
   showPublishModal() {
     console.log('📢 Publishing post to GitHub...');
