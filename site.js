@@ -802,10 +802,10 @@ class SimpleBlog {
   setupButtonEvents() {
     console.log('🔧 Setting up button events...');
     
-    // Star button (home)
+    // Star button (toggle sitemap)
     this.addClickHandler('#star-button', () => {
-      console.log('⭐ Star button clicked - going home');
-      window.location.href = 'index.html';
+      console.log('⭐ Star button clicked - toggling sitemap');
+      this.toggleSiteMap();
     });
 
     // New post button
@@ -2274,8 +2274,8 @@ class SimpleBlog {
     // Add previous post link
     if (prevPost) {
       const prevLink = document.createElement('div');
-      prevLink.innerHTML = `<a href="#" class="nav-link prev-link" data-slug="${prevPost.slug}">_previous</a>`;
-      prevLink.style.cssText = 'margin-bottom: 4px;';
+      prevLink.innerHTML = `<a href="#" class="nav-link prev-link" data-slug="${prevPost.slug}" style="font-size: 0.5em; opacity: 0.5;">_previous</a>`;
+      prevLink.style.cssText = 'margin-bottom: 0px; line-height: 1;';
       navContainer.appendChild(prevLink);
       
       // Add click handler
@@ -2288,7 +2288,8 @@ class SimpleBlog {
     // Add next post link
     if (nextPost) {
       const nextLink = document.createElement('div');
-      nextLink.innerHTML = `<a href="#" class="nav-link next-link" data-slug="${nextPost.slug}">_next</a>`;
+      nextLink.innerHTML = `<a href="#" class="nav-link next-link" data-slug="${nextPost.slug}" style="font-size: 0.5em; opacity: 0.5;">_next</a>`;
+      nextLink.style.cssText = 'margin-bottom: 0px; line-height: 1;';
       navContainer.appendChild(nextLink);
       
       // Add click handler
@@ -7645,6 +7646,7 @@ class SimpleBlog {
       font-size: 11px;
       line-height: 1.2;
       color: var(--fg);
+      opacity: 0.5;
       pointer-events: none;
       max-height: calc(100vh - 60px);
       overflow-y: auto;
@@ -8016,16 +8018,15 @@ hideSiteMap() {
     this.currentSiteMap.remove();
     this.currentSiteMap = null;
   }
-}
 
-// Toggle site map visibility
-toggleSiteMap() {
-  if (this.currentSiteMap) {
-    this.hideSiteMap();
-  } else {
-    this.showSiteMap();
+  // Toggle site map visibility
+  toggleSiteMap() {
+    if (this.currentSiteMap) {
+      this.hideSiteMap();
+    } else {
+      this.showSiteMap();
+    }
   }
-}
   makeWindowDraggable(window) {
     let isDragging = false;
     let startX, startY, startLeft, startTop;
