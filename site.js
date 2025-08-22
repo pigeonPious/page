@@ -8007,16 +8007,17 @@ class SimpleBlog {
   }
 
 // Hide site map
-hideSiteMap() {
-  if (this.currentSiteMap) {
-    // Remove resize listener
-    if (this.siteMapResizeHandler) {
-      window.removeEventListener('resize', this.siteMapResizeHandler);
-      this.siteMapResizeHandler = null;
+  hideSiteMap() {
+    if (this.currentSiteMap) {
+      // Remove resize listener
+      if (this.siteMapResizeHandler) {
+        window.removeEventListener('resize', this.siteMapResizeHandler);
+        this.siteMapResizeHandler = null;
+      }
+      
+      this.currentSiteMap.remove();
+      this.currentSiteMap = null;
     }
-    
-    this.currentSiteMap.remove();
-    this.currentSiteMap = null;
   }
 
   // Toggle site map visibility
@@ -8027,6 +8028,7 @@ hideSiteMap() {
       this.showSiteMap();
     }
   }
+
   makeWindowDraggable(window) {
     let isDragging = false;
     let startX, startY, startLeft, startTop;
