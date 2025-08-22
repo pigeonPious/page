@@ -2242,7 +2242,7 @@ class SimpleBlog {
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      padding: 20px;
+      padding: 50px;
       box-sizing: border-box;
     `;
     
@@ -2274,8 +2274,8 @@ class SimpleBlog {
     
     // Wait for image to load to calculate proper sizing
     fullImage.onload = () => {
-      const viewportWidth = window.innerWidth - 40; // Account for padding
-      const viewportHeight = window.innerHeight - 40;
+      const viewportWidth = window.innerWidth - 100; // Account for 50px padding on each side
+      const viewportHeight = window.innerHeight - 100;
       
       let displayWidth = fullImage.naturalWidth;
       let displayHeight = fullImage.naturalHeight;
@@ -2283,7 +2283,7 @@ class SimpleBlog {
       // Calculate scaling to fit within viewport
       const scaleX = viewportWidth / displayWidth;
       const scaleY = viewportHeight / displayHeight;
-      const scale = Math.min(scaleX, scaleY, 1); // Never scale up, only down
+      const scale = Math.min(scaleX, scaleY); // Allow scaling up for small images
       
       // Apply calculated dimensions
       displayWidth = Math.floor(displayWidth * scale);
@@ -2339,13 +2339,14 @@ class SimpleBlog {
       overlay.remove();
     });
     
+    // Close overlay when clicking anywhere (including on the image)
     overlay.addEventListener('click', () => {
       overlay.remove();
     });
     
-    // Prevent image container clicks from closing overlay
-    imageContainer.addEventListener('click', (e) => {
-      e.stopPropagation();
+    // Also close when clicking on the image itself
+    fullImage.addEventListener('click', () => {
+      overlay.remove();
     });
     
     // Assemble and add to DOM
@@ -2366,15 +2367,15 @@ class SimpleBlog {
     // Add window resize handler to recalculate image sizing
     const resizeHandler = () => {
       if (fullImage.complete && fullImage.naturalWidth) {
-        const viewportWidth = window.innerWidth - 40;
-        const viewportHeight = window.innerHeight - 40;
+        const viewportWidth = window.innerWidth - 100; // Account for 50px padding on each side
+        const viewportHeight = window.innerHeight - 100;
         
         let displayWidth = fullImage.naturalWidth;
         let displayHeight = fullImage.naturalHeight;
         
         const scaleX = viewportWidth / displayWidth;
         const scaleY = viewportHeight / displayHeight;
-        const scale = Math.min(scaleX, scaleY, 1);
+        const scale = Math.min(scaleX, scaleY); // Allow scaling up for small images
         
         displayWidth = Math.floor(displayWidth * scale);
         displayHeight = Math.floor(displayHeight * scale);
