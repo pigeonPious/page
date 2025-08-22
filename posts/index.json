@@ -1,5 +1,11 @@
 [
   {
+    "slug": "i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title",
+    "title": "I vibe coded this blog and it was miserable. this is the title",
+    "date": "2025-08-22",
+    "keywords": "NEW CATEGORY"
+  },
+  {
     "title": "I vibe coded this blog and it was miserable.",
     "slug": "i-vibe-coded-this-blog-and-it-was-miserable-",
     "filename": "i-vibe-coded-this-blog-and-it-was-miserable-.json",
@@ -7,17 +13,17 @@
     "tags": "NEW CATEGORY"
   },
   {
-    "title": "About",
-    "slug": "about",
-    "filename": "about.json",
-    "date": "2024-07-25T12:00:00Z",
-    "tags": "about"
-  },
-  {
     "title": "Contact",
     "slug": "contact",
     "filename": "contact.json",
     "date": "2024-07-25T12:00:01Z",
     "tags": "contact"
+  },
+  {
+    "title": "About",
+    "slug": "about",
+    "filename": "about.json",
+    "date": "2024-07-25T12:00:00Z",
+    "tags": "about"
   }
 ]
