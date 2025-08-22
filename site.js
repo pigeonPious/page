@@ -2215,6 +2215,11 @@ class SimpleBlog {
   addPostNavigation(currentPost) {
     if (!currentPost || !this.posts || this.posts.length === 0) return;
     
+    // Don't show navigation for 'about' and 'contact' pages
+    if (currentPost.slug === 'about' || currentPost.slug === 'contact') {
+      return;
+    }
+    
     const contentElement = document.getElementById('post-content');
     if (!contentElement) return;
     
@@ -6125,25 +6130,54 @@ class SimpleBlog {
     
       content.innerHTML = `
         <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub OAuth Login</h3>
-      <p style="color: var(--menu-fg); margin-bottom: 20px;">Click below to authenticate with GitHub using OAuth.</p>
-      <p style="color: var(--muted, #888); font-size: 12px; margin-bottom: 20px;">This provides higher rate limits and more reliable access.</p>
-      <button id="githubOAuthBtn" style="
-        background: #24292e;
+      <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
+      
+      <div style="margin-bottom: 20px; padding: 15px; background: var(--bg); border-radius: 6px; text-align: left;">
+        <p style="margin: 0 0 10px 0; color: var(--muted, #888); font-size: 12px;"><strong>Token Requirements:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; color: var(--muted, #888); font-size: 12px;">
+          <li>Scope: <code>repo</code> (full repository access)</li>
+          <li>Expiration: Set to "No expiration" or at least 1 year</li>
+          <li>Note: "PiousPigeon Blog Editor"</li>
+        </ul>
+      </div>
+        
+        <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
+          width: 100%;
+          padding: 12px;
+          margin-bottom: 20px;
+          border: 1px solid var(--border);
+          background: var(--bg);
+          color: var(--fg);
+          font-family: monospace;
+          font-size: 14px;
+          border-radius: 6px;
+        ">
+        
+        <div style="margin-bottom: 20px;">
+        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 14px;">
+          🔗 Create token at github.com/settings/tokens
+          </a>
+        </div>
+        
+        <button id="githubLoginBtn" style="
+          background: #24292e;
           color: white;
           border: none;
           padding: 15px 30px;
           border-radius: 6px;
           cursor: pointer;
           font-size: 16px;
-          margin-bottom: 15px;
+          margin-right: 10px;
           width: 100%;
-      ">🔐 Login with GitHub</button>
+          margin-bottom: 10px;
+      ">🔐 Authenticate</button>
+        
         <button id="closeLoginModal" style="
           background: transparent;
           color: var(--menu-fg);
           border: 1px solid var(--border);
-          padding: 8px 16px;
-          border-radius: 4px;
+        padding: 8px 20px;
+        border-radius: 6px;
           cursor: pointer;
         ">Cancel</button>
       `;
@@ -6151,19 +6185,30 @@ class SimpleBlog {
     modal.appendChild(content);
     document.body.appendChild(modal);
     
+    // Focus on input
+      const tokenInput = document.getElementById('githubTokenInput');
+      tokenInput.focus();
+      
     // Add event listeners
-    document.getElementById('githubOAuthBtn').addEventListener('click', () => {
-      this.initiateOAuth();
-    });
+      document.getElementById('githubLoginBtn').addEventListener('click', () => {
+        this.authenticateWithToken();
+      });
     
     document.getElementById('closeLoginModal').addEventListener('click', () => {
       document.body.removeChild(modal);
-    });
+      });
+      
+      // Handle Enter key
+      tokenInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          this.authenticateWithToken();
+        }
+      });
     
     // Close on outside click
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        document.body.removeChild(modal);
+      document.body.removeChild(modal);
       }
     });
   }
