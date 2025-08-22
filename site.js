@@ -6145,104 +6145,105 @@ class SimpleBlog {
   showGitHubLogin() {
     console.log('Showing GitHub OAuth login...');
     
-    // Create OAuth login modal
-    const modal = document.createElement('div');
-    modal.id = 'githubLoginModal';
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
+    // Get the PiousPigeon label position for anchoring
+    const pigeonLabel = document.querySelector('.pigeon-label');
+    if (!pigeonLabel) {
+      console.log('⚠️ PiousPigeon label not found');
+      return;
+    }
     
-    const content = document.createElement('div');
-    content.style.cssText = `
+    const labelRect = pigeonLabel.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    
+    // Calculate position - anchor to right side of PiousPigeon label
+    let left = labelRect.right + 10; // 10px to the right of the label
+    let top = labelRect.bottom + 5; // 5px below the label
+    
+    // Adjust horizontal position if too close to right edge
+    if (left + 350 > windowWidth - 20) {
+      left = windowWidth - 370; // 350px width + 20px margin
+    }
+    
+    // Create single-line input box (like flags input)
+    const inputBox = document.createElement('div');
+    inputBox.id = 'githubLoginInput';
+    inputBox.className = 'menu-style-1-input';
+    inputBox.style.cssText = `
+      position: fixed;
+      top: ${top}px;
+      left: ${left}px;
       background: var(--menu-bg);
       border: 1px solid var(--border);
-      padding: 30px;
-      max-width: 400px;
-      text-align: center;
+      padding: 8px 12px;
+      z-index: 1000;
+      min-width: 350px;
     `;
     
-      content.innerHTML = `
-        <h3 style="margin: 0 0 20px 0; color: var(--menu-fg); font-weight: normal;">GitHub Login</h3>
-      <p style="color: var(--menu-fg); margin-bottom: 20px; font-size: 14px;">Enter your GitHub personal access token to publish posts.</p>
-      
-      <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
-          width: 100%;
-          padding: 12px;
-          margin-bottom: 20px;
-          border: 1px solid var(--border);
-          background: var(--bg);
-          color: var(--fg);
-          font-family: monospace;
-          font-size: 14px;
-          border-radius: 0;
-        ">
-        
-        <div style="margin-bottom: 20px;">
-        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 12px;">
-          Create token at github.com/settings/tokens
-          </a>
-        </div>
-        
-        <button id="githubLoginBtn" style="
-          background: var(--menu-fg);
-          color: var(--menu-bg);
-          border: none;
-          padding: 12px 24px;
-          cursor: pointer;
-          font-size: 14px;
-          width: 100%;
-          margin-bottom: 10px;
-          border-radius: 0;
-      ">Login</button>
-        
-        <button id="closeLoginModal" style="
-          background: transparent;
-          color: var(--menu-fg);
-          border: 1px solid var(--border);
-        padding: 8px 20px;
-        cursor: pointer;
-        border-radius: 0;
-        ">Cancel</button>
-      `;
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.placeholder = 'Enter GitHub token (ghp_xxxxxxxxxxxx)';
+    input.style.cssText = `
+      background: transparent;
+      border: none;
+      color: var(--menu-fg);
+      font-size: 13px;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+    `;
     
-    modal.appendChild(content);
-    document.body.appendChild(modal);
+    // Add help text below input
+    const helpText = document.createElement('div');
+    helpText.style.cssText = `
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-style: italic;
+    `;
+    helpText.textContent = 'Press Enter to login, Escape to cancel';
     
-    // Focus on input
-      const tokenInput = document.getElementById('githubTokenInput');
-      tokenInput.focus();
-      
-    // Add event listeners
-      document.getElementById('githubLoginBtn').addEventListener('click', () => {
-        this.authenticateWithToken();
-      });
+    inputBox.appendChild(input);
+    inputBox.appendChild(helpText);
+    document.body.appendChild(inputBox);
+    input.focus();
     
-    document.getElementById('closeLoginModal').addEventListener('click', () => {
-      document.body.removeChild(modal);
-      });
-      
-      // Handle Enter key
-      tokenInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          this.authenticateWithToken();
+    // Handle input events
+    const handleInput = async (e) => {
+      if (e.key === 'Enter') {
+        const token = input.value.trim();
+        if (token) {
+          // Show loading state
+          helpText.textContent = 'Authenticating...';
+          helpText.style.color = 'var(--accent)';
+          
+          try {
+            await this.authenticateWithToken(token);
+            // Success - page will reload
+          } catch (error) {
+            // Show error message
+            helpText.textContent = `Login failed: ${error.message}`;
+            helpText.style.color = 'var(--danger-color)';
+            input.focus();
+          }
         }
-      });
+      } else if (e.key === 'Escape') {
+        this.removeInputBox(inputBox);
+      }
+    };
+    
+    input.addEventListener('keydown', handleInput);
     
     // Close on outside click
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-      document.body.removeChild(modal);
+    const outsideClick = (e) => {
+      if (!inputBox.contains(e.target)) {
+        this.removeInputBox(inputBox);
+        document.removeEventListener('click', outsideClick);
       }
-    });
+    };
+    
+    setTimeout(() => {
+      document.addEventListener('click', outsideClick);
+    }, 100);
   }
 
   // Check GitHub API rate limit status
@@ -6381,13 +6382,9 @@ class SimpleBlog {
     }, 10000);
   }
 
-  async authenticateWithToken() {
-    const tokenInput = document.getElementById('githubTokenInput');
-    const token = tokenInput.value.trim();
-    
+  async authenticateWithToken(token) {
     if (!token) {
-      alert('Please enter a GitHub token');
-      return;
+      throw new Error('Please enter a GitHub token');
     }
     
     // Test the token with GitHub API
@@ -6421,16 +6418,12 @@ class SimpleBlog {
       localStorage.setItem('github_token', token);
       localStorage.setItem('github_user', userData.login);
       
-      // Close modal
-      const modal = document.getElementById('githubLoginModal');
-      if (modal) document.body.removeChild(modal);
-      
       // Reload page immediately without confirmation
       location.reload();
       
     } catch (error) {
       console.error('Token validation failed:', error);
-      alert(`Authentication failed: ${error.message}\n\nPlease check your token has the correct permissions.`);
+      throw error; // Re-throw the error so the caller can handle it
     }
   }
 

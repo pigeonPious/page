@@ -281,6 +281,7 @@ body {
   font-size: 13px;
   margin: 0;
   padding: 0;
+  padding-top: 22px; /* Account for fixed taskbar */
 }
 
 /* Ensure background covers all content */
@@ -313,8 +314,10 @@ body {
   user-select: none;
   background-color: var(--bg); /* Match the main background color */
   border: none; /* Remove any borders */
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
   height: 22px; /* Reduced height */
   min-height: 0;
