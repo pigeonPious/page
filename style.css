@@ -628,14 +628,23 @@ body {
 #image-preview-overlay {
   backdrop-filter: blur(4px);
   transition: opacity 0.2s ease;
+  overflow: hidden; /* Prevent any content from extending beyond overlay */
 }
 
 #image-preview-overlay img {
   transition: transform 0.2s ease;
+  display: block; /* Ensure proper block display */
 }
 
 #image-preview-overlay img:hover {
   transform: scale(1.02);
+}
+
+/* Ensure image container properly constrains content */
+#image-preview-overlay > div {
+  overflow: hidden; /* Prevent image overflow */
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Ensure images in posts show they're clickable */

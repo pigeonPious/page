@@ -2242,28 +2242,63 @@ class SimpleBlog {
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      padding: 20px;
+      box-sizing: border-box;
     `;
     
-    // Create image container
+    // Create image container with improved sizing logic
     const imageContainer = document.createElement('div');
     imageContainer.style.cssText = `
-      max-width: 90vw;
-      max-height: 90vh;
       position: relative;
       cursor: default;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
     `;
     
-    // Create image element
+    // Create image element with proper sizing
     const fullImage = document.createElement('img');
     fullImage.src = imageSrc;
     fullImage.alt = imageAlt;
     fullImage.style.cssText = `
       max-width: 100%;
       max-height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
       border-radius: 8px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     `;
+    
+    // Wait for image to load to calculate proper sizing
+    fullImage.onload = () => {
+      const viewportWidth = window.innerWidth - 40; // Account for padding
+      const viewportHeight = window.innerHeight - 40;
+      
+      let displayWidth = fullImage.naturalWidth;
+      let displayHeight = fullImage.naturalHeight;
+      
+      // Calculate scaling to fit within viewport
+      const scaleX = viewportWidth / displayWidth;
+      const scaleY = viewportHeight / displayHeight;
+      const scale = Math.min(scaleX, scaleY, 1); // Never scale up, only down
+      
+      // Apply calculated dimensions
+      displayWidth = Math.floor(displayWidth * scale);
+      displayHeight = Math.floor(displayHeight * scale);
+      
+      fullImage.style.width = `${displayWidth}px`;
+      fullImage.style.height = `${displayHeight}px`;
+      
+      console.log('🖼️ Image preview sized:', {
+        natural: `${fullImage.naturalWidth}x${fullImage.naturalHeight}`,
+        display: `${displayWidth}x${displayHeight}`,
+        viewport: `${viewportWidth}x${viewportHeight}`,
+        scale: scale.toFixed(3)
+      });
+    };
     
     // Create close button
     const closeButton = document.createElement('div');
@@ -2328,9 +2363,38 @@ class SimpleBlog {
     };
     document.addEventListener('keydown', escapeHandler);
     
-    // Clean up event listener when overlay is removed
+    // Add window resize handler to recalculate image sizing
+    const resizeHandler = () => {
+      if (fullImage.complete && fullImage.naturalWidth) {
+        const viewportWidth = window.innerWidth - 40;
+        const viewportHeight = window.innerHeight - 40;
+        
+        let displayWidth = fullImage.naturalWidth;
+        let displayHeight = fullImage.naturalHeight;
+        
+        const scaleX = viewportWidth / displayWidth;
+        const scaleY = viewportHeight / displayHeight;
+        const scale = Math.min(scaleX, scaleY, 1);
+        
+        displayWidth = Math.floor(displayWidth * scale);
+        displayHeight = Math.floor(displayHeight * scale);
+        
+        fullImage.style.width = `${displayWidth}px`;
+        fullImage.style.height = `${displayHeight}px`;
+        
+        console.log('🖼️ Image preview resized:', {
+          display: `${displayWidth}x${displayHeight}`,
+          viewport: `${viewportWidth}x${viewportHeight}`,
+          scale: scale.toFixed(3)
+        });
+      }
+    };
+    window.addEventListener('resize', resizeHandler);
+    
+    // Clean up event listeners when overlay is removed
     overlay.addEventListener('remove', () => {
       document.removeEventListener('keydown', escapeHandler);
+      window.removeEventListener('resize', resizeHandler);
     });
   }
 
