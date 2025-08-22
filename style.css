@@ -629,6 +629,10 @@ body {
   backdrop-filter: blur(4px);
   transition: opacity 0.2s ease;
   overflow: hidden; /* Prevent any content from extending beyond overlay */
+  /* Ensure overlay is visible and clickable */
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
 }
 
 #image-preview-overlay img {

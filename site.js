@@ -2205,26 +2205,57 @@ class SimpleBlog {
   // Setup image click handlers for full preview functionality
   setupImageClickHandlers(contentElement) {
     const images = contentElement.querySelectorAll('img');
+    console.log(`🖼️ Setting up click handlers for ${images.length} images`);
     
-    images.forEach(img => {
+    images.forEach((img, index) => {
+      // Remove any existing click handlers to prevent duplicates
+      const newImg = img.cloneNode(true);
+      img.parentNode.replaceChild(newImg, img);
+      
       // Add click handler for full preview
-      img.addEventListener('click', (e) => {
+      newImg.addEventListener('click', (e) => {
         e.preventDefault();
-        this.showImagePreview(img.src, img.alt || 'Image');
+        e.stopPropagation();
+        console.log(`🖼️ Image ${index + 1} clicked:`, newImg.src);
+        
+        // Test if the function exists and is callable
+        if (typeof this.showImagePreview === 'function') {
+          this.showImagePreview(newImg.src, newImg.alt || 'Image');
+        } else {
+          console.error('❌ showImagePreview function not found!');
+        }
+      });
+      
+      // Also add a mousedown event as backup
+      newImg.addEventListener('mousedown', (e) => {
+        console.log(`🖼️ Image ${index + 1} mousedown:`, newImg.src);
       });
       
       // Add visual indication that image is clickable
-      img.style.cursor = 'pointer';
-      img.title = 'Click to view full size';
+      newImg.style.cursor = 'pointer';
+      newImg.title = 'Click to view full size';
+      
+      // Ensure the image is clickable
+      newImg.style.pointerEvents = 'auto';
+      newImg.style.userSelect = 'none';
+      
+      console.log(`🖼️ Click handler added to image ${index + 1}:`, newImg.src, {
+        cursor: newImg.style.cursor,
+        pointerEvents: newImg.style.pointerEvents,
+        userSelect: newImg.style.userSelect
+      });
     });
   }
 
   // Show full-size image preview
   showImagePreview(imageSrc, imageAlt) {
+    console.log('🖼️ showImagePreview called with:', { imageSrc, imageAlt });
+    
     // Remove existing preview if any
     const existingPreview = document.getElementById('image-preview-overlay');
     if (existingPreview) {
       existingPreview.remove();
+      console.log('🖼️ Removed existing preview');
     }
     
     // Create overlay
@@ -2354,6 +2385,16 @@ class SimpleBlog {
     imageContainer.appendChild(closeButton);
     overlay.appendChild(imageContainer);
     document.body.appendChild(overlay);
+    
+    console.log('🖼️ Image preview overlay added to DOM');
+    
+    // Verify the overlay is actually in the DOM
+    const verifyOverlay = document.getElementById('image-preview-overlay');
+    if (verifyOverlay) {
+      console.log('✅ Image preview overlay verified in DOM');
+    } else {
+      console.error('❌ Image preview overlay not found in DOM after creation');
+    }
     
     // Add escape key handler
     const escapeHandler = (e) => {
