@@ -149,33 +149,29 @@ class SimpleBlog {
             <div class="label">File</div>
             <div class="menu-dropdown">
               <a class="menu-entry" id="new-post" href="editor.html">New Post</a>
-              <div class="menu-entry editor-only" id="open-in-github">Open in GitHub</div>
-              <div class="menu-entry editor-only admin-only" id="open-draft-btn">Open Draft</div>
               <div class="menu-separator"></div>
+              <div class="menu-entry editor-only admin-only" id="open-draft-btn">Open Draft</div>
+              <div class="menu-entry editor-only" id="open-in-github">Open in GitHub</div>
               <div class="menu-entry editor-only admin-only" id="import-btn">Import</div>
-              <div class="menu-entry editor-only admin-only" id="export-btn">Export</div>
               <div class="menu-separator"></div>
               <div class="menu-entry editor-only admin-only" id="save-draft-btn">Save Draft</div>
+              <div class="menu-entry editor-only admin-only" id="export-btn">Export</div>
               <div class="menu-entry editor-only admin-only" id="publish-btn">Publish</div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry" id="open-console-btn">Open Console</div>
             </div>
           </div>
           
           <div class="menu-item" data-menu="edit">
             <div class="label">Edit</div>
             <div class="menu-dropdown">
-              <div class="menu-entry disabled">Undo</div>
-              <div class="menu-entry editor-only" id="make-note-button">Make Note</div>
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
-              <div class="menu-entry editor-only admin-only" id="keywords-btn">Flags</div>
-              <div class="menu-entry editor-only admin-only" id="images-btn">Images</div>
               <div class="menu-separator"></div>
               <div class="menu-entry admin-only" id="force-reindex-button">Force Reindex</div>
               <div class="menu-entry admin-only" id="check-rate-limit">Check Rate Limit</div>
               <div class="menu-separator"></div>
-              <div class="menu-entry" id="open-console-btn">Open Console</div>
-              <div class="menu-separator"></div>
-              <div class="menu-entry blog-only" id="font-size-button">Font Size</div>
-              <div class="menu-entry admin-only" id="draft-manager-button">Draft Manager</div>
+              <div class="menu-entry editor-only admin-only" id="images-btn">Images</div>
+              <div class="menu-entry editor-only admin-only" id="keywords-btn">Flags</div>
             </div>
           </div>
           
@@ -185,9 +181,9 @@ class SimpleBlog {
               <div class="menu-entry" id="about-btn">About</div>
               <div class="menu-entry" id="contact-btn">Contact</div>
               <div class="menu-separator"></div>
-              <div class="menu-entry" id="most-recent-post">Most Recent</div>
-              <div class="menu-entry" id="random-post">Random Post</div>
               <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
+              <div class="menu-entry" id="random-post">Random Post</div>
+              <div class="menu-separator"></div>
               <div class="menu-entry" id="show-site-map">Site Map</div>
             </div>
           </div>
