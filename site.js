@@ -130,6 +130,20 @@ class SimpleBlog {
       }
     }
     
+    // If random theme, check for saved random theme values and apply them
+    if (this.theme === 'random') {
+      const savedRandomTheme = localStorage.getItem('ppPage_random_theme');
+      if (savedRandomTheme) {
+        try {
+          const { h, s, l } = JSON.parse(savedRandomTheme);
+          this.applyCustomTheme(h, s, l);
+          console.log('🎲 Applied saved random theme on page load:', { h, s, l });
+        } catch (error) {
+          console.warn('⚠️ Could not parse saved random theme on page load:', error);
+        }
+      }
+    }
+    
     // Load saved post flags
     this.loadSavedFlags();
     
@@ -2638,102 +2652,23 @@ class SimpleBlog {
         console.log('🎨 Custom theme restored from localStorage, not opening HSL picker');
       }
     } else if (mode === 'random') {
-      // Check if we have a saved random theme
-      let savedRandomTheme = localStorage.getItem('ppPage_random_theme');
-      let h, s, l, color;
-      let shouldGenerateNew = false;
+      console.log('🎲 Random theme button clicked');
       
-      if (savedRandomTheme) {
-        try {
-          const themeData = JSON.parse(savedRandomTheme);
-          h = themeData.h;
-          s = themeData.s;
-          l = themeData.l;
-          color = themeData.color;
-          
-          // Check if this is a fresh click (within last 2 seconds) - user wants new random color
-          const lastClickTime = themeData.timestamp || 0;
-          const timeSinceLastClick = Date.now() - lastClickTime;
-          
-          if (timeSinceLastClick < 2000) {
-            // User clicked Random again within 2 seconds, generate new color
-            shouldGenerateNew = true;
-            console.log('🎲 User clicked Random again, generating new random color');
-          } else {
-            // Use existing saved random theme
-            console.log('🎲 Using existing random theme:', color, { h, s, l });
-          }
-        } catch (error) {
-          console.warn('⚠️ Could not parse saved random theme, generating new one');
-          shouldGenerateNew = true;
-        }
-      } else {
-        // No saved random theme, generate new one
-        shouldGenerateNew = true;
-      }
+      // Generate new random color values
+      const h = Math.floor(Math.random() * 361);
+      const s = Math.floor(Math.random() * 41) + 30;
+      const l = Math.floor(Math.random() * 31) + 15;
+      const color = `hsl(${h},${s}%,${l}%)`;
       
-      // Generate new random theme if needed
-      if (shouldGenerateNew) {
-        console.log('🎲 Generating new random theme');
-        
-        // Generate new random theme values
-        h = Math.floor(Math.random() * 361);
-        s = Math.floor(Math.random() * 41) + 30;
-        l = Math.floor(Math.random() * 31) + 15;
-        color = `hsl(${h},${s}%,${l}%)`;
-        
-        // Save the new random theme values with timestamp
-        const themeData = { h, s, l, color, timestamp: Date.now() };
-        localStorage.setItem('ppPage_random_theme', JSON.stringify(themeData));
-        console.log('🎲 Generated and saved new random theme:', color, { h, s, l });
-        
-        // Clear timestamp after 3 seconds so future clicks will generate new colors
-        setTimeout(() => {
-          const currentTheme = localStorage.getItem('ppPage_random_theme');
-          if (currentTheme) {
-            try {
-              const themeData = JSON.parse(currentTheme);
-              delete themeData.timestamp;
-              localStorage.setItem('ppPage_random_theme', JSON.stringify(themeData));
-              console.log('🎲 Timestamp cleared, future Random clicks will generate new colors');
-            } catch (error) {
-              console.warn('⚠️ Could not clear timestamp:', error);
-            }
-          }
-        }, 3000);
-      }
+      console.log('🎲 Generated random theme:', { h, s, l, color });
       
-      // Apply the random theme using the same method as custom themes
+      // Save the random theme to localStorage
+      const themeData = { h, s, l, color };
+      localStorage.setItem('ppPage_random_theme', JSON.stringify(themeData));
+      
+      // Apply the random theme using the custom theme method
       this.applyCustomTheme(h, s, l);
-      console.log('🎲 Applied random theme:', { h, s, l, color });
-      
-      // Calculate complementary colors for the random theme
-      const bgColor = color;
-      const fgColor = l < 50 ? '#ffffff' : '#000000';
-      const menuBg = color;
-      const menuFg = fgColor;
-      const sidebarBg = `hsl(${h},${s}%,${Math.max(0, l - 20)}%)`;
-      const sidebarFg = fgColor;
-      const borderColor = `hsl(${h},${s}%,${Math.max(0, l - 10)}%)`;
-      const mutedColor = l < 50 ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)';
-      const accentColor = l < 50 ? '#ffffff' : `hsl(${h},${s}%,${Math.min(100, l + 30)}%)`;
-      
-      document.body.classList.add('custom-mode');
-      document.body.style.setProperty('--bg', bgColor);
-      document.body.style.setProperty('--fg', fgColor);
-      document.body.style.setProperty('--menu-bg', menuBg);
-      document.body.style.setProperty('--menu-fg', menuFg);
-      document.body.style.setProperty('--sidebar-bg', sidebarBg);
-      document.body.style.setProperty('--sidebar-fg', sidebarFg);
-      document.body.style.setProperty('--border', borderColor);
-      document.body.style.setProperty('--muted', mutedColor);
-      document.body.style.setProperty('--link', fgColor);
-      document.body.style.setProperty('--accent', accentColor);
-      document.body.style.setProperty('--success-color', '#28a745');
-      document.body.style.setProperty('--success-hover-color', '#218838');
-      document.body.style.setProperty('--danger-color', '#dc3545');
-      document.body.style.setProperty('--danger-hover-color', '#c82333');
-      document.body.style.setProperty('--btn-text-color', fgColor);
+      console.log('✅ Random theme applied successfully');
     }
     
     // Update theme display
