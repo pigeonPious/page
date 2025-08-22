@@ -1543,12 +1543,12 @@ class SimpleBlog {
             if (statusElement) {
               statusElement.textContent = 'Reindexed!';
               statusElement.style.color = '#28a745'; // Green
-              
-              // Reset status after 3 seconds
-              setTimeout(() => {
-                statusElement.textContent = originalStatus;
-                statusElement.style.color = '';
-              }, 3000);
+            
+            // Reset status after 3 seconds
+            setTimeout(() => {
+              statusElement.textContent = originalStatus;
+              statusElement.style.color = '';
+            }, 3000);
             }
             
             // Update any open submenus
@@ -7636,7 +7636,7 @@ class SimpleBlog {
     siteMap.id = 'site-map';
     siteMap.style.cssText = `
       position: fixed;
-      top: 39px;
+      top: 19px;
       left: 2px;
       background: transparent;
       padding: 8px;
@@ -8015,6 +8015,15 @@ hideSiteMap() {
     
     this.currentSiteMap.remove();
     this.currentSiteMap = null;
+  }
+}
+
+// Toggle site map visibility
+toggleSiteMap() {
+  if (this.currentSiteMap) {
+    this.hideSiteMap();
+  } else {
+    this.showSiteMap();
   }
 }
   makeWindowDraggable(window) {
