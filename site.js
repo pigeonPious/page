@@ -80,7 +80,10 @@ class SimpleBlog {
       // Show site map by default after posts are loaded (only in blog mode)
       if (!window.location.pathname.includes('editor.html')) {
         setTimeout(() => {
-          this.showSiteMap();
+          // Only show site map automatically if user hasn't manually toggled it or hidden it
+          if (!this.siteMapManuallyToggled && !this.siteMapManuallyHidden) {
+            this.showSiteMap();
+          }
         }, 500);
       } else {
         console.log('🗺️ Site map not shown (editor mode)');
@@ -240,6 +243,10 @@ class SimpleBlog {
   // Logout functionality
   logout() {
     console.log('Logging out...');
+    
+    // Check if this was called from console
+    const isFromConsole = new Error().stack?.includes('executeCommand') || false;
+    
     localStorage.removeItem('github_token');
     localStorage.removeItem('github_oauth_token');
     localStorage.removeItem('github_token_type');
@@ -258,6 +265,11 @@ class SimpleBlog {
     }
     
     console.log('Logged out successfully');
+    
+    // If called from console, provide feedback
+    if (isFromConsole) {
+      this.printToConsole('✅ Logged out of GitHub successfully');
+    }
   }
 
   // Enhanced cache clearer for new builds
@@ -2169,6 +2181,10 @@ class SimpleBlog {
     // Add navigation controls
     this.addPostNavigation(post);
     
+    // Reset site map manual state when showing a new post
+    this.siteMapManuallyToggled = false;
+    this.siteMapManuallyHidden = false;
+    
     console.log('✅ Post displayed successfully:', post.title);
   }
   addPostNavigation(currentPost) {
@@ -3684,6 +3700,8 @@ class SimpleBlog {
       this.forceReindex();
     } else if (command === 'check-rate-limit') {
       this.checkRateLimit();
+    } else if (command === 'logout') {
+      this.logout();
     } else if (command === 'link') {
       this.startAddProjectLink();
     } else if (command === 'project') {
@@ -3709,6 +3727,7 @@ class SimpleBlog {
     this.printToConsole('  posts - Show post count and list');
     this.printToConsole('  force-reindex - Force reindex all posts');
     this.printToConsole('  check-rate-limit - Check GitHub rate limit');
+    this.printToConsole('  logout - Logout of GitHub');
     this.printToConsole('  link - Add a new project link');
     this.printToConsole('  project - Enter project mode for advanced project management');
     this.printToConsole('');
@@ -6181,7 +6200,7 @@ class SimpleBlog {
     
     const input = document.createElement('input');
     input.type = 'password';
-    input.placeholder = 'Enter GitHub token (ghp_xxxxxxxxxxxx)';
+    input.placeholder = '';
     input.style.cssText = `
       background: transparent;
       border: none;
@@ -6200,7 +6219,7 @@ class SimpleBlog {
       margin-top: 4px;
       font-style: italic;
     `;
-    helpText.textContent = 'Press Enter to login, Escape to cancel';
+    helpText.textContent = '';
     
     inputBox.appendChild(input);
     inputBox.appendChild(helpText);
@@ -7460,8 +7479,24 @@ class SimpleBlog {
   }
   // Show site map when viewing a post
   showSiteMap() {
+    console.log('🔍 showSiteMap called');
+    
     // Remove existing site map if present
     this.hideSiteMap();
+    
+    // Check for any remaining site maps in DOM
+    const existingSiteMaps = document.querySelectorAll('#site-map');
+    if (existingSiteMaps.length > 0) {
+      console.log('⚠️ Found', existingSiteMaps.length, 'existing site maps, removing them');
+      existingSiteMaps.forEach(map => map.remove());
+    }
+    
+    // Also check if we already have a currentSiteMap reference
+    if (this.currentSiteMap) {
+      console.log('⚠️ currentSiteMap reference exists, removing it');
+      this.currentSiteMap.remove();
+      this.currentSiteMap = null;
+    }
     
     // Get current post slug
     const currentSlug = localStorage.getItem('current_post_slug');
@@ -7842,6 +7877,8 @@ class SimpleBlog {
 
   // Hide site map
   hideSiteMap() {
+    console.log('🔍 hideSiteMap called, currentSiteMap:', this.currentSiteMap);
+    
     if (this.currentSiteMap) {
       // Remove resize listener
       if (this.siteMapResizeHandler) {
@@ -7851,11 +7888,31 @@ class SimpleBlog {
       
       this.currentSiteMap.remove();
       this.currentSiteMap = null;
+      console.log('✅ Site map removed');
+      
+      // If this was a manual hide, mark it so automatic show doesn't interfere
+      if (this.siteMapManuallyToggled) {
+        this.siteMapManuallyHidden = true;
+      }
+    } else {
+      console.log('⚠️ No currentSiteMap reference found');
+      
+      // Fallback: remove any site maps by ID
+      const siteMaps = document.querySelectorAll('#site-map');
+      if (siteMaps.length > 0) {
+        console.log('🔍 Found', siteMaps.length, 'site maps by ID, removing them');
+        siteMaps.forEach(map => map.remove());
+      }
     }
   }
 
   // Toggle site map visibility
   toggleSiteMap() {
+    console.log('🔍 toggleSiteMap called');
+    
+    // Mark that user has manually toggled the site map
+    this.siteMapManuallyToggled = true;
+    
     if (this.currentSiteMap) {
       this.hideSiteMap();
     } else {
