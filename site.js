@@ -7182,19 +7182,6 @@ class SimpleBlog {
         const entry = document.createElement('div');
         entry.className = 'menu-entry';
         entry.textContent = project.label;
-        entry.style.cssText = `
-          padding: 1px 12px 1px 20px;
-          cursor: pointer;
-          color: var(--menu-fg, #fff);
-          transition: background-color 0.15s ease;
-          border-radius: 3px;
-          margin: 0.25px 1px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-          font-size: 11px;
-        `;
         
         entry.title = `Click to visit: ${project.url}`;
         

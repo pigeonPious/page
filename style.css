@@ -435,7 +435,7 @@ body {
 /* Menu separator */
 .menu-separator {
   height: 1px;
-  background: var(--muted);
+  background: #555555;
   margin: 2px 0; /* Reduced margin */
 }
 
