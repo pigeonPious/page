@@ -1,7 +1,0 @@
-{
-  "slug": "test-reindex-2",
-  "title": "Test Reindex Post 2",
-  "date": "2025-01-20",
-  "keywords": "testing, blog, feature",
-  "content": "<p>This is another test post to verify the force reindex functionality.</p><p>It has different keywords: testing, blog, and feature.</p><p>This post should also appear in the index after running force reindex.</p><p>It will help test that multiple posts get indexed properly.</p>"
-}
