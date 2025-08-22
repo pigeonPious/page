@@ -2156,10 +2156,17 @@ class SimpleBlog {
     console.log('✅ Post displayed successfully:', post.title);
   }
   addPostNavigation(currentPost) {
-    if (!currentPost || !this.posts || this.posts.length === 0) return;
+    console.log('🔍 addPostNavigation called with:', currentPost);
+    console.log('🔍 this.posts length:', this.posts ? this.posts.length : 'undefined');
+    
+    if (!currentPost || !this.posts || this.posts.length === 0) {
+      console.log('🔍 Early return - missing data');
+      return;
+    }
     
     // Don't show navigation for 'about' and 'contact' pages
     if (currentPost.slug === 'about' || currentPost.slug === 'contact') {
+      console.log('🔍 Early return - about/contact page');
       return;
     }
     
@@ -2257,6 +2264,10 @@ class SimpleBlog {
       nextPost: nextPost ? nextPost.slug : 'none',
       navContainer: navContainer.outerHTML
     });
+    
+    // Additional debug info
+    console.log('🧭 Navigation container added to DOM:', navContainer);
+    console.log('🧭 Content element children count after adding nav:', contentElement.children.length);
   }
 
   displayDefaultContent() {
