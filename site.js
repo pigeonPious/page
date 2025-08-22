@@ -48,7 +48,7 @@ class SimpleBlog {
       const urlParams = new URLSearchParams(window.location.search);
       const postSlug = urlParams.get('post');
       if (postSlug) {
-        console.log(`🔗 Loading post from URL parameter: ${postSlug}`);
+        console.log(` Loading post from URL parameter: ${postSlug}`);
         this.loadPost(postSlug);
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -57,7 +57,7 @@ class SimpleBlog {
       // Check for post hash in URL (direct linking)
       const hashSlug = window.location.hash.substring(1); // Remove # from hash
       if (hashSlug) {
-        console.log(`🔗 Loading post from URL hash: ${hashSlug}`);
+        console.log(` Loading post from URL hash: ${hashSlug}`);
         this.loadPost(hashSlug);
       }
       
@@ -288,7 +288,7 @@ class SimpleBlog {
 
   // Enhanced cache clearer for new builds
   clearAllCache() {
-    console.log('🧹 Clearing all cache for new build...');
+    console.log(' Clearing all cache for new build...');
     
     // Clear all localStorage items
     const keysToRemove = [];
@@ -299,24 +299,24 @@ class SimpleBlog {
       }
     }
     
-    console.log('🧹 Clearing localStorage keys:', keysToRemove);
+    console.log(' Clearing localStorage keys:', keysToRemove);
     
     keysToRemove.forEach(key => {
       const oldValue = localStorage.getItem(key);
       localStorage.removeItem(key);
-      console.log(`🧹 Cleared: ${key} = ${oldValue}`);
+      console.log(` Cleared: ${key} = ${oldValue}`);
     });
     
     // Clear sessionStorage
     sessionStorage.clear();
-    console.log('🧹 Cleared sessionStorage');
+    console.log(' Cleared sessionStorage');
     
     // Clear any cached data in memory
     this.posts = [];
     this.currentPost = null;
     
     // Force reload to ensure fresh state
-    console.log('🧹 Cache cleared, reloading page...');
+    console.log(' Cache cleared, reloading page...');
     setTimeout(() => {
       window.location.reload();
     }, 1000);
@@ -954,7 +954,7 @@ class SimpleBlog {
 
     
     this.addClickHandler('#font-size-button', () => {
-      console.log('🔤 Font size button clicked');
+      console.log(' Font size button clicked');
       this.showFontSizeWindow();
     });
     
@@ -1734,8 +1734,10 @@ class SimpleBlog {
         } catch (dirError) {
           console.warn('Could not scan posts directory:', dirError);
           this.printToConsole('Could not scan posts directory');
-          
-          // Fallback: manually scan the posts we know exist
+        }
+        
+        // If still no local posts found, try manual fallback regardless
+        if (localPosts.length === 0) {
           console.log('Trying manual fallback scan...');
           this.printToConsole('Trying manual fallback scan...');
           
@@ -1745,7 +1747,6 @@ class SimpleBlog {
             'contact.json'
           ];
           
-          localPosts = [];
           for (const postFile of knownPosts) {
             try {
               const postResponse = await fetch(`posts/${postFile}`);
@@ -1854,9 +1855,9 @@ class SimpleBlog {
         
         return;
         
-      } else if (response.status === 403) {
-        console.log('GitHub API returned 403 - using local posts as fallback');
-        this.printToConsole('GitHub API blocked (403) - using local posts as fallback');
+      } else if (response.status === 403 || response.status === 404) {
+        console.log(`GitHub API returned ${response.status} - using local posts as fallback`);
+        this.printToConsole(`GitHub API blocked (${response.status}) - using local posts as fallback`);
         
         // Use local posts when GitHub API is blocked
         if (localPosts.length > 0) {
@@ -2317,7 +2318,7 @@ class SimpleBlog {
     console.log(` this.displayDefaultContent function:`, this.displayDefaultContent);
     
     try {
-      console.log(`📖 Loading post: ${slug}`);
+      console.log(` Loading post: ${slug}`);
       
       // Try GitHub API first, then local fallback
       let post = null;
@@ -2397,7 +2398,7 @@ class SimpleBlog {
     if (post && post.slug) {
       const newUrl = `${window.location.origin}${window.location.pathname}#${post.slug}`;
       window.history.pushState({ postSlug: post.slug }, post.title, newUrl);
-      console.log('🔗 Updated URL to:', newUrl);
+      console.log(' Updated URL to:', newUrl);
     }
     
     const titleElement = document.getElementById('post-title');
@@ -2901,18 +2902,18 @@ class SimpleBlog {
     
     // Remove existing theme classes
     document.body.classList.remove('dark-mode', 'light-mode', 'custom-mode');
-    console.log('🧹 Removed existing theme classes');
+    console.log(' Removed existing theme classes');
     
     // Clear any inline styles from previous custom/random themes
     const cssVars = ['--bg', '--fg', '--menu-bg', '--menu-fg', '--sidebar-bg', '--sidebar-fg', '--border', '--muted', '--link', '--accent', '--success-color', '--success-hover-color', '--danger-color', '--danger-hover-color', '--btn-text-color'];
     cssVars.forEach(varName => {
       document.body.style.removeProperty(varName);
     });
-    console.log('🧹 Cleared all inline CSS variables');
+    console.log(' Cleared all inline CSS variables');
     
     if (mode === 'dark') {
       document.body.classList.add('dark-mode');
-      console.log('🌙 Added dark-mode class');
+      console.log(' Added dark-mode class');
     } else if (mode === 'light') {
       document.body.classList.add('light-mode');
       console.log('Added light-mode class');
@@ -5480,7 +5481,7 @@ class SimpleBlog {
   sanitizeContent(content) {
     if (!content) return '';
     
-    console.log('🧹 Sanitizing content for publishing...');
+    console.log(' Sanitizing content for publishing...');
     
     // Remove or replace problematic characters
     let sanitized = content
@@ -5496,7 +5497,7 @@ class SimpleBlog {
       // Remove other control characters except newlines and tabs
       .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
     
-    console.log('🧹 Content sanitization complete');
+    console.log(' Content sanitization complete');
     return sanitized;
   }
 
@@ -6394,7 +6395,7 @@ class SimpleBlog {
           // Clear edit data after successful publish
           if (isEdit) {
             localStorage.removeItem('editPostData');
-            console.log('🧹 Edit data cleared after successful publish');
+            console.log(' Edit data cleared after successful publish');
           }
           
 
@@ -8212,7 +8213,7 @@ class SimpleBlog {
       
       // Add click handler to load post
       postEntry.addEventListener('click', () => {
-        console.log(`📖 Loading post: ${post.title || post.slug}`);
+        console.log(` Loading post: ${post.title || post.slug}`);
         
         // Close the category window
         window.remove();
@@ -8456,7 +8457,7 @@ class SimpleBlog {
               this.loadEditDataForPost(slug);
             } else {
               // In blog mode: navigate to the post
-              console.log(`📖 Blog mode: Loading post ${slug} for viewing`);
+              console.log(` Blog mode: Loading post ${slug} for viewing`);
               this.loadPost(slug);
             }
             // Don't close site map - keep it open
@@ -8971,7 +8972,7 @@ class SimpleBlog {
     const urlMatch = noteText.match(/(https?:\/\/[^\s]+)/i);
     if (urlMatch) {
       const url = urlMatch[1];
-      console.log('🔗 Opening URL from hovernote:', url);
+      console.log(' Opening URL from hovernote:', url);
       window.open(url, '_blank');
     }
   }
@@ -9461,7 +9462,7 @@ class SimpleBlog {
 
   // Cleanup method to prevent memory leaks
   destroy() {
-    console.log('🧹 Cleaning up SimpleBlog...');
+    console.log(' Cleaning up SimpleBlog...');
     
     // Remove event listeners
     const allPostsMenu = document.getElementById('all-posts-menu');
@@ -9487,7 +9488,7 @@ class SimpleBlog {
 
 
   showFontSizeWindow() {
-    console.log('🔤 Opening font size window...');
+    console.log(' Opening font size window...');
     
     // Check if window already exists
     const existingWindow = document.getElementById('fontSizeWindow');
@@ -9620,7 +9621,7 @@ class SimpleBlog {
   }
 
   adjustFontSize(action) {
-    console.log(`🔤 Adjusting font size: ${action}`);
+    console.log(` Adjusting font size: ${action}`);
     
     const contentElement = document.getElementById('post-content');
     if (!contentElement) {
@@ -9842,7 +9843,7 @@ class SimpleBlog {
     const savedSize = localStorage.getItem('fontSize');
     if (savedSize) {
       document.body.style.fontSize = savedSize + 'px';
-      console.log(`🔤 Font size restored to ${savedSize}px`);
+      console.log(` Font size restored to ${savedSize}px`);
     }
   }
 }
