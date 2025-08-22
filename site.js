@@ -2638,37 +2638,19 @@ class SimpleBlog {
         console.log('🎨 Custom theme restored from localStorage, not opening HSL picker');
       }
     } else if (mode === 'random') {
-      // Check if we have saved random theme values
-      const savedRandomTheme = localStorage.getItem('ppPage_random_theme');
-      let h, s, l, color;
+      // Always generate a new random theme when random button is clicked
+      console.log('🎲 Random theme button clicked - generating new random theme');
       
-      if (savedRandomTheme) {
-        // Restore saved random theme
-        try {
-          const themeData = JSON.parse(savedRandomTheme);
-          h = themeData.h;
-          s = themeData.s;
-          l = themeData.l;
-          color = themeData.color;
-          console.log('🎲 Restored saved random theme:', color);
-        } catch (error) {
-          console.warn('⚠️ Could not parse saved random theme, generating new one');
-          // Fall through to generate new theme
-        }
-      }
+      // Generate new random theme values
+      const h = Math.floor(Math.random() * 361);
+      const s = Math.floor(Math.random() * 41) + 30;
+      const l = Math.floor(Math.random() * 31) + 15;
+      const color = `hsl(${h},${s}%,${l}%)`;
       
-      // Generate new random theme if none saved
-      if (!savedRandomTheme || !h || !s || !l || !color) {
-        h = Math.floor(Math.random() * 361);
-        s = Math.floor(Math.random() * 41) + 30;
-        l = Math.floor(Math.random() * 31) + 15;
-        color = `hsl(${h},${s}%,${l}%)`;
-        
-        // Save the random theme values
-        const themeData = { h, s, l, color };
-        localStorage.setItem('ppPage_random_theme', JSON.stringify(themeData));
-        console.log('🎲 Generated and saved new random theme:', color);
-      }
+      // Save the new random theme values
+      const themeData = { h, s, l, color };
+      localStorage.setItem('ppPage_random_theme', JSON.stringify(themeData));
+      console.log('🎲 Generated and saved new random theme:', color, { h, s, l });
       
       // Calculate complementary colors for the random theme
       const bgColor = color;
