@@ -366,7 +366,7 @@ class SimpleBlog {
         return;
       }
       
-      console.log('🔐 Testing GitHub token...');
+      console.log('Testing GitHub token...');
       const response = await fetch('https://api.github.com/user', {
         headers: {
           'Authorization': `token ${token}`,
@@ -375,15 +375,12 @@ class SimpleBlog {
       
       if (response.ok) {
         const userData = await response.json();
-        alert(`GitHub token is valid! Logged in as: ${userData.login}`);
-        console.log('✅ GitHub token valid:', userData);
+        console.log('GitHub token valid:', userData);
       } else {
-        alert(`GitHub token is invalid! Status: ${response.status}`);
-        console.log('❌ GitHub token invalid:', response.status, response.statusText);
+        console.log('GitHub token invalid:', response.status, response.statusText);
       }
     } catch (error) {
-      alert(`Error testing GitHub token: ${error.message}`);
-      console.error('❌ Error testing GitHub token:', error);
+      console.error('Error testing GitHub token:', error);
     }
   }
 
@@ -886,7 +883,7 @@ class SimpleBlog {
 
     // Open in GitHub button
     this.addClickHandler('#open-in-github', () => {
-      console.log('🔗 Open in GitHub button clicked');
+      console.log('Open in GitHub button clicked');
       this.openCurrentPostInGitHub();
     });
 
@@ -902,13 +899,13 @@ class SimpleBlog {
 
     // GitHub connect button (old - will be removed from menu)
     this.addClickHandler('#github-connect', () => {
-      console.log('🔐 GitHub connect button clicked');
+      console.log('GitHub connect button clicked');
       this.showGitHubLogin();
     });
     
     // GitHub connect underscore
     this.addClickHandler('#github-connect-underscore', () => {
-      console.log('🔐 GitHub connect underscore clicked');
+      console.log('GitHub connect underscore clicked');
       this.showGitHubLogin();
     });
 
@@ -957,7 +954,7 @@ class SimpleBlog {
 
     
     this.addClickHandler('#test-github-token', () => {
-      console.log('🔐 Test GitHub token button clicked');
+      console.log('Test GitHub token button clicked');
       this.validateGitHubToken();
     });
     
@@ -3134,7 +3131,7 @@ class SimpleBlog {
   }
 
   clearAuthentication() {
-    console.log('🔐 Clearing authentication...');
+          console.log('Clearing authentication...');
     
     // Remove tokens from localStorage
     localStorage.removeItem('github_token');
@@ -5377,21 +5374,21 @@ class SimpleBlog {
       // Get GitHub token first
       const githubToken = localStorage.getItem('github_token');
       if (!githubToken) {
-        console.log('🔐 No GitHub token found, redirecting to login');
+        console.log('No GitHub token found, redirecting to login');
         this.showGitHubLogin();
         return;
       }
       
       // Check if user is authenticated
-      console.log('🔐 Checking authentication...');
+              console.log('Checking authentication...');
       const isAuthenticated = await this.checkAuthentication();
-      console.log('🔐 Authentication result:', isAuthenticated);
+              console.log('Authentication result:', isAuthenticated);
       if (!isAuthenticated) {
-        console.log('🔐 User not authenticated, redirecting to login');
+        console.log('User not authenticated, redirecting to login');
         this.showGitHubLogin();
         return;
       }
-      console.log('🔐 Authentication successful, proceeding with publish...');
+      console.log('Authentication successful, proceeding with publish...');
       
       // Get current flags from localStorage (more reliable than DOM)
       const currentFlags = localStorage.getItem('current_post_flags') || '';
@@ -5600,8 +5597,8 @@ class SimpleBlog {
       }
       
       console.log('📤 Publishing with request body:', requestBody);
-      console.log('🔗 API endpoint:', `https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
-      console.log('🔐 Token length:', githubToken ? githubToken.length : 0);
+              console.log('API endpoint:', `https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
+      console.log('Token length:', githubToken ? githubToken.length : 0);
       
       const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`, {
         method: 'PUT',
@@ -5833,7 +5830,7 @@ class SimpleBlog {
       }
       
       if (!token) {
-        console.log('🔐 No GitHub token found in localStorage');
+        console.log('No GitHub token found in localStorage');
         return false;
       }
       
@@ -5848,10 +5845,10 @@ class SimpleBlog {
         const userData = await response.json();
         // Check if user is the admin (pigeonPious)
         const isAdmin = userData.login === 'pigeonPious';
-        console.log(`🔐 Authentication check: ${isAdmin ? 'SUCCESS' : 'FAILED'} - User: ${userData.login} (${authMethod})`);
+        console.log(`Authentication check: ${isAdmin ? 'SUCCESS' : 'FAILED'} - User: ${userData.login} (${authMethod})`);
         return isAdmin;
       } else {
-        console.log(`🔐 Token validation failed with status: ${response.status} (${authMethod})`);
+                  console.log(`Token validation failed with status: ${response.status} (${authMethod})`);
         // Token might be expired, remove it
         if (authMethod === 'OAuth') {
           localStorage.removeItem('github_oauth_token');
@@ -6171,7 +6168,7 @@ class SimpleBlog {
     }
   }
   showGitHubLogin() {
-    console.log('🔐 Showing GitHub OAuth login...');
+    console.log('Showing GitHub OAuth login...');
     
     // Create OAuth login modal
     const modal = document.createElement('div');
@@ -6193,25 +6190,16 @@ class SimpleBlog {
     content.style.cssText = `
       background: var(--menu-bg);
       border: 1px solid var(--border);
-      padding: 20px;
+      padding: 30px;
       max-width: 400px;
       text-align: center;
     `;
     
       content.innerHTML = `
-        <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">GitHub OAuth Login</h3>
-      <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
+        <h3 style="margin: 0 0 20px 0; color: var(--menu-fg); font-weight: normal;">GitHub Login</h3>
+      <p style="color: var(--menu-fg); margin-bottom: 20px; font-size: 14px;">Enter your GitHub personal access token to publish posts.</p>
       
-      <div style="margin-bottom: 20px; padding: 15px; background: var(--bg); border-radius: 6px; text-align: left;">
-        <p style="margin: 0 0 10px 0; color: var(--muted, #888); font-size: 12px;"><strong>Token Requirements:</strong></p>
-        <ul style="margin: 0; padding-left: 20px; color: var(--muted, #888); font-size: 12px;">
-          <li>Scope: <code>repo</code> (full repository access)</li>
-          <li>Expiration: Set to "No expiration" or at least 1 year</li>
-          <li>Note: "PiousPigeon Blog Editor"</li>
-        </ul>
-      </div>
-        
-        <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
+      <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
           width: 100%;
           padding: 12px;
           margin-bottom: 20px;
@@ -6220,35 +6208,34 @@ class SimpleBlog {
           color: var(--fg);
           font-family: monospace;
           font-size: 14px;
-          border-radius: 6px;
+          border-radius: 0;
         ">
         
         <div style="margin-bottom: 20px;">
-        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 14px;">
-          🔗 Create token at github.com/settings/tokens
+        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 12px;">
+          Create token at github.com/settings/tokens
           </a>
         </div>
         
         <button id="githubLoginBtn" style="
-          background: #24292e;
-          color: white;
+          background: var(--menu-fg);
+          color: var(--menu-bg);
           border: none;
-          padding: 15px 30px;
-          border-radius: 6px;
+          padding: 12px 24px;
           cursor: pointer;
-          font-size: 16px;
-          margin-right: 10px;
+          font-size: 14px;
           width: 100%;
           margin-bottom: 10px;
-      ">🔐 Authenticate</button>
+          border-radius: 0;
+      ">Login</button>
         
         <button id="closeLoginModal" style="
           background: transparent;
           color: var(--menu-fg);
           border: 1px solid var(--border);
         padding: 8px 20px;
-        border-radius: 6px;
-          cursor: pointer;
+        cursor: pointer;
+        border-radius: 0;
         ">Cancel</button>
       `;
     
@@ -6285,7 +6272,7 @@ class SimpleBlog {
 
   // Enhanced Personal Access Token authentication
   initiateOAuth() {
-    console.log('🔐 Showing enhanced GitHub token input...');
+    console.log('Showing enhanced GitHub token input...');
     
     // Create enhanced login modal
     const modal = document.createElement('div');
@@ -6313,19 +6300,10 @@ class SimpleBlog {
     `;
     
       content.innerHTML = `
-      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg);">🔐 GitHub Personal Access Token</h3>
+      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg); font-weight: normal;">GitHub Personal Access Token</h3>
         <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
       
-      <div style="margin-bottom: 20px; padding: 15px; background: var(--bg); border-radius: 6px; text-align: left;">
-        <p style="margin: 0 0 10px 0; color: var(--muted, #888); font-size: 12px;"><strong>Token Requirements:</strong></p>
-        <ul style="margin: 0; padding-left: 20px; color: var(--muted, #888); font-size: 12px;">
-          <li>Scope: <code>repo</code> (full repository access)</li>
-          <li>Expiration: Set to "No expiration" or at least 1 year</li>
-          <li>Note: "PiousPigeon Blog Editor"</li>
-        </ul>
-      </div>
-        
-        <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
+      <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
           width: 100%;
           padding: 12px;
           margin-bottom: 20px;
@@ -6334,35 +6312,34 @@ class SimpleBlog {
           color: var(--fg);
           font-family: monospace;
           font-size: 14px;
-          border-radius: 6px;
+          border-radius: 0;
         ">
         
         <div style="margin-bottom: 20px;">
-        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 14px;">
-          🔗 Create token at github.com/settings/tokens
+        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 12px;">
+          Create token at github.com/settings/tokens
           </a>
         </div>
         
         <button id="githubLoginBtn" style="
-          background: #24292e;
-          color: white;
+          background: var(--menu-fg);
+          color: var(--menu-bg);
           border: none;
-          padding: 15px 30px;
-          border-radius: 6px;
+          padding: 12px 24px;
           cursor: pointer;
-          font-size: 16px;
-          margin-right: 10px;
+          font-size: 14px;
           width: 100%;
           margin-bottom: 10px;
-      ">🔐 Authenticate</button>
+          border-radius: 0;
+      ">Login</button>
         
         <button id="closeLoginModal" style="
           background: transparent;
           color: var(--menu-fg);
           border: 1px solid var(--border);
         padding: 8px 20px;
-        border-radius: 6px;
-          cursor: pointer;
+        cursor: pointer;
+        border-radius: 0;
         ">Cancel</button>
       `;
     
@@ -6658,7 +6635,7 @@ class SimpleBlog {
       // Check if we're returning from OAuth callback
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('auth') === 'success') {
-        console.log('🔐 OAuth callback successful');
+        console.log('OAuth callback successful');
         this.updateAuthStatus(true);
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -6801,7 +6778,7 @@ class SimpleBlog {
   }
 
   openCurrentPostInGitHub() {
-    console.log('🔗 Opening current post in GitHub...');
+          console.log('Opening current post in GitHub...');
     
     // Get the current post slug from localStorage or URL
     let postSlug = localStorage.getItem('current_post_slug');
@@ -6822,7 +6799,7 @@ class SimpleBlog {
     // Construct the GitHub URL for the post file
     const githubUrl = `https://github.com/pigeonPious/page/blob/main/posts/${postSlug}.json`;
     
-    console.log('🔗 Opening GitHub URL:', githubUrl);
+          console.log('Opening GitHub URL:', githubUrl);
     
     // Open in a new tab
     window.open(githubUrl, '_blank');
@@ -8006,7 +7983,7 @@ class SimpleBlog {
     }
   }
 
-// Hide site map
+  // Hide site map
   hideSiteMap() {
     if (this.currentSiteMap) {
       // Remove resize listener
@@ -8456,7 +8433,7 @@ class SimpleBlog {
     
     // Check if user is authenticated
     if (!this.isAuthenticated) {
-      console.log('🔐 User not authenticated, redirecting to login');
+      console.log('User not authenticated, redirecting to login');
       this.showGitHubLogin();
       return;
     }
