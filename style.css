@@ -161,6 +161,9 @@ a:hover {
   font-family: monospace;
   font-size: 9px;
   line-height: 1.4;
+  clear: both; /* Ensure navigation is below any floating images */
+  position: relative; /* Establish positioning context */
+  z-index: 1; /* Ensure navigation appears above content */
 }
 
 .post-navigation .nav-link {
@@ -552,6 +555,8 @@ body {
   line-height: 1.6; /* Slightly taller line height for readability */
   hyphens: auto; /* Enable automatic hyphenation */
   word-wrap: break-word; /* Allow long words to break */
+  overflow: hidden; /* Ensure content doesn't overflow */
+  position: relative; /* Establish positioning context */
 }
 
 .post-content p {
@@ -605,6 +610,42 @@ body {
     width: 120px !important;
     height: 120px !important;
   }
+}
+
+/* Ensure images at the bottom of posts have proper spacing */
+.post-content img:last-of-type {
+  margin-bottom: 20px; /* Add extra bottom margin for last image */
+}
+
+/* Clearfix utility class for floating elements */
+.post-content::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Image preview overlay styles */
+#image-preview-overlay {
+  backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease;
+}
+
+#image-preview-overlay img {
+  transition: transform 0.2s ease;
+}
+
+#image-preview-overlay img:hover {
+  transform: scale(1.02);
+}
+
+/* Ensure images in posts show they're clickable */
+.post-content img {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.post-content img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .clear-after {

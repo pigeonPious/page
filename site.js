@@ -2169,6 +2169,20 @@ class SimpleBlog {
         document.head.appendChild(style);
       }
       
+      // Setup image click handlers for full preview
+      this.setupImageClickHandlers(contentElement);
+      
+      // Add clearfix to ensure floating images don't extend beyond content
+      const clearfix = document.createElement('div');
+      clearfix.style.cssText = `
+        clear: both;
+        height: 0;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+      `;
+      contentElement.appendChild(clearfix);
+      
       console.log('🔍 Set content to:', post.content ? post.content.substring(0, 100) + '...' : '');
     } else {
       console.error('❌ contentElement not found!');
@@ -2187,6 +2201,139 @@ class SimpleBlog {
     
     console.log('✅ Post displayed successfully:', post.title);
   }
+
+  // Setup image click handlers for full preview functionality
+  setupImageClickHandlers(contentElement) {
+    const images = contentElement.querySelectorAll('img');
+    
+    images.forEach(img => {
+      // Add click handler for full preview
+      img.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showImagePreview(img.src, img.alt || 'Image');
+      });
+      
+      // Add visual indication that image is clickable
+      img.style.cursor = 'pointer';
+      img.title = 'Click to view full size';
+    });
+  }
+
+  // Show full-size image preview
+  showImagePreview(imageSrc, imageAlt) {
+    // Remove existing preview if any
+    const existingPreview = document.getElementById('image-preview-overlay');
+    if (existingPreview) {
+      existingPreview.remove();
+    }
+    
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'image-preview-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    `;
+    
+    // Create image container
+    const imageContainer = document.createElement('div');
+    imageContainer.style.cssText = `
+      max-width: 90vw;
+      max-height: 90vh;
+      position: relative;
+      cursor: default;
+    `;
+    
+    // Create image element
+    const fullImage = document.createElement('img');
+    fullImage.src = imageSrc;
+    fullImage.alt = imageAlt;
+    fullImage.style.cssText = `
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    `;
+    
+    // Create close button
+    const closeButton = document.createElement('div');
+    closeButton.innerHTML = '×';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 32px;
+      height: 32px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s ease;
+    `;
+    
+    // Add hover effect to close button
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.backgroundColor = 'var(--accent)';
+      closeButton.style.color = 'white';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.backgroundColor = 'var(--bg)';
+      closeButton.style.color = 'var(--fg)';
+    });
+    
+    // Add click handlers
+    closeButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      overlay.remove();
+    });
+    
+    overlay.addEventListener('click', () => {
+      overlay.remove();
+    });
+    
+    // Prevent image container clicks from closing overlay
+    imageContainer.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    // Assemble and add to DOM
+    imageContainer.appendChild(fullImage);
+    imageContainer.appendChild(closeButton);
+    overlay.appendChild(imageContainer);
+    document.body.appendChild(overlay);
+    
+    // Add escape key handler
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Clean up event listener when overlay is removed
+    overlay.addEventListener('remove', () => {
+      document.removeEventListener('keydown', escapeHandler);
+    });
+  }
+
   addPostNavigation(currentPost) {
     console.log('🔍 addPostNavigation called with:', currentPost);
     console.log('🔍 this.posts length:', this.posts ? this.posts.length : 'undefined');
