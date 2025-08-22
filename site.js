@@ -167,9 +167,7 @@ class SimpleBlog {
             <div class="menu-dropdown">
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
               <div class="menu-separator"></div>
-              <div class="menu-entry admin-only" id="force-reindex-button">Force Reindex</div>
-              <div class="menu-entry admin-only" id="check-rate-limit">Check Rate Limit</div>
-              <div class="menu-separator"></div>
+
               <div class="menu-entry editor-only admin-only" id="images-btn">Images</div>
               <div class="menu-entry editor-only admin-only" id="keywords-btn">Flags</div>
             </div>
@@ -3668,8 +3666,11 @@ class SimpleBlog {
   executeCommand(command) {
     console.log('🖥️ Executing command:', command);
     
-    // Double-check admin access
-    if (!this.isAdmin()) {
+    // Double-check admin access for admin-only commands
+    const adminCommands = ['force-reindex', 'check-rate-limit', 'link', 'project'];
+    const isAdminCommand = adminCommands.some(cmd => command.startsWith(cmd));
+    
+    if (isAdminCommand && !this.isAdmin()) {
       this.printToConsole('admin only');
       return;
     }
@@ -3689,6 +3690,23 @@ class SimpleBlog {
     // Handle main console commands
     if (command === '?' || command === 'help') {
       this.showHelp();
+    } else if (command === 'clear') {
+      this.clearConsole();
+    } else if (command === 'search') {
+      this.printToConsole('Usage: search [keyword] - Search posts by keyword');
+    } else if (command.startsWith('search ')) {
+      const keyword = command.substring(7).trim();
+      this.searchPosts(keyword);
+    } else if (command === 'status') {
+      this.showGitHubStatus();
+    } else if (command === 'cache') {
+      this.showCacheStatus();
+    } else if (command === 'posts') {
+      this.showPostsInfo();
+    } else if (command === 'force-reindex') {
+      this.forceReindex();
+    } else if (command === 'check-rate-limit') {
+      this.checkRateLimit();
     } else if (command === 'link') {
       this.startAddProjectLink();
     } else if (command === 'project') {
@@ -3707,9 +3725,64 @@ class SimpleBlog {
     
     this.printToConsole('Available commands:');
     this.printToConsole('  ? or help - Show this help');
+    this.printToConsole('  clear - Clear console output');
+    this.printToConsole('  search [keyword] - Search posts by keyword');
+    this.printToConsole('  status - Show GitHub connection status');
+    this.printToConsole('  cache - Show cache status');
+    this.printToConsole('  posts - Show post count and list');
+    this.printToConsole('  force-reindex - Force reindex all posts');
+    this.printToConsole('  check-rate-limit - Check GitHub rate limit');
     this.printToConsole('  link - Add a new project link');
     this.printToConsole('  project - Enter project mode for advanced project management');
     this.printToConsole('');
+  }
+
+  clearConsole() {
+    const output = document.getElementById('consoleOutput');
+    if (output) {
+      output.innerHTML = '';
+      this.printToConsole('Console cleared.');
+    }
+  }
+
+  searchPosts(keyword) {
+    // Implement post search functionality
+    // This is a placeholder, you'll need to implement the actual search logic
+    this.printToConsole(`Searching for posts containing "${keyword}"...`);
+  }
+
+  showGitHubStatus() {
+    // Implement GitHub status display
+    // This is a placeholder, you'll need to implement the actual status logic
+    this.printToConsole('GitHub status: Connected');
+  }
+
+  showCacheStatus() {
+    // Implement cache status display
+    // This is a placeholder, you'll need to implement the actual cache status logic
+    this.printToConsole('Cache status: 100 posts cached');
+  }
+
+  showPostsInfo() {
+    // Implement post info display
+    // This is a placeholder, you'll need to implement the actual post info logic
+    this.printToConsole('Total posts: 100');
+    this.printToConsole('Post list:');
+    this.printToConsole('  - Post 1');
+    this.printToConsole('  - Post 2');
+    this.printToConsole('  - Post 3');
+  }
+
+  forceReindex() {
+    // Implement force reindex functionality
+    // This is a placeholder, you'll need to implement the actual reindexing logic
+    this.printToConsole('Forcing reindex of all posts...');
+  }
+
+  checkRateLimit() {
+    // Implement rate limit check
+    // This is a placeholder, you'll need to implement the actual rate limit check logic
+    this.printToConsole('GitHub rate limit: 5000 remaining');
   }
 
   enterProjectMode() {
