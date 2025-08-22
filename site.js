@@ -5,44 +5,44 @@
 
 class SimpleBlog {
   constructor() {
-    console.log('🚀 SimpleBlog constructor called');
+    console.log('SimpleBlog constructor called');
     this.currentPost = null;
     this.posts = [];
     // Load theme from localStorage or default to dark
     this.theme = localStorage.getItem('ppPage_theme') || 'dark';
-    console.log('🎨 Theme loaded from localStorage:', this.theme);
+    console.log('Theme loaded from localStorage:', this.theme);
     
     // Initialize handler references to prevent memory leaks
     this.allPostsMouseEnterHandler = null;
 
     
-    console.log('🔍 About to call init()...');
+    console.log('About to call init()...');
     this.init();
-    console.log('🔍 init() called');
+    console.log('init() called');
   }
 
   init() {
-    console.log('🚀 Initializing SimpleBlog...');
+    console.log('Initializing SimpleBlog...');
     this.createTaskbar();
-    console.log('✅ Taskbar created');
+    console.log('Taskbar created');
     this.bindEvents();
-    console.log('✅ Events bound');
+    console.log('Events bound');
     
     // Try to load cached posts first for immediate submenu access
     const cachedPosts = localStorage.getItem('posts');
     if (cachedPosts) {
       try {
         this.posts = JSON.parse(cachedPosts);
-        console.log('📚 Loaded', this.posts.length, 'cached posts for immediate submenu access');
+        console.log('Loaded', this.posts.length, 'cached posts for immediate submenu access');
       } catch (error) {
-        console.warn('⚠️ Could not parse cached posts:', error);
+        console.warn('Could not parse cached posts:', error);
         localStorage.removeItem('posts');
       }
     }
     
     // Load posts first, then handle URL parameters
     this.loadPosts().then(() => {
-      console.log('✅ Posts loaded, now processing URL parameters');
+      console.log('Posts loaded, now processing URL parameters');
       
       // Check for post parameter in URL (from editor navigation)
       const urlParams = new URLSearchParams(window.location.search);
@@ -65,13 +65,13 @@ class SimpleBlog {
       if (!postSlug && !hashSlug) {
         const storedCurrentPost = localStorage.getItem('current_post_slug');
         if (storedCurrentPost) {
-          console.log(`🔄 Reloading with stored current post: ${storedCurrentPost}`);
+          console.log(` Reloading with stored current post: ${storedCurrentPost}`);
           this.loadPost(storedCurrentPost);
         } else {
           // No stored post, no URL params - load most recent post
           if (this.posts && this.posts.length > 0) {
             const mostRecent = this.posts[0]; // Already sorted by date
-            console.log(`📚 No stored post, loading most recent: ${mostRecent.title}`);
+            console.log(` No stored post, loading most recent: ${mostRecent.title}`);
             this.loadPost(mostRecent.slug);
           }
         }
@@ -86,18 +86,18 @@ class SimpleBlog {
           }
         }, 500);
       } else {
-        console.log('🗺️ Site map not shown (editor mode)');
+        console.log('Site map not shown (editor mode)');
       }
       
       // Load and display projects in menu
       this.loadAndDisplayProjects();
     }).catch(error => {
-      console.error('❌ Error loading posts:', error);
+      console.error('Error loading posts:', error);
     });
     
     // Handle browser back/forward navigation
     window.addEventListener('popstate', (event) => {
-      console.log('🔙 Browser navigation detected:', event.state);
+      console.log('Browser navigation detected:', event.state);
       if (event.state && event.state.postSlug) {
         this.loadPost(event.state.postSlug);
       } else if (window.location.hash) {
@@ -110,11 +110,11 @@ class SimpleBlog {
     });
     
     this.setTheme(this.theme, false); // Don't open HSL picker on page load
-    console.log('✅ Theme set');
+    console.log('Theme set');
     
     // Initialize font size
     this.initializeFontSize();
-    console.log('✅ Font size initialized');
+    console.log('Font size initialized');
     
     // If custom theme, check for saved HSL values and apply them
     if (this.theme === 'custom') {
@@ -123,9 +123,9 @@ class SimpleBlog {
         try {
           const { h, s, l } = JSON.parse(savedHSL);
           this.applyCustomTheme(h, s, l);
-          console.log('🎨 Applied saved custom theme HSL values on page load:', { h, s, l });
+          console.log('Applied saved custom theme HSL values on page load:', { h, s, l });
         } catch (error) {
-          console.warn('⚠️ Could not parse saved custom theme HSL values on page load:', error);
+          console.warn('Could not parse saved custom theme HSL values on page load:', error);
         }
       }
     }
@@ -137,9 +137,9 @@ class SimpleBlog {
         try {
           const { h, s, l } = JSON.parse(savedRandomTheme);
           this.applyCustomTheme(h, s, l);
-          console.log('🎲 Applied saved random theme on page load:', { h, s, l });
+          console.log('Applied saved random theme on page load:', { h, s, l });
         } catch (error) {
-          console.warn('⚠️ Could not parse saved random theme on page load:', error);
+          console.warn('Could not parse saved random theme on page load:', error);
         }
       }
     }
@@ -153,7 +153,7 @@ class SimpleBlog {
     // Check authentication status
     this.checkAndUpdateAuthStatus();
     
-    console.log('✅ SimpleBlog initialized successfully');
+    console.log('SimpleBlog initialized successfully');
   }
 
   createTaskbar() {
@@ -239,7 +239,7 @@ class SimpleBlog {
 
     // Insert at the beginning of body
     document.body.insertAdjacentHTML('afterbegin', taskbarHTML);
-    console.log('✅ Taskbar created');
+    console.log('Taskbar created');
     
     // Bind events after taskbar is in the DOM
     this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
@@ -282,7 +282,7 @@ class SimpleBlog {
     
     // If called from console, provide feedback
     if (isFromConsole) {
-      this.printToConsole('✅ Logged out of GitHub successfully');
+      this.printToConsole('Logged out of GitHub successfully');
     }
   }
 
@@ -321,12 +321,12 @@ class SimpleBlog {
       window.location.reload();
     }, 1000);
     
-    console.log('✅ All cache cleared and page will reload');
+    console.log('All cache cleared and page will reload');
   }
   
   // Function to increment build word (called automatically on new builds)
   incrementBuildWord() {
-    console.log('🔧 Incrementing build word for new build...');
+    console.log('Incrementing build word for new build...');
     
     // Get current build counter
     const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
@@ -341,8 +341,8 @@ class SimpleBlog {
       buildWordElement.textContent = `build-${newCounter}`;
     }
     
-    console.log(`🔧 Build word incremented from ${currentCounter} to ${newCounter}`);
-    console.log('✅ Build word updated successfully');
+    console.log(` Build word incremented from ${currentCounter} to ${newCounter}`);
+    console.log('Build word updated successfully');
   }
 
   async validateGitHubToken() {
@@ -374,7 +374,7 @@ class SimpleBlog {
 
 
   setupCSSVariables() {
-    console.log('🎨 Setting up CSS variables...');
+    console.log('Setting up CSS variables...');
     
     // Set CSS custom properties for consistent theming
     const root = document.documentElement;
@@ -396,32 +396,32 @@ class SimpleBlog {
     root.style.setProperty('--muted', '#888888');
     root.style.setProperty('--border', '#555555');
     
-    console.log('✅ CSS variables setup complete');
+    console.log('CSS variables setup complete');
   }
 
   bindEvents() {
-    console.log('🔧 bindEvents() called');
+    console.log('bindEvents() called');
     
     // Setup CSS variables
     this.setupCSSVariables();
     
     // Menu system
-    console.log('🔍 Setting up menu system...');
+    console.log('Setting up menu system...');
     this.setupMenuSystem();
     
     // Button events
-    console.log('🔍 Setting up button events...');
+    console.log('Setting up button events...');
     this.setupButtonEvents();
     
     // Global events
-    console.log('🔍 Setting up global events...');
+    console.log('Setting up global events...');
     this.setupGlobalEvents();
     
-    console.log('✅ bindEvents() completed');
+    console.log('bindEvents() completed');
   }
 
   setupMenuSystem() {
-    console.log('🔧 Setting up menu system...');
+    console.log('Setting up menu system...');
     
     // Initialize text selection preservation
     this.initializeTextSelectionPreservation();
@@ -430,13 +430,13 @@ class SimpleBlog {
     this.globalClickHandler = (e) => {
       // Don't close menus when clicking on theme buttons
       if (e.target.closest('[data-mode]')) {
-        console.log('🎨 Theme button clicked, not closing menus');
+        console.log('Theme button clicked, not closing menus');
         return;
       }
       
       const menuItem = e.target.closest('.menu-item');
       if (menuItem) {
-        console.log('📋 Menu item clicked:', menuItem.querySelector('.label')?.textContent);
+        console.log('Menu item clicked:', menuItem.querySelector('.label')?.textContent);
         this.toggleMenu(menuItem);
       } else {
         this.closeAllMenus();
@@ -447,7 +447,7 @@ class SimpleBlog {
     // Close on escape - store reference for cleanup
     this.globalKeyHandler = (e) => {
       if (e.key === 'Escape') {
-        console.log('⌨️ Escape key pressed - closing menus');
+        console.log('Escape key pressed - closing menus');
         this.closeAllMenus();
       }
       
@@ -458,14 +458,14 @@ class SimpleBlog {
     // Prevent text selection loss on taskbar elements
     this.preventSelectionLoss();
     
-    console.log('✅ Menu system setup complete');
+    console.log('Menu system setup complete');
   }
 
   toggleMenu(menuItem) {
     const dropdown = menuItem.querySelector('.menu-dropdown');
     const isOpen = menuItem.classList.contains('open');
     
-    console.log('🔧 Toggle menu:', {
+    console.log('Toggle menu:', {
       menuLabel: menuItem.querySelector('.label')?.textContent,
       hasDropdown: !!dropdown,
       isOpen: isOpen,
@@ -478,37 +478,37 @@ class SimpleBlog {
     // Toggle current menu - add 'open' class to menu-item, not dropdown
     if (!isOpen) {
       menuItem.classList.add('open');
-      console.log('✅ Menu opened, added "open" class to menu-item');
+      console.log('Menu opened, added "open" class to menu-item');
     } else {
       menuItem.classList.remove('open');
-      console.log('✅ Menu closed, removed "open" class from menu-item');
+      console.log('Menu closed, removed "open" class from menu-item');
     }
     
     // Debug: check if class was added
     setTimeout(() => {
       const isNowOpen = menuItem.classList.contains('open');
-      console.log('🔍 After toggle - menu-item has "open" class:', isNowOpen);
-      console.log('🔍 Dropdown display style:', dropdown.style.display);
-      console.log('🔍 Computed display:', window.getComputedStyle(dropdown).display);
+      console.log('After toggle - menu-item has "open" class:', isNowOpen);
+      console.log('Dropdown display style:', dropdown.style.display);
+      console.log('Computed display:', window.getComputedStyle(dropdown).display);
     }, 100);
   }
 
   closeAllMenus() {
     const openMenus = document.querySelectorAll('.menu-item.open');
-    console.log('🔧 Closing all menus, found:', openMenus.length, 'open menus');
+    console.log('Closing all menus, found:', openMenus.length, 'open menus');
     
     openMenus.forEach(menuItem => {
       menuItem.classList.remove('open');
-      console.log('✅ Removed "open" class from menu-item');
+      console.log('Removed "open" class from menu-item');
     });
     
     // Close all submenus and sub-submenus
     const allSubmenus = document.querySelectorAll('.submenu, .sub-submenu');
-    console.log('🔧 Closing all submenus, found:', allSubmenus.length, 'submenus');
+    console.log('Closing all submenus, found:', allSubmenus.length, 'submenus');
     
     allSubmenus.forEach(submenu => {
       submenu.remove();
-      console.log('✅ Removed submenu:', submenu.className);
+      console.log('Removed submenu:', submenu.className);
     });
     
     // Reset menu state
@@ -516,7 +516,7 @@ class SimpleBlog {
   }
 
   resetMenuState() {
-    console.log('🔄 Resetting menu state - all submenus cleared');
+    console.log('Resetting menu state - all submenus cleared');
     // This ensures that when menus are reopened, they start fresh
     // No cached submenus or stale event listeners
   }
@@ -622,7 +622,7 @@ class SimpleBlog {
               node.style.mozUserSelect = 'none';
               node.style.msUserSelect = 'none';
               node.classList.add('preserve-selection');
-              console.log('📝 Applied selection preservation to new submenu element');
+              console.log('Applied selection preservation to new submenu element');
             }
             
             // Also check child elements
@@ -645,7 +645,7 @@ class SimpleBlog {
       subtree: true
     });
     
-    console.log('📝 Submenu selection preservation observer setup complete');
+    console.log('Submenu selection preservation observer setup complete');
   }
 
   preserveEditorSelection() {
@@ -710,7 +710,7 @@ class SimpleBlog {
     }
     
     document.head.appendChild(editorStyle);
-    console.log('📝 Editor selection preservation CSS applied');
+    console.log('Editor selection preservation CSS applied');
   }
 
   initializeTextSelectionPreservation() {
@@ -725,7 +725,7 @@ class SimpleBlog {
           text: selection.toString(),
           range: selection.getRangeAt(0).cloneRange()
         };
-        console.log('📝 Text selection captured:', this.currentSelection.text);
+        console.log('Text selection captured:', this.currentSelection.text);
       }
     });
     
@@ -751,7 +751,7 @@ class SimpleBlog {
         // Preserve selection before click
         element.addEventListener('mousedown', (e) => {
           if (this.currentSelection && this.currentSelection.text) {
-            console.log('📝 Preserving selection before click:', this.currentSelection.text);
+            console.log('Preserving selection before click:', this.currentSelection.text);
             // Store the selection temporarily
             this.tempSelection = { ...this.currentSelection };
           }
@@ -765,9 +765,9 @@ class SimpleBlog {
                 const selection = window.getSelection();
                 selection.removeAllRanges();
                 selection.addRange(this.tempSelection.range);
-                console.log('📝 Selection restored after click:', this.tempSelection.text);
+                console.log('Selection restored after click:', this.tempSelection.text);
               } catch (error) {
-                console.warn('⚠️ Could not restore selection:', error);
+                console.warn('Could not restore selection:', error);
               }
             }, 10);
           }
@@ -775,27 +775,27 @@ class SimpleBlog {
       });
     });
     
-    console.log('📝 Selection preservation handlers added');
+    console.log('Selection preservation handlers added');
   }
   setupButtonEvents() {
-    console.log('🔧 Setting up button events...');
+    console.log('Setting up button events...');
     
     // Star button (toggle sitemap)
     this.addClickHandler('#star-button', () => {
-      console.log('⭐ Star button clicked - toggling sitemap');
+      console.log('Star button clicked - toggling sitemap');
       this.toggleSiteMap();
     });
 
     // New post button
     this.addClickHandler('#new-post', (e) => {
-      console.log('📝 New post button clicked');
+      console.log('New post button clicked');
       e.preventDefault();
       window.location.href = 'editor.html';
     });
 
     // Make note button
     this.addClickHandler('#make-note-button', () => {
-      console.log('📌 Make note button clicked');
+      console.log('Make note button clicked');
       // Ensure text selection is preserved before creating note
       this.preserveEditorSelection();
       this.captureSelectionAndMakeNote();
@@ -803,62 +803,62 @@ class SimpleBlog {
     
     // Force reindex button
     this.addClickHandler('#force-reindex-button', () => {
-      console.log('🔄 Force reindex button clicked');
+      console.log('Force reindex button clicked');
       this.forceReindexPostsImproved();
     });
     
     // Check rate limit button
     this.addClickHandler('#check-rate-limit', () => {
-      console.log('📊 Check rate limit button clicked');
+      console.log('Check rate limit button clicked');
       this.checkRateLimit();
     });
     
     // Edit post button
     this.addClickHandler('#edit-post-button', () => {
-      console.log('✏️ Edit post button clicked');
+      console.log('Edit post button clicked');
       this.editCurrentPost();
     });
 
     // Editor-specific buttons
     this.addClickHandler('#import-btn', () => {
-      console.log('📥 Import button clicked');
+      console.log('Import button clicked');
       this.importPost();
     });
 
     this.addClickHandler('#export-btn', () => {
-      console.log('📤 Export button clicked');
+      console.log('Export button clicked');
       this.exportPost();
     });
 
     this.addClickHandler('#save-draft-btn', () => {
-      console.log('💾 Save draft button clicked');
+      console.log('Save draft button clicked');
       this.saveDraft();
     });
 
     this.addClickHandler('#images-btn', () => {
-      console.log('🖼️ Images button clicked');
-      console.log('🔍 About to call showImagesModal...');
+      console.log('Images button clicked');
+      console.log('About to call showImagesModal...');
       this.showImagesModal();
-      console.log('🔍 showImagesModal called');
+      console.log('showImagesModal called');
     });
 
       this.addClickHandler('#publish-btn', () => {
-    console.log('📢 Publish button clicked');
+    console.log('Publish button clicked');
     this.showPublishModal();
   });
 
   this.addClickHandler('#open-draft-btn', () => {
-    console.log('📁 Open Draft button clicked');
+    console.log('Open Draft button clicked');
     this.showDraftsModal();
   });
 
   this.addClickHandler('#keywords-btn', () => {
-    console.log('🏷️ Flags button clicked');
+    console.log('Flags button clicked');
     this.showFlagsModal();
   });
 
   this.addClickHandler('#open-console-btn', () => {
-    console.log('🖥️ Console button clicked');
+    console.log('Console button clicked');
     this.showConsole();
   });
 
@@ -874,7 +874,7 @@ class SimpleBlog {
 
     // Editor mode toggle (Raw/Preview)
     this.addClickHandler('#toggle-editor-mode', () => {
-      console.log('📝 Editor mode toggle clicked');
+      console.log('Editor mode toggle clicked');
       this.toggleEditorMode();
     });
 
@@ -891,17 +891,17 @@ class SimpleBlog {
     });
 
     // Theme buttons
-    console.log('🔧 Setting up theme buttons...');
+    console.log('Setting up theme buttons...');
     this.addClickHandler('[data-mode]', (e) => {
       const mode = e.target.dataset.mode;
-      console.log('🎨 Theme button clicked:', mode);
-      console.log('🎯 Target element:', e.target);
-      console.log('🎯 Dataset:', e.target.dataset);
-      console.log('🎯 Element text:', e.target.textContent);
-      console.log('🎯 Element classes:', e.target.className);
+      console.log('Theme button clicked:', mode);
+      console.log('Target element:', e.target);
+      console.log('Dataset:', e.target.dataset);
+      console.log('Element text:', e.target.textContent);
+      console.log('Element classes:', e.target.className);
       
       if (mode === 'custom') {
-        console.log('🎨 Custom theme button clicked - calling setTheme...');
+        console.log('Custom theme button clicked - calling setTheme...');
       }
       
       this.setTheme(mode, mode === 'custom'); // Open HSL picker only for custom theme
@@ -914,19 +914,19 @@ class SimpleBlog {
     });
 
     this.addClickHandler('#random-post', () => {
-      console.log('🎲 Random post clicked');
+      console.log('Random post clicked');
       this.loadRandomPost();
     });
 
     // Site Map button
     this.addClickHandler('#show-site-map', () => {
-      console.log('🗺️ Site Map button clicked');
+      console.log('Site Map button clicked');
       this.showSiteMap();
     });
 
     // Build indicator - no click handler needed, only changes on actual builds
     // this.addClickHandler('#build-indicator', () => {
-    //   console.log('🔧 Build indicator clicked - incrementing build');
+    //   console.log('Build indicator clicked - incrementing build');
     //   this.incrementBuildWord();
     // });
     
@@ -961,11 +961,11 @@ class SimpleBlog {
 
     
     this.addClickHandler('#draft-manager-button', () => {
-      console.log('📝 Draft manager button clicked');
+      console.log('Draft manager button clicked');
       this.showDraftManager();
     });
     
-    console.log('✅ Button events setup complete');
+    console.log('Button events setup complete');
   }
 
   addClickHandler(selector, handler) {
@@ -973,10 +973,10 @@ class SimpleBlog {
     if (elements.length > 0) {
       elements.forEach(element => {
         element.addEventListener('click', handler);
-        console.log(`✅ Click handler attached to:`, element.textContent || element.id || selector);
+        console.log(` Click handler attached to:`, element.textContent || element.id || selector);
       });
     } else {
-      console.warn(`⚠️ No elements found for selector: ${selector}`);
+      console.warn(` No elements found for selector: ${selector}`);
     }
   }
 
@@ -1033,7 +1033,7 @@ class SimpleBlog {
   }
 
   setupSubmenus() {
-    console.log('🔧 Setting up submenus...');
+    console.log('Setting up submenus...');
     
     // Global menu manager - ensures only one menu open at each level
     this.closeOtherLevel1Menus = (currentMenu) => {
@@ -1078,7 +1078,7 @@ class SimpleBlog {
       let openTimeout = null;
       
       this.allPostsMouseEnterHandler = () => {
-        console.log('📚 All posts submenu hovered');
+        console.log('All posts submenu hovered');
         if (openTimeout) {
           clearTimeout(openTimeout);
         }
@@ -1089,10 +1089,10 @@ class SimpleBlog {
           // Only create submenu if it doesn't already exist
           const existingSubmenu = allPostsMenu.querySelector('.submenu');
           if (!existingSubmenu) {
-            console.log('📚 Creating new All Posts submenu');
+            console.log('Creating new All Posts submenu');
             this.showAllPostsSubmenu(allPostsMenu);
           } else {
-            console.log('📚 All Posts submenu already exists, not recreating');
+            console.log('All Posts submenu already exists, not recreating');
           }
         }, 150); // Small delay to prevent accidental opening
       };
@@ -1107,7 +1107,7 @@ class SimpleBlog {
       this.allPostsClickHandler = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('📚 All posts submenu clicked');
+        console.log('All posts submenu clicked');
         
         // Close other level 1 menus first
         this.closeOtherLevel1Menus('all-posts-menu');
@@ -1124,9 +1124,9 @@ class SimpleBlog {
       allPostsMenu.addEventListener('mouseenter', this.allPostsMouseEnterHandler);
       allPostsMenu.addEventListener('mouseleave', this.allPostsMouseLeaveHandler);
       allPostsMenu.addEventListener('click', this.allPostsClickHandler);
-      console.log('✅ All posts submenu handler attached');
+      console.log('All posts submenu handler attached');
     } else {
-      console.warn('⚠️ All posts menu element not found');
+      console.warn('All posts menu element not found');
     }
 
 
@@ -1134,7 +1134,7 @@ class SimpleBlog {
 
 
     
-    console.log('✅ Submenus setup complete with menu hierarchy management');
+    console.log('Submenus setup complete with menu hierarchy management');
   }
 
 
@@ -1405,7 +1405,7 @@ class SimpleBlog {
             // Display posts in submenu
             this.displayPostsInSubmenu(submenu, allPosts);
           } catch (decodeError) {
-            console.error('❌ Error decoding GitHub content:', decodeError);
+            console.error('Error decoding GitHub content:', decodeError);
             throw new Error('Failed to decode index content');
           }
         } else {
@@ -1415,14 +1415,14 @@ class SimpleBlog {
         throw new Error(`GitHub API failed: ${response.status}`);
       }
     } catch (error) {
-      console.log('🔄 Submenu: GitHub API failed, trying local index.json...');
+      console.log('Submenu: GitHub API failed, trying local index.json...');
       
       // Fallback to local index.json
       try {
         const localResponse = await fetch('posts/index.json');
         if (localResponse.ok) {
           const localData = await localResponse.json();
-          console.log('🔍 Submenu: Local index.json loaded:', localData);
+          console.log('Submenu: Local index.json loaded:', localData);
           
           let allPosts = [];
           if (Array.isArray(localData)) {
@@ -1433,7 +1433,7 @@ class SimpleBlog {
             throw new Error('Unexpected local index format');
           }
           
-          console.log('✅ Submenu: Loaded posts from local index:', allPosts.length);
+          console.log('Submenu: Loaded posts from local index:', allPosts.length);
           
           // Update local posts array to keep in sync
           this.posts = allPosts;
@@ -1445,18 +1445,18 @@ class SimpleBlog {
           throw new Error(`Local index failed: ${localResponse.status}`);
         }
       } catch (localError) {
-        console.error('❌ Submenu: Both GitHub API and local index failed:', localError);
+        console.error('Submenu: Both GitHub API and local index failed:', localError);
         submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
       }
     }
   }
   // Force reindex all posts across the site (admin only)
   async forceReindexPosts() {
-    console.log('🔄 Force reindex started');
+    console.log('Force reindex started');
     
     // Check if user is admin
     if (!this.isAdmin()) {
-      console.log('⚠️ Non-admin user attempted to force reindex');
+      console.log('Non-admin user attempted to force reindex');
       const statusElement = document.getElementById('github-status');
       if (statusElement) {
         statusElement.textContent = 'Admin only';
@@ -1487,7 +1487,7 @@ class SimpleBlog {
       // Force reload posts from GitHub with fresh timestamp
       const timestamp = Date.now();
       const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
-      console.log('🔄 Loading fresh posts index from GitHub:', indexUrl);
+      console.log('Loading fresh posts index from GitHub:', indexUrl);
       
       const response = await fetch(indexUrl);
       if (response.ok) {
@@ -1512,7 +1512,7 @@ class SimpleBlog {
             // Cache the fresh posts
             localStorage.setItem('posts', JSON.stringify(allPosts));
             
-            console.log('✅ Reindex complete. Found', allPosts.length, 'posts');
+            console.log('Reindex complete. Found', allPosts.length, 'posts');
             
             // Show success message
             if (statusElement) {
@@ -1530,7 +1530,7 @@ class SimpleBlog {
             this.updateOpenSubmenus();
             
           } catch (decodeError) {
-            console.error('❌ Error decoding GitHub content:', decodeError);
+            console.error('Error decoding GitHub content:', decodeError);
             throw new Error('Failed to decode index content');
           }
         } else {
@@ -1538,7 +1538,7 @@ class SimpleBlog {
         }
         
       } else if (response.status === 403) {
-        console.warn('⚠️ GitHub API returned 403 - trying to force push updated index to GitHub');
+        console.warn('GitHub API returned 403 - trying to force push updated index to GitHub');
         
         // When GitHub API is blocked, try to force push the current local state
         try {
@@ -1553,7 +1553,7 @@ class SimpleBlog {
                 currentPosts = Array.isArray(localData) ? localData : (localData.posts || []);
               }
             } catch (localError) {
-              console.warn('⚠️ Could not load local posts:', localError);
+              console.warn('Could not load local posts:', localError);
             }
           }
           
@@ -1561,7 +1561,7 @@ class SimpleBlog {
             // Force push the current index to GitHub (this will overwrite the remote index)
             const forcePushSuccess = await this.forcePushIndexToGitHub(currentPosts);
             if (forcePushSuccess) {
-              console.log('✅ Force reindex completed by pushing updated index to GitHub');
+              console.log('Force reindex completed by pushing updated index to GitHub');
               
               // Show success message
               if (statusElement) {
@@ -1583,7 +1583,7 @@ class SimpleBlog {
           
           throw new Error('Could not force push index to GitHub');
         } catch (forcePushError) {
-          console.warn('⚠️ Force push failed:', forcePushError);
+          console.warn('Force push failed:', forcePushError);
           
           // Fall back to local-only reindex as last resort
           try {
@@ -1595,7 +1595,7 @@ class SimpleBlog {
               this.posts = localPosts;
               localStorage.setItem('posts', JSON.stringify(localPosts));
               
-              console.log('✅ Force reindex completed using local fallback, posts updated:', localPosts.length);
+              console.log('Force reindex completed using local fallback, posts updated:', localPosts.length);
               
               // Show success message
               if (statusElement) {
@@ -1614,7 +1614,7 @@ class SimpleBlog {
               return;
             }
           } catch (localError) {
-            console.warn('⚠️ Local fallback also failed:', localError);
+            console.warn('Local fallback also failed:', localError);
           }
           
           throw new Error(`GitHub API blocked (403) and all fallbacks failed`);
@@ -1624,7 +1624,7 @@ class SimpleBlog {
       }
       
     } catch (error) {
-      console.error('❌ Force reindex failed:', error);
+      console.error('Force reindex failed:', error);
       
       // Show error message
       const statusElement = document.getElementById('github-status');
@@ -1650,25 +1650,25 @@ class SimpleBlog {
 
   // Improved force reindex function that actually works
   async forceReindexPostsImproved() {
-    console.log('🔄 Improved force reindex started');
+    console.log('Improved force reindex started');
     
     // Check if user is admin
     if (!this.isAdmin()) {
-      console.log('⚠️ Non-admin user attempted to force reindex');
-      this.printToConsole('❌ Admin only - you need to be authenticated with GitHub');
+      console.log('Non-admin user attempted to force reindex');
+      this.printToConsole('Admin only - you need to be authenticated with GitHub');
       return;
     }
     
     try {
-      this.printToConsole('🔄 Starting improved force reindex...');
+      this.printToConsole('Starting improved force reindex...');
       
       // Clear cached posts
       this.posts = null;
       localStorage.removeItem('posts');
       
       // First, try to scan the local posts directory to see what files actually exist
-      console.log('🔍 Scanning local posts directory...');
-      this.printToConsole('🔍 Scanning local posts directory...');
+      console.log('Scanning local posts directory...');
+      this.printToConsole('Scanning local posts directory...');
       
       // Try to load the local index.json first
       let localPosts = [];
@@ -1677,18 +1677,18 @@ class SimpleBlog {
         if (localResponse.ok) {
           const localData = await localResponse.json();
           localPosts = Array.isArray(localData) ? localData : (localData.posts || []);
-          console.log('📁 Found local index.json with', localPosts.length, 'posts');
-          this.printToConsole(`📁 Found local index.json with ${localPosts.length} posts`);
+          console.log('Found local index.json with', localPosts.length, 'posts');
+          this.printToConsole(`Found local index.json with ${localPosts.length} posts`);
         }
       } catch (localError) {
-        console.warn('⚠️ Could not load local index.json:', localError);
-        this.printToConsole('⚠️ Could not load local index.json');
+        console.warn('Could not load local index.json:', localError);
+        this.printToConsole('Could not load local index.json');
       }
       
       // If no local index.json, try to scan the posts directory directly
       if (localPosts.length === 0) {
-        console.log('🔍 No local index.json found, scanning posts directory...');
-        this.printToConsole('🔍 No local index.json found, scanning posts directory...');
+        console.log('No local index.json found, scanning posts directory...');
+        this.printToConsole('No local index.json found, scanning posts directory...');
         
         try {
           // Try to fetch the posts directory listing
@@ -1703,8 +1703,8 @@ class SimpleBlog {
                 .map(href => href.match(/href="([^"]+)"/)[1])
                 .filter(file => file !== 'index.json' && file.endsWith('.json'));
               
-              console.log('📁 Found', postFiles.length, 'post files in directory');
-              this.printToConsole(`📁 Found ${postFiles.length} post files in directory`);
+              console.log('Found', postFiles.length, 'post files in directory');
+              this.printToConsole(`Found ${postFiles.length} post files in directory`);
               
               // Load each post file to build the index
               localPosts = [];
@@ -1723,23 +1723,82 @@ class SimpleBlog {
                     }
                   }
                 } catch (postError) {
-                  console.warn('⚠️ Could not load post file:', postFile, postError);
+                  console.warn('Could not load post file:', postFile, postError);
                 }
               }
               
-              console.log('📁 Built local index from', localPosts.length, 'post files');
-              this.printToConsole(`📁 Built local index from ${localPosts.length} post files`);
+              console.log('Built local index from', localPosts.length, 'post files');
+              this.printToConsole(`Built local index from ${localPosts.length} post files`);
             }
           }
         } catch (dirError) {
-          console.warn('⚠️ Could not scan posts directory:', dirError);
-          this.printToConsole('⚠️ Could not scan posts directory');
+          console.warn('Could not scan posts directory:', dirError);
+          this.printToConsole('Could not scan posts directory');
+          
+          // Fallback: manually scan the posts we know exist
+          console.log('Trying manual fallback scan...');
+          this.printToConsole('Trying manual fallback scan...');
+          
+          const knownPosts = [
+            'i-vibe-coded-this-blog-and-it-was-miserable-.json',
+            'about.json',
+            'contact.json'
+          ];
+          
+          localPosts = [];
+          for (const postFile of knownPosts) {
+            try {
+              const postResponse = await fetch(`posts/${postFile}`);
+              if (postResponse.ok) {
+                const postData = await postResponse.json();
+                if (postData && postData.title) {
+                  localPosts.push({
+                    title: postData.title,
+                    slug: postData.slug || postFile.replace('.json', ''),
+                    filename: postFile,
+                    date: postData.date || new Date().toISOString(),
+                    tags: postData.keywords || postData.tags || []
+                  });
+                }
+              }
+            } catch (postError) {
+              console.warn('Could not load post file:', postFile, postError);
+            }
+          }
+          
+          if (localPosts.length > 0) {
+            console.log('Manual fallback successful, found', localPosts.length, 'posts');
+            this.printToConsole(`Manual fallback successful, found ${localPosts.length} posts`);
+            
+            // Create a local index.json file for future use
+            try {
+              const indexContent = JSON.stringify(localPosts, null, 2);
+              const blob = new Blob([indexContent], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              
+              // Create a download link to save the index.json
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'index.json';
+              a.style.display = 'none';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              
+              console.log('Created index.json with', localPosts.length, 'posts');
+              this.printToConsole(`Created index.json with ${localPosts.length} posts - save this to posts/ directory`);
+            } catch (saveError) {
+              console.warn('Could not create index.json:', saveError);
+              this.printToConsole('Could not create index.json automatically');
+            }
+          }
         }
       }
       
       // Now try to get fresh data from GitHub
-      console.log('🔄 Attempting to fetch fresh posts from GitHub...');
-      this.printToConsole('🔄 Attempting to fetch fresh posts from GitHub...');
+      console.log('Attempting to fetch fresh posts from GitHub...');
+      this.printToConsole('Attempting to fetch fresh posts from GitHub...');
       
       const timestamp = Date.now();
       const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
@@ -1761,12 +1820,12 @@ class SimpleBlog {
               allPosts = parsedData.posts;
             }
             
-            console.log('✅ GitHub API returned', allPosts.length, 'posts');
-            this.printToConsole(`✅ GitHub API returned ${allPosts.length} posts`);
+            console.log('GitHub API returned', allPosts.length, 'posts');
+            this.printToConsole(`GitHub API returned ${allPosts.length} posts`);
             
           } catch (decodeError) {
-            console.error('❌ Error decoding GitHub content:', decodeError);
-            this.printToConsole('❌ Error decoding GitHub content');
+            console.error('Error decoding GitHub content:', decodeError);
+            this.printToConsole('Error decoding GitHub content');
             throw new Error('Failed to decode index content');
           }
         } else {
@@ -1779,16 +1838,16 @@ class SimpleBlog {
         // Cache the fresh posts
         localStorage.setItem('posts', JSON.stringify(allPosts));
         
-        console.log('✅ Reindex complete. Found', allPosts.length, 'posts');
-        this.printToConsole(`✅ Reindex complete. Found ${allPosts.length} posts`);
+        console.log('Reindex complete. Found', allPosts.length, 'posts');
+        this.printToConsole(`Reindex complete. Found ${allPosts.length} posts`);
         
         // Update any open submenus
         this.updateOpenSubmenus();
         
         // Force refresh the site map if it's open
         if (this.currentSiteMap) {
-          console.log('🗺️ Refreshing open site map...');
-          this.printToConsole('🗺️ Refreshing open site map...');
+          console.log('Refreshing open site map...');
+          this.printToConsole('Refreshing open site map...');
           this.hideSiteMap();
           this.showSiteMap();
         }
@@ -1796,16 +1855,16 @@ class SimpleBlog {
         return;
         
       } else if (response.status === 403) {
-        console.log('⚠️ GitHub API returned 403 - using local posts as fallback');
-        this.printToConsole('⚠️ GitHub API blocked (403) - using local posts as fallback');
+        console.log('GitHub API returned 403 - using local posts as fallback');
+        this.printToConsole('GitHub API blocked (403) - using local posts as fallback');
         
         // Use local posts when GitHub API is blocked
         if (localPosts.length > 0) {
           this.posts = localPosts;
           localStorage.setItem('posts', JSON.stringify(localPosts));
           
-          console.log('✅ Reindex completed using local posts:', localPosts.length);
-          this.printToConsole(`✅ Reindex completed using local posts: ${localPosts.length}`);
+          console.log('Reindex completed using local posts:', localPosts.length);
+          this.printToConsole(`Reindex completed using local posts: ${localPosts.length}`);
           
           // Try to save the rebuilt index back to the posts directory
           try {
@@ -1823,11 +1882,11 @@ class SimpleBlog {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            console.log('💾 Index.json download initiated');
-            this.printToConsole('💾 Index.json download initiated - save this to posts/ directory');
+            console.log('Index.json download initiated');
+            this.printToConsole('Index.json download initiated - save this to posts/ directory');
           } catch (saveError) {
-            console.warn('⚠️ Could not save index.json:', saveError);
-            this.printToConsole('⚠️ Could not save index.json automatically');
+            console.warn('Could not save index.json:', saveError);
+            this.printToConsole('Could not save index.json automatically');
           }
           
           // Update any open submenus
@@ -1835,15 +1894,22 @@ class SimpleBlog {
           
           // Force refresh the site map if it's open
           if (this.currentSiteMap) {
-            console.log('🗺️ Refreshing open site map...');
-            this.printToConsole('🗺️ Refreshing open site map...');
+            console.log('Refreshing open site map...');
+            this.printToConsole('Refreshing open site map...');
             this.hideSiteMap();
             this.showSiteMap();
           }
           
           return;
         } else {
-          throw new Error('No local posts found and GitHub API blocked');
+          // Try one more fallback - check if we have any posts in memory
+          if (this.posts && this.posts.length > 0) {
+            console.log('Using posts from memory as final fallback:', this.posts.length);
+            this.printToConsole(`Using posts from memory as final fallback: ${this.posts.length}`);
+            localPosts = this.posts;
+          } else {
+            throw new Error('No local posts found and GitHub API blocked. Try refreshing the page first.');
+          }
         }
         
       } else {
@@ -1851,13 +1917,13 @@ class SimpleBlog {
       }
       
     } catch (error) {
-      console.error('❌ Force reindex failed:', error);
-      this.printToConsole(`❌ Force reindex failed: ${error.message}`);
+      console.error('Force reindex failed:', error);
+      this.printToConsole(`Force reindex failed: ${error.message}`);
       
       // Try to use whatever posts we have as last resort
       if (this.posts && this.posts.length > 0) {
-        console.log('🔄 Using existing posts as fallback');
-        this.printToConsole('🔄 Using existing posts as fallback');
+        console.log('Using existing posts as fallback');
+        this.printToConsole('Using existing posts as fallback');
         this.updateOpenSubmenus();
       }
     }
@@ -1865,12 +1931,12 @@ class SimpleBlog {
 
   // Force push the posts index to GitHub (bypasses SHA requirement)
   async forcePushIndexToGitHub(posts) {
-    console.log('🚀 Force pushing posts index to GitHub...');
+    console.log('Force pushing posts index to GitHub...');
     
     try {
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.warn('⚠️ No GitHub token found for force push');
+        console.warn('No GitHub token found for force push');
         return false;
       }
       
@@ -1893,11 +1959,11 @@ class SimpleBlog {
       });
       
       if (pushResponse.ok) {
-        console.log('✅ Force push successful - index updated on GitHub');
+        console.log('Force push successful - index updated on GitHub');
         return true;
       } else if (pushResponse.status === 422) {
         // File exists but SHA is required - try to get SHA and update
-        console.log('🔄 File exists, trying to get SHA and update...');
+        console.log('File exists, trying to get SHA and update...');
         
         try {
           // Try to get SHA from public API (might work even when authenticated API is blocked)
@@ -1923,17 +1989,17 @@ class SimpleBlog {
               });
               
               if (updateResponse.ok) {
-                console.log('✅ Force push successful with SHA - index updated on GitHub');
+                console.log('Force push successful with SHA - index updated on GitHub');
                 return true;
               }
             }
           }
         } catch (shaError) {
-          console.warn('⚠️ Could not get SHA for update:', shaError);
+          console.warn('Could not get SHA for update:', shaError);
         }
         
         // If all else fails, try to delete and recreate
-        console.log('🔄 Trying delete and recreate approach...');
+        console.log('Trying delete and recreate approach...');
         try {
           // This is risky but might work when other methods fail
           const deleteResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
@@ -1965,20 +2031,20 @@ class SimpleBlog {
             });
             
             if (createResponse.ok) {
-              console.log('✅ Force push successful via delete/recreate - index updated on GitHub');
+              console.log('Force push successful via delete/recreate - index updated on GitHub');
               return true;
             }
           }
         } catch (deleteError) {
-          console.warn('⚠️ Delete and recreate failed:', deleteError);
+          console.warn('Delete and recreate failed:', deleteError);
         }
       }
       
-      console.error('❌ Force push failed:', pushResponse.status, pushResponse.statusText);
+      console.error('Force push failed:', pushResponse.status, pushResponse.statusText);
       return false;
       
     } catch (error) {
-      console.error('❌ Force push error:', error);
+      console.error('Force push error:', error);
       return false;
     }
   }
@@ -1994,7 +2060,7 @@ class SimpleBlog {
       const currentFlags = localStorage.getItem('current_post_flags') || '';
       
       if (!postTitle.trim()) {
-        console.log('⚠️ No title found for fast reindex');
+        console.log('No title found for fast reindex');
         return;
       }
       
@@ -2015,11 +2081,11 @@ class SimpleBlog {
       if (existingIndex >= 0) {
         // Update existing post
         this.posts[existingIndex] = { ...this.posts[existingIndex], ...currentPost };
-        console.log('✅ Updated existing post in local index');
+        console.log('Updated existing post in local index');
       } else {
         // Add new post
         this.posts.unshift(currentPost); // Add to beginning
-        console.log('✅ Added new post to local index');
+        console.log('Added new post to local index');
       }
       
       // Update localStorage cache
@@ -2031,7 +2097,7 @@ class SimpleBlog {
       console.log('⚡ Fast reindex completed for:', currentPost.title);
       
     } catch (error) {
-      console.error('❌ Fast reindex error:', error);
+      console.error('Fast reindex error:', error);
     }
   }
   
@@ -2052,7 +2118,7 @@ class SimpleBlog {
 
   async scanLocalPostsDirectory(allPosts) {
     try {
-      console.log('🔍 All Posts submenu: Scanning local posts directory...');
+      console.log('All Posts submenu: Scanning local posts directory...');
       
       // Try to get a list of local posts by checking common post files
       // Since we can't directly list directory contents in the browser,
@@ -2064,7 +2130,7 @@ class SimpleBlog {
         if (localIndexResponse.ok) {
           const localIndexData = await localIndexResponse.json();
           const localPosts = Array.isArray(localIndexData) ? localIndexData : (localIndexData.posts || []);
-          console.log('🔍 All Posts submenu: Found local index.json with posts:', localPosts.length);
+          console.log('All Posts submenu: Found local index.json with posts:', localPosts.length);
           
           // Add these posts to our list
           for (const post of localPosts) {
@@ -2074,7 +2140,7 @@ class SimpleBlog {
           }
         }
       } catch (localIndexError) {
-        console.log('🔍 All Posts submenu: No local index.json found');
+        console.log('All Posts submenu: No local index.json found');
       }
       
       // Try to load some common post files directly
@@ -2092,7 +2158,7 @@ class SimpleBlog {
                 keywords: postData.keywords || 'general'
               };
               allPosts.push(post);
-              console.log('✅ All Posts submenu: Loaded local post:', post);
+              console.log('All Posts submenu: Loaded local post:', post);
             }
           }
         } catch (postError) {
@@ -2100,35 +2166,35 @@ class SimpleBlog {
         }
       }
       
-      console.log('🔍 All Posts submenu: Local directory scan complete, total posts:', allPosts.length);
+      console.log('All Posts submenu: Local directory scan complete, total posts:', allPosts.length);
       
     } catch (error) {
-      console.error('❌ All Posts submenu: Error scanning local directory:', error);
+      console.error('All Posts submenu: Error scanning local directory:', error);
     }
   }
 
 
 
   async loadPosts() {
-    console.log('🔍 loadPosts: Loading posts from index...');
+    console.log('loadPosts: Loading posts from index...');
     
     try {
       // Load posts from GitHub index (much faster than scanning directory)
       const timestamp = Date.now();
       const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
-      console.log('🔍 loadPosts: Loading posts index from GitHub:', indexUrl);
+      console.log('loadPosts: Loading posts index from GitHub:', indexUrl);
       
       const response = await fetch(indexUrl);
       if (response.ok) {
         const indexData = await response.json();
-        console.log('🔍 loadPosts: GitHub index data loaded:', indexData);
+        console.log('loadPosts: GitHub index data loaded:', indexData);
         
         // GitHub API returns content in base64, need to decode
         if (indexData.content && indexData.encoding === 'base64') {
           try {
             const decodedContent = atob(indexData.content);
             const parsedData = JSON.parse(decodedContent);
-            console.log('🔍 loadPosts: Decoded index data:', parsedData);
+            console.log('loadPosts: Decoded index data:', parsedData);
             
             // Handle both array and object formats
             if (Array.isArray(parsedData)) {
@@ -2136,28 +2202,28 @@ class SimpleBlog {
             } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
               this.posts = parsedData.posts;
             } else {
-              console.warn('⚠️ loadPosts: Unexpected index format:', parsedData);
+              console.warn('loadPosts: Unexpected index format:', parsedData);
               // Don't clear posts array - keep cached posts if available
               if (!this.posts || this.posts.length === 0) {
                 this.posts = [];
               }
             }
           } catch (decodeError) {
-            console.error('❌ Error decoding GitHub content:', decodeError);
+            console.error('Error decoding GitHub content:', decodeError);
             // Don't clear posts array - keep cached posts if available
             if (!this.posts || this.posts.length === 0) {
               this.posts = [];
             }
           }
         } else {
-          console.warn('⚠️ loadPosts: Unexpected GitHub API response format:', indexData);
+          console.warn('loadPosts: Unexpected GitHub API response format:', indexData);
           // Don't clear posts array - keep cached posts if available
           if (!this.posts || this.posts.length === 0) {
             this.posts = [];
           }
         }
         
-        console.log('📚 loadPosts: Posts loaded from index:', this.posts.length);
+        console.log('loadPosts: Posts loaded from index:', this.posts.length);
         
         // Cache posts in localStorage for submenu use
         localStorage.setItem('posts', JSON.stringify(this.posts));
@@ -2166,28 +2232,28 @@ class SimpleBlog {
           // Sort by date for reference, but don't auto-load most recent
           // (let the init function decide which post to load)
           this.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
-          console.log('📚 loadPosts: Posts sorted by date, ready for loading');
+          console.log('loadPosts: Posts sorted by date, ready for loading');
           
           // Don't create submenus on page load - only create them on hover
           console.log('🧭 loadPosts: Posts loaded, submenus will be created on hover');
           
 
         } else {
-          console.log('⚠️ loadPosts: No posts found in index');
+          console.log('loadPosts: No posts found in index');
           // Don't clear posts array - keep cached posts if available
           if (!this.posts || this.posts.length === 0) {
             this.displayDefaultContent();
           }
         }
       } else {
-        console.warn('⚠️ loadPosts: Could not load index file:', response.status);
+        console.warn('loadPosts: Could not load index file:', response.status);
         // Don't clear posts array - keep cached posts if available
         if (!this.posts || this.posts.length === 0) {
           this.displayDefaultContent();
         }
       }
     } catch (error) {
-      console.error('❌ loadPosts: Error loading index:', error);
+      console.error('loadPosts: Error loading index:', error);
       // Don't clear posts array - keep cached posts if available
       if (!this.posts || this.posts.length === 0) {
         this.displayDefaultContent();
@@ -2197,7 +2263,7 @@ class SimpleBlog {
 
   async filterAvailablePosts(posts) {
     if (!Array.isArray(posts)) {
-      console.warn('⚠️ filterAvailablePosts: posts is not an array:', posts);
+      console.warn('filterAvailablePosts: posts is not an array:', posts);
       return [];
     }
     
@@ -2205,7 +2271,7 @@ class SimpleBlog {
     
     for (const post of posts) {
       if (!post || !post.slug) {
-        console.warn('⚠️ Skipping invalid post in filter:', post);
+        console.warn('Skipping invalid post in filter:', post);
         continue;
       }
       
@@ -2233,22 +2299,22 @@ class SimpleBlog {
         if (postExists) {
           availablePosts.push(post);
         } else {
-          console.warn(`⚠️ Post file not found: ${post.slug}.json`);
+          console.warn(` Post file not found: ${post.slug}.json`);
         }
       } catch (error) {
-        console.warn(`⚠️ Error checking post ${post.slug}:`, error);
+        console.warn(` Error checking post ${post.slug}:`, error);
       }
     }
     
-    console.log(`✅ Filtered ${posts.length} posts down to ${availablePosts.length} available`);
+    console.log(` Filtered ${posts.length} posts down to ${availablePosts.length} available`);
     return availablePosts;
   }
 
   async loadPost(slug) {
-    console.log(`🔍 MAXIMUM TROUBLESHOOTING: loadPost called with slug: ${slug}`);
-    console.log(`🔍 this object in loadPost:`, this);
-    console.log(`🔍 this.displayPost function:`, this.displayPost);
-    console.log(`🔍 this.displayDefaultContent function:`, this.displayDefaultContent);
+    console.log(` MAXIMUM TROUBLESHOOTING: loadPost called with slug: ${slug}`);
+    console.log(` this object in loadPost:`, this);
+    console.log(` this.displayPost function:`, this.displayPost);
+    console.log(` this.displayDefaultContent function:`, this.displayDefaultContent);
     
     try {
       console.log(`📖 Loading post: ${slug}`);
@@ -2260,45 +2326,45 @@ class SimpleBlog {
         // Try GitHub API first (public access, no authentication required)
         const timestamp = Date.now();
         const githubUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json?t=${timestamp}`;
-        console.log('🔍 loadPost: Fetching from GitHub API (public):', githubUrl);
+        console.log('loadPost: Fetching from GitHub API (public):', githubUrl);
         
         const githubResponse = await fetch(githubUrl);
-        console.log('🔍 loadPost: GitHub API response status:', githubResponse.status, githubResponse.statusText);
+        console.log('loadPost: GitHub API response status:', githubResponse.status, githubResponse.statusText);
         
         if (githubResponse.ok) {
           const githubData = await githubResponse.json();
-          console.log('🔍 loadPost: GitHub API response data:', githubData);
+          console.log('loadPost: GitHub API response data:', githubData);
           
           const content = atob(githubData.content); // Decode base64 content
-          console.log('🔍 loadPost: Decoded content:', content);
+          console.log('loadPost: Decoded content:', content);
           
           post = JSON.parse(content);
-          console.log('✅ Post loaded from GitHub API:', post.title);
+          console.log('Post loaded from GitHub API:', post.title);
         } else if (githubResponse.status === 403) {
-          console.log('⚠️ loadPost: GitHub API 403 Forbidden - this might be a rate limit issue, trying local...');
+          console.log('loadPost: GitHub API 403 Forbidden - this might be a rate limit issue, trying local...');
         } else if (githubResponse.status === 404) {
-          console.log('⚠️ loadPost: Post not found on GitHub (404), trying local...');
+          console.log('loadPost: Post not found on GitHub (404), trying local...');
         } else {
-          console.log('⚠️ loadPost: GitHub API failed with status:', githubResponse.status);
+          console.log('loadPost: GitHub API failed with status:', githubResponse.status);
         }
       } catch (githubError) {
-        console.log('⚠️ GitHub API failed, trying local...');
-        console.log('🔍 GitHub error details:', githubError);
+        console.log('GitHub API failed, trying local...');
+        console.log('GitHub error details:', githubError);
       }
       
       // Try local posts if GitHub failed or returned error
       if (!post) {
         try {
-          console.log('🔍 loadPost: Trying local post file...');
+          console.log('loadPost: Trying local post file...');
           const localResponse = await fetch(`posts/${slug}.json`);
           if (localResponse.ok) {
             post = await localResponse.json();
-            console.log('✅ Post loaded from local:', post.title);
+            console.log('Post loaded from local:', post.title);
           } else {
-            console.log('⚠️ loadPost: Local post file not found:', localResponse.status);
+            console.log('loadPost: Local post file not found:', localResponse.status);
           }
         } catch (localError) {
-          console.warn('❌ Local post loading failed:', localError);
+          console.warn('Local post loading failed:', localError);
         }
       }
       
@@ -2309,23 +2375,23 @@ class SimpleBlog {
         // Store the current post slug in localStorage for the GitHub button
         if (post.slug) {
           localStorage.setItem('current_post_slug', post.slug);
-          console.log(`💾 Stored current post slug in localStorage: ${post.slug}`);
+          console.log(` Stored current post slug in localStorage: ${post.slug}`);
         }
         
-        console.log(`✅ Post loaded successfully: ${post.title}`);
+        console.log(` Post loaded successfully: ${post.title}`);
         return post;
       } else {
-        console.error(`❌ Failed to load post ${slug}: Post not found`);
+        console.error(` Failed to load post ${slug}: Post not found`);
         this.displayDefaultContent();
       }
     } catch (error) {
-      console.error(`❌ Error loading post ${slug}:`, error);
+      console.error(` Error loading post ${slug}:`, error);
       this.displayDefaultContent();
     }
   }
 
   displayPost(post) {
-    console.log('🔍 MAXIMUM TROUBLESHOOTING: displayPost called with:', post);
+    console.log('MAXIMUM TROUBLESHOOTING: displayPost called with:', post);
     
     // Update URL to reflect current post (for direct linking and sharing)
     if (post && post.slug) {
@@ -2338,7 +2404,7 @@ class SimpleBlog {
     const dateElement = document.getElementById('post-date');
     const contentElement = document.getElementById('post-content');
 
-    console.log('🔍 DOM elements found:', { 
+    console.log('DOM elements found:', { 
       titleElement: !!titleElement, 
       dateElement: !!dateElement, 
       contentElement: !!contentElement 
@@ -2346,16 +2412,16 @@ class SimpleBlog {
 
     if (titleElement) {
       titleElement.textContent = post.title || 'Untitled';
-      console.log('🔍 Set title to:', post.title || 'Untitled');
+      console.log('Set title to:', post.title || 'Untitled');
     } else {
-      console.error('❌ titleElement not found!');
+      console.error('titleElement not found!');
     }
     
     if (dateElement) {
       dateElement.textContent = post.date || '';
-      console.log('🔍 Set date to:', post.date || '');
+      console.log('Set date to:', post.date || '');
     } else {
-      console.error('❌ dateElement not found!');
+      console.error('dateElement not found!');
     }
     
     if (contentElement) {
@@ -2412,13 +2478,13 @@ class SimpleBlog {
       `;
       contentElement.appendChild(clearfix);
       
-      console.log('🔍 Set content to:', post.content ? post.content.substring(0, 100) + '...' : '');
+      console.log('Set content to:', post.content ? post.content.substring(0, 100) + '...' : '');
     } else {
-      console.error('❌ contentElement not found!');
+      console.error('contentElement not found!');
     }
     
     // Setup hover notes for the displayed post
-    console.log('🔍 Setting up hover notes...');
+    console.log('Setting up hover notes...');
     this.setupHoverNotes();
     
     // Add navigation controls
@@ -2428,13 +2494,13 @@ class SimpleBlog {
     this.siteMapManuallyToggled = false;
     this.siteMapManuallyHidden = false;
     
-    console.log('✅ Post displayed successfully:', post.title);
+    console.log('Post displayed successfully:', post.title);
   }
 
   // Setup image click handlers for full preview functionality
   setupImageClickHandlers(contentElement) {
     const images = contentElement.querySelectorAll('img');
-    console.log(`🖼️ Setting up click handlers for ${images.length} images`);
+    console.log(` Setting up click handlers for ${images.length} images`);
     
     images.forEach((img, index) => {
       // Remove any existing click handlers to prevent duplicates
@@ -2445,19 +2511,19 @@ class SimpleBlog {
       newImg.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log(`🖼️ Image ${index + 1} clicked:`, newImg.src);
+        console.log(` Image ${index + 1} clicked:`, newImg.src);
         
         // Test if the function exists and is callable
         if (typeof this.showImagePreview === 'function') {
           this.showImagePreview(newImg.src, newImg.alt || 'Image');
         } else {
-          console.error('❌ showImagePreview function not found!');
+          console.error('showImagePreview function not found!');
         }
       });
       
       // Also add a mousedown event as backup
       newImg.addEventListener('mousedown', (e) => {
-        console.log(`🖼️ Image ${index + 1} mousedown:`, newImg.src);
+        console.log(` Image ${index + 1} mousedown:`, newImg.src);
       });
       
       // Add visual indication that image is clickable
@@ -2468,7 +2534,7 @@ class SimpleBlog {
       newImg.style.pointerEvents = 'auto';
       newImg.style.userSelect = 'none';
       
-      console.log(`🖼️ Click handler added to image ${index + 1}:`, newImg.src, {
+      console.log(` Click handler added to image ${index + 1}:`, newImg.src, {
         cursor: newImg.style.cursor,
         pointerEvents: newImg.style.pointerEvents,
         userSelect: newImg.style.userSelect
@@ -2478,13 +2544,13 @@ class SimpleBlog {
 
   // Show full-size image preview
   showImagePreview(imageSrc, imageAlt) {
-    console.log('🖼️ showImagePreview called with:', { imageSrc, imageAlt });
+    console.log('showImagePreview called with:', { imageSrc, imageAlt });
     
     // Remove existing preview if any
     const existingPreview = document.getElementById('image-preview-overlay');
     if (existingPreview) {
       existingPreview.remove();
-      console.log('🖼️ Removed existing preview');
+      console.log('Removed existing preview');
     }
     
     // Create overlay
@@ -2552,7 +2618,7 @@ class SimpleBlog {
       fullImage.style.width = `${displayWidth}px`;
       fullImage.style.height = `${displayHeight}px`;
       
-      console.log('🖼️ Image preview sized:', {
+      console.log('Image preview sized:', {
         natural: `${fullImage.naturalWidth}x${fullImage.naturalHeight}`,
         display: `${displayWidth}x${displayHeight}`,
         viewport: `${viewportWidth}x${viewportHeight}`,
@@ -2615,14 +2681,14 @@ class SimpleBlog {
     overlay.appendChild(imageContainer);
     document.body.appendChild(overlay);
     
-    console.log('🖼️ Image preview overlay added to DOM');
+    console.log('Image preview overlay added to DOM');
     
     // Verify the overlay is actually in the DOM
     const verifyOverlay = document.getElementById('image-preview-overlay');
     if (verifyOverlay) {
-      console.log('✅ Image preview overlay verified in DOM');
+      console.log('Image preview overlay verified in DOM');
     } else {
-      console.error('❌ Image preview overlay not found in DOM after creation');
+      console.error('Image preview overlay not found in DOM after creation');
     }
     
     // Add escape key handler
@@ -2653,7 +2719,7 @@ class SimpleBlog {
         fullImage.style.width = `${displayWidth}px`;
         fullImage.style.height = `${displayHeight}px`;
         
-        console.log('🖼️ Image preview resized:', {
+        console.log('Image preview resized:', {
           display: `${displayWidth}x${displayHeight}`,
           viewport: `${viewportWidth}x${viewportHeight}`,
           scale: scale.toFixed(3)
@@ -2670,17 +2736,17 @@ class SimpleBlog {
   }
 
   addPostNavigation(currentPost) {
-    console.log('🔍 addPostNavigation called with:', currentPost);
-    console.log('🔍 this.posts length:', this.posts ? this.posts.length : 'undefined');
+    console.log('addPostNavigation called with:', currentPost);
+    console.log('this.posts length:', this.posts ? this.posts.length : 'undefined');
     
     if (!currentPost || !this.posts || this.posts.length === 0) {
-      console.log('🔍 Early return - missing data');
+      console.log('Early return - missing data');
       return;
     }
     
     // Don't show navigation for 'about' and 'contact' pages
     if (currentPost.slug === 'about' || currentPost.slug === 'contact') {
-      console.log('🔍 Early return - about/contact page');
+      console.log('Early return - about/contact page');
       return;
     }
     
@@ -2714,7 +2780,7 @@ class SimpleBlog {
         }
         if (categoryIndex < categoryPosts.length - 1) {
           nextPost = categoryPosts[categoryIndex + 1];
-          console.log('🔍 Next post in category:', nextPost.title);
+          console.log('Next post in category:', nextPost.title);
         }
       }
     }
@@ -2793,7 +2859,7 @@ class SimpleBlog {
     if (dateElement) dateElement.textContent = '';
     if (contentElement) contentElement.innerHTML = '<p>Welcome to the blog! Posts will appear here once loaded.</p>';
     
-    console.log('✅ Default content displayed');
+    console.log('Default content displayed');
   }
 
   loadMostRecentPost() {
@@ -2803,11 +2869,11 @@ class SimpleBlog {
         // Navigate to blog view with this post
         window.location.href = `index.html#${mostRecent.slug}`;
       } else {
-        console.warn('⚠️ Most recent post missing slug');
+        console.warn('Most recent post missing slug');
         this.displayDefaultContent();
       }
     } else {
-      console.log('⚠️ No posts available');
+      console.log('No posts available');
       this.displayDefaultContent();
     }
   }
@@ -2820,17 +2886,17 @@ class SimpleBlog {
         // Navigate to blog view with this post
         window.location.href = `index.html#${randomPost.slug}`;
       } else {
-        console.warn('⚠️ Random post missing slug');
+        console.warn('Random post missing slug');
         this.displayDefaultContent();
       }
     } else {
-      console.log('⚠️ No posts available');
+      console.log('No posts available');
       this.displayDefaultContent();
     }
   }
 
   setTheme(mode, openHSL = false) {
-    console.log('🎨 Setting theme:', mode, 'openHSL:', openHSL);
+    console.log('Setting theme:', mode, 'openHSL:', openHSL);
     this.theme = mode;
     
     // Remove existing theme classes
@@ -2849,25 +2915,25 @@ class SimpleBlog {
       console.log('🌙 Added dark-mode class');
     } else if (mode === 'light') {
       document.body.classList.add('light-mode');
-      console.log('☀️ Added light-mode class');
+      console.log('Added light-mode class');
     } else if (mode === 'custom') {
       document.body.classList.add('custom-mode');
       
       // Only open HSL color picker if explicitly requested (not on page load)
       if (openHSL) {
-        console.log('🎨 Custom theme selected by user, opening HSL color picker...');
+        console.log('Custom theme selected by user, opening HSL color picker...');
         try {
           this.openHSLColorPicker();
-          console.log('✅ HSL color picker opened successfully');
+          console.log('HSL color picker opened successfully');
         } catch (error) {
-          console.error('❌ Error opening HSL color picker:', error);
-          console.error('❌ Error stack:', error.stack);
+          console.error('Error opening HSL color picker:', error);
+          console.error('Error stack:', error.stack);
         }
       } else {
-        console.log('🎨 Custom theme restored from localStorage, not opening HSL picker');
+        console.log('Custom theme restored from localStorage, not opening HSL picker');
       }
     } else if (mode === 'random') {
-      console.log('🎲 Random theme button clicked');
+      console.log('Random theme button clicked');
       
       // Generate new random color values
       const h = Math.floor(Math.random() * 361);
@@ -2875,7 +2941,7 @@ class SimpleBlog {
       const l = Math.floor(Math.random() * 31) + 15;
       const color = `hsl(${h},${s}%,${l}%)`;
       
-      console.log('🎲 Generated random theme:', { h, s, l, color });
+      console.log('Generated random theme:', { h, s, l, color });
       
       // Save the random theme to localStorage
       const themeData = { h, s, l, color };
@@ -2883,16 +2949,16 @@ class SimpleBlog {
       
       // Apply the random theme using the custom theme method
       this.applyCustomTheme(h, s, l);
-      console.log('✅ Random theme applied successfully');
+      console.log('Random theme applied successfully');
     }
     
     // Update theme display
     this.updateThemeDisplay(mode);
-    console.log('✅ Theme display updated');
+    console.log('Theme display updated');
     
     // Save to localStorage
     localStorage.setItem('ppPage_theme', mode);
-    console.log('💾 Theme saved to localStorage');
+    console.log('Theme saved to localStorage');
     
     // If custom theme, also save HSL values
     if (mode === 'custom') {
@@ -2902,16 +2968,16 @@ class SimpleBlog {
         try {
           const { h, s, l } = JSON.parse(savedHSL);
           this.applyCustomTheme(h, s, l);
-          console.log('🎨 Applied saved custom theme HSL values:', { h, s, l });
+          console.log('Applied saved custom theme HSL values:', { h, s, l });
         } catch (error) {
-          console.warn('⚠️ Could not parse saved custom theme HSL values:', error);
+          console.warn('Could not parse saved custom theme HSL values:', error);
         }
       }
     }
     
     // Debug: show current body classes
-    console.log('🔍 Current body classes:', document.body.className);
-    console.log('🔍 Current CSS variables:', {
+    console.log('Current body classes:', document.body.className);
+    console.log('Current CSS variables:', {
       '--bg': getComputedStyle(document.body).getPropertyValue('--bg'),
       '--fg': getComputedStyle(document.body).getPropertyValue('--fg')
     });
@@ -2973,7 +3039,7 @@ class SimpleBlog {
   }
 
   openHSLColorPicker() {
-    console.log('🔧 openHSLColorPicker function called');
+    console.log('openHSLColorPicker function called');
     
     // Remove existing color picker
     const existingPicker = document.getElementById('hsl-color-picker');
@@ -2984,7 +3050,7 @@ class SimpleBlog {
     // Find the View menu to position the HSL picker relative to it
     const viewMenu = document.querySelector('[data-menu="view"]');
     if (!viewMenu) {
-      console.error('❌ View menu not found');
+      console.error('View menu not found');
       return;
     }
 
@@ -3101,13 +3167,13 @@ class SimpleBlog {
       // Close if clicking anywhere else
       picker.remove();
       document.removeEventListener('click', outsideClickHandler);
-      console.log('🔧 HSL color picker closed by outside click');
+      console.log('HSL color picker closed by outside click');
     };
     
     // Add the click handler immediately
     document.addEventListener('click', outsideClickHandler);
 
-    console.log('✅ HSL color picker opened in menu style 1');
+    console.log('HSL color picker opened in menu style 1');
   }
 
   applyCustomTheme(h, s, l) {
@@ -3145,13 +3211,13 @@ class SimpleBlog {
     
     // Save custom theme HSL values to localStorage
     localStorage.setItem('ppPage_custom_hsl', JSON.stringify({ h, s, l }));
-    console.log('💾 Custom theme HSL values saved to localStorage:', { h, s, l });
+    console.log('Custom theme HSL values saved to localStorage:', { h, s, l });
     
-    console.log('🎨 Custom theme applied:', { h, s, l, bgColor, fgColor });
+    console.log('Custom theme applied:', { h, s, l, bgColor, fgColor });
   }
 
   captureSelectionAndMakeNote() {
-    console.log('📝 Using monitored selection to create hover note...');
+    console.log('Using monitored selection to create hover note...');
     
     // Check if we have a recent valid selection
     if (!this.lastValidSelection) {
@@ -3166,7 +3232,7 @@ class SimpleBlog {
       return;
     }
     
-    console.log('✅ Using monitored selection:', this.lastValidSelection.text);
+    console.log('Using monitored selection:', this.lastValidSelection.text);
     
     // Use the monitored selection data
     this.capturedNoteData = {
@@ -3181,7 +3247,7 @@ class SimpleBlog {
 
   openNoteInput() {
     if (!this.capturedNoteData) {
-      console.log('⚠️ No captured selection data');
+      console.log('No captured selection data');
       return;
     }
     
@@ -3281,7 +3347,7 @@ class SimpleBlog {
     range.deleteContents();
     range.insertNode(span);
     
-    console.log('✅ Hover note created:', { text: selectedText, note: noteText });
+    console.log('Hover note created:', { text: selectedText, note: noteText });
     
     // Setup hover preview for the new note
     this.setupHoverNotePreview();
@@ -3294,7 +3360,7 @@ class SimpleBlog {
   }
 
   exportPost() {
-    console.log('📤 Exporting post as JSON...');
+    console.log('Exporting post as JSON...');
     const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
     const postContent = document.getElementById('visualEditor')?.innerHTML || '';
     
@@ -3320,14 +3386,14 @@ class SimpleBlog {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      console.log('✅ Post exported as JSON:', postData);
+      console.log('Post exported as JSON:', postData);
     } else {
       alert('Please add some content to export.');
     }
   }
 
   showImagesModal() {
-    console.log('🖼️ Opening image magazine...');
+    console.log('Opening image magazine...');
     
     // Check if magazine already exists
     let magazine = document.getElementById('imageMagazine');
@@ -3364,11 +3430,11 @@ class SimpleBlog {
     magazine.style.display = 'flex';
     magazine.classList.remove('hidden');
     
-    console.log('🔍 Magazine positioned at:', { x: initialX, y: initialY });
-    console.log('🔍 Magazine created and positioned');
+    console.log('Magazine positioned at:', { x: initialX, y: initialY });
+    console.log('Magazine created and positioned');
     
     // Load images from assets folder
-    console.log('🔍 Loading images...');
+    console.log('Loading images...');
     this.loadImagesToMagazine();
     
     // Fix any existing images that might be missing overlays
@@ -3376,11 +3442,11 @@ class SimpleBlog {
       this.fixMissingImageOverlays();
     }, 200);
     
-    console.log('✅ Image magazine opened');
+    console.log('Image magazine opened');
   }
 
   showDraftsModal() {
-    console.log('📁 Opening drafts modal...');
+    console.log('Opening drafts modal...');
     
     // Check if modal already exists
     let modal = document.getElementById('draftsModal');
@@ -3404,13 +3470,13 @@ class SimpleBlog {
     // Show the modal
     modal.style.display = 'flex';
     
-    console.log('🔍 Drafts modal positioned at center of window');
-    console.log('🔍 Drafts modal created and positioned');
+    console.log('Drafts modal positioned at center of window');
+    console.log('Drafts modal created and positioned');
     
     // Load drafts from GitHub
     this.loadDraftsFromGitHub();
     
-    console.log('✅ Drafts modal opened');
+    console.log('Drafts modal opened');
   }
   createDraftsModal() {
     const modal = document.createElement('div');
@@ -3502,7 +3568,7 @@ class SimpleBlog {
 
   async loadDraftsFromGitHub() {
     try {
-      console.log('🔍 Loading drafts from GitHub...');
+      console.log('Loading drafts from GitHub...');
       
       // Get GitHub token
       const githubToken = this.getCurrentToken();
@@ -3520,7 +3586,7 @@ class SimpleBlog {
       });
       
       if (testResponse.status === 401) {
-        console.log('⚠️ Token expired or invalid, clearing authentication');
+        console.log('Token expired or invalid, clearing authentication');
         this.clearAuthentication();
         this.displayDraftsError('GitHub token expired. Please re-authenticate.');
         return;
@@ -3539,7 +3605,7 @@ class SimpleBlog {
       });
       
       if (response.status === 401) {
-        console.log('⚠️ Token expired when accessing drafts, clearing authentication');
+        console.log('Token expired when accessing drafts, clearing authentication');
         this.clearAuthentication();
         this.displayDraftsError('GitHub token expired. Please re-authenticate.');
         return;
@@ -3550,7 +3616,7 @@ class SimpleBlog {
       }
       
       const drafts = await response.json();
-      console.log('✅ Drafts loaded from GitHub:', drafts);
+      console.log('Drafts loaded from GitHub:', drafts);
       
       // Filter for JSON files and display them
       const jsonDrafts = drafts.filter(item => 
@@ -3560,7 +3626,7 @@ class SimpleBlog {
       this.displayDrafts(jsonDrafts);
       
     } catch (error) {
-      console.error('❌ Error loading drafts:', error);
+      console.error('Error loading drafts:', error);
       this.displayDraftsError('Failed to load drafts: ' + error.message);
     }
   }
@@ -3576,7 +3642,7 @@ class SimpleBlog {
     // Update UI to show not connected
     this.updateAuthStatus(false);
     
-    console.log('✅ Authentication cleared');
+    console.log('Authentication cleared');
   }
 
   displayDrafts(drafts) {
@@ -3676,7 +3742,7 @@ class SimpleBlog {
 
   async openDraft(draftName) {
     try {
-      console.log('📁 Opening draft:', draftName);
+      console.log('Opening draft:', draftName);
       
       // Get GitHub token
       const githubToken = this.getCurrentToken();
@@ -3694,7 +3760,7 @@ class SimpleBlog {
       });
       
       if (response.status === 401) {
-        console.log('⚠️ Token expired when opening draft, clearing authentication');
+        console.log('Token expired when opening draft, clearing authentication');
         this.clearAuthentication();
         alert('GitHub token expired. Please re-authenticate.');
         return;
@@ -3708,7 +3774,7 @@ class SimpleBlog {
       const content = atob(draftData.content); // Decode base64 content
       const draft = JSON.parse(content);
       
-      console.log('✅ Draft loaded:', draft);
+      console.log('Draft loaded:', draft);
       
       // Populate editor with draft content
       this.populateEditorWithDraft(draft);
@@ -3720,7 +3786,7 @@ class SimpleBlog {
       }
       
     } catch (error) {
-      console.error('❌ Error opening draft:', error);
+      console.error('Error opening draft:', error);
       alert('Failed to open draft: ' + error.message);
     }
   }
@@ -3748,7 +3814,7 @@ class SimpleBlog {
       localStorage.setItem('current_draft_slug', draft.slug);
     }
     
-    console.log('✅ Editor populated with draft content');
+    console.log('Editor populated with draft content');
   }
 
   async deleteDraft(draftName) {
@@ -3758,7 +3824,7 @@ class SimpleBlog {
     }
     
     try {
-      console.log('🗑️ Deleting draft:', draftName);
+      console.log('Deleting draft:', draftName);
       
       // Get GitHub token
       const githubToken = this.getCurrentToken();
@@ -3776,7 +3842,7 @@ class SimpleBlog {
       });
       
       if (getResponse.status === 401) {
-        console.log('⚠️ Token expired when deleting draft, clearing authentication');
+        console.log('Token expired when deleting draft, clearing authentication');
         this.clearAuthentication();
         alert('GitHub token expired. Please re-authenticate.');
         return;
@@ -3803,7 +3869,7 @@ class SimpleBlog {
       });
       
       if (deleteResponse.status === 401) {
-        console.log('⚠️ Token expired when deleting draft, clearing authentication');
+        console.log('Token expired when deleting draft, clearing authentication');
         this.clearAuthentication();
         alert('GitHub token expired. Please re-authenticate.');
         return;
@@ -3813,13 +3879,13 @@ class SimpleBlog {
         throw new Error(`Failed to delete draft: ${deleteResponse.status}`);
       }
       
-      console.log('✅ Draft deleted successfully');
+      console.log('Draft deleted successfully');
       
       // Refresh the drafts list
       this.loadDraftsFromGitHub();
       
     } catch (error) {
-      console.error('❌ Error deleting draft:', error);
+      console.error('Error deleting draft:', error);
       alert('Failed to delete draft: ' + error.message);
     }
   }
@@ -4097,7 +4163,7 @@ class SimpleBlog {
   }
 
   executeCommand(command) {
-    console.log('🖥️ Executing command:', command);
+    console.log('Executing command:', command);
     
     // Double-check admin access for admin-only commands
     const adminCommands = ['force-reindex', 'check-rate-limit', 'link', 'project'];
@@ -4159,17 +4225,17 @@ class SimpleBlog {
     }
     
     this.printToConsole('Available commands:');
-    this.printToConsole('  ? or help - Show this help');
-    this.printToConsole('  clear - Clear console output');
-    this.printToConsole('  search [keyword] - Search posts by keyword');
-    this.printToConsole('  status - Show GitHub connection status');
-    this.printToConsole('  cache - Show cache status');
-    this.printToConsole('  posts - Show post count and list');
-    this.printToConsole('  force-reindex - Force reindex all posts');
-    this.printToConsole('  check-rate-limit - Check GitHub rate limit');
-    this.printToConsole('  logout - Logout of GitHub');
-    this.printToConsole('  link - Add a new project link');
-    this.printToConsole('  project - Enter project mode for advanced project management');
+    this.printToConsole(' ? or help - Show this help');
+    this.printToConsole(' clear - Clear console output');
+    this.printToConsole(' search [keyword] - Search posts by keyword');
+    this.printToConsole(' status - Show GitHub connection status');
+    this.printToConsole(' cache - Show cache status');
+    this.printToConsole(' posts - Show post count and list');
+    this.printToConsole(' force-reindex - Force reindex all posts');
+    this.printToConsole(' check-rate-limit - Check GitHub rate limit');
+    this.printToConsole(' logout - Logout of GitHub');
+    this.printToConsole(' link - Add a new project link');
+    this.printToConsole(' project - Enter project mode for advanced project management');
     this.printToConsole('');
   }
 
@@ -4204,9 +4270,9 @@ class SimpleBlog {
     // This is a placeholder, you'll need to implement the actual post info logic
     this.printToConsole('Total posts: 100');
     this.printToConsole('Post list:');
-    this.printToConsole('  - Post 1');
-    this.printToConsole('  - Post 2');
-    this.printToConsole('  - Post 3');
+    this.printToConsole(' - Post 1');
+    this.printToConsole(' - Post 2');
+    this.printToConsole(' - Post 3');
   }
 
   forceReindex() {
@@ -4325,11 +4391,11 @@ class SimpleBlog {
 
   showProjectModeHelp() {
     this.printToConsole('Project Mode Commands:');
-    this.printToConsole('  add - Add new project link');
-    this.printToConsole('  delete LINK LABEL HERE - Delete specified project');
-    this.printToConsole('  list - Show all current projects');
-    this.printToConsole('  help or ? - Show this help');
-    this.printToConsole('  escape/exit/quit - Exit project mode');
+    this.printToConsole(' add - Add new project link');
+    this.printToConsole(' delete LINK LABEL HERE - Delete specified project');
+    this.printToConsole(' list - Show all current projects');
+    this.printToConsole(' help or ? - Show this help');
+    this.printToConsole(' escape/exit/quit - Exit project mode');
   }
 
   async addProjectLink(label, url) {
@@ -4361,10 +4427,10 @@ class SimpleBlog {
       // Update the projects menu
       this.updateProjectsMenu(projects);
       
-      this.printToConsole(`✅ Project link "${label}" added successfully!`);
+      this.printToConsole(`Project link "${label}" added successfully!`);
       
     } catch (error) {
-      console.error('❌ Error adding project link:', error);
+      console.error('Error adding project link:', error);
       this.printToConsole(`Error: ${error.message}`);
     }
   }
@@ -4386,7 +4452,7 @@ class SimpleBlog {
       // Find and remove the project
       const projectIndex = projects.findIndex(p => p.label.toLowerCase() === label.toLowerCase());
       if (projectIndex === -1) {
-        this.printToConsole(`❌ Project "${label}" not found`);
+        this.printToConsole(`Project "${label}" not found`);
         return;
       }
       
@@ -4398,10 +4464,10 @@ class SimpleBlog {
       // Update the projects menu
       this.updateProjectsMenu(projects);
       
-      this.printToConsole(`✅ Project "${deletedProject.label}" deleted successfully!`);
+      this.printToConsole(`Project "${deletedProject.label}" deleted successfully!`);
       
     } catch (error) {
-      console.error('❌ Error deleting project:', error);
+      console.error('Error deleting project:', error);
       this.printToConsole(`Error: ${error.message}`);
     }
   }
@@ -4417,11 +4483,11 @@ class SimpleBlog {
       
       this.printToConsole(`Found ${projects.length} project(s):`);
       projects.forEach((project, index) => {
-        this.printToConsole(`  ${index + 1}. ${project.title} → ${project.url}`);
+        this.printToConsole(` ${index + 1}. ${project.title} → ${project.url}`);
       });
       
     } catch (error) {
-      console.error('❌ Error listing projects:', error);
+      console.error('Error listing projects:', error);
       this.printToConsole(`Error: ${error.message}`);
     }
   }
@@ -4430,12 +4496,12 @@ class SimpleBlog {
     try {
       const tokenInfo = this.getCurrentToken();
       if (!tokenInfo) {
-        console.warn('⚠️ loadProjectsFromGitHub: No GitHub token found');
+        console.warn('loadProjectsFromGitHub: No GitHub token found');
         return [];
       }
       
       const token = tokenInfo.token;
-      console.log(`🔍 loadProjectsFromGitHub: Using ${tokenInfo.type} token`);
+      console.log(` loadProjectsFromGitHub: Using ${tokenInfo.type} token`);
       
       // Try to load from projects.json file
       const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/projects.json', {
@@ -4451,14 +4517,14 @@ class SimpleBlog {
         return JSON.parse(content);
       } else if (response.status === 404) {
         // File doesn't exist, return empty array
-        console.log('📝 projects.json not found, returning empty array');
+        console.log('projects.json not found, returning empty array');
         return [];
       } else {
         throw new Error(`GitHub API error: ${response.status}`);
       }
       
     } catch (error) {
-      console.error('❌ Error loading projects:', error);
+      console.error('Error loading projects:', error);
       return [];
     }
   }
@@ -4471,7 +4537,7 @@ class SimpleBlog {
       }
       
       const token = tokenInfo.token;
-      console.log(`💾 saveProjectsToGitHub: Using ${tokenInfo.type} token`);
+      console.log(` saveProjectsToGitHub: Using ${tokenInfo.type} token`);
       
       // Get current file info if it exists
       let sha = null;
@@ -4489,7 +4555,7 @@ class SimpleBlog {
         }
       } catch (error) {
         // File doesn't exist, that's fine
-        console.log('📝 projects.json not found, will create new file');
+        console.log('projects.json not found, will create new file');
       }
       
       // Prepare content
@@ -4522,10 +4588,10 @@ class SimpleBlog {
         throw new Error(`Failed to save projects: ${response.status}`);
       }
       
-      console.log('✅ Projects saved to GitHub');
+      console.log('Projects saved to GitHub');
       
     } catch (error) {
-      console.error('❌ Error saving projects:', error);
+      console.error('Error saving projects:', error);
       throw error;
     }
   }
@@ -4538,11 +4604,11 @@ class SimpleBlog {
     const importBtn = document.getElementById('import-image-btn');
     const closeBtn = document.getElementById('close-magazine-btn');
     
-    console.log('🔍 Found import button:', !!importBtn);
-    console.log('🔍 Found close button:', !!closeBtn);
+    console.log('Found import button:', !!importBtn);
+    console.log('Found close button:', !!closeBtn);
     
     if (!importBtn || !closeBtn) {
-      console.log('⚠️ Buttons not found - cannot setup functionality');
+      console.log('Buttons not found - cannot setup functionality');
       return;
     }
     
@@ -4556,7 +4622,7 @@ class SimpleBlog {
     
     // Setup import button
     newImportBtn.addEventListener('click', (e) => {
-      console.log('📁 Import button CLICKED!');
+      console.log('Import button CLICKED!');
       e.stopPropagation();
       e.preventDefault();
       this.importImages();
@@ -4564,7 +4630,7 @@ class SimpleBlog {
     
     // Setup close button
     newCloseBtn.addEventListener('click', (e) => {
-      console.log('🔴 Close button CLICKED!');
+      console.log('Close button CLICKED!');
       e.stopPropagation();
       e.preventDefault();
       
@@ -4572,7 +4638,7 @@ class SimpleBlog {
       if (magazine) {
         magazine.style.display = 'none';
         magazine.classList.add('hidden');
-        console.log('✅ Magazine closed via close button');
+        console.log('Magazine closed via close button');
       }
     });
     
@@ -4609,8 +4675,8 @@ class SimpleBlog {
     newCloseBtn.addEventListener('mouseenter', () => { newCloseBtn.style.color = '#ccc'; });
     newCloseBtn.addEventListener('mouseleave', () => { newCloseBtn.style.color = '#fff'; });
     
-    console.log('✅ Image magazine buttons setup complete');
-    console.log('🔍 Buttons now have normal styling and hover effects');
+    console.log('Image magazine buttons setup complete');
+    console.log('Buttons now have normal styling and hover effects');
   }
 
 
@@ -4706,21 +4772,21 @@ class SimpleBlog {
     
     // Multiple event listeners for maximum compatibility
     importBtn.addEventListener('click', (e) => {
-      console.log('📁 Import button CLICKED via click event!');
+      console.log('Import button CLICKED via click event!');
       e.stopPropagation();
       e.preventDefault();
       this.importImages();
     });
     
     importBtn.addEventListener('mousedown', (e) => {
-      console.log('📁 Import button CLICKED via mousedown event!');
+      console.log('Import button CLICKED via mousedown event!');
       e.stopPropagation();
       e.preventDefault();
       this.importImages();
     });
     
     importBtn.addEventListener('mouseup', (e) => {
-      console.log('📁 Import button CLICKED via mouseup event!');
+      console.log('Import button CLICKED via mouseup event!');
       e.stopPropagation();
       e.preventDefault();
       this.importImages();
@@ -4747,7 +4813,7 @@ class SimpleBlog {
     `;
     // Multiple event listeners for maximum compatibility
     closeBtn.addEventListener('click', (e) => {
-      console.log('🔴 Close button CLICKED via click event!');
+      console.log('Close button CLICKED via click event!');
       e.stopPropagation(); // Prevent event bubbling
       e.preventDefault(); // Prevent any default button behavior
       
@@ -4756,14 +4822,14 @@ class SimpleBlog {
       if (magazineToClose) {
         magazineToClose.style.display = 'none';
         magazineToClose.classList.add('hidden');
-        console.log('✅ Magazine closed via close button');
+        console.log('Magazine closed via close button');
       } else {
-        console.log('⚠️ Magazine not found for closing');
+        console.log('Magazine not found for closing');
       }
     });
     
     closeBtn.addEventListener('mousedown', (e) => {
-      console.log('🔴 Close button CLICKED via mousedown event!');
+      console.log('Close button CLICKED via mousedown event!');
       e.stopPropagation();
       e.preventDefault();
       
@@ -4771,12 +4837,12 @@ class SimpleBlog {
       if (magazineToClose) {
         magazineToClose.style.display = 'none';
         magazineToClose.classList.add('hidden');
-        console.log('✅ Magazine closed via close button (mousedown)');
+        console.log('Magazine closed via close button (mousedown)');
       }
     });
     
     closeBtn.addEventListener('mouseup', (e) => {
-      console.log('🔴 Close button CLICKED via mouseup event!');
+      console.log('Close button CLICKED via mouseup event!');
       e.stopPropagation();
       e.preventDefault();
       
@@ -4784,7 +4850,7 @@ class SimpleBlog {
       if (magazineToClose) {
         magazineToClose.style.display = 'none';
         magazineToClose.classList.add('hidden');
-        console.log('✅ Magazine closed via close button (mouseup)');
+        console.log('Magazine closed via close button (mouseup)');
       }
     });
     
@@ -4807,7 +4873,7 @@ class SimpleBlog {
     `;
     
     refreshBtn.addEventListener('click', (e) => {
-      console.log('🔄 Refresh button clicked');
+      console.log('Refresh button clicked');
       e.stopPropagation();
       e.preventDefault();
       this.loadImagesToMagazine();
@@ -4819,21 +4885,21 @@ class SimpleBlog {
     
     // Emergency button test
 
-    console.log('🔍 Import button text:', importBtn.textContent);
-    console.log('🔍 Close button text:', closeBtn.textContent);
-    console.log('🔍 Import button type:', importBtn.type);
-    console.log('🔍 Close button type:', closeBtn.type);
-    console.log('🔍 Import button tagName:', importBtn.tagName);
-    console.log('🔍 Close button tagName:', closeBtn.tagName);
+    console.log('Import button text:', importBtn.textContent);
+    console.log('Close button text:', closeBtn.textContent);
+    console.log('Import button type:', importBtn.type);
+    console.log('Close button type:', closeBtn.type);
+    console.log('Import button tagName:', importBtn.tagName);
+    console.log('Close button tagName:', closeBtn.tagName);
     
     // Test button properties
-    console.log('🔍 Import button disabled:', importBtn.disabled);
-    console.log('🔍 Close button disabled:', closeBtn.disabled);
-    console.log('🔍 Import button style.display:', importBtn.style.display);
-    console.log('🔍 Close button style.display:', closeBtn.style.display);
-    console.log('🔍 Import button style.visibility:', importBtn.style.visibility);
-    console.log('🔍 Close button style.visibility:', closeBtn.style.visibility);
-    console.log('🔍 Import button style.pointerEvents:', closeBtn.style.pointerEvents);
+    console.log('Import button disabled:', importBtn.disabled);
+    console.log('Close button disabled:', closeBtn.disabled);
+    console.log('Import button style.display:', importBtn.style.display);
+    console.log('Close button style.display:', closeBtn.style.display);
+    console.log('Import button style.visibility:', importBtn.style.visibility);
+    console.log('Close button style.visibility:', closeBtn.style.visibility);
+    console.log('Import button style.pointerEvents:', closeBtn.style.pointerEvents);
     
 
     
@@ -4853,18 +4919,18 @@ class SimpleBlog {
     magazine.appendChild(header);
     magazine.appendChild(content);
     
-    console.log('🔍 About to append magazine to document.body...');
-    console.log('🔍 document.body exists:', !!document.body);
-    console.log('🔍 document.body children count:', document.body.children.length);
+    console.log('About to append magazine to document.body...');
+    console.log('document.body exists:', !!document.body);
+    console.log('document.body children count:', document.body.children.length);
     
     document.body.appendChild(magazine);
     
-    console.log('🔍 Magazine added to DOM:', magazine);
-    console.log('🔍 Magazine parent:', magazine.parentNode);
-    console.log('🔍 Magazine parent is body:', magazine.parentNode === document.body);
-    console.log('🔍 Magazine computed styles:', window.getComputedStyle(magazine));
-    console.log('🔍 Magazine offsetParent:', magazine.offsetParent);
-    console.log('🔍 Magazine offsetWidth/Height:', magazine.offsetWidth, magazine.offsetHeight);
+    console.log('Magazine added to DOM:', magazine);
+    console.log('Magazine parent:', magazine.parentNode);
+    console.log('Magazine parent is body:', magazine.parentNode === document.body);
+    console.log('Magazine computed styles:', window.getComputedStyle(magazine));
+    console.log('Magazine offsetParent:', magazine.offsetParent);
+    console.log('Magazine offsetWidth/Height:', magazine.offsetWidth, magazine.offsetHeight);
     
     // Don't start hidden - let showImagesModal control visibility
     return magazine;
@@ -4906,13 +4972,13 @@ class SimpleBlog {
           .filter(item => item.type === 'file' && this.isImageFile(item.name))
           .map(item => item.name);
         
-        console.log('📁 Found', images.length, 'images in assets folder:', images);
+        console.log('Found', images.length, 'images in assets folder:', images);
       } else if (response.status === 403) {
         // GitHub API blocked, try to scan local assets folder
-        console.log('⚠️ GitHub API blocked, scanning local assets...');
+        console.log('GitHub API blocked, scanning local assets...');
         images = await this.scanLocalAssetsFolder();
       } else {
-        console.warn('⚠️ Could not fetch assets from GitHub:', response.status);
+        console.warn('Could not fetch assets from GitHub:', response.status);
         // Fallback to local scanning
         images = await this.scanLocalAssetsFolder();
       }
@@ -4994,7 +5060,7 @@ class SimpleBlog {
       });
       
     } catch (error) {
-      console.error('❌ Error loading images:', error);
+      console.error('Error loading images:', error);
       
       // Clear loading state and show error
       gallery.innerHTML = '';
@@ -5036,12 +5102,12 @@ class SimpleBlog {
             .map(href => href.match(/href="([^"]+)"/i)[1])
             .filter(file => this.isImageFile(file));
           
-          console.log('📁 Found', images.length, 'images in local assets folder:', images);
+          console.log('Found', images.length, 'images in local assets folder:', images);
           return images;
         }
       }
     } catch (error) {
-      console.warn('⚠️ Could not scan local assets folder:', error);
+      console.warn('Could not scan local assets folder:', error);
     }
     
     // Fallback to empty array
@@ -5049,11 +5115,11 @@ class SimpleBlog {
   }
   
   insertImageToPost(filename) {
-    console.log('🖼️ Inserting image:', filename);
+    console.log('Inserting image:', filename);
     
     const visualEditor = document.getElementById('visualEditor');
     if (!visualEditor) {
-      console.log('⚠️ Visual editor not found');
+      console.log('Visual editor not found');
       return;
     }
     
@@ -5116,7 +5182,7 @@ class SimpleBlog {
         range.insertNode(blockElement);
         range.collapse(false);
         inserted = true;
-        console.log('✅ Image inserted at cursor position as block');
+        console.log('Image inserted at cursor position as block');
       }
     }
     
@@ -5125,7 +5191,7 @@ class SimpleBlog {
       const blockElement = document.createElement('div');
       blockElement.appendChild(imageContainer);
       visualEditor.appendChild(blockElement);
-      console.log('✅ Image inserted at end of post as block');
+      console.log('Image inserted at end of post as block');
     }
     
     // Add positioning overlay functionality with retry mechanism
@@ -5134,12 +5200,12 @@ class SimpleBlog {
     // Verify overlay was added, retry if needed
     setTimeout(() => {
       if (!imageContainer.querySelector('.image-position-overlay')) {
-        console.log('⚠️ Overlay not found, retrying...');
+        console.log('Overlay not found, retrying...');
         this.addImagePositioningOverlay(imageContainer);
       }
     }, 100);
     
-    console.log('✅ Image inserted:', filename);
+    console.log('Image inserted:', filename);
   }
   setupEditorDragAndDrop() {
     // Only setup once
@@ -5182,22 +5248,22 @@ class SimpleBlog {
       }
       
       if (filename) {
-        console.log('🖼️ Dropped image:', filename);
+        console.log('Dropped image:', filename);
         this.insertImageToPost(filename);
       }
     });
     
-    console.log('✅ Editor drag and drop setup complete');
+    console.log('Editor drag and drop setup complete');
   }
 
 
 
   addImagePositioningOverlay(imageContainer) {
-    console.log('🔧 Adding positioning overlay to image container:', imageContainer);
+    console.log('Adding positioning overlay to image container:', imageContainer);
     
     // Ensure the image container is properly set up
     if (!imageContainer || !imageContainer.appendChild) {
-      console.error('❌ Invalid image container for overlay:', imageContainer);
+      console.error('Invalid image container for overlay:', imageContainer);
       return;
     }
     
@@ -5286,15 +5352,15 @@ class SimpleBlog {
     // Add overlay to image container
     try {
       imageContainer.appendChild(overlay);
-      console.log('✅ Overlay appended successfully');
+      console.log('Overlay appended successfully');
     } catch (error) {
-      console.error('❌ Failed to append overlay:', error);
+      console.error('Failed to append overlay:', error);
       return;
     }
     
     // Verify overlay was added
     if (!imageContainer.querySelector('.image-position-overlay')) {
-      console.error('❌ Overlay not found after append');
+      console.error('Overlay not found after append');
       return;
     }
     
@@ -5302,14 +5368,14 @@ class SimpleBlog {
     imageContainer.addEventListener('mouseenter', () => {
       overlay.style.opacity = '1';
       overlay.style.pointerEvents = 'auto';
-      console.log('🖱️ Overlay shown on mouseenter');
+      console.log('Overlay shown on mouseenter');
     });
     
     // Hide overlay on mouseleave
     imageContainer.addEventListener('mouseleave', () => {
       overlay.style.opacity = '0';
       overlay.style.pointerEvents = 'none';
-      console.log('🖱️ Overlay hidden on mouseleave');
+      console.log('Overlay hidden on mouseleave');
     });
     
     // Add click handlers for positioning
@@ -5320,7 +5386,7 @@ class SimpleBlog {
     
     // Verify all buttons were found
     if (!leftBtn || !rowBtn || !rightBtn || !deleteBtn) {
-      console.error('❌ Some positioning buttons not found:', { leftBtn, rowBtn, rightBtn, deleteBtn });
+      console.error('Some positioning buttons not found:', { leftBtn, rowBtn, rightBtn, deleteBtn });
       return;
     }
     
@@ -5336,7 +5402,7 @@ class SimpleBlog {
         height: 200px;
         clear: both;
       `;
-      console.log('✅ Image positioned left');
+      console.log('Image positioned left');
     });
     
     // Row positioning (inline, no clear)
@@ -5352,7 +5418,7 @@ class SimpleBlog {
         clear: none;
         display: block;
       `;
-      console.log('✅ Image positioned left');
+      console.log('Image positioned left');
     });
     
     // Right positioning (float right)
@@ -5367,7 +5433,7 @@ class SimpleBlog {
         height: 200px;
         clear: both;
       `;
-      console.log('✅ Image positioned right');
+      console.log('Image positioned right');
     });
     
     // Delete button functionality
@@ -5375,19 +5441,19 @@ class SimpleBlog {
       e.stopPropagation();
       if (confirm('Are you sure you want to delete this image?')) {
         imageContainer.remove();
-        console.log('✅ Image deleted from post');
+        console.log('Image deleted from post');
       }
     });
     
     // Setup drag and drop for the visual editor if not already done
     this.setupEditorDragAndDrop();
     
-    console.log('✅ Image positioning overlay setup complete');
+    console.log('Image positioning overlay setup complete');
   }
 
   // Function to check and fix any images missing overlays
   fixMissingImageOverlays() {
-    console.log('🔧 Checking for images missing overlays...');
+    console.log('Checking for images missing overlays...');
     
     const visualEditor = document.getElementById('visualEditor');
     if (!visualEditor) return;
@@ -5397,16 +5463,16 @@ class SimpleBlog {
     
     imageContainers.forEach(container => {
       if (!container.querySelector('.image-position-overlay')) {
-        console.log('⚠️ Found image container without overlay, fixing...');
+        console.log('Found image container without overlay, fixing...');
         this.addImagePositioningOverlay(container);
         fixedCount++;
       }
     });
     
     if (fixedCount > 0) {
-      console.log(`✅ Fixed ${fixedCount} missing image overlays`);
+      console.log(` Fixed ${fixedCount} missing image overlays`);
     } else {
-      console.log('✅ All image overlays are present');
+      console.log('All image overlays are present');
     }
   }
 
@@ -5438,12 +5504,12 @@ class SimpleBlog {
 
   // Function to update posts index incrementally (much more efficient)
   async updatePostsIndexIncrementally(postData, isEdit) {
-    console.log('🔄 Updating posts index incrementally...');
+    console.log('Updating posts index incrementally...');
     
     try {
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.error('❌ No GitHub token found for index update');
+        console.error('No GitHub token found for index update');
         return false;
       }
       
@@ -5455,14 +5521,14 @@ class SimpleBlog {
       });
       
       if (!indexResponse.ok) {
-        console.error('❌ Could not fetch current index file:', indexResponse.status);
+        console.error('Could not fetch current index file:', indexResponse.status);
         return false;
       }
       
       const indexData = await indexResponse.json();
       const currentIndex = JSON.parse(atob(indexData.content));
       
-      console.log('📊 Current index has', currentIndex.length, 'posts');
+      console.log('Current index has', currentIndex.length, 'posts');
       
       // Create new index entry for this post
       const newIndexEntry = {
@@ -5479,7 +5545,7 @@ class SimpleBlog {
         updatedIndex = currentIndex.map(post => 
           post.slug === postData.slug ? newIndexEntry : post
         );
-        console.log('✏️ Updated existing post in index:', postData.slug);
+        console.log('Updated existing post in index:', postData.slug);
       } else {
         // For new posts: add to beginning (newest first)
         updatedIndex = [newIndexEntry, ...currentIndex];
@@ -5511,31 +5577,31 @@ class SimpleBlog {
       });
       
       if (updateResponse.ok) {
-        console.log('✅ Index updated successfully on GitHub');
+        console.log('Index updated successfully on GitHub');
         return true;
       } else {
-        console.error('❌ Failed to update index:', updateResponse.status);
+        console.error('Failed to update index:', updateResponse.status);
         return false;
       }
       
     } catch (error) {
-      console.error('❌ Error updating posts index:', error);
+      console.error('Error updating posts index:', error);
       return false;
     }
   }
 
   // Function to rebuild the entire posts index from actual GitHub files (kept for manual use)
-  // ⚠️ WARNING: This function makes N+3 API calls where N = number of posts
+  //  WARNING: This function makes N+3 API calls where N = number of posts
   // Use only when you need to completely rebuild the index (e.g., after manual file changes)
   // For normal post publishing, use updatePostsIndexIncrementally() instead
   async rebuildPostsIndexFromGitHub() {
-    console.log('🔄 Rebuilding posts index from actual GitHub files...');
-    console.log('⚠️ This will make many API calls - use only when necessary!');
+    console.log('Rebuilding posts index from actual GitHub files...');
+    console.log('This will make many API calls - use only when necessary!');
     
     try {
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.error('❌ No GitHub token found for index rebuild');
+        console.error('No GitHub token found for index rebuild');
         return false;
       }
       
@@ -5547,12 +5613,12 @@ class SimpleBlog {
       });
       
       if (!postsResponse.ok) {
-        console.error('❌ Failed to fetch posts directory:', postsResponse.status);
+        console.error('Failed to fetch posts directory:', postsResponse.status);
         return false;
       }
       
       const postsDirectory = await postsResponse.json();
-      console.log('📁 Found posts directory contents:', postsDirectory.length, 'items');
+      console.log('Found posts directory contents:', postsDirectory.length, 'items');
       
       // Filter for JSON files (actual posts, not index.json)
       const postFiles = postsDirectory.filter(item => 
@@ -5561,8 +5627,8 @@ class SimpleBlog {
         item.name !== 'index.json'
       );
       
-      console.log('📄 Found post files:', postFiles.length);
-      console.log('⚠️ Will make', postFiles.length + 3, 'API calls total');
+      console.log('Found post files:', postFiles.length);
+      console.log('Will make', postFiles.length + 3, 'API calls total');
       
       // Build new index by reading each post file
       const newIndex = [];
@@ -5588,19 +5654,19 @@ class SimpleBlog {
             };
             
             newIndex.push(indexEntry);
-            console.log('✅ Added to index:', indexEntry.title);
+            console.log('Added to index:', indexEntry.title);
           } else {
-            console.warn('⚠️ Could not read post file:', postFile.name, postResponse.status);
+            console.warn('Could not read post file:', postFile.name, postResponse.status);
           }
         } catch (error) {
-          console.error('❌ Error reading post file:', postFile.name, error);
+          console.error('Error reading post file:', postFile.name, error);
         }
       }
       
       // Sort by date (newest first)
       newIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
       
-      console.log('📊 New index built with', newIndex.length, 'posts');
+      console.log('New index built with', newIndex.length, 'posts');
       
       // Get current index file to get its SHA
       const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
@@ -5610,7 +5676,7 @@ class SimpleBlog {
       });
       
       if (!indexResponse.ok) {
-        console.error('❌ Could not fetch current index file:', indexResponse.status);
+        console.error('Could not fetch current index file:', indexResponse.status);
         return false;
       }
       
@@ -5632,23 +5698,23 @@ class SimpleBlog {
       });
       
       if (updateResponse.ok) {
-        console.log('✅ Posts index rebuilt and updated successfully');
+        console.log('Posts index rebuilt and updated successfully');
         // Update local posts array
         this.posts = newIndex;
         return true;
       } else {
-        console.error('❌ Failed to update index file:', updateResponse.status);
+        console.error('Failed to update index file:', updateResponse.status);
         return false;
       }
       
     } catch (error) {
-      console.error('❌ Error rebuilding posts index:', error);
+      console.error('Error rebuilding posts index:', error);
       return false;
     }
   }
 
   showImagePositioningControls(imageContainer) {
-    console.log('🔧 showImagePositioningControls called with:', imageContainer);
+    console.log('showImagePositioningControls called with:', imageContainer);
     
     // Create positioning controls window
     const controlsWindow = document.createElement('div');
@@ -5724,7 +5790,7 @@ class SimpleBlog {
     
     // Add to document
     document.body.appendChild(controlsWindow);
-    console.log('🔧 Controls window added to document');
+    console.log('Controls window added to document');
     
     // Position controls near the image
     const imageRect = imageContainer.getBoundingClientRect();
@@ -5748,7 +5814,7 @@ class SimpleBlog {
         clear: both;
       `;
       controlsWindow.remove();
-      console.log('✅ Image positioned left');
+      console.log('Image positioned left');
     });
     
     // Center positioning (centered, no float)
@@ -5761,7 +5827,7 @@ class SimpleBlog {
         text-align: center;
       `;
       controlsWindow.remove();
-      console.log('✅ Image positioned center');
+      console.log('Image positioned center');
     });
     
     // Right positioning (float right)
@@ -5774,13 +5840,13 @@ class SimpleBlog {
         clear: both;
       `;
       controlsWindow.remove();
-      console.log('✅ Image positioned right');
+      console.log('Image positioned right');
     });
     
     // Close button
     closeBtn.addEventListener('click', () => {
       controlsWindow.remove();
-      console.log('✅ Image positioning controls closed');
+      console.log('Image positioning controls closed');
     });
     
     // Close when clicking outside
@@ -5806,11 +5872,11 @@ class SimpleBlog {
   }
 
   async importImages() {
-    console.log('📁 Importing images...');
+    console.log('Importing images...');
     
     // Check if user is authenticated
     if (!this.isAdmin()) {
-      console.log('⚠️ Non-admin user attempted to import images');
+      console.log('Non-admin user attempted to import images');
       alert('You need to be authenticated with GitHub to import images.');
       return;
     }
@@ -5825,7 +5891,7 @@ class SimpleBlog {
     input.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
       if (files.length > 0) {
-        console.log(`📁 Processing ${files.length} image(s)...`);
+        console.log(` Processing ${files.length} image(s)...`);
         
         // Show progress
         const progressDiv = document.createElement('div');
@@ -5860,22 +5926,22 @@ class SimpleBlog {
               const success = await this.uploadImageToGitHub(file);
               if (success) {
                 successCount++;
-                console.log(`✅ Successfully uploaded: ${file.name}`);
+                console.log(` Successfully uploaded: ${file.name}`);
               } else {
                 errorCount++;
-                console.error(`❌ Failed to upload: ${file.name}`);
+                console.error(` Failed to upload: ${file.name}`);
               }
             } catch (error) {
               errorCount++;
-              console.error(`❌ Error uploading ${file.name}:`, error);
+              console.error(` Error uploading ${file.name}:`, error);
             }
           }
           
           // Show results
           progressDiv.innerHTML = `
             <p>Upload complete!</p>
-            <p>✅ ${successCount} successful</p>
-            <p>❌ ${errorCount} failed</p>
+            <p> ${successCount} successful</p>
+            <p> ${errorCount} failed</p>
             <button onclick="this.parentElement.remove()">Close</button>
           `;
           
@@ -5887,7 +5953,7 @@ class SimpleBlog {
           }
           
         } catch (error) {
-          console.error('❌ Error during batch upload:', error);
+          console.error('Error during batch upload:', error);
           progressDiv.innerHTML = `
             <p>Upload failed!</p>
             <p style="color: #dc3545;">${error.message}</p>
@@ -5933,11 +5999,11 @@ class SimpleBlog {
       });
       
       if (response.ok) {
-        console.log(`✅ Successfully uploaded ${file.name} to GitHub`);
+        console.log(` Successfully uploaded ${file.name} to GitHub`);
         return true;
       } else if (response.status === 422) {
         // File already exists, try to update it
-        console.log(`🔄 File ${file.name} already exists, updating...`);
+        console.log(` File ${file.name} already exists, updating...`);
         
         // Get the current SHA
         const shaResponse = await fetch(uploadUrl);
@@ -5961,7 +6027,7 @@ class SimpleBlog {
           });
           
           if (updateResponse.ok) {
-            console.log(`✅ Successfully updated ${file.name} on GitHub`);
+            console.log(` Successfully updated ${file.name} on GitHub`);
             return true;
           } else {
             throw new Error(`Failed to update ${file.name}: ${updateResponse.status}`);
@@ -5974,7 +6040,7 @@ class SimpleBlog {
       }
       
     } catch (error) {
-      console.error(`❌ Error uploading ${file.name}:`, error);
+      console.error(` Error uploading ${file.name}:`, error);
       throw error;
     }
   }
@@ -5992,7 +6058,7 @@ class SimpleBlog {
     });
   }
   showPublishModal() {
-    console.log('📢 Publishing post to GitHub...');
+    console.log('Publishing post to GitHub...');
     
     const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
     const postContent = document.getElementById('visualEditor')?.innerHTML || '';
@@ -6046,7 +6112,7 @@ class SimpleBlog {
             const editPost = JSON.parse(editData);
             defaultMessage = `Update post: ${postTitle}`;
           } catch (error) {
-            console.warn('⚠️ Could not parse edit data for commit message:', error);
+            console.warn('Could not parse edit data for commit message:', error);
           }
         }
         
@@ -6073,7 +6139,7 @@ class SimpleBlog {
     }, 100);
   }
   async publishPostToGitHub(title, content, commitMessage) {
-    console.log('🚀 Publishing to GitHub:', { title, commitMessage });
+    console.log('Publishing to GitHub:', { title, commitMessage });
     
     try {
       // Get GitHub token first
@@ -6099,8 +6165,8 @@ class SimpleBlog {
       const currentFlags = localStorage.getItem('current_post_flags') || '';
       const finalFlags = currentFlags.trim() || 'general';
       
-      console.log('🏷️ Current flags from localStorage:', currentFlags);
-      console.log('🏷️ Final flags for post:', finalFlags);
+      console.log('Current flags from localStorage:', currentFlags);
+      console.log('Final flags for post:', finalFlags);
       
       // Check if this is an edit (check for existing post data)
       const editData = localStorage.getItem('editPostData');
@@ -6113,7 +6179,7 @@ class SimpleBlog {
           const editPost = JSON.parse(editData);
           originalSlug = editPost.slug;
           isEdit = true;
-          console.log('✏️ This is an edit of existing post:', originalSlug);
+          console.log('This is an edit of existing post:', originalSlug);
           
           // For edits, we need to get the current SHA of the post file
           // Try multiple approaches to get the SHA
@@ -6131,12 +6197,12 @@ class SimpleBlog {
               const postData = await postResponse.json();
               currentSha = postData.sha;
               shaFound = true;
-              console.log('✅ Got current SHA for edit (GitHub API):', currentSha);
+              console.log('Got current SHA for edit (GitHub API):', currentSha);
             } else {
-              console.warn('⚠️ GitHub API returned status for SHA fetch:', postResponse.status);
+              console.warn('GitHub API returned status for SHA fetch:', postResponse.status);
             }
           } catch (error) {
-            console.warn('⚠️ Error getting SHA from GitHub API:', error);
+            console.warn('Error getting SHA from GitHub API:', error);
           }
           
           // Method 2: Try GitHub API without auth (public access)
@@ -6148,12 +6214,12 @@ class SimpleBlog {
                 const postData = await publicResponse.json();
                 currentSha = postData.sha;
                 shaFound = true;
-                console.log('✅ Got current SHA for edit (public API):', currentSha);
+                console.log('Got current SHA for edit (public API):', currentSha);
               } else {
-                console.warn('⚠️ Public API returned status for SHA fetch:', publicResponse.status);
+                console.warn('Public API returned status for SHA fetch:', publicResponse.status);
               }
             } catch (error) {
-              console.warn('⚠️ Error getting SHA from public API:', error);
+              console.warn('Error getting SHA from public API:', error);
             }
           }
           
@@ -6163,15 +6229,15 @@ class SimpleBlog {
             if (localPost && localPost.sha) {
               currentSha = localPost.sha;
               shaFound = true;
-              console.log('✅ Got current SHA for edit (local cache):', currentSha);
+              console.log('Got current SHA for edit (local cache):', currentSha);
             }
           }
           
           if (!shaFound) {
-            console.warn('⚠️ Could not get SHA for edit - will try to create new file');
+            console.warn('Could not get SHA for edit - will try to create new file');
           }
         } catch (error) {
-          console.warn('⚠️ Could not parse edit data:', error);
+          console.warn('Could not parse edit data:', error);
         }
       }
       
@@ -6184,27 +6250,27 @@ class SimpleBlog {
         content: content
       };
       
-      console.log('📝 Post data prepared:', postData);
+      console.log('Post data prepared:', postData);
       
       // Check for duplicate posts (only for new posts, not edits)
       if (!isEdit) {
         const duplicatePost = await this.checkForDuplicatePost(postData.slug);
         if (duplicatePost) {
-          console.log('⚠️ Duplicate post detected:', duplicatePost);
+          console.log('Duplicate post detected:', duplicatePost);
           const shouldOverwrite = await this.showOverwriteConfirmation(postData.title, duplicatePost.title);
           if (!shouldOverwrite) {
-            console.log('❌ User cancelled overwrite');
+            console.log('User cancelled overwrite');
             return;
           }
-          console.log('✅ User confirmed overwrite');
+          console.log('User confirmed overwrite');
           
           // Use the SHA from the duplicate post if we're overwriting
           if (duplicatePost.sha) {
             currentSha = duplicatePost.sha;
-            console.log('✅ Using SHA from duplicate check:', currentSha);
+            console.log('Using SHA from duplicate check:', currentSha);
           } else {
                     // Always try to fetch SHA for existing posts, even if duplicate check failed
-        console.log('🔄 Need to fetch SHA for existing post...');
+        console.log('Need to fetch SHA for existing post...');
         
         // Try multiple methods to get SHA
         let shaFound = false;
@@ -6216,12 +6282,12 @@ class SimpleBlog {
             const shaData = await shaResponse.json();
             currentSha = shaData.sha;
             shaFound = true;
-            console.log('✅ Successfully fetched SHA (public API):', currentSha);
+            console.log('Successfully fetched SHA (public API):', currentSha);
           } else {
-            console.warn('⚠️ Public API failed to fetch SHA, status:', shaResponse.status);
+            console.warn('Public API failed to fetch SHA, status:', shaResponse.status);
           }
         } catch (shaError) {
-          console.error('❌ Error fetching SHA from public API:', shaError);
+          console.error('Error fetching SHA from public API:', shaError);
         }
         
         // Method 2: Try authenticated GitHub API
@@ -6236,17 +6302,17 @@ class SimpleBlog {
               const shaData = await authShaResponse.json();
               currentSha = shaData.sha;
               shaFound = true;
-              console.log('✅ Successfully fetched SHA (authenticated API):', currentSha);
+              console.log('Successfully fetched SHA (authenticated API):', currentSha);
             } else {
-              console.warn('⚠️ Authenticated API failed to fetch SHA, status:', authShaResponse.status);
+              console.warn('Authenticated API failed to fetch SHA, status:', authShaResponse.status);
             }
           } catch (authShaError) {
-            console.error('❌ Error fetching SHA from authenticated API:', authShaError);
+            console.error('Error fetching SHA from authenticated API:', authShaError);
           }
         }
         
         if (!shaFound) {
-          console.warn('⚠️ Could not fetch SHA from any method - will try to create new file');
+          console.warn('Could not fetch SHA from any method - will try to create new file');
         }
           }
         }
@@ -6259,7 +6325,7 @@ class SimpleBlog {
       
       // If we still don't have a SHA for an edit, we'll need to handle this specially
       if (isEdit && !currentSha) {
-        console.log('⚠️ No SHA available for edit - will try alternative approach');
+        console.log('No SHA available for edit - will try alternative approach');
         // We'll try to create a new file, which might fail if it already exists
         // But this is better than the current 422 error
       }
@@ -6279,12 +6345,12 @@ class SimpleBlog {
         // First try standard btoa
         encodedContent = btoa(postContent);
       } catch (error) {
-        console.log('⚠️ Standard btoa failed, using UTF-8 safe encoding...');
+        console.log('Standard btoa failed, using UTF-8 safe encoding...');
         // Fallback: convert to UTF-8 bytes then encode
         encodedContent = btoa(unescape(encodeURIComponent(postContent)));
       }
       
-      console.log('📝 Content encoding successful, length:', encodedContent.length);
+      console.log('Content encoding successful, length:', encodedContent.length);
       
       // Publish directly to GitHub using GitHub API
       const requestBody = {
@@ -6296,12 +6362,12 @@ class SimpleBlog {
       // Include SHA if we have it (for edits or overwrites)
       if (currentSha) {
         requestBody.sha = currentSha;
-        console.log('🔧 Including SHA for update:', currentSha);
+        console.log('Including SHA for update:', currentSha);
       } else {
-        console.log('🔧 No SHA available - creating new file');
+        console.log('No SHA available - creating new file');
       }
       
-      console.log('📤 Publishing with request body:', requestBody);
+      console.log('Publishing with request body:', requestBody);
               console.log('API endpoint:', `https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
       console.log('Token length:', githubToken ? githubToken.length : 0);
       
@@ -6318,10 +6384,10 @@ class SimpleBlog {
       console.log('📡 Response ok:', response.ok);
       
       if (response.ok) {
-        console.log('✅ Post published successfully to GitHub');
+        console.log('Post published successfully to GitHub');
         
         // Update the posts index incrementally instead of rebuilding from scratch
-        console.log('🔄 Updating posts index incrementally...');
+        console.log('Updating posts index incrementally...');
         const indexUpdated = await this.updatePostsIndexIncrementally(postData, isEdit);
         
         if (indexUpdated) {
@@ -6333,18 +6399,18 @@ class SimpleBlog {
           
 
           
-          this.showMenuStyle1Message(`🎉 Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nIndex updated efficiently with minimal API calls.`, 'success');
+          this.showMenuStyle1Message(` Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nIndex updated efficiently with minimal API calls.`, 'success');
           
           // Redirect to the published post after a short delay
           setTimeout(() => {
             window.location.href = `index.html?post=${postData.slug}`;
           }, 3000);
         } else {
-          this.showMenuStyle1Message('⚠️ Post published but index update failed. Please refresh the page to see updated navigation.', 'warning');
+          this.showMenuStyle1Message(' Post published but index update failed. Please refresh the page to see updated navigation.', 'warning');
         }
       } else {
         const error = await response.json();
-        console.error('❌ Failed to publish post:', error);
+        console.error('Failed to publish post:', error);
         
               // Provide more specific error messages for common issues
       let errorMessage = error.message || 'Unknown error';
@@ -6356,12 +6422,12 @@ class SimpleBlog {
         errorMessage = 'Content contains invalid characters. This usually happens with special formatting or copied text. Please try editing the content and removing any unusual characters.';
       }
       
-      this.showMenuStyle1Message(`❌ Failed to publish post: ${errorMessage}`, 'error');
+      this.showMenuStyle1Message(` Failed to publish post: ${errorMessage}`, 'error');
       }
       
     } catch (error) {
-      console.error('❌ Error publishing post:', error);
-      console.error('❌ Error details:', {
+      console.error('Error publishing post:', error);
+      console.error('Error details:', {
         name: error.name,
         message: error.message,
         stack: error.stack
@@ -6387,7 +6453,7 @@ class SimpleBlog {
     try {
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.warn('⚠️ updatePostsIndex: No GitHub token found');
+        console.warn('updatePostsIndex: No GitHub token found');
         return false;
       }
       
@@ -6402,7 +6468,7 @@ class SimpleBlog {
           originalSlug = editPost.slug;
           isEdit = true;
         } catch (error) {
-          console.warn('⚠️ Could not parse edit data:', error);
+          console.warn('Could not parse edit data:', error);
         }
       }
       
@@ -6442,7 +6508,7 @@ class SimpleBlog {
             })
           });
           
-          console.log('✅ Posts index updated (slug changed)');
+          console.log('Posts index updated (slug changed)');
           this.posts = filteredIndex;
         } else if (isEdit) {
           // Handle regular edit - update existing entry
@@ -6455,12 +6521,12 @@ class SimpleBlog {
               date: postData.date,
               keywords: postData.keywords
             };
-            console.log('✅ Updated existing post in index:', postData.slug);
+            console.log('Updated existing post in index:', postData.slug);
           } else {
             // For edits, we should always find the existing post
             // If not found, this indicates an error in the edit process
-            console.error('❌ Edit post not found in index:', postData.slug);
-            console.error('❌ Available slugs:', currentIndex.map(p => p.slug));
+            console.error('Edit post not found in index:', postData.slug);
+            console.error('Available slugs:', currentIndex.map(p => p.slug));
             throw new Error(`Edit post '${postData.slug}' not found in posts index. This indicates a synchronization error.`);
           }
           
@@ -6479,7 +6545,7 @@ class SimpleBlog {
             })
           });
           
-          console.log('✅ Posts index updated (edit)');
+          console.log('Posts index updated (edit)');
           this.posts = currentIndex;
         } else {
           // Handle new post - add new entry
@@ -6505,14 +6571,14 @@ class SimpleBlog {
             })
           });
           
-          console.log('✅ Posts index updated (new post)');
+          console.log('Posts index updated (new post)');
           this.posts = currentIndex;
         }
         
         return true;
       }
     } catch (error) {
-      console.error('❌ Error updating posts index:', error);
+      console.error('Error updating posts index:', error);
     }
   }
 
@@ -6564,7 +6630,7 @@ class SimpleBlog {
         return false;
       }
     } catch (error) {
-      console.error('❌ Error checking authentication:', error);
+      console.error('Error checking authentication:', error);
       // On error, remove the token to force re-authentication
       localStorage.removeItem('github_oauth_token');
       localStorage.removeItem('github_token');
@@ -6608,12 +6674,12 @@ class SimpleBlog {
     try {
       const tokenInfo = this.getCurrentToken();
       if (!tokenInfo) {
-        console.warn('⚠️ deletePost: No GitHub token found');
+        console.warn('deletePost: No GitHub token found');
         return false;
       }
       
       const token = tokenInfo.token;
-      console.log(`🗑️ deletePost: Using ${tokenInfo.type} token`);
+      console.log(` deletePost: Using ${tokenInfo.type} token`);
       
       // First, get the current SHA of the post file
       const postResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`, {
@@ -6623,7 +6689,7 @@ class SimpleBlog {
       });
       
       if (!postResponse.ok) {
-        console.error('❌ deletePost: Post file not found:', postResponse.status);
+        console.error('deletePost: Post file not found:', postResponse.status);
         return false;
       }
       
@@ -6644,23 +6710,23 @@ class SimpleBlog {
       });
       
       if (deleteResponse.ok) {
-        console.log('✅ Post file deleted successfully');
+        console.log('Post file deleted successfully');
         
         // Now update the index to remove the deleted post
         const indexUpdated = await this.removePostFromIndex(slug);
         if (indexUpdated) {
-          console.log('✅ Post removed from index successfully');
+          console.log('Post removed from index successfully');
         } else {
-          console.warn('⚠️ Failed to remove post from index');
+          console.warn('Failed to remove post from index');
         }
         
         return true;
       } else {
-        console.error('❌ deletePost: Failed to delete post file:', deleteResponse.status);
+        console.error('deletePost: Failed to delete post file:', deleteResponse.status);
         return false;
       }
     } catch (error) {
-      console.error('❌ deletePost: Error deleting post:', error);
+      console.error('deletePost: Error deleting post:', error);
       return false;
     }
   }
@@ -6669,7 +6735,7 @@ class SimpleBlog {
     try {
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.warn('⚠️ removePostFromIndex: No GitHub token found');
+        console.warn('removePostFromIndex: No GitHub token found');
         return false;
       }
       
@@ -6690,7 +6756,7 @@ class SimpleBlog {
             currentIndex = [];
           }
         } catch (parseError) {
-          console.warn('⚠️ removePostFromIndex: Could not parse existing index');
+          console.warn('removePostFromIndex: Could not parse existing index');
           return false;
         }
         
@@ -6713,18 +6779,18 @@ class SimpleBlog {
         });
         
         if (updateResponse.ok) {
-          console.log('✅ Post removed from index successfully');
+          console.log('Post removed from index successfully');
           return true;
         } else {
-          console.error('❌ removePostFromIndex: Failed to update index file:', updateResponse.status);
+          console.error('removePostFromIndex: Failed to update index file:', updateResponse.status);
           return false;
         }
       } else {
-        console.warn('⚠️ removePostFromIndex: Could not fetch current index');
+        console.warn('removePostFromIndex: Could not fetch current index');
         return false;
       }
     } catch (error) {
-      console.error('❌ removePostFromIndex: Error removing post from index:', error);
+      console.error('removePostFromIndex: Error removing post from index:', error);
       return false;
     }
   }
@@ -6735,7 +6801,7 @@ class SimpleBlog {
       // Get current post information
       const currentPost = this.currentPost;
       if (!currentPost || !currentPost.slug) {
-        console.warn('⚠️ shareToBluesky: No current post found');
+        console.warn('shareToBluesky: No current post found');
         this.showMenuStyle1Message('No post to share. Please navigate to a post first.', 'error');
         return;
       }
@@ -6788,13 +6854,13 @@ class SimpleBlog {
             selection.addRange(this.currentSelection.range);
             console.log('🔵 shareToBluesky: Selection restored after sharing');
           } catch (error) {
-            console.warn('⚠️ shareToBluesky: Could not restore selection:', error);
+            console.warn('shareToBluesky: Could not restore selection:', error);
           }
         }, 100);
       }
       
     } catch (error) {
-      console.error('❌ shareToBluesky: Error sharing to Bluesky:', error);
+      console.error('shareToBluesky: Error sharing to Bluesky:', error);
       this.showMenuStyle1Message('Error sharing to Bluesky. Please try again.', 'error');
     }
   }
@@ -6806,7 +6872,7 @@ class SimpleBlog {
       // Get current post information
       const currentPost = this.currentPost;
       if (!currentPost || !currentPost.slug) {
-        console.warn('⚠️ shareToTwitter: No current post found');
+        console.warn('shareToTwitter: No current post found');
         this.showMenuStyle1Message('No post to share. Please navigate to a post first.', 'error');
         return;
       }
@@ -6861,13 +6927,13 @@ class SimpleBlog {
             selection.addRange(this.currentSelection.range);
             console.log('🐦 shareToTwitter: Selection restored after sharing');
           } catch (error) {
-            console.warn('⚠️ shareToTwitter: Could not restore selection:', error);
+            console.warn('shareToTwitter: Could not restore selection:', error);
           }
         }, 100);
       }
       
     } catch (error) {
-      console.error('❌ shareToTwitter: Error sharing to Twitter:', error);
+      console.error('shareToTwitter: Error sharing to Twitter:', error);
       this.showMenuStyle1Message('Error sharing to Twitter. Please try again.', 'error');
     }
   }
@@ -6877,7 +6943,7 @@ class SimpleBlog {
     // Get the PiousPigeon label position for anchoring
     const pigeonLabel = document.querySelector('.pigeon-label');
     if (!pigeonLabel) {
-      console.log('⚠️ PiousPigeon label not found');
+      console.log('PiousPigeon label not found');
       return;
     }
     
@@ -6994,7 +7060,7 @@ class SimpleBlog {
         const core = rateLimitData.resources.core;
         const search = rateLimitData.resources.search;
         
-        console.log('📊 Rate Limit Status:', {
+        console.log('Rate Limit Status:', {
           core: {
             limit: core.limit,
             remaining: core.remaining,
@@ -7014,11 +7080,11 @@ class SimpleBlog {
         
         return { core, search };
       } else {
-        console.warn('⚠️ Could not fetch rate limit info:', response.status);
+        console.warn('Could not fetch rate limit info:', response.status);
         return null;
       }
     } catch (error) {
-      console.error('❌ Error checking rate limit:', error);
+      console.error('Error checking rate limit:', error);
       return null;
     }
   }
@@ -7065,7 +7131,7 @@ class SimpleBlog {
     const resetTime = new Date(core.reset * 1000).toLocaleTimeString();
     
     statusElement.innerHTML = `
-      <div style="margin-bottom: 10px; font-weight: bold;">📊 GitHub API Rate Limit</div>
+      <div style="margin-bottom: 10px; font-weight: bold;"> GitHub API Rate Limit</div>
       
       <div style="margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
@@ -7160,12 +7226,12 @@ class SimpleBlog {
     const savedFlags = localStorage.getItem('current_post_flags');
     if (savedFlags) {
       this.currentPostFlags = savedFlags;
-      console.log('🏷️ Loaded saved flags:', savedFlags);
+      console.log('Loaded saved flags:', savedFlags);
     }
   }
 
   setupSelectionMonitoring() {
-    console.log('📝 Setting up text selection monitoring...');
+    console.log('Setting up text selection monitoring...');
     
     // Store the last valid selection
     this.lastValidSelection = null;
@@ -7184,16 +7250,16 @@ class SimpleBlog {
             range: range.cloneRange(),
             timestamp: Date.now()
           };
-          console.log('📝 Selection captured:', selectedText);
+          console.log('Selection captured:', selectedText);
         }
       }
     });
     
-    console.log('✅ Text selection monitoring active');
+    console.log('Text selection monitoring active');
   }
 
   setupHoverNotePreview() {
-    console.log('👁️ Setting up hover note preview in editor...');
+    console.log('Setting up hover note preview in editor...');
     
     // Find all note-link elements in the editor
     const noteLinks = document.querySelectorAll('.note-link');
@@ -7215,7 +7281,7 @@ class SimpleBlog {
       }
     });
     
-    console.log(`✅ Hover note preview setup for ${noteLinks.length} elements`);
+    console.log(` Hover note preview setup for ${noteLinks.length} elements`);
   }
 
   async checkAndUpdateAuthStatus() {
@@ -7232,7 +7298,7 @@ class SimpleBlog {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     } catch (error) {
-      console.error('❌ Error checking auth status:', error);
+      console.error('Error checking auth status:', error);
       this.updateAuthStatus(false);
     }
   }
@@ -7270,12 +7336,12 @@ class SimpleBlog {
   }
 
   showFlagsModal() {
-    console.log('🏷️ Setting post flags/keywords...');
+    console.log('Setting post flags/keywords...');
     
     // Get the flags button position for anchoring
     const flagsBtn = document.getElementById('keywords-btn');
     if (!flagsBtn) {
-      console.log('⚠️ Flags button not found');
+      console.log('Flags button not found');
       return;
     }
     
@@ -7333,7 +7399,7 @@ class SimpleBlog {
     const existingFlags = localStorage.getItem('current_post_flags') || '';
     if (existingFlags) {
       input.value = existingFlags;
-      console.log('🏷️ Loaded existing flags:', existingFlags);
+      console.log('Loaded existing flags:', existingFlags);
     }
     
     inputBox.appendChild(input);
@@ -7381,7 +7447,7 @@ class SimpleBlog {
     }
     
     if (!postSlug) {
-      console.log('⚠️ No post slug found - cannot open in GitHub');
+      console.log('No post slug found - cannot open in GitHub');
       // Show a message to the user
       alert('No post to open. Please save or load a post first.');
       return;
@@ -7396,7 +7462,7 @@ class SimpleBlog {
     window.open(githubUrl, '_blank');
   }
   setPostFlags(flags) {
-    console.log('🏷️ Setting post flags:', flags);
+    console.log('Setting post flags:', flags);
     
     // Store flags for the current post
     const postTitle = document.getElementById('postTitle')?.value || 'Untitled Post';
@@ -7405,7 +7471,7 @@ class SimpleBlog {
     const flagArray = flags.split(',').map(f => f.trim());
     const devlogFlags = flagArray.filter(f => f.startsWith('devlog:'));
     
-    console.log('📋 Parsed flags:', { all: flagArray, devlog: devlogFlags });
+    console.log('Parsed flags:', { all: flagArray, devlog: devlogFlags });
     
     // Store in localStorage for persistence
     localStorage.setItem('current_post_flags', flags);
@@ -7413,7 +7479,7 @@ class SimpleBlog {
     // Update navigation menu with new flags
     this.updateNavigationMenu(flagArray);
     
-    console.log('✅ Post flags saved:', flags);
+    console.log('Post flags saved:', flags);
   }
 
   updateNavigationMenu(flags) {
@@ -7428,15 +7494,15 @@ class SimpleBlog {
     
 
     
-    console.log('✅ Navigation menu fully updated');
+    console.log('Navigation menu fully updated');
   }
   updateAllPostsSubmenu(allPosts) {
-    console.log('📚 Updating All Posts submenu with', allPosts.length, 'posts');
+    console.log('Updating All Posts submenu with', allPosts.length, 'posts');
     
     // Find the all posts menu item
     const allPostsMenu = document.querySelector('#all-posts-menu');
     if (!allPostsMenu) {
-      console.log('⚠️ All Posts menu not found');
+      console.log('All Posts menu not found');
       return;
     }
     
@@ -7447,7 +7513,7 @@ class SimpleBlog {
     }
     
     if (allPosts.length === 0) {
-      console.log('📋 No posts to show in All Posts submenu');
+      console.log('No posts to show in All Posts submenu');
       return;
     }
     
@@ -7546,10 +7612,10 @@ class SimpleBlog {
         
         postEntry.addEventListener('click', () => {
           // Check if we're in the editor
-          console.log('🔍 Current pathname:', window.location.pathname);
-          console.log('🔍 Current href:', window.location.href);
+          console.log('Current pathname:', window.location.pathname);
+          console.log('Current href:', window.location.href);
           if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
-            console.log('📝 In editor - redirecting to main blog with post:', post.slug);
+            console.log('In editor - redirecting to main blog with post:', post.slug);
             // Redirect to main blog with the selected post
             window.location.href = `index.html?post=${post.slug}`;
           } else {
@@ -7613,10 +7679,10 @@ class SimpleBlog {
         
         postEntry.addEventListener('click', () => {
           // Check if we're in the editor
-          console.log('🔍 Current pathname:', window.location.pathname);
-          console.log('🔍 Current href:', window.location.href);
+          console.log('Current pathname:', window.location.pathname);
+          console.log('Current href:', window.location.href);
           if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
-            console.log('📝 In editor - redirecting to main blog with post:', post.slug);
+            console.log('In editor - redirecting to main blog with post:', post.slug);
             // Redirect to main blog with the selected post
             window.location.href = `index.html?post=${post.slug}`;
           } else {
@@ -7678,41 +7744,41 @@ class SimpleBlog {
     allPostsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
     
-    console.log('✅ All Posts submenu updated with grouped posts:', Object.keys(groupedPosts).length, 'categories +', generalPosts.length, 'general posts');
+    console.log('All Posts submenu updated with grouped posts:', Object.keys(groupedPosts).length, 'categories +', generalPosts.length, 'general posts');
   }
 
   updateProjectsSubmenu(allPosts) {
     // This method is no longer used - projects menu is now static
     return;
-    console.log('📋 Updating Projects submenu');
+    console.log('Updating Projects submenu');
     
     // Find the projects dropdown container
     const projectsDropdown = document.querySelector('#projects-dropdown');
     if (!projectsDropdown) {
-      console.log('⚠️ Projects dropdown not found');
+      console.log('Projects dropdown not found');
       return;
     }
     
     // Find the projects menu item (the "Loading..." element)
     const projectsMenu = document.querySelector('#projects-menu');
     if (!projectsMenu) {
-      console.log('⚠️ Projects menu not found');
+      console.log('Projects menu not found');
       return;
     }
     
     // Filter for devlog posts
-    console.log('📋 All posts for projects menu:', allPosts);
+    console.log('All posts for projects menu:', allPosts);
     const devlogPosts = allPosts.filter(post => {
       const postFlags = post.keywords || '';
       const hasDevlog = postFlags.includes('devlog');
-      console.log(`📋 Post "${post.title}" has keywords: "${postFlags}", devlog: ${hasDevlog}`);
+      console.log(` Post "${post.title}" has keywords: "${postFlags}", devlog: ${hasDevlog}`);
       return hasDevlog;
     });
     
-    console.log('📋 Devlog posts found:', devlogPosts);
+    console.log('Devlog posts found:', devlogPosts);
     
     if (devlogPosts.length === 0) {
-      console.log('📋 No devlog posts found');
+      console.log('No devlog posts found');
       projectsMenu.textContent = 'No projects found';
       return;
     }
@@ -7723,7 +7789,7 @@ class SimpleBlog {
       const postFlags = post.keywords || '';
       const devlogFlag = postFlags.split(',').find(f => f.trim().startsWith('devlog:'));
       
-      console.log(`📋 Processing post "${post.title}":`);
+      console.log(` Processing post "${post.title}":`);
       console.log(`  - Keywords: "${postFlags}"`);
       console.log(`  - Devlog flag found: "${devlogFlag}"`);
       
@@ -7754,7 +7820,7 @@ class SimpleBlog {
       }
     });
     
-    console.log('📋 Final devlog categories:', devlogCategories);
+    console.log('Final devlog categories:', devlogCategories);
     
     // Create simple list of project categories
     const categoriesList = document.createElement('div');
@@ -7803,7 +7869,7 @@ class SimpleBlog {
     projectsMenu.innerHTML = '';
     projectsMenu.appendChild(categoriesList);
     
-    console.log('✅ Projects submenu updated with simple category list');
+    console.log('Projects submenu updated with simple category list');
   }
 
   updateProjectsMenu(projects) {
@@ -7846,17 +7912,17 @@ class SimpleBlog {
 
   async loadAndDisplayProjects() {
     try {
-      console.log('🔍 Loading projects for menu display...');
+      console.log('Loading projects for menu display...');
       const projects = await this.loadProjectsFromGitHub();
       this.updateProjectsMenu(projects);
-      console.log('✅ Projects menu updated with', projects.length, 'projects');
+      console.log('Projects menu updated with', projects.length, 'projects');
     } catch (error) {
-      console.error('❌ Error loading projects for menu:', error);
+      console.error('Error loading projects for menu:', error);
     }
   }
 
   showDevlogPostsWindow(category, posts) {
-    console.log(`📋 Opening devlog posts window for category: ${category} with ${posts.length} posts`);
+    console.log(` Opening devlog posts window for category: ${category} with ${posts.length} posts`);
     
     // Remove any existing devlog window
     const existingWindow = document.getElementById('devlog-posts-window');
@@ -8022,11 +8088,11 @@ class SimpleBlog {
     };
     document.addEventListener('keydown', closeOnEscape);
     
-    console.log(`✅ Devlog posts window opened for ${category} with ${posts.length} posts`);
+    console.log(` Devlog posts window opened for ${category} with ${posts.length} posts`);
   }
 
   showCategoryWindow(category, posts) {
-    console.log(`📋 Opening category window for ${category} with ${posts.length} posts`);
+    console.log(` Opening category window for ${category} with ${posts.length} posts`);
     
     // Remove any existing category window
     const existingWindow = document.getElementById('category-window');
@@ -8185,11 +8251,11 @@ class SimpleBlog {
       window.style.transform = 'none';
     }, 100);
     
-    console.log(`✅ Category window opened for ${category} with ${posts.length} posts`);
+    console.log(` Category window opened for ${category} with ${posts.length} posts`);
   }
   // Show site map when viewing a post
   showSiteMap() {
-    console.log('🔍 showSiteMap called');
+    console.log('showSiteMap called');
     
     // Remove existing site map if present
     this.hideSiteMap();
@@ -8197,13 +8263,13 @@ class SimpleBlog {
     // Check for any remaining site maps in DOM
     const existingSiteMaps = document.querySelectorAll('#site-map');
     if (existingSiteMaps.length > 0) {
-      console.log('⚠️ Found', existingSiteMaps.length, 'existing site maps, removing them');
+      console.log('Found', existingSiteMaps.length, 'existing site maps, removing them');
       existingSiteMaps.forEach(map => map.remove());
     }
     
     // Also check if we already have a currentSiteMap reference
     if (this.currentSiteMap) {
-      console.log('⚠️ currentSiteMap reference exists, removing it');
+      console.log('currentSiteMap reference exists, removing it');
       this.currentSiteMap.remove();
       this.currentSiteMap = null;
     }
@@ -8254,10 +8320,10 @@ class SimpleBlog {
             try {
               const decodedContent = atob(indexData.content);
               const posts = JSON.parse(decodedContent);
-              console.log('🔍 Site map: Loaded posts from GitHub:', posts.length);
+              console.log('Site map: Loaded posts from GitHub:', posts.length);
               return posts;
             } catch (decodeError) {
-              console.error('❌ Error decoding GitHub content for site map:', decodeError);
+              console.error('Error decoding GitHub content for site map:', decodeError);
               throw new Error('Failed to decode GitHub content');
             }
           } else {
@@ -8267,14 +8333,14 @@ class SimpleBlog {
           throw new Error(`GitHub API failed: ${response.status}`);
         }
       } catch (error) {
-        console.log('🔄 Site map: GitHub API failed, trying local index.json...');
+        console.log('Site map: GitHub API failed, trying local index.json...');
         
         // Fallback to local index.json
         try {
           const localResponse = await fetch('posts/index.json');
           if (localResponse.ok) {
             const localData = await localResponse.json();
-            console.log('🔍 Site map: Loaded posts from local index:', localData);
+            console.log('Site map: Loaded posts from local index:', localData);
             
             if (Array.isArray(localData)) {
               return localData;
@@ -8287,7 +8353,7 @@ class SimpleBlog {
             throw new Error(`Local index failed: ${localResponse.status}`);
           }
         } catch (localError) {
-          console.error('❌ Site map: Both GitHub API and local index failed:', localError);
+          console.error('Site map: Both GitHub API and local index failed:', localError);
           throw localError;
         }
       }
@@ -8386,7 +8452,7 @@ class SimpleBlog {
             
             if (window.location.pathname.includes('editor.html')) {
               // In editor mode: populate the editor with this post
-              console.log(`📝 Editor mode: Loading post ${slug} for editing`);
+              console.log(` Editor mode: Loading post ${slug} for editing`);
               this.loadEditDataForPost(slug);
             } else {
               // In blog mode: navigate to the post
@@ -8531,7 +8597,7 @@ class SimpleBlog {
 
         const slug = link.getAttribute('data-slug');
         if (window.location.pathname.includes('editor.html')) {
-          console.log(`📝 Editor mode: Loading post ${slug} for editing from expanded category`);
+          console.log(` Editor mode: Loading post ${slug} for editing from expanded category`);
           this.loadEditDataForPost(slug);
         } else {
           this.loadPost(slug);
@@ -8587,7 +8653,7 @@ class SimpleBlog {
 
   // Hide site map
   hideSiteMap() {
-    console.log('🔍 hideSiteMap called, currentSiteMap:', this.currentSiteMap);
+    console.log('hideSiteMap called, currentSiteMap:', this.currentSiteMap);
     
     if (this.currentSiteMap) {
       // Remove resize listener
@@ -8598,19 +8664,19 @@ class SimpleBlog {
       
       this.currentSiteMap.remove();
       this.currentSiteMap = null;
-      console.log('✅ Site map removed');
+      console.log('Site map removed');
       
       // If this was a manual hide, mark it so automatic show doesn't interfere
       if (this.siteMapManuallyToggled) {
         this.siteMapManuallyHidden = true;
       }
     } else {
-      console.log('⚠️ No currentSiteMap reference found');
+      console.log('No currentSiteMap reference found');
       
       // Fallback: remove any site maps by ID
       const siteMaps = document.querySelectorAll('#site-map');
       if (siteMaps.length > 0) {
-        console.log('🔍 Found', siteMaps.length, 'site maps by ID, removing them');
+        console.log('Found', siteMaps.length, 'site maps by ID, removing them');
         siteMaps.forEach(map => map.remove());
       }
     }
@@ -8618,7 +8684,7 @@ class SimpleBlog {
 
   // Toggle site map visibility
   toggleSiteMap() {
-    console.log('🔍 toggleSiteMap called');
+    console.log('toggleSiteMap called');
     
     // Mark that user has manually toggled the site map
     this.siteMapManuallyToggled = true;
@@ -8687,19 +8753,19 @@ class SimpleBlog {
   }
 
   toggleEditorMode() {
-    console.log('📝 Toggling editor mode...');
+    console.log('Toggling editor mode...');
     
     // Get the toggle button
     const toggleBtn = document.getElementById('toggle-editor-mode');
     if (!toggleBtn) {
-      console.error('❌ Toggle button not found');
+      console.error('Toggle button not found');
       return;
     }
     
     // Get the visual editor
     const visualEditor = document.getElementById('visualEditor');
     if (!visualEditor) {
-      console.error('❌ Visual editor not found');
+      console.error('Visual editor not found');
       return;
     }
     
@@ -8713,7 +8779,7 @@ class SimpleBlog {
       }
       visualEditor.classList.remove('raw-mode');
       toggleBtn.textContent = 'Raw Mode';
-      console.log('✅ Switched to Preview mode');
+      console.log('Switched to Preview mode');
     } else {
       // Switch to Raw mode - save current HTML and show raw content
       visualEditor.dataset.originalHtml = visualEditor.innerHTML;
@@ -8729,7 +8795,7 @@ class SimpleBlog {
       
       visualEditor.classList.add('raw-mode');
       toggleBtn.textContent = 'Preview Mode';
-      console.log('✅ Switched to Raw mode');
+      console.log('Switched to Raw mode');
     }
   }
 
@@ -8754,7 +8820,7 @@ class SimpleBlog {
   }
 
   setupHoverNotes() {
-    console.log('📝 Setting up hover notes...');
+    console.log('Setting up hover notes...');
     
     // Find all elements with data-note attribute (including .note-link and .pigeon-label)
     const noteElements = document.querySelectorAll('[data-note]');
@@ -8778,7 +8844,7 @@ class SimpleBlog {
       }
     });
     
-    console.log(`✅ Hover notes setup for ${noteElements.length} elements`);
+    console.log(` Hover notes setup for ${noteElements.length} elements`);
   }
 
   showHoverNote(event) {
@@ -9052,7 +9118,7 @@ class SimpleBlog {
   }
 
   editCurrentPost() {
-    console.log('✏️ editCurrentPost called');
+    console.log('editCurrentPost called');
     
     // Check if user is authenticated
     if (!this.isAuthenticated) {
@@ -9064,12 +9130,12 @@ class SimpleBlog {
     // Get current post data
     const currentPost = this.currentPost;
     if (!currentPost || !currentPost.slug) {
-      console.log('⚠️ No current post to edit');
+      console.log('No current post to edit');
       this.showMenuStyle1Message('No post currently loaded to edit.', 'error');
       return;
     }
     
-    console.log('✏️ Editing post:', currentPost);
+    console.log('Editing post:', currentPost);
     
     // Store post data for editor
     localStorage.setItem('editPostData', JSON.stringify({
@@ -9085,7 +9151,7 @@ class SimpleBlog {
   }
 
   async checkForDuplicatePost(slug) {
-    console.log('🔍 Checking for duplicate post:', slug);
+    console.log('Checking for duplicate post:', slug);
     
     try {
       // Check if post exists on GitHub
@@ -9093,20 +9159,20 @@ class SimpleBlog {
       if (response.ok) {
         const postData = await response.json();
         const content = JSON.parse(atob(postData.content));
-        console.log(`✅ Found existing post on GitHub: ${slug} (SHA: ${postData.sha})`);
+        console.log(` Found existing post on GitHub: ${slug} (SHA: ${postData.sha})`);
         return {
           slug: slug,
           title: content.title || slug,
           sha: postData.sha
         };
       } else if (response.status === 404) {
-        console.log(`✅ No existing post found on GitHub: ${slug}`);
+        console.log(` No existing post found on GitHub: ${slug}`);
         return null; // No duplicate found
       } else {
-        console.warn(`⚠️ GitHub API returned status ${response.status} for ${slug}`);
+        console.warn(` GitHub API returned status ${response.status} for ${slug}`);
       }
     } catch (error) {
-      console.log(`🔄 GitHub API failed for ${slug}, trying local check...`);
+      console.log(` GitHub API failed for ${slug}, trying local check...`);
     }
     
     // Fallback: check local posts array and local files
@@ -9114,7 +9180,7 @@ class SimpleBlog {
       if (this.posts && this.posts.length > 0) {
         const existingPost = this.posts.find(post => post.slug === slug);
         if (existingPost) {
-          console.log(`✅ Found existing post in local cache: ${slug}`);
+          console.log(` Found existing post in local cache: ${slug}`);
           // For local posts, we'll need to fetch the SHA when publishing
           return {
             slug: slug,
@@ -9129,7 +9195,7 @@ class SimpleBlog {
       try {
         const localResponse = await fetch(`posts/${slug}.json`);
         if (localResponse.ok) {
-          console.log(`✅ Found existing local post file: ${slug}`);
+          console.log(` Found existing local post file: ${slug}`);
           return {
             slug: slug,
             title: slug, // We don't know the title from local file
@@ -9145,7 +9211,7 @@ class SimpleBlog {
       if (this.posts && this.posts.length > 0) {
         const memoryPost = this.posts.find(post => post.slug === slug);
         if (memoryPost) {
-          console.log(`✅ Found existing post in memory: ${slug}`);
+          console.log(` Found existing post in memory: ${slug}`);
           return {
             slug: slug,
             title: memoryPost.title || slug,
@@ -9155,16 +9221,16 @@ class SimpleBlog {
         }
       }
       
-      console.log(`✅ No existing post found locally: ${slug}`);
+      console.log(` No existing post found locally: ${slug}`);
       return null; // No duplicate found
     } catch (fallbackError) {
-      console.error('❌ Error in fallback duplicate check:', fallbackError);
+      console.error('Error in fallback duplicate check:', fallbackError);
       return null;
     }
   }
 
   async showOverwriteConfirmation(newTitle, existingTitle) {
-    console.log('⚠️ Showing overwrite confirmation for:', { newTitle, existingTitle });
+    console.log('Showing overwrite confirmation for:', { newTitle, existingTitle });
     
     return new Promise((resolve) => {
       // Create menu style 1 confirmation popup
@@ -9224,7 +9290,7 @@ class SimpleBlog {
   
   // Load edit data for a specific post (used by site map in editor mode)
   async loadEditDataForPost(slug) {
-    console.log(`📝 Loading edit data for post: ${slug}`);
+    console.log(` Loading edit data for post: ${slug}`);
     
     // Try GitHub API first (preferred source)
     try {
@@ -9234,13 +9300,13 @@ class SimpleBlog {
         if (indexData.content && indexData.encoding === 'base64') {
           const decodedContent = atob(indexData.content);
           const postData = JSON.parse(decodedContent);
-          console.log(`✅ Loaded post data from GitHub: ${postData.title}`);
+          console.log(` Loaded post data from GitHub: ${postData.title}`);
           this.populateEditorWithPost(postData);
           return;
         }
       }
     } catch (githubError) {
-      console.log('🔄 GitHub API failed, trying local...');
+      console.log('GitHub API failed, trying local...');
     }
     
     // Fallback to local file if GitHub fails
@@ -9248,65 +9314,65 @@ class SimpleBlog {
       const localResponse = await fetch(`posts/${slug}.json`);
       if (localResponse.ok) {
         const postData = await localResponse.json();
-        console.log(`✅ Loaded post data from local: ${postData.title}`);
+        console.log(` Loaded post data from local: ${postData.title}`);
         this.populateEditorWithPost(postData);
         return;
       }
     } catch (localError) {
-      console.log('🔄 Local file not found');
+      console.log('Local file not found');
     }
     
-    console.error('❌ Could not load post data for editing');
+    console.error('Could not load post data for editing');
   }
   
   // Populate editor fields with post data
   populateEditorWithPost(postData) {
-    console.log(`📝 Populating editor with: ${postData.title}`);
+    console.log(` Populating editor with: ${postData.title}`);
     
     // Populate title field
     const titleField = document.getElementById('postTitle');
     if (titleField) {
       titleField.value = postData.title || '';
-      console.log('✅ Title field populated');
+      console.log('Title field populated');
     }
     
     // Populate content field
     const contentField = document.getElementById('visualEditor');
     if (contentField) {
       contentField.innerHTML = postData.content || '';
-      console.log('✅ Content field populated');
+      console.log('Content field populated');
     }
     
     // Populate flags/keywords field
     const flagsField = document.getElementById('keywords-input');
     if (flagsField) {
       flagsField.value = postData.keywords || '';
-      console.log('✅ Flags field populated');
+      console.log('Flags field populated');
     }
     
     // Store current post slug for editing
     localStorage.setItem('current_post_slug', postData.slug);
-    console.log(`✅ Editor populated with post: ${postData.title}`);
+    console.log(` Editor populated with post: ${postData.title}`);
   }
 
   loadEditData() {
-    console.log('📝 Checking for edit data...');
+    console.log('Checking for edit data...');
     
     // Hide site map when in editor mode
     if (window.location.pathname.includes('editor.html')) {
       this.hideSiteMap();
-      console.log('🗺️ Site map hidden (editor mode)');
+      console.log('Site map hidden (editor mode)');
     }
     
     const editData = localStorage.getItem('editPostData');
     if (!editData) {
-      console.log('📝 No edit data found');
+      console.log('No edit data found');
       return;
     }
     
     try {
       const editPost = JSON.parse(editData);
-      console.log('📝 Loading edit data:', editPost);
+      console.log('Loading edit data:', editPost);
       
       // Populate the form fields
       const titleField = document.getElementById('postTitle');
@@ -9314,12 +9380,12 @@ class SimpleBlog {
       
       if (titleField && editPost.title) {
         titleField.value = editPost.title;
-        console.log('📝 Title populated:', editPost.title);
+        console.log('Title populated:', editPost.title);
         
         // Update localStorage with the current post slug for GitHub button
         const slug = editPost.title.toLowerCase().replace(/[^a-z0-9]/gi, '-');
         localStorage.setItem('current_post_slug', slug);
-        console.log('💾 Updated current post slug in localStorage:', slug);
+        console.log('Updated current post slug in localStorage:', slug);
       }
       
       // Add event listener to title field to update localStorage as user types
@@ -9329,15 +9395,15 @@ class SimpleBlog {
           if (currentTitle) {
             const slug = currentTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-');
             localStorage.setItem('current_post_slug', slug);
-            console.log('💾 Updated current post slug in localStorage:', slug);
+            console.log('Updated current post slug in localStorage:', slug);
           }
         });
-        console.log('📝 Added title field event listener for localStorage updates');
+        console.log('Added title field event listener for localStorage updates');
       }
       
       if (contentField && editPost.content) {
         contentField.innerHTML = editPost.content;
-        console.log('📝 Content populated:', editPost.content);
+        console.log('Content populated:', editPost.content);
         
         // Fix any images that might be missing overlays after loading content
         setTimeout(() => {
@@ -9354,27 +9420,27 @@ class SimpleBlog {
         const flagsInput = document.getElementById('keywords-input');
         if (flagsInput) {
           flagsInput.value = editPost.keywords;
-          console.log('📝 Flags input field populated:', editPost.keywords);
+          console.log('Flags input field populated:', editPost.keywords);
         }
         
-        console.log('📝 Flags set:', editPost.keywords);
+        console.log('Flags set:', editPost.keywords);
       }
       
       // Clear the edit data after loading
       localStorage.removeItem('editPostData');
-      console.log('📝 Edit data loaded and cleared');
+      console.log('Edit data loaded and cleared');
       
       // Show success message
       this.showMenuStyle1Message(`Editing post: ${editPost.title}`, 'success');
       
     } catch (error) {
-      console.error('❌ Error loading edit data:', error);
+      console.error('Error loading edit data:', error);
       localStorage.removeItem('editPostData'); // Clear invalid data
     }
   }
 
   setupTitleFieldListener() {
-    console.log('📝 Setting up title field listener for new posts...');
+    console.log('Setting up title field listener for new posts...');
     
     const titleField = document.getElementById('postTitle');
     if (titleField) {
@@ -9384,12 +9450,12 @@ class SimpleBlog {
         if (currentTitle) {
           const slug = currentTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-');
           localStorage.setItem('current_post_slug', slug);
-          console.log('💾 Updated current post slug in localStorage:', slug);
+          console.log('Updated current post slug in localStorage:', slug);
         }
       });
-      console.log('📝 Added title field event listener for new posts');
+      console.log('Added title field event listener for new posts');
     } else {
-      console.log('⚠️ Title field not found for event listener setup');
+      console.log('Title field not found for event listener setup');
     }
   }
 
@@ -9414,7 +9480,7 @@ class SimpleBlog {
     document.removeEventListener('click', this.globalClickHandler);
     document.removeEventListener('keydown', this.globalKeyHandler);
     
-    console.log('✅ Cleanup complete');
+    console.log('Cleanup complete');
   }
   // ========== NEW EDIT MENU FUNCTIONS ==========
 
@@ -9542,7 +9608,7 @@ class SimpleBlog {
       document.addEventListener('click', outsideClick);
     }, 100);
     
-    console.log('✅ Font size window opened');
+    console.log('Font size window opened');
   }
   
   updateFontSizeDisplay() {
@@ -9558,7 +9624,7 @@ class SimpleBlog {
     
     const contentElement = document.getElementById('post-content');
     if (!contentElement) {
-      console.log('⚠️ No post content found');
+      console.log('No post content found');
       return;
     }
     
@@ -9581,13 +9647,13 @@ class SimpleBlog {
     contentElement.style.fontSize = currentSize + 'px';
     localStorage.setItem('fontSize', currentSize.toString());
     
-    console.log(`✅ Font size set to ${currentSize}px`);
+    console.log(` Font size set to ${currentSize}px`);
   }
 
 
 
   showDraftManager() {
-    console.log('📝 Opening draft manager...');
+    console.log('Opening draft manager...');
     
     // Create modal for draft management
     const modal = document.createElement('div');
@@ -9633,7 +9699,7 @@ class SimpleBlog {
   }
 
   importPost() {
-    console.log('📥 Importing post...');
+    console.log('Importing post...');
     
     // Create file input
     const fileInput = document.createElement('input');
@@ -9661,11 +9727,11 @@ class SimpleBlog {
             localStorage.setItem('current_post_flags', postData.keywords);
           }
           
-          console.log('✅ Post imported successfully');
+          console.log('Post imported successfully');
           this.showMenuStyle1Message('Post imported successfully!', 'success');
           
         } catch (error) {
-          console.error('❌ Error importing post:', error);
+          console.error('Error importing post:', error);
           this.showMenuStyle1Message('Error importing post. Please check the file format.', 'error');
         }
       };
@@ -9677,7 +9743,7 @@ class SimpleBlog {
   }
 
   async saveDraft() {
-    console.log('💾 Saving draft...');
+    console.log('Saving draft...');
     
     // Check authentication first
     const isAuthenticated = await this.checkAuthentication();
@@ -9733,7 +9799,7 @@ class SimpleBlog {
       const filename = `draft-${slug}-${Date.now()}.json`;
       const path = `drafts/${filename}`;
       
-      console.log('💾 Saving draft to:', path);
+      console.log('Saving draft to:', path);
       
       const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
         method: 'PUT',
@@ -9748,16 +9814,16 @@ class SimpleBlog {
       });
       
       if (response.ok) {
-        console.log('✅ Draft saved successfully');
+        console.log('Draft saved successfully');
         this.showMenuStyle1Message('Draft saved successfully!', 'success');
       } else {
         const errorData = await response.json();
-        console.error('❌ Draft save failed:', response.status, errorData);
+        console.error('Draft save failed:', response.status, errorData);
         throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
       }
       
     } catch (error) {
-      console.error('❌ Error saving draft:', error);
+      console.error('Error saving draft:', error);
       this.showMenuStyle1Message(`Error saving draft: ${error.message}`, 'error');
     }
   }
