@@ -222,6 +222,13 @@ body {
   opacity: 0.5;
 }
 
+/* Menu separator - ensure consistent brightness */
+.menu-separator {
+  height: 1px;
+  background: #555555;
+  margin: 2px 0;
+}
+
 .editor-only {
   /* Will be shown/hidden by JavaScript based on page context */
   display: inherit;
