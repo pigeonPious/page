@@ -260,45 +260,6 @@ class SimpleBlog {
     console.log('Logged out successfully');
   }
 
-  clearBuildCache() {
-    console.log('🧹 MAXIMUM TROUBLESHOOTING: clearBuildCache called!');
-    console.log('🧹 localStorage before clearing:', Object.keys(localStorage));
-    
-    // Clear stored build word
-    const oldBuildWord = localStorage.getItem('currentBuildWord');
-    localStorage.removeItem('currentBuildWord');
-    console.log('🧹 Cleared currentBuildWord:', oldBuildWord);
-    
-    // Clear any other cached data that should be refreshed on new builds
-    const oldPosts = localStorage.getItem('posts');
-    localStorage.removeItem('posts');
-    console.log('🧹 Cleared posts:', oldPosts);
-    
-    const oldCurrentPost = localStorage.getItem('currentPost');
-    localStorage.removeItem('currentPost');
-    console.log('🧹 Cleared currentPost:', oldCurrentPost);
-    
-    // Clear any other build-related cache items
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.includes('cache') || key.includes('temp') || key.includes('build'))) {
-        keysToRemove.push(key);
-      }
-    }
-    
-    console.log('🧹 Found keys to remove:', keysToRemove);
-    
-    keysToRemove.forEach(key => {
-      const oldValue = localStorage.getItem(key);
-      localStorage.removeItem(key);
-      console.log(`🧹 Cleared cache item: ${key} = ${oldValue}`);
-    });
-    
-    console.log('🧹 localStorage after clearing:', Object.keys(localStorage));
-    console.log('✅ Build cache cleared - MAXIMUM TROUBLESHOOTING COMPLETE');
-  }
-
   // Enhanced cache clearer for new builds
   clearAllCache() {
     console.log('🧹 Clearing all cache for new build...');
@@ -410,12 +371,6 @@ class SimpleBlog {
     root.style.setProperty('--border', '#555555');
     
     console.log('✅ CSS variables setup complete');
-  }
-
-  setupBuildWordAutoRefresh() {
-    // Build word is now static and only changes on actual builds
-    // No auto-refresh needed
-    console.log('🔧 Build word is static - no auto-refresh needed');
   }
 
   bindEvents() {
@@ -1005,9 +960,6 @@ class SimpleBlog {
     
     // Setup submenu functionality
     this.setupSubmenus();
-    
-    // Setup build word auto-refresh (every minute)
-    this.setupBuildWordAutoRefresh();
   }
 
   setupPageSpecificElements() {
@@ -2271,7 +2223,7 @@ class SimpleBlog {
     // Add previous post link
     if (prevPost) {
       const prevLink = document.createElement('div');
-      prevLink.innerHTML = `<a href="#" class="nav-link prev-link" data-slug="${prevPost.slug}" style="font-size: 0.5em; opacity: 0.5;">_previous</a>`;
+      prevLink.innerHTML = `<a href="#" class="nav-link prev-link" data-slug="${prevPost.slug}" style="font-size: 10px; opacity: 0.5;">_previous</a>`;
       prevLink.style.cssText = 'margin-bottom: 0px; line-height: 1;';
       navContainer.appendChild(prevLink);
       
@@ -2285,7 +2237,7 @@ class SimpleBlog {
     // Add next post link
     if (nextPost) {
       const nextLink = document.createElement('div');
-      nextLink.innerHTML = `<a href="#" class="nav-link next-link" data-slug="${nextPost.slug}" style="font-size: 0.5em; opacity: 0.5;">_next</a>`;
+      nextLink.innerHTML = `<a href="#" class="nav-link next-link" data-slug="${nextPost.slug}" style="font-size: 10px; opacity: 0.5;">_next</a>`;
       nextLink.style.cssText = 'margin-bottom: 0px; line-height: 1;';
       navContainer.appendChild(nextLink);
       
@@ -3776,7 +3728,6 @@ class SimpleBlog {
     // This is a placeholder, you'll need to implement the actual reindexing logic
     this.printToConsole('Forcing reindex of all posts...');
   }
-
   checkRateLimit() {
     // Implement rate limit check
     // This is a placeholder, you'll need to implement the actual rate limit check logic
@@ -4496,7 +4447,6 @@ class SimpleBlog {
       gallery.appendChild(item);
     });
   }
-
   insertImageToPost(filename) {
     console.log('🖼️ Inserting image:', filename);
     
@@ -5285,7 +5235,6 @@ class SimpleBlog {
     document.body.appendChild(input);
     input.click();
   }
-
   showPublishModal() {
     console.log('📢 Publishing post to GitHub...');
     
@@ -6023,7 +5972,6 @@ class SimpleBlog {
       return false;
     }
   }
-
   shareToBluesky() {
     console.log('🔵 shareToBluesky: Starting Bluesky share...');
     
@@ -6198,110 +6146,6 @@ class SimpleBlog {
       content.innerHTML = `
         <h3 style="margin: 0 0 20px 0; color: var(--menu-fg); font-weight: normal;">GitHub Login</h3>
       <p style="color: var(--menu-fg); margin-bottom: 20px; font-size: 14px;">Enter your GitHub personal access token to publish posts.</p>
-      
-      <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
-          width: 100%;
-          padding: 12px;
-          margin-bottom: 20px;
-          border: 1px solid var(--border);
-          background: var(--bg);
-          color: var(--fg);
-          font-family: monospace;
-          font-size: 14px;
-          border-radius: 0;
-        ">
-        
-        <div style="margin-bottom: 20px;">
-        <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--link); font-size: 12px;">
-          Create token at github.com/settings/tokens
-          </a>
-        </div>
-        
-        <button id="githubLoginBtn" style="
-          background: var(--menu-fg);
-          color: var(--menu-bg);
-          border: none;
-          padding: 12px 24px;
-          cursor: pointer;
-          font-size: 14px;
-          width: 100%;
-          margin-bottom: 10px;
-          border-radius: 0;
-      ">Login</button>
-        
-        <button id="closeLoginModal" style="
-          background: transparent;
-          color: var(--menu-fg);
-          border: 1px solid var(--border);
-        padding: 8px 20px;
-        cursor: pointer;
-        border-radius: 0;
-        ">Cancel</button>
-      `;
-    
-    modal.appendChild(content);
-    document.body.appendChild(modal);
-    
-    // Focus on input
-      const tokenInput = document.getElementById('githubTokenInput');
-      tokenInput.focus();
-      
-    // Add event listeners
-      document.getElementById('githubLoginBtn').addEventListener('click', () => {
-        this.authenticateWithToken();
-      });
-    
-    document.getElementById('closeLoginModal').addEventListener('click', () => {
-      document.body.removeChild(modal);
-      });
-      
-      // Handle Enter key
-      tokenInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          this.authenticateWithToken();
-        }
-      });
-    
-    // Close on outside click
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-      document.body.removeChild(modal);
-      }
-    });
-  }
-
-  // Enhanced Personal Access Token authentication
-  initiateOAuth() {
-    console.log('Showing enhanced GitHub token input...');
-    
-    // Create enhanced login modal
-    const modal = document.createElement('div');
-    modal.id = 'githubLoginModal';
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
-    
-    const content = document.createElement('div');
-    content.style.cssText = `
-      background: var(--menu-bg);
-      border: 1px solid var(--border);
-      padding: 30px;
-      max-width: 500px;
-      text-align: center;
-    `;
-    
-      content.innerHTML = `
-      <h3 style="margin: 0 0 20px 0; color: var(--menu-fg); font-weight: normal;">GitHub Personal Access Token</h3>
-        <p style="color: var(--menu-fg); margin-bottom: 20px;">Enter your GitHub personal access token to publish posts.</p>
       
       <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="
           width: 100%;
@@ -6563,8 +6407,6 @@ class SimpleBlog {
     }
   }
 
-  // OAuth method removed - using direct token authentication instead
-
   loadSavedFlags() {
     const savedFlags = localStorage.getItem('current_post_flags');
     if (savedFlags) {
@@ -6804,11 +6646,6 @@ class SimpleBlog {
     // Open in a new tab
     window.open(githubUrl, '_blank');
   }
-
-
-
-
-
   setPostFlags(flags) {
     console.log('🏷️ Setting post flags:', flags);
     
@@ -8355,7 +8192,6 @@ class SimpleBlog {
       tooltip.style.display = 'none';
     }
   }
-
   showMenuStyle1Message(message, type = 'info') {
     // Remove any existing message
     const existingMessage = document.getElementById('menuStyle1Message');
@@ -9157,7 +8993,6 @@ class SimpleBlog {
     }
   }
 }
-
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
