@@ -1896,15 +1896,24 @@ class SimpleBlog {
               this.posts = parsedData.posts;
             } else {
               console.warn('⚠️ loadPosts: Unexpected index format:', parsedData);
-              this.posts = [];
+              // Don't clear posts array - keep cached posts if available
+              if (!this.posts || this.posts.length === 0) {
+                this.posts = [];
+              }
             }
           } catch (decodeError) {
             console.error('❌ Error decoding GitHub content:', decodeError);
-            this.posts = [];
+            // Don't clear posts array - keep cached posts if available
+            if (!this.posts || this.posts.length === 0) {
+              this.posts = [];
+            }
           }
         } else {
           console.warn('⚠️ loadPosts: Unexpected GitHub API response format:', indexData);
-          this.posts = [];
+          // Don't clear posts array - keep cached posts if available
+          if (!this.posts || this.posts.length === 0) {
+            this.posts = [];
+          }
         }
         
         console.log('📚 loadPosts: Posts loaded from index:', this.posts.length);
@@ -1924,17 +1933,24 @@ class SimpleBlog {
 
         } else {
           console.log('⚠️ loadPosts: No posts found in index');
-          this.displayDefaultContent();
+          // Don't clear posts array - keep cached posts if available
+          if (!this.posts || this.posts.length === 0) {
+            this.displayDefaultContent();
+          }
         }
       } else {
         console.warn('⚠️ loadPosts: Could not load index file:', response.status);
-        this.posts = [];
-        this.displayDefaultContent();
+        // Don't clear posts array - keep cached posts if available
+        if (!this.posts || this.posts.length === 0) {
+          this.displayDefaultContent();
+        }
       }
     } catch (error) {
       console.error('❌ loadPosts: Error loading index:', error);
-      this.posts = [];
-      this.displayDefaultContent();
+      // Don't clear posts array - keep cached posts if available
+      if (!this.posts || this.posts.length === 0) {
+        this.displayDefaultContent();
+      }
     }
   }
 
