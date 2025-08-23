@@ -1,0 +1,14 @@
+# Simple duck illustration representation
+# This is a text-based representation that should be converted to an actual PNG image
+# 
+# The duck should be:
+# - Drawn in profile, facing right
+# - Simple line drawing style
+# - Enclosed in a black rectangular border
+# - Approximately 200x200 pixels
+# - PNG format with transparent background
+# 
+# Since I cannot generate actual image files, you'll need to:
+# 1. Take a screenshot of the duck area from your handwritten page
+# 2. Crop it to focus on the duck illustration
+# 3. Save it as duck-illustration.png in the assets folder
