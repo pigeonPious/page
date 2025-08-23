@@ -6234,73 +6234,83 @@ class SimpleBlog {
       console.log('Current flags from localStorage:', currentFlags);
       console.log('Final flags for post:', finalFlags);
       
-      // Check if this is an edit (check for existing post data)
+            // Check if this is an edit (check for existing post data)
       const editData = localStorage.getItem('editPostData');
       let isEdit = false;
       let originalSlug = '';
       let currentSha = null;
+      let shouldDeleteOldFile = false;
       
       if (editData) {
         try {
           const editPost = JSON.parse(editData);
           originalSlug = editPost.slug;
           isEdit = true;
-          console.log('This is an edit of existing post:', originalSlug);
           
-          // For edits, we need to get the current SHA of the post file
-          // Try multiple approaches to get the SHA
-          let shaFound = false;
-          
-          // Method 1: Try GitHub API with auth
-          try {
-            const postResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`, {
-              headers: {
-                'Authorization': `token ${githubToken}`,
-              }
-            });
+          // Check if title has changed significantly (which would change the slug)
+          const newSlug = title.toLowerCase().replace(/[^a-z0-9]/gi, '-');
+          if (newSlug !== originalSlug) {
+            console.log('Title changed significantly - old slug:', originalSlug, 'new slug:', newSlug);
+            shouldDeleteOldFile = true;
+            // Don't get SHA for old file since we'll delete it
+          } else {
+            console.log('This is an edit of existing post with same slug:', originalSlug);
             
-            if (postResponse.ok) {
-              const postData = await postResponse.json();
-              currentSha = postData.sha;
-              shaFound = true;
-              console.log('Got current SHA for edit (GitHub API):', currentSha);
-            } else {
-              console.warn('GitHub API returned status for SHA fetch:', postResponse.status);
-            }
-          } catch (error) {
-            console.warn('Error getting SHA from GitHub API:', error);
-          }
-          
-          // Method 2: Try GitHub API without auth (public access)
-          if (!shaFound) {
+            // For edits with same slug, we need to get the current SHA of the post file
+            // Try multiple approaches to get the SHA
+            let shaFound = false;
+            
+            // Method 1: Try GitHub API with auth
             try {
-              const publicResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`);
+              const postResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`, {
+                headers: {
+                  'Authorization': `token ${githubToken}`,
+                }
+              });
               
-              if (publicResponse.ok) {
-                const postData = await publicResponse.json();
+              if (postResponse.ok) {
+                const postData = await postResponse.json();
                 currentSha = postData.sha;
                 shaFound = true;
-                console.log('Got current SHA for edit (public API):', currentSha);
+                console.log('Got current SHA for edit (GitHub API):', currentSha);
               } else {
-                console.warn('Public API returned status for SHA fetch:', publicResponse.status);
+                console.warn('GitHub API returned status for SHA fetch:', postResponse.status);
               }
             } catch (error) {
-              console.warn('Error getting SHA from public API:', error);
+              console.warn('Error getting SHA from GitHub API:', error);
             }
-          }
-          
-          // Method 3: Try to get SHA from local posts cache
-          if (!shaFound && this.posts && this.posts.length > 0) {
-            const localPost = this.posts.find(p => p.slug === originalSlug);
-            if (localPost && localPost.sha) {
-              currentSha = localPost.sha;
-              shaFound = true;
-              console.log('Got current SHA for edit (local cache):', currentSha);
+            
+            // Method 2: Try GitHub API without auth (public access)
+            if (!shaFound) {
+              try {
+                const publicResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`);
+                
+                if (publicResponse.ok) {
+                  const postData = await publicResponse.json();
+                  currentSha = postData.sha;
+                  shaFound = true;
+                  console.log('Got current SHA for edit (public API):', currentSha);
+                } else {
+                  console.warn('Public API returned status for SHA fetch:', publicResponse.status);
+                }
+              } catch (error) {
+                console.warn('Error getting SHA from public API:', error);
+              }
             }
-          }
-          
-          if (!shaFound) {
-            console.warn('Could not get SHA for edit - will try to create new file');
+            
+            // Method 3: Try to get SHA from local posts cache
+            if (!shaFound && this.posts && this.posts.length > 0) {
+              const localPost = this.posts.find(p => p.slug === originalSlug);
+              if (localPost && localPost.sha) {
+                currentSha = localPost.sha;
+                shaFound = true;
+                console.log('Got current SHA for edit (local cache):', currentSha);
+              }
+            }
+            
+            if (!shaFound) {
+              console.warn('Could not get SHA for edit - will try to create new file');
+            }
           }
         } catch (error) {
           console.warn('Could not parse edit data:', error);
@@ -6457,6 +6467,23 @@ class SimpleBlog {
         const indexUpdated = await this.updatePostsIndexIncrementally(postData, isEdit);
         
         if (indexUpdated) {
+          // If this was an edit with a title change, delete the old file
+          console.log('Checking if old file should be deleted:', { isEdit, shouldDeleteOldFile, originalSlug, newSlug: postData.slug });
+          if (isEdit && shouldDeleteOldFile && originalSlug !== postData.slug) {
+            console.log('Title changed significantly - deleting old file:', originalSlug);
+            try {
+              await this.deleteOldPostFile(originalSlug);
+              console.log('Old post file deleted successfully');
+            } catch (deleteError) {
+              console.warn('Failed to delete old post file:', deleteError);
+              // Don't fail the entire operation if deletion fails
+            }
+          } else if (isEdit && originalSlug === postData.slug) {
+            console.log('No title change detected - keeping existing file');
+          } else if (!isEdit) {
+            console.log('This is a new post - no old file to delete');
+          }
+          
           // Clear edit data after successful publish
           if (isEdit) {
             localStorage.removeItem('editPostData');
