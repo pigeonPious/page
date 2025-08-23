@@ -1587,7 +1587,24 @@ class SimpleBlog {
       
       // Update any open submenus
       this.updateOpenSubmenus();
-
+      
+    } catch (error) {
+      console.error('Force reindex failed:', error);
+      
+      // Show error message
+      const statusElement = document.getElementById('github-status');
+      if (statusElement) {
+        statusElement.textContent = 'Reindex failed';
+        statusElement.style.color = '#dc3545'; // Red
+        
+        // Reset status after 3 seconds
+        setTimeout(() => {
+          statusElement.textContent = originalStatus;
+          statusElement.style.color = '';
+        }, 3000);
+      }
+    }
+  }
 
   // Improved force reindex function that actually works
   async forceReindexPostsImproved() {
