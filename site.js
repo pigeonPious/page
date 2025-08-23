@@ -9675,6 +9675,10 @@ class SimpleBlog {
 
   async editCurrentPost() {
     console.log('editCurrentPost called');
+    console.log('Current URL:', window.location.href);
+    console.log('URL hash:', window.location.hash);
+    console.log('this.currentPost:', this.currentPost);
+    console.log('localStorage current_post_slug:', localStorage.getItem('current_post_slug'));
     
     // Check if user is authenticated
     if (!this.isAuthenticated) {
