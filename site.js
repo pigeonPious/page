@@ -5341,7 +5341,7 @@ class SimpleBlog {
     // This method is deprecated - no more index.json updates
     console.log('Index updating deprecated - using dynamic repository scanning');
     return true;
-
+  }
 
   // Function to delete an old post file when title changes significantly
   async deleteOldPostFile(oldSlug) {
