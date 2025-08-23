@@ -1,5 +1,11 @@
 [
   {
+    "slug": "edited-title-test-today",
+    "title": "Edited title Test Today",
+    "date": "2025-08-23",
+    "keywords": "NEW CATEGORY"
+  },
+  {
     "slug": "edited-title",
     "title": "Edited Title",
     "date": "2025-08-23",
