@@ -1,17 +1,5 @@
 [
   {
-    "slug": "the-final-post-deletion-test",
-    "title": "The final post deletion test",
-    "keywords": "general, coding, AI, blog",
-    "date": "2025-08-23"
-  },
-  {
-    "slug": "deletings-post-",
-    "title": "Deletings post ",
-    "keywords": "general, coding, AI, blog",
-    "date": "2025-08-23"
-  },
-  {
     "slug": "editing-debug-test-2",
     "title": "Editing Debug Test 2",
     "date": "2025-08-23",
@@ -103,11 +91,5 @@
     "filename": "about.json",
     "date": "2024-07-25T12:00:00Z",
     "tags": "about"
-  },
-  {
-    "slug": "first-post",
-    "title": "First Post",
-    "date": "2024-01-21",
-    "keywords": "general, coding, AI, blog"
   }
 ]
