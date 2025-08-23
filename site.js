@@ -7385,49 +7385,15 @@ class SimpleBlog {
       
       console.log('Post file deleted successfully');
       
-      // Now remove the post from the index
-      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        headers: {
-          'Authorization': `token ${githubToken}`,
-        }
-      });
+      // No index updating needed - we use dynamic repository scanning
+      console.log('No index.json to update - using dynamic repository scanning');
       
-      if (!indexResponse.ok) {
-        this.showMenuStyle1Message('Post deleted but could not update index.', 'warning');
-        return;
+      // Update local posts array by removing the deleted post
+      if (this.posts && Array.isArray(this.posts)) {
+        this.posts = this.posts.filter(post => post.slug !== postSlug);
+        localStorage.setItem('posts', JSON.stringify(this.posts));
+        console.log('Updated local posts array, removed:', postSlug);
       }
-      
-      const indexData = await indexResponse.json();
-      const currentIndex = JSON.parse(atob(indexData.content));
-      
-      // Remove the deleted post from the index
-      const updatedIndex = currentIndex.filter(post => post.slug !== postSlug);
-      
-      // Update the index file
-      const updateIndexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${githubToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: `Remove deleted post from index: ${editPost.title}`,
-          content: btoa(JSON.stringify(updatedIndex, null, 2)),
-          sha: indexData.sha,
-          branch: 'main'
-        })
-      });
-      
-      if (!updateIndexResponse.ok) {
-        this.showMenuStyle1Message('Post deleted but index update failed.', 'warning');
-        return;
-      }
-      
-      console.log('Index updated successfully');
-      
-      // Update local posts array
-      this.posts = updatedIndex;
-      localStorage.setItem('posts', JSON.stringify(updatedIndex));
       
       // Clear edit data
       localStorage.removeItem('editPostData');
