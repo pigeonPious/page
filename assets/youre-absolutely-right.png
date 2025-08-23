@@ -1,17 +1,17 @@
-# "You're absolutely right!" text box representation
-# This is a text-based representation that should be converted to an actual PNG image
-# 
-# The text box should contain:
+# This is a placeholder for the youre-absolutely-right.png
+# The actual PNG file should contain the cropped text box from the bottom left
+# of the handwritten page, showing the black rectangular box containing:
 # "You're
 # absolutely
 # right!
 # _-_"
 # 
-# - Enclosed in a black rectangular border
-# - Approximately 200x200 pixels
-# - PNG format with transparent background
+# The image should be cropped to focus on the text box area
+# and saved as a PNG with transparent background for best web display.
 # 
-# Since I cannot generate actual image files, you'll need to:
-# 1. Take a screenshot of the text box area from your handwritten page
-# 2. Crop it to focus on the "You're absolutely right!" text box
-# 3. Save it as youre-absolutely-right.png in the assets folder
+# CROP INSTRUCTIONS:
+# - Focus on the black rectangular frame containing the text
+# - Include the entire black border
+# - Center the text content within the crop
+# - Maintain the handwritten aesthetic
+# - Save as PNG with transparent background

@@ -9673,7 +9673,7 @@ class SimpleBlog {
     this.log(message, 'warn');
   }
 
-  editCurrentPost() {
+  async editCurrentPost() {
     console.log('editCurrentPost called');
     
     // Check if user is authenticated
@@ -9683,11 +9683,71 @@ class SimpleBlog {
       return;
     }
     
-    // Get current post data
-    const currentPost = this.currentPost;
+    // Try multiple sources to get current post data
+    let currentPost = this.currentPost;
+    let postSlug = null;
+    
+    // First try this.currentPost
+    if (currentPost && currentPost.slug) {
+      postSlug = currentPost.slug;
+      console.log('Found current post from this.currentPost:', postSlug);
+    }
+    
+    // If not found, try URL hash
+    if (!postSlug && window.location.hash) {
+      postSlug = window.location.hash.substring(1);
+      console.log('Found post slug from URL hash:', postSlug);
+    }
+    
+    // If still not found, try localStorage
+    if (!postSlug) {
+      const storedSlug = localStorage.getItem('current_post_slug');
+      if (storedSlug) {
+        postSlug = storedSlug;
+        console.log('Found post slug from localStorage:', postSlug);
+      }
+    }
+    
+    // If we have a slug but no currentPost object, try to load it
+    if (postSlug && (!currentPost || !currentPost.slug)) {
+      console.log('Loading post data for slug:', postSlug);
+      
+      // Try to find the post in the local posts array
+      if (this.posts && this.posts.length > 0) {
+        currentPost = this.posts.find(post => post.slug === postSlug);
+        if (currentPost) {
+          console.log('Found post in local posts array:', currentPost);
+          this.currentPost = currentPost; // Update the current post reference
+        }
+      }
+      
+      // If still not found, try to load from GitHub
+      if (!currentPost) {
+        try {
+          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+          const response = await fetch(postUrl);
+          if (response.ok) {
+            const postData = await response.json();
+            currentPost = {
+              slug: postSlug,
+              title: postData.title || 'Untitled',
+              content: postData.content || '',
+              keywords: postData.keywords || 'general',
+              date: postData.date || new Date().toISOString()
+            };
+            console.log('Loaded post from GitHub:', currentPost);
+            this.currentPost = currentPost; // Update the current post reference
+          }
+        } catch (error) {
+          console.warn('Could not load post from GitHub:', error);
+        }
+      }
+    }
+    
+    // Final check - do we have a post to edit?
     if (!currentPost || !currentPost.slug) {
-      console.log('No current post to edit');
-      this.showMenuStyle1Message('No post currently loaded to edit.', 'error');
+      console.log('No current post to edit - checked all sources');
+      this.showMenuStyle1Message('No post currently loaded to edit. Please navigate to a post first.', 'error');
       return;
     }
     
