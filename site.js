@@ -5541,24 +5541,38 @@ class SimpleBlog {
       
       let updatedIndex;
       
-      if (isEdit) {
-        // For edits: check if slug changed due to title change
-        const originalSlug = localStorage.getItem('editPostData') ? 
-          JSON.parse(localStorage.getItem('editPostData')).slug : null;
-        
-        if (originalSlug && originalSlug !== postData.slug) {
-          // Title changed significantly - remove old entry and add new one
-          updatedIndex = currentIndex.filter(post => post.slug !== originalSlug);
-          updatedIndex = [newIndexEntry, ...updatedIndex];
-          console.log('Title changed - removed old entry and added new one:', originalSlug, '->', postData.slug);
+              if (isEdit) {
+          // For edits: check if title changed
+          const editData = localStorage.getItem('editPostData');
+          if (editData) {
+            try {
+              const editPost = JSON.parse(editData);
+              if (editPost.title !== postData.title) {
+                // Title changed - remove old entry and add new one
+                updatedIndex = currentIndex.filter(post => post.slug !== editPost.slug);
+                updatedIndex = [newIndexEntry, ...updatedIndex];
+                console.log('Title changed - removed old entry and added new one:', editPost.slug, '->', postData.slug);
+              } else {
+                // Same title - update existing entry
+                updatedIndex = currentIndex.map(post => 
+                  post.slug === editPost.slug ? newIndexEntry : post
+                );
+                console.log('Updated existing post in index:', editPost.slug);
+              }
+            } catch (error) {
+              console.warn('Could not parse edit data for index update:', error);
+              // Fallback: update existing entry
+              updatedIndex = currentIndex.map(post => 
+                post.slug === postData.slug ? newIndexEntry : post
+              );
+            }
+          } else {
+            // No edit data - update existing entry
+            updatedIndex = currentIndex.map(post => 
+              post.slug === postData.slug ? newIndexEntry : post
+            );
+          }
         } else {
-          // Same slug - update existing entry
-          updatedIndex = currentIndex.map(post => 
-            post.slug === postData.slug ? newIndexEntry : post
-          );
-          console.log('Updated existing post in index:', postData.slug);
-        }
-      } else {
         // For new posts: add to beginning (newest first)
         updatedIndex = [newIndexEntry, ...currentIndex];
         console.log('➕ Added new post to index:', postData.slug);
@@ -6319,9 +6333,9 @@ class SimpleBlog {
         }
       }
       
-      // Create post data - use new slug if title changed significantly, original slug for same-title edits
+      // Create post data - always use new slug based on current title
       const postData = {
-        slug: (isEdit && !shouldDeleteOldFile) ? originalSlug : title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
+        slug: title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
         title: title,
         date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
         keywords: finalFlags,
@@ -6329,7 +6343,7 @@ class SimpleBlog {
       };
       
       console.log('Post data prepared:', postData);
-      console.log('Slug decision - isEdit:', isEdit, 'shouldDeleteOldFile:', shouldDeleteOldFile, 'originalSlug:', originalSlug, 'finalSlug:', postData.slug);
+      console.log('Title check - original:', originalTitle, 'new:', title, 'changed:', originalTitle !== title);
       
       // Check for duplicate posts (only for new posts, not edits)
       if (!isEdit) {
@@ -6470,10 +6484,9 @@ class SimpleBlog {
         const indexUpdated = await this.updatePostsIndexIncrementally(postData, isEdit);
         
         if (indexUpdated) {
-          // If this was an edit with a title change, delete the old file
-          console.log('Checking if old file should be deleted:', { isEdit, shouldDeleteOldFile, originalSlug, newSlug: postData.slug });
-          if (isEdit && shouldDeleteOldFile && originalSlug !== postData.slug) {
-            console.log('Title changed significantly - deleting old file:', originalSlug);
+          // If this was an edit and the title changed, delete the old file
+          if (isEdit && originalTitle !== title) {
+            console.log('Title changed - deleting old file:', originalSlug);
             try {
               await this.deleteOldPostFile(originalSlug);
               console.log('Old post file deleted successfully');
@@ -6481,9 +6494,9 @@ class SimpleBlog {
               console.warn('Failed to delete old post file:', deleteError);
               // Don't fail the entire operation if deletion fails
             }
-          } else if (isEdit && originalSlug === postData.slug) {
-            console.log('No title change detected - keeping existing file');
-          } else if (!isEdit) {
+          } else if (isEdit) {
+            console.log('No title change - keeping existing file');
+          } else {
             console.log('This is a new post - no old file to delete');
           }
           
