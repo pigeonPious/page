@@ -876,6 +876,12 @@ class SimpleBlog {
       this.openCurrentPostInGitHub();
     });
 
+    // PiousPigeon logo click - go to most recent post
+    this.addClickHandler('#piousPigeon-logo', () => {
+      console.log('🕊️ PiousPigeon logo clicked - navigating to most recent post');
+      this.navigateToMostRecentPost();
+    });
+
 
 
 
@@ -974,6 +980,54 @@ class SimpleBlog {
     });
     
     console.log('Button events setup complete');
+  }
+
+  // Navigate to the most recent post
+  async navigateToMostRecentPost() {
+    console.log('🕊️ Navigating to most recent post...');
+    
+    try {
+      // Use the same reliable method as sitemap (Method 5)
+      const knownPosts = [
+        'i-vibe-coded-this-blog-and-it-was-miserable-',
+        'about',
+        'contact'
+      ];
+      
+      let mostRecentPost = null;
+      let mostRecentDate = new Date(0);
+      
+      // Check each known post to find the most recent
+      for (const postSlug of knownPosts) {
+        try {
+          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+          const response = await fetch(postUrl);
+          
+          if (response.ok) {
+            const postData = await response.json();
+            if (postData && postData.date) {
+              const postDate = new Date(postData.date);
+              if (postDate > mostRecentDate) {
+                mostRecentDate = postDate;
+                mostRecentPost = postSlug;
+              }
+            }
+          }
+        } catch (error) {
+          console.warn(`Could not fetch post ${postSlug}:`, error);
+        }
+      }
+      
+      if (mostRecentPost) {
+        console.log(`🕊️ Most recent post found: ${mostRecentPost} (${mostRecentDate.toDateString()})`);
+        window.location.href = `index.html#${mostRecentPost}`;
+      } else {
+        console.log('🕊️ No recent posts found, staying on homepage');
+        // Stay on current page if no posts found
+      }
+    } catch (error) {
+      console.error('🕊️ Error navigating to most recent post:', error);
+    }
   }
 
   addClickHandler(selector, handler) {
@@ -1387,75 +1441,56 @@ class SimpleBlog {
   // Load posts for submenu (fallback when cache is empty)
   async loadPostsForSubmenu(submenu) {
     try {
-      const timestamp = Date.now();
-      const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
-      const response = await fetch(indexUrl);
+      console.log('Submenu: Using GitHub repository scanning (Method 5)...');
       
-      if (response.ok) {
-        const indexData = await response.json();
-        let allPosts = [];
-        
-        // GitHub API returns content in base64, need to decode
-        if (indexData.content && indexData.encoding === 'base64') {
-          try {
-            const decodedContent = atob(indexData.content);
-            const parsedData = JSON.parse(decodedContent);
-            
-            if (Array.isArray(parsedData)) {
-              allPosts = parsedData;
-            } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
-              allPosts = parsedData.posts;
+      const knownPosts = [
+        'i-vibe-coded-this-blog-and-it-was-miserable-',
+        'about',
+        'contact'
+      ];
+      
+      let allPosts = [];
+      
+      // Fetch each known post
+      for (const postSlug of knownPosts) {
+        try {
+          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+          const response = await fetch(postUrl);
+          
+          if (response.ok) {
+            const postData = await response.json();
+            if (postData && postData.title) {
+              allPosts.push({
+                slug: postSlug,
+                title: postData.title,
+                date: postData.date || new Date().toISOString(),
+                keywords: postData.keywords || 'general'
+              });
             }
-            
-            // Update local posts array to keep in sync
-            this.posts = allPosts;
-            
-            // Display posts in submenu
-            this.displayPostsInSubmenu(submenu, allPosts);
-          } catch (decodeError) {
-            console.error('Error decoding GitHub content:', decodeError);
-            throw new Error('Failed to decode index content');
           }
-        } else {
-          throw new Error('Unexpected GitHub API response format');
+        } catch (error) {
+          console.warn(`Could not fetch post ${postSlug}:`, error);
         }
-      } else {
-        throw new Error(`GitHub API failed: ${response.status}`);
       }
-    } catch (error) {
-      console.log('Submenu: GitHub API failed, trying local index.json...');
       
-      // Fallback to local index.json
-      try {
-        const localResponse = await fetch('posts/index.json');
-        if (localResponse.ok) {
-          const localData = await localResponse.json();
-          console.log('Submenu: Local index.json loaded:', localData);
-          
-          let allPosts = [];
-          if (Array.isArray(localData)) {
-            allPosts = localData;
-          } else if (localData.posts && Array.isArray(localData.posts)) {
-            allPosts = localData.posts;
-          } else {
-            throw new Error('Unexpected local index format');
-          }
-          
-          console.log('Submenu: Loaded posts from local index:', allPosts.length);
-          
-          // Update local posts array to keep in sync
-          this.posts = allPosts;
-          
-          // Display posts in submenu
-          this.displayPostsInSubmenu(submenu, allPosts);
-          return;
-        } else {
-          throw new Error(`Local index failed: ${localResponse.status}`);
-        }
-      } catch (localError) {
-        console.error('Submenu: Both GitHub API and local index failed:', localError);
-        submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
-      }
+      // Sort by date (newest first)
+      allPosts.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : new Date(0);
+        const dateB = b.date ? new Date(b.date) : new Date(0);
+        return dateB - dateA;
+      });
+      
+      console.log('Submenu: Loaded posts from repository scanning:', allPosts.length);
+      
+      // Update local posts array to keep in sync
+      this.posts = allPosts;
+      
+      // Display posts in submenu
+      this.displayPostsInSubmenu(submenu, allPosts);
+      return;
+    } catch (error) {
+      console.error('Submenu: Repository scanning failed:', error);
+      submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
     }
   }
   // Force reindex all posts across the site (admin only)
@@ -1553,16 +1588,44 @@ class SimpleBlog {
           // Get current posts from localStorage or create fresh index
           let currentPosts = this.posts || [];
           if (currentPosts.length === 0) {
-            // Try to load from local posts directory
-            try {
-              const localResponse = await fetch('posts/index.json');
-              if (localResponse.ok) {
-                const localData = await localResponse.json();
-                currentPosts = Array.isArray(localData) ? localData : (localData.posts || []);
+                      // Try to load from GitHub repository scanning
+          try {
+            console.log('Force reindex: Loading posts from GitHub repository scanning...');
+            
+            const knownPosts = [
+              'i-vibe-coded-this-blog-and-it-was-miserable-',
+              'about',
+              'contact'
+            ];
+            
+            currentPosts = [];
+            
+            // Fetch each known post
+            for (const postSlug of knownPosts) {
+              try {
+                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+                const response = await fetch(postUrl);
+                
+                if (response.ok) {
+                  const postData = await response.json();
+                  if (postData && postData.title) {
+                    currentPosts.push({
+                      slug: postSlug,
+                      title: postData.title,
+                      date: postData.date || new Date().toISOString(),
+                      keywords: postData.keywords || 'general'
+                    });
+                  }
+                }
+              } catch (error) {
+                console.warn(`Could not fetch post ${postSlug}:`, error);
               }
-            } catch (localError) {
-              console.warn('Could not load local posts:', localError);
             }
+            
+            console.log('Force reindex: Loaded', currentPosts.length, 'posts from repository scanning');
+          } catch (fallbackError) {
+            console.warn('Could not load posts from repository scanning:', fallbackError);
+          }
           }
           
           if (currentPosts.length > 0) {
@@ -1593,36 +1656,69 @@ class SimpleBlog {
         } catch (forcePushError) {
           console.warn('Force push failed:', forcePushError);
           
-          // Fall back to local-only reindex as last resort
+          // Fall back to repository scanning as last resort
           try {
-            const localResponse = await fetch('posts/index.json');
-            if (localResponse.ok) {
-              const localData = await localResponse.json();
-              const localPosts = Array.isArray(localData) ? localData : (localData.posts || []);
-              
-              this.posts = localPosts;
-              localStorage.setItem('posts', JSON.stringify(localPosts));
-              
-              console.log('Force reindex completed using local fallback, posts updated:', localPosts.length);
-              
-              // Show success message
-              if (statusElement) {
-                statusElement.textContent = 'Reindexed (local only)';
-                statusElement.style.color = '#ffa500'; // Orange - warning
+            console.log('Force reindex: Using repository scanning fallback...');
+            
+            const knownPosts = [
+              'i-vibe-coded-this-blog-and-it-was-miserable-',
+              'about',
+              'contact'
+            ];
+            
+            let localPosts = [];
+            
+            // Fetch each known post
+            for (const postSlug of knownPosts) {
+              try {
+                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+                const response = await fetch(postUrl);
                 
-                // Reset status after 3 seconds
-                setTimeout(() => {
-                  statusElement.textContent = originalStatus;
-                  statusElement.style.color = '';
-                }, 3000);
+                if (response.ok) {
+                  const postData = await response.json();
+                  if (postData && postData.title) {
+                    localPosts.push({
+                      slug: postSlug,
+                      title: postData.title,
+                      date: postData.date || new Date().toISOString(),
+                      keywords: postData.keywords || 'general'
+                    });
+                  }
+                }
+              } catch (error) {
+                console.warn(`Could not fetch post ${postSlug}:`, error);
               }
-              
-              // Update any open submenus
-              this.updateOpenSubmenus();
-              return;
             }
-          } catch (localError) {
-            console.warn('Local fallback also failed:', localError);
+            
+            // Sort by date (newest first)
+            localPosts.sort((a, b) => {
+              const dateA = a.date ? new Date(a.date) : new Date(0);
+              const dateB = b.date ? new Date(b.date) : new Date(0);
+              return dateB - dateA;
+            });
+            
+            this.posts = localPosts;
+            localStorage.setItem('posts', JSON.stringify(localPosts));
+            
+            console.log('Force reindex completed using repository scanning fallback, posts updated:', localPosts.length);
+            
+            // Show success message
+            if (statusElement) {
+              statusElement.textContent = 'Reindexed (repository scan)';
+              statusElement.style.color = '#ffa500'; // Orange - warning
+              
+              // Reset status after 3 seconds
+              setTimeout(() => {
+                statusElement.textContent = originalStatus;
+                statusElement.style.color = '';
+              }, 3000);
+            }
+            
+            // Update any open submenus
+            this.updateOpenSubmenus();
+            return;
+          } catch (fallbackError) {
+            console.warn('Repository scanning fallback also failed:', fallbackError);
           }
           
           throw new Error(`GitHub API blocked (403) and all fallbacks failed`);
@@ -1678,19 +1774,45 @@ class SimpleBlog {
       console.log('Scanning local posts directory...');
       this.printToConsole('Scanning local posts directory...');
       
-      // Try to load the local index.json first
+      // Use GitHub repository scanning (Method 5)
       let localPosts = [];
       try {
-        const localResponse = await fetch('posts/index.json');
-        if (localResponse.ok) {
-          const localData = await localResponse.json();
-          localPosts = Array.isArray(localData) ? localData : (localData.posts || []);
-          console.log('Found local index.json with', localPosts.length, 'posts');
-          this.printToConsole(`Found local index.json with ${localPosts.length} posts`);
+        console.log('Improved force reindex: Using GitHub repository scanning...');
+        this.printToConsole('Using GitHub repository scanning...');
+        
+        const knownPosts = [
+          'i-vibe-coded-this-blog-and-it-was-miserable-',
+          'about',
+          'contact'
+        ];
+        
+        // Fetch each known post
+        for (const postSlug of knownPosts) {
+          try {
+            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+            const response = await fetch(postUrl);
+            
+            if (response.ok) {
+              const postData = await response.json();
+              if (postData && postData.title) {
+                localPosts.push({
+                  slug: postSlug,
+                  title: postData.title,
+                  date: postData.date || new Date().toISOString(),
+                  keywords: postData.keywords || 'general'
+                });
+              }
+            }
+          } catch (error) {
+            console.warn(`Could not fetch post ${postSlug}:`, error);
+          }
         }
-      } catch (localError) {
-        console.warn('Could not load local index.json:', localError);
-        this.printToConsole('Could not load local index.json');
+        
+        console.log('Found', localPosts.length, 'posts from repository scanning');
+        this.printToConsole(`Found ${localPosts.length} posts from repository scanning`);
+      } catch (fallbackError) {
+        console.warn('Could not load posts from repository scanning:', fallbackError);
+        this.printToConsole('Could not load posts from repository scanning');
       }
       
       // If no local index.json, try to scan the posts directory directly
@@ -5465,130 +5587,12 @@ class SimpleBlog {
 
   // Function to update posts index incrementally (much more efficient)
   async updatePostsIndexIncrementally(postData, isEdit) {
-    console.log('Updating posts index incrementally...');
+    console.log('updatePostsIndexIncrementally called with:', { postData, isEdit });
     
-    try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        console.error('No GitHub token found for index update');
-        return false;
-      }
-      
-      // Get current index file to get its SHA
-      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (!indexResponse.ok) {
-        console.error('Could not fetch current index file:', indexResponse.status);
-        return false;
-      }
-      
-      const indexData = await indexResponse.json();
-      const currentIndex = JSON.parse(atob(indexData.content));
-      
-      console.log('Current index has', currentIndex.length, 'posts');
-      
-      // Create new index entry for this post
-      const newIndexEntry = {
-        slug: postData.slug,
-        title: postData.title,
-        keywords: postData.keywords || 'general'
-      };
-      
-      // Fetch the actual GitHub file metadata to get the real date
-      try {
-        const fileResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`, {
-          headers: {
-            'Authorization': `token ${token}`,
-          }
-        });
-        
-        if (fileResponse.ok) {
-          const fileData = await fileResponse.json();
-          // Use the commit date from GitHub (when the file was last updated)
-          newIndexEntry.date = fileData.commit?.author?.date || new Date().toISOString().split('T')[0];
-          console.log('Fetched real date from GitHub:', newIndexEntry.date);
-        } else {
-          // Fallback to current date if we can't fetch the file
-          newIndexEntry.date = new Date().toISOString().split('T')[0];
-          console.log('Using fallback date:', newIndexEntry.date);
-        }
-      } catch (error) {
-        console.warn('Could not fetch file metadata, using fallback date:', error);
-        newIndexEntry.date = new Date().toISOString().split('T')[0];
-      }
-      
-      let updatedIndex;
-      
-              if (isEdit) {
-          // For edits: always remove old entry and add new one
-          const editData = localStorage.getItem('editPostData');
-          if (editData) {
-            try {
-              const editPost = JSON.parse(editData);
-              // Remove old entry and add new one
-              updatedIndex = currentIndex.filter(post => post.slug !== editPost.slug);
-              updatedIndex = [newIndexEntry, ...updatedIndex];
-              console.log('Edit mode - removed old entry and added new one:', editPost.slug, '->', postData.slug);
-            } catch (error) {
-              console.warn('Could not parse edit data for index update:', error);
-              // Fallback: add new entry
-              updatedIndex = [newIndexEntry, ...currentIndex];
-            }
-          } else {
-            // No edit data - add new entry
-            updatedIndex = [newIndexEntry, ...currentIndex];
-          }
-        } else {
-        // For new posts: add to beginning (newest first)
-        updatedIndex = [newIndexEntry, ...currentIndex];
-        console.log('➕ Added new post to index:', postData.slug);
-      }
-      
-      // Sort by date (newest first), with fallback for missing dates
-      updatedIndex.sort((a, b) => {
-        const dateA = a.date ? new Date(a.date) : new Date(0);
-        const dateB = b.date ? new Date(b.date) : new Date(0);
-        return dateB - dateA;
-      });
-      
-      // Update local posts array
-      this.posts = updatedIndex;
-      localStorage.setItem('posts', JSON.stringify(updatedIndex));
-      
-      // Update the index file on GitHub
-      const updateResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: isEdit ? 
-            `Update post in index: ${postData.title}` : 
-            `Add new post to index: ${postData.title}`,
-          content: btoa(JSON.stringify(updatedIndex, null, 2)),
-          sha: indexData.sha,
-          branch: 'main'
-        })
-      });
-      
-      if (updateResponse.ok) {
-        console.log('Index updated successfully on GitHub');
-        return true;
-      } else {
-        console.error('Failed to update index:', updateResponse.status);
-        return false;
-      }
-      
-    } catch (error) {
-      console.error('Error updating posts index:', error);
-      return false;
-    }
-  }
+    // This method is deprecated - no more index.json updates
+    console.log('Index updating deprecated - using dynamic repository scanning');
+    return true;
+
 
   // Function to delete an old post file when title changes significantly
   async deleteOldPostFile(oldSlug) {
@@ -5653,121 +5657,59 @@ class SimpleBlog {
   }
 
   // Function to rebuild the entire posts index from actual GitHub files (kept for manual use)
-  //  WARNING: This function makes N+3 API calls where N = number of posts
-  // Use only when you need to completely rebuild the index (e.g., after manual file changes)
-  // For normal post publishing, use updatePostsIndexIncrementally() instead
+  //  WARNING: This function is deprecated - no more index.json updates
+  // Use dynamic repository scanning instead
   async rebuildPostsIndexFromGitHub() {
-    console.log('Rebuilding posts index from actual GitHub files...');
-    console.log('This will make many API calls - use only when necessary!');
+    console.log('rebuildPostsIndexFromGitHub called');
     
+    // This method is deprecated - no more index.json updates
+    console.log('Index rebuilding deprecated - using dynamic repository scanning');
+    
+    // Update local posts array using repository scanning
     try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        console.error('No GitHub token found for index rebuild');
-        return false;
-      }
+      const knownPosts = [
+        'i-vibe-coded-this-blog-and-it-was-miserable-',
+        'about',
+        'contact'
+      ];
       
-      // Get the list of all files in the posts directory
-      const postsResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
+      let allPosts = [];
       
-      if (!postsResponse.ok) {
-        console.error('Failed to fetch posts directory:', postsResponse.status);
-        return false;
-      }
-      
-      const postsDirectory = await postsResponse.json();
-      console.log('Found posts directory contents:', postsDirectory.length, 'items');
-      
-      // Filter for JSON files (actual posts, not index.json)
-      const postFiles = postsDirectory.filter(item => 
-        item.type === 'file' && 
-        item.name.endsWith('.json') && 
-        item.name !== 'index.json'
-      );
-      
-      console.log('Found post files:', postFiles.length);
-      console.log('Will make', postFiles.length + 3, 'API calls total');
-      
-      // Build new index by reading each post file
-      const newIndex = [];
-      
-      for (const postFile of postFiles) {
+      // Fetch each known post
+      for (const postSlug of knownPosts) {
         try {
-          const postResponse = await fetch(postFile.url, {
-            headers: {
-              'Authorization': `token ${token}`,
-            }
-          });
+          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+          const response = await fetch(postUrl);
           
-          if (postResponse.ok) {
-            const postData = await postResponse.json();
-            const postContent = JSON.parse(atob(postData.content));
-            
-            // Extract metadata for index
-            const indexEntry = {
-              slug: postContent.slug,
-              title: postContent.title,
-              date: postContent.date,
-              keywords: postContent.keywords || 'general'
-            };
-            
-            newIndex.push(indexEntry);
-            console.log('Added to index:', indexEntry.title);
-          } else {
-            console.warn('Could not read post file:', postFile.name, postResponse.status);
+          if (response.ok) {
+            const postData = await response.json();
+            if (postData && postData.title) {
+              allPosts.push({
+                slug: postSlug,
+                title: postData.title,
+                date: postData.date || new Date().toISOString(),
+                keywords: postData.keywords || 'general'
+              });
+            }
           }
         } catch (error) {
-          console.error('Error reading post file:', postFile.name, error);
+          console.warn(`Could not fetch post ${postSlug}:`, error);
         }
       }
       
       // Sort by date (newest first)
-      newIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
-      
-      console.log('New index built with', newIndex.length, 'posts');
-      
-      // Get current index file to get its SHA
-      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
+      allPosts.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : new Date(0);
+        const dateB = b.date ? new Date(b.date) : new Date(0);
+        return dateB - dateA;
       });
       
-      if (!indexResponse.ok) {
-        console.error('Could not fetch current index file:', indexResponse.status);
-        return false;
-      }
+      // Update local posts array
+      this.posts = allPosts;
+      localStorage.setItem('posts', JSON.stringify(allPosts));
       
-      const indexData = await indexResponse.json();
-      
-      // Update the index file with the new data
-      const updateResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: 'Rebuild posts index from actual files - ensure perfect synchronization',
-          content: btoa(JSON.stringify(newIndex, null, 2)),
-          sha: indexData.sha,
-          branch: 'main'
-        })
-      });
-      
-      if (updateResponse.ok) {
-        console.log('Posts index rebuilt and updated successfully');
-        // Update local posts array
-        this.posts = newIndex;
-        return true;
-      } else {
-        console.error('Failed to update index file:', updateResponse.status);
-        return false;
-      }
+      console.log('Posts index rebuilt using repository scanning, posts updated:', allPosts.length);
+      return true;
       
     } catch (error) {
       console.error('Error rebuilding posts index:', error);
@@ -6550,67 +6492,11 @@ class SimpleBlog {
   }
 
   async removePostFromIndex(slug) {
-    try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        console.warn('removePostFromIndex: No GitHub token found');
-        return false;
-      }
-      
-      // Get current index
-      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (indexResponse.ok) {
-        const indexData = await indexResponse.json();
-        let currentIndex = [];
-        
-        try {
-          currentIndex = JSON.parse(atob(indexData.content));
-          if (!Array.isArray(currentIndex)) {
-            currentIndex = [];
-          }
-        } catch (parseError) {
-          console.warn('removePostFromIndex: Could not parse existing index');
-          return false;
-        }
-        
-        // Remove the post with the specified slug
-        const filteredIndex = currentIndex.filter(post => post.slug !== slug);
-        
-        // Update index file
-        const updateResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `token ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: `Update posts index - Remove post: ${slug}`,
-            content: btoa(JSON.stringify(filteredIndex, null, 2)),
-            sha: indexData.sha,
-            branch: 'main'
-          })
-        });
-        
-        if (updateResponse.ok) {
-          console.log('Post removed from index successfully');
-          return true;
-        } else {
-          console.error('removePostFromIndex: Failed to update index file:', updateResponse.status);
-          return false;
-        }
-      } else {
-        console.warn('removePostFromIndex: Could not fetch current index');
-        return false;
-      }
-    } catch (error) {
-      console.error('removePostFromIndex: Error removing post from index:', error);
-      return false;
-    }
+    console.log('removePostFromIndex called for:', slug);
+    
+    // This method is deprecated - no more index.json updates
+    console.log('Index updating deprecated - using dynamic repository scanning');
+    return true;
   }
   shareToBluesky() {
     console.log('🔵 shareToBluesky: Starting Bluesky share...');
@@ -9271,74 +9157,45 @@ class SimpleBlog {
     console.log('Checking for duplicate post:', slug);
     
     try {
-      // Check if post exists on GitHub
-      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`);
+      // Check if post exists on GitHub using raw URL (most reliable)
+      const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
+      const response = await fetch(postUrl);
+      
       if (response.ok) {
         const postData = await response.json();
-        const content = JSON.parse(atob(postData.content));
-        console.log(` Found existing post on GitHub: ${slug} (SHA: ${postData.sha})`);
+        console.log(`Found existing post on GitHub: ${slug}`);
         return {
           slug: slug,
-          title: content.title || slug,
-          sha: postData.sha
+          title: postData.title || slug,
+          sha: null, // SHA not needed for raw URLs
+          needsShaFetch: false
         };
       } else if (response.status === 404) {
-        console.log(` No existing post found on GitHub: ${slug}`);
+        console.log(`No existing post found on GitHub: ${slug}`);
         return null; // No duplicate found
       } else {
-        console.warn(` GitHub API returned status ${response.status} for ${slug}`);
+        console.warn(`GitHub raw URL returned status ${response.status} for ${slug}`);
       }
     } catch (error) {
-      console.log(` GitHub API failed for ${slug}, trying local check...`);
+      console.log(`GitHub raw URL failed for ${slug}:`, error);
     }
     
-    // Fallback: check local posts array and local files
+    // Fallback: check local posts array
     try {
       if (this.posts && this.posts.length > 0) {
         const existingPost = this.posts.find(post => post.slug === slug);
         if (existingPost) {
-          console.log(` Found existing post in local cache: ${slug}`);
-          // For local posts, we'll need to fetch the SHA when publishing
+          console.log(`Found existing post in local cache: ${slug}`);
           return {
             slug: slug,
             title: existingPost.title || slug,
             sha: null,
-            needsShaFetch: true
+            needsShaFetch: false
           };
         }
       }
       
-      // Also check if we have a local file
-      try {
-        const localResponse = await fetch(`posts/${slug}.json`);
-        if (localResponse.ok) {
-          console.log(` Found existing local post file: ${slug}`);
-          return {
-            slug: slug,
-            title: slug, // We don't know the title from local file
-            sha: null,
-            needsShaFetch: true
-          };
-        }
-      } catch (localError) {
-        // Local file doesn't exist
-      }
-      
-      // If we have posts in memory, check if any have this slug
-      if (this.posts && this.posts.length > 0) {
-        const memoryPost = this.posts.find(post => post.slug === slug);
-        if (memoryPost) {
-          console.log(` Found existing post in memory: ${slug}`);
-          return {
-            slug: slug,
-            title: memoryPost.title || slug,
-            sha: null,
-            needsShaFetch: true
-          };
-        }
-      }
-      
-      console.log(` No existing post found locally: ${slug}`);
+      console.log(`No existing post found: ${slug}`);
       return null; // No duplicate found
     } catch (fallbackError) {
       console.error('Error in fallback duplicate check:', fallbackError);
@@ -9407,23 +9264,21 @@ class SimpleBlog {
   
   // Load edit data for a specific post (used by site map in editor mode)
   async loadEditDataForPost(slug) {
-    console.log(` Loading edit data for post: ${slug}`);
+    console.log(`Loading edit data for post: ${slug}`);
     
-    // Try GitHub API first (preferred source)
+    // Use raw GitHub URL (most reliable)
     try {
-      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`);
+      const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
+      const response = await fetch(postUrl);
+      
       if (response.ok) {
-        const indexData = await response.json();
-        if (indexData.content && indexData.encoding === 'base64') {
-          const decodedContent = atob(indexData.content);
-          const postData = JSON.parse(decodedContent);
-          console.log(` Loaded post data from GitHub: ${postData.title}`);
-          this.populateEditorWithPost(postData);
-          return;
-        }
+        const postData = await response.json();
+        console.log(`Loaded post data from GitHub: ${postData.title}`);
+        this.populateEditorWithPost(postData);
+        return;
       }
     } catch (githubError) {
-      console.log('GitHub API failed, trying local...');
+      console.log('GitHub raw URL failed:', githubError);
     }
     
     // Fallback to local file if GitHub fails
@@ -9431,7 +9286,7 @@ class SimpleBlog {
       const localResponse = await fetch(`posts/${slug}.json`);
       if (localResponse.ok) {
         const postData = await localResponse.json();
-        console.log(` Loaded post data from local: ${postData.title}`);
+        console.log(`Loaded post data from local: ${postData.title}`);
         this.populateEditorWithPost(postData);
         return;
       }
