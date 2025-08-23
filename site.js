@@ -6242,7 +6242,8 @@ class SimpleBlog {
         }
       }
       
-      // Create post data - use original slug for edits, new slug for new posts
+      // Create post data - for edits, always use the original slug to update the existing file
+      // This ensures that editing a post updates the same file rather than creating a new one
       const postData = {
         slug: isEdit ? originalSlug : title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
         title: title,
@@ -6252,8 +6253,10 @@ class SimpleBlog {
       };
       
       console.log('Post data prepared:', postData);
+      console.log('Is edit:', isEdit, 'Original slug:', originalSlug, 'Final slug:', postData.slug);
       
       // Check for duplicate posts (only for new posts, not edits)
+      // For edits, we always update the existing file using the original slug
       if (!isEdit) {
         const duplicatePost = await this.checkForDuplicatePost(postData.slug);
         if (duplicatePost) {
@@ -6323,6 +6326,8 @@ class SimpleBlog {
       
       // For edits, we always use the original slug, so no slug change handling needed
       // The post will be updated in place with the new content, title, and flags
+      // This ensures that editing a post (even with a changed title) updates the existing file
+      // rather than creating a new post file
       
       // If we still don't have a SHA for an edit, we'll need to handle this specially
       if (isEdit && !currentSha) {
@@ -9139,6 +9144,8 @@ class SimpleBlog {
     console.log('Editing post:', currentPost);
     
     // Store post data for editor
+    // The slug is preserved to ensure the edited post updates the existing file
+    // even if the title changes significantly
     localStorage.setItem('editPostData', JSON.stringify({
       slug: currentPost.slug,
       title: currentPost.title,
@@ -9383,20 +9390,30 @@ class SimpleBlog {
         titleField.value = editPost.title;
         console.log('Title populated:', editPost.title);
         
-        // Update localStorage with the current post slug for GitHub button
-        const slug = editPost.title.toLowerCase().replace(/[^a-z0-9]/gi, '-');
-        localStorage.setItem('current_post_slug', slug);
-        console.log('Updated current post slug in localStorage:', slug);
+        // For edits, we keep the original slug to ensure the post updates the existing file
+        // even if the title changes
+        localStorage.setItem('current_post_slug', editPost.slug);
+        console.log('Preserved original slug for editing:', editPost.slug);
       }
       
       // Add event listener to title field to update localStorage as user types
+      // For edits, we preserve the original slug to ensure the post updates the existing file
       if (titleField) {
         titleField.addEventListener('input', () => {
           const currentTitle = titleField.value.trim();
           if (currentTitle) {
-            const slug = currentTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-');
-            localStorage.setItem('current_post_slug', slug);
-            console.log('Updated current post slug in localStorage:', slug);
+            // Check if we're editing an existing post
+            const isEditing = editPost && editPost.slug;
+            if (isEditing) {
+              // For edits, keep the original slug to update the existing file
+              localStorage.setItem('current_post_slug', editPost.slug);
+              console.log('Preserved original slug for editing:', editPost.slug);
+            } else {
+              // For new posts, update slug based on title
+              const slug = currentTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-');
+              localStorage.setItem('current_post_slug', slug);
+              console.log('Updated current post slug in localStorage:', slug);
+            }
           }
         });
         console.log('Added title field event listener for localStorage updates');
@@ -9446,6 +9463,7 @@ class SimpleBlog {
     const titleField = document.getElementById('postTitle');
     if (titleField) {
       // Add event listener to title field to update localStorage as user types
+      // This is only for new posts, not for editing existing posts
       titleField.addEventListener('input', () => {
         const currentTitle = titleField.value.trim();
         if (currentTitle) {
