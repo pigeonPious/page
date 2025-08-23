@@ -9546,6 +9546,20 @@ class SimpleBlog {
           if (currentTitle) {
             const slug = currentTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-');
             localStorage.setItem('current_post_slug', slug);
+            
+            // Update the editPostData with the new title but preserve the original slug
+            const currentEditData = localStorage.getItem('editPostData');
+            if (currentEditData) {
+              try {
+                const editData = JSON.parse(currentEditData);
+                editData.title = currentTitle;
+                localStorage.setItem('editPostData', JSON.stringify(editData));
+                console.log('Updated editPostData with new title, preserved original slug:', editData.slug);
+              } catch (error) {
+                console.warn('Could not update editPostData:', error);
+              }
+            }
+            
             console.log('Updated current post slug in localStorage:', slug);
           }
         });
@@ -9577,9 +9591,8 @@ class SimpleBlog {
         console.log('Flags set:', editPost.keywords);
       }
       
-      // Clear the edit data after loading
-      localStorage.removeItem('editPostData');
-      console.log('Edit data loaded and cleared');
+      // Don't clear edit data yet - keep it for the publish operation
+      console.log('Edit data loaded and preserved for publishing');
       
       // Show success message
       this.showMenuStyle1Message(`Editing post: ${editPost.title}`, 'success');
