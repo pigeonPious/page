@@ -2699,9 +2699,18 @@ class SimpleBlog {
   displayPost(post) {
     // Update URL to reflect current post (for direct linking and sharing)
     if (post && post.slug) {
-      const newUrl = `${window.location.origin}${window.location.pathname}#${post.slug}`;
-      window.history.pushState({ postSlug: post.slug }, post.title, newUrl);
-      console.log('Updated URL to:', newUrl);
+      // Use direct hash change for more reliable URL updates
+      const currentHash = window.location.hash;
+      const newHash = `#${post.slug}`;
+      
+      if (currentHash !== newHash) {
+        console.log(`Updating URL hash from ${currentHash} to ${newHash}`);
+        window.location.hash = newHash;
+        
+        // Also update history state for back/forward navigation
+        window.history.replaceState({ postSlug: post.slug }, post.title, window.location.href);
+        console.log('Updated URL hash and history state for:', post.slug);
+      }
     }
     
     const titleElement = document.getElementById('post-title');
