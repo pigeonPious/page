@@ -2185,57 +2185,55 @@ class SimpleBlog {
 
 
   async loadPosts() {
-    console.log('loadPosts: Loading posts from index...');
+    console.log('loadPosts: Dynamically scanning GitHub repository contents...');
     
     try {
-      // Load posts from GitHub index (much faster than scanning directory)
-      const timestamp = Date.now();
-      const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
-      console.log('loadPosts: Loading posts index from GitHub:', indexUrl);
-      
-      const response = await fetch(indexUrl);
+      // Fetch the contents of the posts directory from GitHub
+      const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
       if (response.ok) {
-        const indexData = await response.json();
-        console.log('loadPosts: GitHub index data loaded:', indexData);
+        const directoryContents = await response.json();
         
-        // GitHub API returns content in base64, need to decode
-        if (indexData.content && indexData.encoding === 'base64') {
+        // Filter for JSON files (posts) and exclude index.json
+        const postFiles = directoryContents.filter(item => 
+          item.type === 'file' && 
+          item.name.endsWith('.json') && 
+          item.name !== 'index.json'
+        );
+        
+        console.log('loadPosts: Found', postFiles.length, 'post files in repository');
+        
+        // Fetch and parse each post file to get metadata
+        const posts = [];
+        for (const postFile of postFiles) {
           try {
-            const decodedContent = atob(indexData.content);
-            const parsedData = JSON.parse(decodedContent);
-            console.log('loadPosts: Decoded index data:', parsedData);
-            
-            // Handle both array and object formats
-            if (Array.isArray(parsedData)) {
-              this.posts = parsedData;
-            } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
-              this.posts = parsedData.posts;
-            } else {
-              console.warn('loadPosts: Unexpected index format:', parsedData);
-              // Don't clear posts array - keep cached posts if available
-              if (!this.posts || this.posts.length === 0) {
-                this.posts = [];
-              }
+            const postResponse = await fetch(postFile.download_url);
+            if (postResponse.ok) {
+              const postData = await postResponse.json();
+              
+              // Extract slug from filename (remove .json extension)
+              const slug = postFile.name.replace('.json', '');
+              
+              // Create post object with all necessary data
+              const post = {
+                slug: slug,
+                title: postData.title || 'Untitled',
+                date: postData.date || 'Unknown Date',
+                keywords: postData.keywords || 'general',
+                content: postData.content || ''
+              };
+              
+              posts.push(post);
             }
-          } catch (decodeError) {
-            console.error('Error decoding GitHub content:', decodeError);
-            // Don't clear posts array - keep cached posts if available
-            if (!this.posts || this.posts.length === 0) {
-              this.posts = [];
-            }
-          }
-        } else {
-          console.warn('loadPosts: Unexpected GitHub API response format:', indexData);
-          // Don't clear posts array - keep cached posts if available
-          if (!this.posts || this.posts.length === 0) {
-            this.posts = [];
+          } catch (postError) {
+            console.warn('Could not parse post file:', postFile.name, postError);
           }
         }
         
-        console.log('loadPosts: Posts loaded from index:', this.posts.length);
+        console.log('loadPosts: Successfully loaded', posts.length, 'posts from repository');
         
-        // Cache posts in localStorage for submenu use
-        localStorage.setItem('posts', JSON.stringify(this.posts));
+        // Update posts array and cache in localStorage
+        this.posts = posts;
+        localStorage.setItem('posts', JSON.stringify(posts));
         
         if (this.posts.length > 0) {
           // Sort by date for reference, but don't auto-load most recent
@@ -2245,24 +2243,19 @@ class SimpleBlog {
           
           // Don't create submenus on page load - only create them on hover
           console.log('🧭 loadPosts: Posts loaded, submenus will be created on hover');
-          
-
         } else {
-          console.log('loadPosts: No posts found in index');
-          // Don't clear posts array - keep cached posts if available
-          if (!this.posts || this.posts.length === 0) {
-            this.displayDefaultContent();
-          }
+          console.log('loadPosts: No posts found in repository');
+          this.displayDefaultContent();
         }
       } else {
-        console.warn('loadPosts: Could not load index file:', response.status);
+        console.warn('loadPosts: Could not access posts directory:', response.status);
         // Don't clear posts array - keep cached posts if available
         if (!this.posts || this.posts.length === 0) {
           this.displayDefaultContent();
         }
       }
     } catch (error) {
-      console.error('loadPosts: Error loading index:', error);
+      console.error('loadPosts: Error scanning repository:', error);
       // Don't clear posts array - keep cached posts if available
       if (!this.posts || this.posts.length === 0) {
         this.displayDefaultContent();
@@ -6377,44 +6370,34 @@ class SimpleBlog {
       if (response.ok) {
         console.log('Post published successfully to GitHub');
         
-        // Update the posts index incrementally instead of rebuilding from scratch
-        console.log('Updating posts index incrementally...');
-        const indexUpdated = await this.updatePostsIndexIncrementally(postData, isEdit);
-        
-        if (indexUpdated) {
-          // If this was an edit, always delete the old file
-          if (isEdit && originalSlug) {
-            console.log('🔴 Edit mode - deleting old file:', originalSlug);
-            console.log('🔴 isEdit:', isEdit, 'originalSlug:', originalSlug);
-            try {
-              await this.deleteOldPostFile(originalSlug);
-              console.log('✅ Old post file deleted successfully');
-            } catch (deleteError) {
-              console.error('❌ Failed to delete old post file:', deleteError);
-              // Don't fail the entire operation if deletion fails
-            }
-          } else {
-            console.log('🟡 This is a new post - no old file to delete');
-            console.log('🟡 isEdit:', isEdit, 'originalSlug:', originalSlug);
+        // Post published successfully - now handle old file deletion for edits
+        if (isEdit && originalSlug) {
+          console.log('🔴 Edit mode - deleting old file:', originalSlug);
+          console.log('🔴 isEdit:', isEdit, 'originalSlug:', originalSlug);
+          try {
+            await this.deleteOldPostFile(originalSlug);
+            console.log('✅ Old post file deleted successfully');
+          } catch (deleteError) {
+            console.error('❌ Failed to delete old post file:', deleteError);
+            // Don't fail the entire operation if deletion fails
           }
-          
-          // Clear edit data after successful publish
-          if (isEdit) {
-            localStorage.removeItem('editPostData');
-            console.log(' Edit data cleared after successful publish');
-          }
-          
-
-          
-          this.showMenuStyle1Message(` Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nIndex updated efficiently with minimal API calls.`, 'success');
-          
-          // Redirect to the published post after a short delay
-          setTimeout(() => {
-            window.location.href = `index.html?post=${postData.slug}`;
-          }, 3000);
         } else {
-          this.showMenuStyle1Message(' Post published but index update failed. Please refresh the page to see updated navigation.', 'warning');
+          console.log('🟡 This is a new post - no old file to delete');
+          console.log('🟡 isEdit:', isEdit, 'originalSlug:', originalSlug);
         }
+        
+        // Clear edit data after successful publish
+        if (isEdit) {
+          localStorage.removeItem('editPostData');
+          console.log(' Edit data cleared after successful publish');
+        }
+        
+        this.showMenuStyle1Message(` Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nNo indexing needed - sitemap updates automatically!`, 'success');
+        
+        // Redirect to the published post after a short delay
+        setTimeout(() => {
+          window.location.href = `index.html?post=${postData.slug}`;
+        }, 3000);
       } else {
         const error = await response.json();
         console.error('Failed to publish post:', error);
@@ -8377,40 +8360,65 @@ class SimpleBlog {
       padding-right: 8px;
     `;
     
-    // Always fetch fresh posts from GitHub for sitemap (no local fallback)
+    // Dynamically scan GitHub repository contents for sitemap (no indexing needed)
     const loadPostsForSiteMap = async () => {
       try {
-        // Always use GitHub API for sitemap to ensure it's current
-        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
+        console.log('Site map: Scanning GitHub repository contents directly...');
+        
+        // Fetch the contents of the posts directory from GitHub
+        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
         if (response.ok) {
-          const indexData = await response.json();
+          const directoryContents = await response.json();
           
-          // GitHub API returns content in base64, need to decode
-          if (indexData.content && indexData.encoding === 'base64') {
+          // Filter for JSON files (posts) and exclude index.json
+          const postFiles = directoryContents.filter(item => 
+            item.type === 'file' && 
+            item.name.endsWith('.json') && 
+            item.name !== 'index.json'
+          );
+          
+          console.log('Site map: Found', postFiles.length, 'post files in repository');
+          
+          // Fetch and parse each post file to get metadata
+          const posts = [];
+          for (const postFile of postFiles) {
             try {
-              const decodedContent = atob(indexData.content);
-              const posts = JSON.parse(decodedContent);
-              console.log('Site map: Loaded fresh posts from GitHub:', posts.length);
-              
-              // Update local state to match GitHub
-              this.posts = posts;
-              localStorage.setItem('posts', JSON.stringify(posts));
-              console.log('Site map: Updated local posts state to match GitHub');
-              
-              return posts;
-            } catch (decodeError) {
-              console.error('Error decoding GitHub content for site map:', decodeError);
-              throw new Error('Failed to decode GitHub content');
+              const postResponse = await fetch(postFile.download_url);
+              if (postResponse.ok) {
+                const postData = await postResponse.json();
+                
+                // Extract slug from filename (remove .json extension)
+                const slug = postFile.name.replace('.json', '');
+                
+                // Create post object with all necessary data
+                const post = {
+                  slug: slug,
+                  title: postData.title || 'Untitled',
+                  date: postData.date || 'Unknown Date',
+                  keywords: postData.keywords || 'general',
+                  content: postData.content || ''
+                };
+                
+                posts.push(post);
+              }
+            } catch (postError) {
+              console.warn('Could not parse post file:', postFile.name, postError);
             }
-          } else {
-            throw new Error('Unexpected GitHub API response format');
           }
+          
+          console.log('Site map: Successfully loaded', posts.length, 'posts from repository');
+          
+          // Update local state to match GitHub
+          this.posts = posts;
+          localStorage.setItem('posts', JSON.stringify(posts));
+          console.log('Site map: Updated local posts state to match repository');
+          
+          return posts;
         } else {
           throw new Error(`GitHub API failed: ${response.status}`);
         }
       } catch (error) {
         console.error('Site map: GitHub API failed, cannot generate sitemap:', error);
-        // No local fallback - sitemap requires live data
         this.showMenuStyle1Message('Could not load sitemap: GitHub API unavailable', 'error');
         return [];
       }
