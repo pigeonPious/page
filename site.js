@@ -6320,72 +6320,11 @@ class SimpleBlog {
             return;
           }
           console.log('User confirmed overwrite');
-          
-          // Use the SHA from the duplicate post if we're overwriting
-          if (duplicatePost.sha) {
-            currentSha = duplicatePost.sha;
-            console.log('Using SHA from duplicate check:', currentSha);
-          } else {
-                    // Always try to fetch SHA for existing posts, even if duplicate check failed
-        console.log('Need to fetch SHA for existing post...');
-        
-        // Try multiple methods to get SHA
-        let shaFound = false;
-        
-        // Method 1: Try public GitHub API
-        try {
-          const shaResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
-          if (shaResponse.ok) {
-            const shaData = await shaResponse.json();
-            currentSha = shaData.sha;
-            shaFound = true;
-            console.log('Successfully fetched SHA (public API):', currentSha);
-          } else {
-            console.warn('Public API failed to fetch SHA, status:', shaResponse.status);
-          }
-        } catch (shaError) {
-          console.error('Error fetching SHA from public API:', shaError);
-        }
-        
-        // Method 2: Try authenticated GitHub API
-        if (!shaFound && githubToken) {
-          try {
-            const authShaResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`, {
-              headers: {
-                'Authorization': `token ${githubToken}`,
-              }
-            });
-            if (authShaResponse.ok) {
-              const shaData = await authShaResponse.json();
-              currentSha = shaData.sha;
-              shaFound = true;
-              console.log('Successfully fetched SHA (authenticated API):', currentSha);
-            } else {
-              console.warn('Authenticated API failed to fetch SHA, status:', authShaResponse.status);
-            }
-          } catch (authShaError) {
-            console.error('Error fetching SHA from authenticated API:', authShaError);
-          }
-        }
-        
-        if (!shaFound) {
-          console.warn('Could not fetch SHA from any method - will try to create new file');
-        }
-          }
         }
       }
       
-      // Token already retrieved at function start
-      
-      // For edits, we always use the original slug, so no slug change handling needed
-      // The post will be updated in place with the new content, title, and flags
-      
-      // If we still don't have a SHA for an edit, we'll need to handle this specially
-      if (isEdit && !currentSha) {
-        console.log('No SHA available for edit - will try alternative approach');
-        // We'll try to create a new file, which might fail if it already exists
-        // But this is better than the current 422 error
-      }
+      // For edits, we always create new files, so no SHA handling needed
+      // The old file will be deleted after the new one is created
       
       // Sanitize content to remove problematic characters
       const sanitizedPostData = {
