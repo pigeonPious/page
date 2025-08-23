@@ -1026,7 +1026,7 @@ class SimpleBlog {
         }
       }
       
-                        // Method 5: Bypass API entirely - use raw GitHub URLs directly
+                        // Method 5: Fallback to GitHub public tree API (no authentication required)
         if (!directoryContents) {
           try {
             console.log('🕊️ Method 5 - using GitHub public tree API');
@@ -1055,6 +1055,46 @@ class SimpleBlog {
             }
           } catch (error) {
             console.log('🕊️ Method 5 failed:', error);
+          }
+        }
+        
+        // Method 6: Ultimate fallback - use raw GitHub directory browsing
+        if (!directoryContents) {
+          try {
+            console.log('🕊️ Method 6 - using raw GitHub directory browsing');
+            
+            // Try to fetch the posts directory as HTML and parse it
+            const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+            if (postsDirResponse.ok) {
+              const htmlContent = await postsDirResponse.text();
+              
+              // Parse HTML to find JSON files
+              const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
+              if (jsonFileMatches) {
+                const postFiles = jsonFileMatches
+                  .map(match => match.match(/href="([^"]+)"/)[1])
+                  .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
+                  .map(href => {
+                    const filename = href.split('/').pop();
+                    return {
+                      type: 'file',
+                      name: filename,
+                      download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+                    };
+                  });
+                
+                if (postFiles.length > 0) {
+                  directoryContents = postFiles;
+                  console.log('🕊️ Method 6 successful - parsed HTML directory');
+                }
+              }
+            }
+            
+            if (!directoryContents) {
+              console.log('🕊️ Method 6 failed - could not parse directory');
+            }
+          } catch (error) {
+            console.log('🕊️ Method 6 failed:', error);
           }
         }
       
@@ -1622,6 +1662,46 @@ class SimpleBlog {
         }
       }
       
+      // Method 6: Ultimate fallback - use raw GitHub directory browsing
+      if (!directoryContents) {
+        try {
+          console.log('Submenu: Method 6 - using raw GitHub directory browsing');
+          
+          // Try to fetch the posts directory as HTML and parse it
+          const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+          if (postsDirResponse.ok) {
+            const htmlContent = await postsDirResponse.text();
+            
+            // Parse HTML to find JSON files
+            const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
+            if (jsonFileMatches) {
+              const postFiles = jsonFileMatches
+                .map(match => match.match(/href="([^"]+)"/)[1])
+                .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
+                .map(href => {
+                  const filename = href.split('/').pop();
+                  return {
+                    type: 'file',
+                    name: filename,
+                    download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+                  };
+                });
+              
+              if (postFiles.length > 0) {
+                directoryContents = postFiles;
+                console.log('Submenu: Method 6 successful - parsed HTML directory');
+              }
+            }
+          }
+          
+          if (!directoryContents) {
+            console.log('Submenu: Method 6 failed - could not parse directory');
+          }
+        } catch (error) {
+          console.log('Submenu: Method 6 failed:', error);
+        }
+      }
+      
       if (directoryContents) {
         // Filter for JSON files (posts) and exclude index.json
         const postFiles = directoryContents.filter(item => 
@@ -1820,6 +1900,46 @@ class SimpleBlog {
           }
         } catch (error) {
           console.log('Force reindex: Method 5 failed:', error);
+        }
+      }
+      
+      // Method 6: Ultimate fallback - use raw GitHub directory browsing
+      if (!directoryContents) {
+        try {
+          console.log('Force reindex: Method 6 - using raw GitHub directory browsing');
+          
+          // Try to fetch the posts directory as HTML and parse it
+          const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+          if (postsDirResponse.ok) {
+            const htmlContent = await postsDirResponse.text();
+            
+            // Parse HTML to find JSON files
+            const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
+            if (jsonFileMatches) {
+              const postFiles = jsonFileMatches
+                .map(match => match.match(/href="([^"]+)"/)[1])
+                .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
+                .map(href => {
+                  const filename = href.split('/').pop();
+                  return {
+                    type: 'file',
+                    name: filename,
+                    download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+                  };
+                });
+              
+              if (postFiles.length > 0) {
+                directoryContents = postFiles;
+                console.log('Force reindex: Method 6 successful - parsed HTML directory');
+              }
+            }
+          }
+          
+          if (!directoryContents) {
+            console.log('Force reindex: Method 6 failed - could not parse directory');
+          }
+        } catch (error) {
+          console.log('Force reindex: Method 6 failed:', error);
         }
       }
       
@@ -2472,6 +2592,46 @@ class SimpleBlog {
           }
         } catch (error) {
           console.log('loadPosts: Method 5 failed:', error);
+        }
+      }
+      
+      // Method 6: Ultimate fallback - use raw GitHub directory browsing
+      if (!directoryContents) {
+        try {
+          console.log('loadPosts V2.0: Method 6 - using raw GitHub directory browsing');
+          
+          // Try to fetch the posts directory as HTML and parse it
+          const postsDirResponse = await fetch(`https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
+          if (postsDirResponse.ok) {
+            const htmlContent = await postsDirResponse.text();
+            
+            // Parse HTML to find JSON files
+            const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
+            if (jsonFileMatches) {
+              const postFiles = jsonFileMatches
+                .map(match => match.match(/href="([^"]+)"/)[1])
+                .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
+                .map(href => {
+                  const filename = href.split('/').pop();
+                  return {
+                    type: 'file',
+                    name: filename,
+                    download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}?_cb=${cacheBust}`
+                  };
+                });
+              
+              if (postFiles.length > 0) {
+                directoryContents = postFiles;
+                console.log('loadPosts V2.0: Method 6 successful - parsed HTML directory');
+              }
+            }
+          }
+          
+          if (!directoryContents) {
+            console.log('loadPosts V2.0: Method 6 failed - could not parse directory');
+          }
+        } catch (error) {
+          console.log('loadPosts: Method 6 failed:', error);
         }
       }
       
@@ -8873,6 +9033,46 @@ class SimpleBlog {
             }
           } catch (error) {
             console.log('Site map: Method 5 failed:', error);
+          }
+        }
+        
+        // Method 6: Ultimate fallback - use raw GitHub directory browsing
+        if (!directoryContents) {
+          try {
+            console.log('Site map: Method 6 - using raw GitHub directory browsing');
+            
+            // Try to fetch the posts directory as HTML and parse it
+            const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+            if (postsDirResponse.ok) {
+              const htmlContent = await postsDirResponse.text();
+              
+              // Parse HTML to find JSON files
+              const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
+              if (jsonFileMatches) {
+                const postFiles = jsonFileMatches
+                  .map(match => match.match(/href="([^"]+)"/)[1])
+                  .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
+                  .map(href => {
+                    const filename = href.split('/').pop();
+                    return {
+                      type: 'file',
+                      name: filename,
+                      download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+                    };
+                  });
+                
+                if (postFiles.length > 0) {
+                  directoryContents = postFiles;
+                  console.log('Site map: Method 6 successful - parsed HTML directory');
+                }
+              }
+            }
+            
+            if (!directoryContents) {
+              console.log('Site map: Method 6 failed - could not parse directory');
+            }
+          } catch (error) {
+            console.log('Site map: Method 6 failed:', error);
           }
         }
         
