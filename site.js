@@ -8438,10 +8438,10 @@ class SimpleBlog {
       padding-right: 8px;
     `;
     
-    // Fetch posts from GitHub and build tree (with local fallback)
+    // Always fetch fresh posts from GitHub for sitemap (no local fallback)
     const loadPostsForSiteMap = async () => {
       try {
-        // Try GitHub API first
+        // Always use GitHub API for sitemap to ensure it's current
         const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
         if (response.ok) {
           const indexData = await response.json();
@@ -8451,7 +8451,13 @@ class SimpleBlog {
             try {
               const decodedContent = atob(indexData.content);
               const posts = JSON.parse(decodedContent);
-              console.log('Site map: Loaded posts from GitHub:', posts.length);
+              console.log('Site map: Loaded fresh posts from GitHub:', posts.length);
+              
+              // Update local state to match GitHub
+              this.posts = posts;
+              localStorage.setItem('posts', JSON.stringify(posts));
+              console.log('Site map: Updated local posts state to match GitHub');
+              
               return posts;
             } catch (decodeError) {
               console.error('Error decoding GitHub content for site map:', decodeError);
@@ -8464,29 +8470,10 @@ class SimpleBlog {
           throw new Error(`GitHub API failed: ${response.status}`);
         }
       } catch (error) {
-        console.log('Site map: GitHub API failed, trying local index.json...');
-        
-        // Fallback to local index.json
-        try {
-          const localResponse = await fetch('posts/index.json');
-          if (localResponse.ok) {
-            const localData = await localResponse.json();
-            console.log('Site map: Loaded posts from local index:', localData);
-            
-            if (Array.isArray(localData)) {
-              return localData;
-            } else if (localData.posts && Array.isArray(localData.posts)) {
-              return localData.posts;
-            } else {
-              throw new Error('Unexpected local index format');
-            }
-          } else {
-            throw new Error(`Local index failed: ${localResponse.status}`);
-          }
-        } catch (localError) {
-          console.error('Site map: Both GitHub API and local index failed:', localError);
-          throw localError;
-        }
+        console.error('Site map: GitHub API failed, cannot generate sitemap:', error);
+        // No local fallback - sitemap requires live data
+        this.showMenuStyle1Message('Could not load sitemap: GitHub API unavailable', 'error');
+        return [];
       }
     };
     
