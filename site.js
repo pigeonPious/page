@@ -9542,6 +9542,16 @@ class SimpleBlog {
     
     // Store current post slug for editing
     localStorage.setItem('current_post_slug', postData.slug);
+    
+    // Store edit data for delete functionality
+    localStorage.setItem('editPostData', JSON.stringify({
+      slug: postData.slug,
+      title: postData.title,
+      content: postData.content,
+      keywords: postData.keywords,
+      date: postData.date
+    }));
+    
     console.log(` Editor populated with post: ${postData.title}`);
   }
 
