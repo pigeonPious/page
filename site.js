@@ -5543,9 +5543,31 @@ class SimpleBlog {
       const newIndexEntry = {
         slug: postData.slug,
         title: postData.title,
-        date: postData.date,
         keywords: postData.keywords || 'general'
       };
+      
+      // Fetch the actual GitHub file metadata to get the real date
+      try {
+        const fileResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`, {
+          headers: {
+            'Authorization': `token ${token}`,
+          }
+        });
+        
+        if (fileResponse.ok) {
+          const fileData = await fileResponse.json();
+          // Use the commit date from GitHub (when the file was last updated)
+          newIndexEntry.date = fileData.commit?.author?.date || new Date().toISOString().split('T')[0];
+          console.log('Fetched real date from GitHub:', newIndexEntry.date);
+        } else {
+          // Fallback to current date if we can't fetch the file
+          newIndexEntry.date = new Date().toISOString().split('T')[0];
+          console.log('Using fallback date:', newIndexEntry.date);
+        }
+      } catch (error) {
+        console.warn('Could not fetch file metadata, using fallback date:', error);
+        newIndexEntry.date = new Date().toISOString().split('T')[0];
+      }
       
       let updatedIndex;
       
@@ -5574,8 +5596,12 @@ class SimpleBlog {
         console.log('➕ Added new post to index:', postData.slug);
       }
       
-      // Sort by date (newest first)
-      updatedIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
+      // Sort by date (newest first), with fallback for missing dates
+      updatedIndex.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : new Date(0);
+        const dateB = b.date ? new Date(b.date) : new Date(0);
+        return dateB - dateA;
+      });
       
       // Update local posts array
       this.posts = updatedIndex;
@@ -5614,31 +5640,37 @@ class SimpleBlog {
 
   // Function to delete an old post file when title changes significantly
   async deleteOldPostFile(oldSlug) {
-    console.log('Deleting old post file:', oldSlug);
+    console.log('🗑️ Starting deletion of old post file:', oldSlug);
     
     try {
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.error('No GitHub token found for file deletion');
+        console.error('❌ No GitHub token found for file deletion');
         throw new Error('No GitHub token found');
       }
+      console.log('✅ GitHub token found, length:', token.length);
       
       // Get the current SHA of the file to delete
+      console.log('🔍 Fetching file metadata for deletion...');
       const fileResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${oldSlug}.json`, {
         headers: {
           'Authorization': `token ${token}`,
         }
       });
       
+      console.log('📡 File fetch response status:', fileResponse.status);
+      
       if (!fileResponse.ok) {
-        console.warn('Could not fetch file for deletion (may already be deleted):', fileResponse.status);
+        console.warn('⚠️ Could not fetch file for deletion (may already be deleted):', fileResponse.status);
         return; // File may already not exist
       }
       
       const fileData = await fileResponse.json();
       const currentSha = fileData.sha;
+      console.log('✅ Got file SHA for deletion:', currentSha);
       
       // Delete the file using GitHub API
+      console.log('🗑️ Sending delete request to GitHub...');
       const deleteResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${oldSlug}.json`, {
         method: 'DELETE',
         headers: {
@@ -5652,16 +5684,18 @@ class SimpleBlog {
         })
       });
       
+      console.log('📡 Delete response status:', deleteResponse.status);
+      
       if (deleteResponse.ok) {
-        console.log('Old post file deleted successfully:', oldSlug);
+        console.log('✅ Old post file deleted successfully:', oldSlug);
       } else {
         const error = await deleteResponse.json();
-        console.error('Failed to delete old post file:', error);
+        console.error('❌ Failed to delete old post file:', error);
         throw new Error(`Failed to delete file: ${error.message}`);
       }
       
     } catch (error) {
-      console.error('Error deleting old post file:', error);
+      console.error('❌ Error deleting old post file:', error);
       throw error;
     }
   }
@@ -6266,13 +6300,14 @@ class SimpleBlog {
       const postData = {
         slug: title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
         title: title,
-        date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
         keywords: finalFlags,
         content: content
       };
       
       console.log('Post data prepared:', postData);
-      console.log('Edit mode - original slug:', originalSlug, 'new slug:', postData.slug);
+      console.log('🔍 Edit mode - original slug:', originalSlug, 'new slug:', postData.slug);
+      console.log('🔍 isEdit flag:', isEdit);
+      console.log('🔍 editData from localStorage:', editData);
       
       // Check for duplicate posts (only for new posts, not edits)
       if (!isEdit) {
@@ -6410,16 +6445,18 @@ class SimpleBlog {
         if (indexUpdated) {
           // If this was an edit, always delete the old file
           if (isEdit && originalSlug) {
-            console.log('Edit mode - deleting old file:', originalSlug);
+            console.log('🔴 Edit mode - deleting old file:', originalSlug);
+            console.log('🔴 isEdit:', isEdit, 'originalSlug:', originalSlug);
             try {
               await this.deleteOldPostFile(originalSlug);
-              console.log('Old post file deleted successfully');
+              console.log('✅ Old post file deleted successfully');
             } catch (deleteError) {
-              console.warn('Failed to delete old post file:', deleteError);
+              console.error('❌ Failed to delete old post file:', deleteError);
               // Don't fail the entire operation if deletion fails
             }
           } else {
-            console.log('This is a new post - no old file to delete');
+            console.log('🟡 This is a new post - no old file to delete');
+            console.log('🟡 isEdit:', isEdit, 'originalSlug:', originalSlug);
           }
           
           // Clear edit data after successful publish
