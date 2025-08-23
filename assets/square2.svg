@@ -1,0 +1,13 @@
+<svg width="120" height="80" viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="5" y="5" width="110" height="70" fill="none" stroke="#333" stroke-width="2"/>
+  <!-- Text lines to represent handwriting -->
+  <line x1="15" y1="25" x2="55" y2="25" stroke="#333" stroke-width="1"/>
+  <line x1="15" y1="35" x2="85" y2="35" stroke="#333" stroke-width="1"/>
+  <line x1="15" y1="45" x2="75" y2="45" stroke="#333" stroke-width="1"/>
+  <line x1="15" y1="55" x2="45" y2="55" stroke="#333" stroke-width="1"/>
+  <!-- Dashes to represent specific text -->
+  <text x="60" y="28" font-family="monospace" font-size="8" fill="#333">You're</text>
+  <text x="60" y="38" font-family="monospace" font-size="8" fill="#333">absolutely</text>
+  <text x="60" y="48" font-family="monospace" font-size="8" fill="#333">right!</text>
+  <text x="60" y="58" font-family="monospace" font-size="6" fill="#333">- -</text>
+</svg>
