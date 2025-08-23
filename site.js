@@ -1026,49 +1026,17 @@ class SimpleBlog {
         }
       }
       
-                        // Method 5: Fallback to GitHub public tree API (no authentication required)
+                        // Use GitHub's public directory browsing to discover posts
         if (!directoryContents) {
           try {
-            console.log('🕊️ Method 5 - using GitHub public tree API');
+            console.log('🕊️ Using GitHub public directory browsing...');
             
-            const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-            if (treeResponse.ok) {
-              const treeData = await treeResponse.json();
-              
-              // Filter for JSON files in the posts directory
-              const postFiles = treeData.tree.filter(item => 
-                item.path.startsWith('posts/') && 
-                item.path.endsWith('.json') && 
-                item.path !== 'posts/index.json'
-              );
-              
-              // Convert to directory format for compatibility
-              directoryContents = postFiles.map(item => ({
-                type: 'file',
-                name: item.path.replace('posts/', ''),
-                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
-              }));
-              
-              console.log('🕊️ Method 5 successful - using GitHub tree API');
-            } else {
-              console.log('🕊️ Method 5 failed with status:', treeResponse.status);
-            }
-          } catch (error) {
-            console.log('🕊️ Method 5 failed:', error);
-          }
-        }
-        
-        // Method 6: Ultimate fallback - use raw GitHub directory browsing
-        if (!directoryContents) {
-          try {
-            console.log('🕊️ Method 6 - using raw GitHub directory browsing');
-            
-            // Try to fetch the posts directory as HTML and parse it
+            // Use GitHub's public directory browsing to discover posts
             const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
             if (postsDirResponse.ok) {
               const htmlContent = await postsDirResponse.text();
               
-              // Parse HTML to find JSON files
+              // Parse HTML to find all JSON files in the posts directory
               const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
               if (jsonFileMatches) {
                 const postFiles = jsonFileMatches
@@ -1085,16 +1053,16 @@ class SimpleBlog {
                 
                 if (postFiles.length > 0) {
                   directoryContents = postFiles;
-                  console.log('🕊️ Method 6 successful - parsed HTML directory');
+                  console.log('🕊️ Successfully discovered posts via GitHub directory browsing');
                 }
               }
             }
             
             if (!directoryContents) {
-              console.log('🕊️ Method 6 failed - could not parse directory');
+              console.log('🕊️ GitHub directory browsing failed');
             }
           } catch (error) {
-            console.log('🕊️ Method 6 failed:', error);
+            console.log('🕊️ GitHub directory browsing failed:', error);
           }
         }
       
@@ -1630,49 +1598,17 @@ class SimpleBlog {
         }
       }
       
-      // Method 5: Fallback to GitHub public tree API (no authentication required)
+      // Use GitHub's public directory browsing to discover posts
       if (!directoryContents) {
         try {
-          console.log('Submenu: Method 5 - using GitHub public tree API');
+          console.log('Submenu: Using GitHub public directory browsing...');
           
-          const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-          if (treeResponse.ok) {
-            const treeData = await treeResponse.json();
-            
-            // Filter for JSON files in the posts directory
-            const postFiles = treeData.tree.filter(item => 
-              item.path.startsWith('posts/') && 
-              item.path.endsWith('.json') && 
-              item.path !== 'posts/index.json'
-            );
-            
-            // Convert to directory format for compatibility
-            directoryContents = postFiles.map(item => ({
-              type: 'file',
-              name: item.path.replace('posts/', ''),
-              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
-            }));
-            
-            console.log('Submenu: Method 5 successful - using GitHub tree API');
-          } else {
-            console.log('Submenu: Method 5 failed with status:', treeResponse.status);
-          }
-        } catch (error) {
-          console.log('Submenu: Method 5 failed:', error);
-        }
-      }
-      
-      // Method 6: Ultimate fallback - use raw GitHub directory browsing
-      if (!directoryContents) {
-        try {
-          console.log('Submenu: Method 6 - using raw GitHub directory browsing');
-          
-          // Try to fetch the posts directory as HTML and parse it
+          // Use GitHub's public directory browsing to discover posts
           const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
           if (postsDirResponse.ok) {
             const htmlContent = await postsDirResponse.text();
             
-            // Parse HTML to find JSON files
+            // Parse HTML to find all JSON files in the posts directory
             const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
             if (jsonFileMatches) {
               const postFiles = jsonFileMatches
@@ -1689,16 +1625,16 @@ class SimpleBlog {
               
               if (postFiles.length > 0) {
                 directoryContents = postFiles;
-                console.log('Submenu: Method 6 successful - parsed HTML directory');
+                console.log('Submenu: Successfully discovered posts via GitHub directory browsing');
               }
             }
           }
           
           if (!directoryContents) {
-            console.log('Submenu: Method 6 failed - could not parse directory');
+            console.log('Submenu: GitHub directory browsing failed');
           }
         } catch (error) {
-          console.log('Submenu: Method 6 failed:', error);
+          console.log('Submenu: GitHub directory browsing failed:', error);
         }
       }
       
@@ -1871,49 +1807,17 @@ class SimpleBlog {
         }
       }
       
-      // Method 5: Fallback to GitHub public tree API (no authentication required)
+      // Use GitHub's public directory browsing to discover posts
       if (!directoryContents) {
         try {
-          console.log('Force reindex: Method 5 - using GitHub public tree API');
+          console.log('Force reindex: Using GitHub public directory browsing...');
           
-          const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-          if (treeResponse.ok) {
-            const treeData = await treeResponse.json();
-            
-            // Filter for JSON files in the posts directory
-            const postFiles = treeData.tree.filter(item => 
-              item.path.startsWith('posts/') && 
-              item.path.endsWith('.json') && 
-              item.path !== 'posts/index.json'
-            );
-            
-            // Convert to directory format for compatibility
-            directoryContents = postFiles.map(item => ({
-              type: 'file',
-              name: item.path.replace('posts/', ''),
-              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
-            }));
-            
-            console.log('Force reindex: Method 5 successful - using GitHub tree API');
-          } else {
-            console.log('Force reindex: Method 5 failed with status:', treeResponse.status);
-          }
-        } catch (error) {
-          console.log('Force reindex: Method 5 failed:', error);
-        }
-      }
-      
-      // Method 6: Ultimate fallback - use raw GitHub directory browsing
-      if (!directoryContents) {
-        try {
-          console.log('Force reindex: Method 6 - using raw GitHub directory browsing');
-          
-          // Try to fetch the posts directory as HTML and parse it
+          // Use GitHub's public directory browsing to discover posts
           const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
           if (postsDirResponse.ok) {
             const htmlContent = await postsDirResponse.text();
             
-            // Parse HTML to find JSON files
+            // Parse HTML to find all JSON files in the posts directory
             const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
             if (jsonFileMatches) {
               const postFiles = jsonFileMatches
@@ -1930,16 +1834,16 @@ class SimpleBlog {
               
               if (postFiles.length > 0) {
                 directoryContents = postFiles;
-                console.log('Force reindex: Method 6 successful - parsed HTML directory');
+                console.log('Force reindex: Successfully discovered posts via GitHub directory browsing');
               }
             }
           }
           
           if (!directoryContents) {
-            console.log('Force reindex: Method 6 failed - could not parse directory');
+            console.log('Force reindex: GitHub directory browsing failed');
           }
         } catch (error) {
-          console.log('Force reindex: Method 6 failed:', error);
+          console.log('Force reindex: GitHub directory browsing failed:', error);
         }
       }
       
@@ -2563,49 +2467,17 @@ class SimpleBlog {
         }
       }
       
-      // Method 5: Fallback to GitHub public tree API (no authentication required)
+      // Use GitHub's public directory browsing to discover posts
       if (!directoryContents) {
         try {
-          console.log('loadPosts V2.0: Method 5 - using GitHub public tree API');
+          console.log('loadPosts V2.0: Using GitHub public directory browsing...');
           
-          const treeResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1&_cb=${cacheBust}`);
-          if (treeResponse.ok) {
-            const treeData = await treeResponse.json();
-            
-            // Filter for JSON files in the posts directory
-            const postFiles = treeData.tree.filter(item => 
-              item.path.startsWith('posts/') && 
-              item.path.endsWith('.json') && 
-              item.path !== 'posts/index.json'
-            );
-            
-            // Convert to directory format for compatibility
-            directoryContents = postFiles.map(item => ({
-              type: 'file',
-              name: item.path.replace('posts/', ''),
-              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}?_cb=${cacheBust}`
-            }));
-            
-            console.log('loadPosts V2.0: Method 5 successful - using GitHub tree API');
-          } else {
-            console.log('loadPosts V2.0: Method 5 failed with status:', treeResponse.status);
-          }
-        } catch (error) {
-          console.log('loadPosts: Method 5 failed:', error);
-        }
-      }
-      
-      // Method 6: Ultimate fallback - use raw GitHub directory browsing
-      if (!directoryContents) {
-        try {
-          console.log('loadPosts V2.0: Method 6 - using raw GitHub directory browsing');
-          
-          // Try to fetch the posts directory as HTML and parse it
+          // Use GitHub's public directory browsing to discover posts
           const postsDirResponse = await fetch(`https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
           if (postsDirResponse.ok) {
             const htmlContent = await postsDirResponse.text();
             
-            // Parse HTML to find JSON files
+            // Parse HTML to find all JSON files in the posts directory
             const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
             if (jsonFileMatches) {
               const postFiles = jsonFileMatches
@@ -2622,16 +2494,16 @@ class SimpleBlog {
               
               if (postFiles.length > 0) {
                 directoryContents = postFiles;
-                console.log('loadPosts V2.0: Method 6 successful - parsed HTML directory');
+                console.log('loadPosts V2.0: Successfully discovered posts via GitHub directory browsing');
               }
             }
           }
           
           if (!directoryContents) {
-            console.log('loadPosts V2.0: Method 6 failed - could not parse directory');
+            console.log('loadPosts V2.0: GitHub directory browsing failed');
           }
         } catch (error) {
-          console.log('loadPosts: Method 6 failed:', error);
+          console.log('loadPosts: GitHub directory browsing failed:', error);
         }
       }
       
@@ -6395,41 +6267,48 @@ class SimpleBlog {
     // This method is deprecated - no more index.json updates
     console.log('Index rebuilding deprecated - using dynamic repository scanning');
     
-    // Update local posts array using repository scanning
+    // Update local posts array using dynamic GitHub discovery
     try {
-      console.log('Rebuilding posts index using GitHub tree API...');
+      console.log('Rebuilding posts index using dynamic GitHub discovery...');
       
-      // Use GitHub tree API to get all posts dynamically
-      const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-      if (!treeResponse.ok) {
-        throw new Error(`GitHub tree API failed with status: ${treeResponse.status}`);
+      // Use GitHub's public directory browsing to discover posts
+      const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+      if (!postsDirResponse.ok) {
+        throw new Error(`GitHub directory browsing failed with status: ${postsDirResponse.status}`);
       }
       
-      const treeData = await treeResponse.json();
+      const htmlContent = await postsDirResponse.text();
       
-      // Filter for JSON files in the posts directory
-      const postFiles = treeData.tree.filter(item => 
-        item.path.startsWith('posts/') && 
-        item.path.endsWith('.json') && 
-        item.path !== 'posts/index.json'
-      );
+      // Parse HTML to find all JSON files in the posts directory
+      const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
+      if (!jsonFileMatches) {
+        throw new Error('No JSON files found in posts directory');
+      }
+      
+      // Extract and filter post filenames
+      const postFiles = jsonFileMatches
+        .map(match => match.match(/href="([^"]+)"/)[1])
+        .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
+        .map(href => href.split('/').pop()); // Get just the filename
+      
+      console.log(`Found ${postFiles.length} post files:`, postFiles);
       
       let allPosts = [];
       
       // Fetch each post file
-      for (const postFile of postFiles) {
+      for (const filename of postFiles) {
         try {
-          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/${postFile.path}`;
+          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`;
           const response = await fetch(postUrl);
           
           if (response.ok) {
             const postData = await response.json();
             if (postData && postData.title) {
               // Get the actual commit date from GitHub
-              const commitDate = await this.getCommitDate(postFile.path);
+              const commitDate = await this.getCommitDate(`posts/${filename}`);
               
               allPosts.push({
-                slug: postFile.path.replace('posts/', '').replace('.json', ''),
+                slug: filename.replace('.json', ''),
                 title: postData.title,
                 date: commitDate,
                 keywords: postData.keywords || 'general'
@@ -6437,7 +6316,7 @@ class SimpleBlog {
             }
           }
         } catch (error) {
-          console.warn(`Could not fetch post ${postFile.path}:`, error);
+          console.warn(`Could not fetch post ${filename}:`, error);
         }
       }
       
@@ -8916,176 +8795,41 @@ class SimpleBlog {
       padding-right: 8px;
     `;
     
-    // Dynamically scan GitHub repository contents for sitemap (no indexing needed)
+    // Dynamically discover posts from GitHub's public directory browsing
     const loadPostsForSiteMap = async () => {
       try {
-        console.log('Site map: Starting dynamic repository scan...');
-        console.log('Site map: No index.json needed - scanning posts directory directly');
+        console.log('Site map: Starting dynamic GitHub discovery...');
         
-        // Try multiple approaches to get repository contents
-        let directoryContents = null;
-        let response = null;
+        // Use GitHub's public directory browsing to discover posts
+        const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+        if (!postsDirResponse.ok) {
+          throw new Error(`GitHub directory browsing failed with status: ${postsDirResponse.status}`);
+        }
         
-        // Method 1: Try with proper headers
-        try {
-          response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts', {
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'User-Agent': 'SimpleBlog/1.0'
-            }
+        const htmlContent = await postsDirResponse.text();
+        
+        // Parse HTML to find all JSON files in the posts directory
+        const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
+        if (!jsonFileMatches) {
+          throw new Error('No JSON files found in posts directory');
+        }
+        
+        // Extract and filter post filenames
+        const postFiles = jsonFileMatches
+          .map(match => match.match(/href="([^"]+)"/)[1])
+          .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
+          .map(href => {
+            const filename = href.split('/').pop();
+            return {
+              type: 'file',
+              name: filename,
+              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+            };
           });
-          console.log('Site map: Method 1 response status:', response.status);
-          
-          if (response.ok) {
-            directoryContents = await response.json();
-            console.log('Site map: Method 1 successful');
-          }
-        } catch (error) {
-          console.log('Site map: Method 1 failed:', error);
-        }
         
-        // Method 2: Try without headers if Method 1 failed
-        if (!directoryContents) {
-          try {
-            response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
-            console.log('Site map: Method 2 response status:', response.status);
-            
-            if (response.ok) {
-              directoryContents = await response.json();
-              console.log('Site map: Method 2 successful');
-            }
-          } catch (error) {
-            console.log('Site map: Method 2 failed:', error);
-          }
-        }
+        console.log(`Site map: Found ${postFiles.length} post files in repository`);
         
-        // Method 3: Try using repository tree API if both methods failed
-        if (!directoryContents) {
-          try {
-            response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-            console.log('Site map: Method 3 response status:', response.status);
-            
-            if (response.ok) {
-              const treeData = await response.json();
-              // Filter for posts in the posts directory
-              const postFiles = treeData.tree.filter(item => 
-                item.path.startsWith('posts/') && 
-                item.path.endsWith('.json') && 
-                item.path !== 'posts/index.json'
-              );
-              
-              if (postFiles.length > 0) {
-                console.log('Site map: Method 3 successful - found', postFiles.length, 'posts via tree API');
-                // Convert tree format to directory format for compatibility
-                directoryContents = postFiles.map(item => ({
-                  type: 'file',
-                  name: item.path.replace('posts/', ''),
-                  download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
-                }));
-              }
-            }
-          } catch (error) {
-            console.log('Site map: Method 3 failed:', error);
-          }
-        }
-        
-        // Method 4: Try using the repository's default branch contents
-        if (!directoryContents) {
-          try {
-            response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts?ref=main');
-            console.log('Site map: Method 4 response status:', response.status);
-            
-            if (response.ok) {
-              directoryContents = await response.json();
-              console.log('Site map: Method 4 successful');
-            }
-          } catch (error) {
-            console.log('Site map: Method 4 failed:', error);
-          }
-        }
-        
-        // Method 5: Fallback to GitHub public tree API (no authentication required)
-        if (!directoryContents) {
-          try {
-            console.log('Site map: Method 5 - using GitHub public tree API');
-            
-            const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-            if (treeResponse.ok) {
-              const treeData = await treeResponse.json();
-              
-              // Filter for JSON files in the posts directory
-              const postFiles = treeData.tree.filter(item => 
-                item.path.startsWith('posts/') && 
-                item.path.endsWith('.json') && 
-                item.path !== 'posts/index.json'
-              );
-              
-              // Convert to directory format for compatibility
-              directoryContents = postFiles.map(item => ({
-                type: 'file',
-                name: item.path.replace('posts/', ''),
-                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
-              }));
-              
-              console.log('Site map: Method 5 successful - using GitHub tree API');
-            } else {
-              console.log('Site map: Method 5 failed with status:', treeResponse.status);
-            }
-          } catch (error) {
-            console.log('Site map: Method 5 failed:', error);
-          }
-        }
-        
-        // Method 6: Ultimate fallback - use raw GitHub directory browsing
-        if (!directoryContents) {
-          try {
-            console.log('Site map: Method 6 - using raw GitHub directory browsing');
-            
-            // Try to fetch the posts directory as HTML and parse it
-            const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
-            if (postsDirResponse.ok) {
-              const htmlContent = await postsDirResponse.text();
-              
-              // Parse HTML to find JSON files
-              const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
-              if (jsonFileMatches) {
-                const postFiles = jsonFileMatches
-                  .map(match => match.match(/href="([^"]+)"/)[1])
-                  .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
-                  .map(href => {
-                    const filename = href.split('/').pop();
-                    return {
-                      type: 'file',
-                      name: filename,
-                      download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-                    };
-                  });
-                
-                if (postFiles.length > 0) {
-                  directoryContents = postFiles;
-                  console.log('Site map: Method 6 successful - parsed HTML directory');
-                }
-              }
-            }
-            
-            if (!directoryContents) {
-              console.log('Site map: Method 6 failed - could not parse directory');
-            }
-          } catch (error) {
-            console.log('Site map: Method 6 failed:', error);
-          }
-        }
-        
-        if (directoryContents) {
-          // Filter for JSON files (posts) and exclude index.json
-          const postFiles = directoryContents.filter(item => 
-            item.type === 'file' && 
-            item.name.endsWith('.json') && 
-            item.name !== 'index.json'
-          );
-          
-          console.log('Site map: Found', postFiles.length, 'post files in repository');
-          
+        if (postFiles.length > 0) {
           // Fetch and parse each post file to get metadata
           const posts = [];
           for (const postFile of postFiles) {
@@ -9125,11 +8869,11 @@ class SimpleBlog {
           
           return posts;
         } else {
-          throw new Error(`GitHub API failed: ${response.status}`);
+          throw new Error('No post files found in repository');
         }
       } catch (error) {
-        console.error('Site map: GitHub API failed, cannot generate sitemap:', error);
-        this.showMenuStyle1Message('Could not load sitemap: GitHub API unavailable', 'error');
+        console.error('Site map: GitHub discovery failed, cannot generate sitemap:', error);
+        this.showMenuStyle1Message('Could not load sitemap: GitHub discovery unavailable', 'error');
         return [];
       }
     };
