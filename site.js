@@ -3,37 +3,43 @@
  * Everything in one file for maximum reliability
  */
 
+// CACHE BUST: This file was last modified at 2025-01-23
+// If you see this comment, the file is being served fresh
+// Version: 2.0 - Dynamic GitHub Repository Scanning
 class SimpleBlog {
   constructor() {
-    console.log('SimpleBlog constructor called');
+    // Version check and cache busting
+    const currentVersion = '2.0';
+    const storedVersion = localStorage.getItem('ppPage_js_version');
+    if (storedVersion !== currentVersion) {
+      localStorage.setItem('ppPage_js_version', currentVersion);
+      // Force a reload if this is a major version change
+      if (storedVersion && storedVersion !== currentVersion) {
+        setTimeout(() => window.location.reload(true), 100);
+        return;
+      }
+    }
+    
     this.currentPost = null;
     this.posts = [];
     // Load theme from localStorage or default to dark
     this.theme = localStorage.getItem('ppPage_theme') || 'dark';
-    console.log('Theme loaded from localStorage:', this.theme);
     
     // Initialize handler references to prevent memory leaks
     this.allPostsMouseEnterHandler = null;
 
-    
-    console.log('About to call init()...');
     this.init();
-    console.log('init() called');
   }
 
   init() {
-    console.log('Initializing SimpleBlog...');
     this.createTaskbar();
-    console.log('Taskbar created');
     this.bindEvents();
-    console.log('Events bound');
     
     // Try to load cached posts first for immediate submenu access
     const cachedPosts = localStorage.getItem('posts');
     if (cachedPosts) {
       try {
         this.posts = JSON.parse(cachedPosts);
-        console.log('Loaded', this.posts.length, 'cached posts for immediate submenu access');
       } catch (error) {
         console.warn('Could not parse cached posts:', error);
         localStorage.removeItem('posts');
@@ -42,13 +48,11 @@ class SimpleBlog {
     
     // Load posts first, then handle URL parameters
     this.loadPosts().then(() => {
-      console.log('Posts loaded, now processing URL parameters');
       
       // Check for post parameter in URL (from editor navigation)
       const urlParams = new URLSearchParams(window.location.search);
       const postSlug = urlParams.get('post');
       if (postSlug) {
-        console.log(` Loading post from URL parameter: ${postSlug}`);
         this.loadPost(postSlug);
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -57,7 +61,6 @@ class SimpleBlog {
       // Check for post hash in URL (direct linking)
       const hashSlug = window.location.hash.substring(1); // Remove # from hash
       if (hashSlug) {
-        console.log(` Loading post from URL hash: ${hashSlug}`);
         this.loadPost(hashSlug);
       }
       
@@ -65,13 +68,11 @@ class SimpleBlog {
       if (!postSlug && !hashSlug) {
         const storedCurrentPost = localStorage.getItem('current_post_slug');
         if (storedCurrentPost) {
-          console.log(` Reloading with stored current post: ${storedCurrentPost}`);
           this.loadPost(storedCurrentPost);
         } else {
           // No stored post, no URL params - load most recent post
           if (this.posts && this.posts.length > 0) {
             const mostRecent = this.posts[0]; // Already sorted by date
-            console.log(` No stored post, loading most recent: ${mostRecent.title}`);
             this.loadPost(mostRecent.slug);
           }
         }
@@ -85,8 +86,6 @@ class SimpleBlog {
             this.showSiteMap();
           }
         }, 500);
-      } else {
-        console.log('Site map not shown (editor mode)');
       }
       
       // Load and display projects in menu
@@ -97,7 +96,6 @@ class SimpleBlog {
     
     // Handle browser back/forward navigation
     window.addEventListener('popstate', (event) => {
-      console.log('Browser navigation detected:', event.state);
       if (event.state && event.state.postSlug) {
         this.loadPost(event.state.postSlug);
       } else if (window.location.hash) {
@@ -110,11 +108,9 @@ class SimpleBlog {
     });
     
     this.setTheme(this.theme, false); // Don't open HSL picker on page load
-    console.log('Theme set');
     
     // Initialize font size
     this.initializeFontSize();
-    console.log('Font size initialized');
     
     // If custom theme, check for saved HSL values and apply them
     if (this.theme === 'custom') {
@@ -123,7 +119,6 @@ class SimpleBlog {
         try {
           const { h, s, l } = JSON.parse(savedHSL);
           this.applyCustomTheme(h, s, l);
-          console.log('Applied saved custom theme HSL values on page load:', { h, s, l });
         } catch (error) {
           console.warn('Could not parse saved custom theme HSL values on page load:', error);
         }
@@ -137,7 +132,6 @@ class SimpleBlog {
         try {
           const { h, s, l } = JSON.parse(savedRandomTheme);
           this.applyCustomTheme(h, s, l);
-          console.log('Applied saved random theme on page load:', { h, s, l });
         } catch (error) {
           console.warn('Could not parse saved random theme on page load:', error);
         }
@@ -409,23 +403,16 @@ class SimpleBlog {
     this.setupCSSVariables();
     
     // Menu system
-    console.log('Setting up menu system...');
     this.setupMenuSystem();
     
     // Button events
-    console.log('Setting up button events...');
     this.setupButtonEvents();
     
     // Global events
-    console.log('Setting up global events...');
     this.setupGlobalEvents();
-    
-    console.log('bindEvents() completed');
   }
 
   setupMenuSystem() {
-    console.log('Setting up menu system...');
-    
     // Initialize text selection preservation
     this.initializeTextSelectionPreservation();
     
@@ -433,13 +420,11 @@ class SimpleBlog {
     this.globalClickHandler = (e) => {
       // Don't close menus when clicking on theme buttons
       if (e.target.closest('[data-mode]')) {
-        console.log('Theme button clicked, not closing menus');
         return;
       }
       
       const menuItem = e.target.closest('.menu-item');
       if (menuItem) {
-        console.log('Menu item clicked:', menuItem.querySelector('.label')?.textContent);
         this.toggleMenu(menuItem);
       } else {
         this.closeAllMenus();
@@ -450,30 +435,18 @@ class SimpleBlog {
     // Close on escape - store reference for cleanup
     this.globalKeyHandler = (e) => {
       if (e.key === 'Escape') {
-        console.log('Escape key pressed - closing menus');
         this.closeAllMenus();
       }
-      
-
     };
     document.addEventListener('keydown', this.globalKeyHandler);
     
     // Prevent text selection loss on taskbar elements
     this.preventSelectionLoss();
-    
-    console.log('Menu system setup complete');
   }
 
   toggleMenu(menuItem) {
     const dropdown = menuItem.querySelector('.menu-dropdown');
     const isOpen = menuItem.classList.contains('open');
-    
-    console.log('Toggle menu:', {
-      menuLabel: menuItem.querySelector('.label')?.textContent,
-      hasDropdown: !!dropdown,
-      isOpen: isOpen,
-      dropdownElement: dropdown
-    });
     
     // Close all other menus
     this.closeAllMenus();
@@ -481,33 +454,20 @@ class SimpleBlog {
     // Toggle current menu - add 'open' class to menu-item, not dropdown
     if (!isOpen) {
       menuItem.classList.add('open');
-      console.log('Menu opened, added "open" class to menu-item');
     } else {
       menuItem.classList.remove('open');
-      console.log('Menu closed, removed "open" class from menu-item');
     }
-    
-    // Debug: check if class was added
-    setTimeout(() => {
-      const isNowOpen = menuItem.classList.contains('open');
-      console.log('After toggle - menu-item has "open" class:', isNowOpen);
-      console.log('Dropdown display style:', dropdown.style.display);
-      console.log('Computed display:', window.getComputedStyle(dropdown).display);
-    }, 100);
   }
 
   closeAllMenus() {
     const openMenus = document.querySelectorAll('.menu-item.open');
-    console.log('Closing all menus, found:', openMenus.length, 'open menus');
     
     openMenus.forEach(menuItem => {
       menuItem.classList.remove('open');
-      console.log('Removed "open" class from menu-item');
     });
     
     // Close all submenus and sub-submenus
     const allSubmenus = document.querySelectorAll('.submenu, .sub-submenu');
-    console.log('Closing all submenus, found:', allSubmenus.length, 'submenus');
     
     allSubmenus.forEach(submenu => {
       submenu.remove();
@@ -625,7 +585,6 @@ class SimpleBlog {
               node.style.mozUserSelect = 'none';
               node.style.msUserSelect = 'none';
               node.classList.add('preserve-selection');
-              console.log('Applied selection preservation to new submenu element');
             }
             
             // Also check child elements
@@ -781,7 +740,6 @@ class SimpleBlog {
     console.log('Selection preservation handlers added');
   }
   setupButtonEvents() {
-    console.log('Setting up button events...');
     
     // Star button (toggle sitemap)
     this.addClickHandler('#star-button', () => {
@@ -978,17 +936,12 @@ class SimpleBlog {
       console.log('Draft manager button clicked');
       this.showDraftManager();
     });
-    
-    console.log('Button events setup complete');
   }
 
   // Navigate to the most recent post
   async navigateToMostRecentPost() {
-    console.log('🕊️ Navigating to most recent post...');
-    
     try {
       // Use dynamic GitHub repository scanning to find ALL posts
-      console.log('🕊️ Scanning GitHub repository for all posts...');
       
       // Method 1: Try GitHub API first
       let directoryContents = null;
@@ -996,10 +949,9 @@ class SimpleBlog {
         const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
         if (response.ok) {
           directoryContents = await response.json();
-          console.log('🕊️ Method 1 successful - found', directoryContents.length, 'items via GitHub API');
         }
       } catch (error) {
-        console.log('🕊️ Method 1 failed:', error);
+        // Method 1 failed silently
       }
       
       // Method 2: Try with headers if Method 1 failed
@@ -1133,17 +1085,15 @@ class SimpleBlog {
         }
         
         if (mostRecentPost) {
-          console.log(`🕊️ Most recent post found: ${mostRecentPost} (${mostRecentDate.toDateString()})`);
           window.location.href = `index.html#${mostRecentPost}`;
           return;
         }
       }
       
-      console.log('🕊️ No recent posts found, staying on homepage');
       // Stay on current page if no posts found
       
     } catch (error) {
-      console.error('🕊️ Error navigating to most recent post:', error);
+      console.error('Error navigating to most recent post:', error);
     }
   }
 
@@ -1152,11 +1102,10 @@ class SimpleBlog {
     if (elements.length > 0) {
       elements.forEach(element => {
         element.addEventListener('click', handler);
-        console.log(` Click handler attached to:`, element.textContent || element.id || selector);
       });
-    } else {
-      console.warn(` No elements found for selector: ${selector}`);
-    }
+          } else {
+        // No elements found for selector
+      }
   }
 
   setupGlobalEvents() {
@@ -2373,24 +2322,23 @@ class SimpleBlog {
 
 
   async loadPosts() {
-    console.log('loadPosts: Dynamically scanning GitHub repository contents... (CACHE BUST: ' + Date.now() + ' - VERSION 2.0)');
+    const cacheBust = Date.now();
+    
+    // Add cache-busting parameters to all fetch requests
+    const cacheBustParams = '&_cb=' + cacheBust;
     
     try {
       // Use the same reliable method as sitemap (Method 5) - bypass GitHub API entirely
       let directoryContents = null;
       
       // Method 1: Try GitHub API first
-      console.log('loadPosts V2.0: Trying Method 1 - GitHub API...');
       try {
-        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
+        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts' + cacheBustParams);
         if (response.ok) {
           directoryContents = await response.json();
-          console.log('loadPosts V2.0: Method 1 successful - found', directoryContents.length, 'items via GitHub API');
-        } else {
-          console.log('loadPosts V2.0: Method 1 failed with status:', response.status);
         }
       } catch (error) {
-        console.log('loadPosts V2.0: Method 1 failed:', error);
+        // Method 1 failed silently
       }
       
       // Method 2: Try with headers if Method 1 failed
@@ -2404,10 +2352,9 @@ class SimpleBlog {
           });
           if (response.ok) {
             directoryContents = await response.json();
-            console.log('loadPosts: Method 2 successful - found', directoryContents.length, 'items via GitHub API with headers');
           }
         } catch (error) {
-          console.log('loadPosts: Method 2 failed:', error);
+          // Method 2 failed silently
         }
       }
       
@@ -2425,7 +2372,6 @@ class SimpleBlog {
             );
             
             if (postFiles.length > 0) {
-              console.log('loadPosts: Method 3 successful - found', postFiles.length, 'posts via tree API');
               // Convert tree format to directory format for compatibility
               directoryContents = postFiles.map(item => ({
                 type: 'file',
@@ -2435,7 +2381,7 @@ class SimpleBlog {
             }
           }
         } catch (error) {
-          console.log('loadPosts: Method 3 failed:', error);
+          // Method 3 failed silently
         }
       }
       
@@ -2445,18 +2391,15 @@ class SimpleBlog {
           const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts?ref=main');
           if (response.ok) {
             directoryContents = await response.json();
-            console.log('loadPosts: Method 4 successful');
           }
         } catch (error) {
-          console.log('loadPosts: Method 4 failed:', error);
+          // Method 4 failed silently
         }
       }
       
       // Method 5: Bypass API entirely - use raw GitHub URLs directly
       if (!directoryContents) {
-        console.log('loadPosts V2.0: Trying Method 5 - raw GitHub URLs...');
         try {
-          console.log('loadPosts V2.0: Method 5 - bypassing GitHub API, using raw URLs');
           
           // Since we know the repository structure, we can construct URLs directly
           // This bypasses all API rate limits and authentication issues
@@ -2482,17 +2425,16 @@ class SimpleBlog {
           directoryContents = knownPosts.map(filename => ({
             type: 'file',
             name: filename,
-            download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+            download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}?_cb=${cacheBust}`
           }));
           
-          console.log('loadPosts: Method 5 successful - using known post list');
+          console.log('loadPosts V2.0: Method 5 successful - using known post list');
         } catch (error) {
           console.log('loadPosts: Method 5 failed:', error);
         }
       }
       
       if (directoryContents) {
-        console.log('loadPosts V2.0: directoryContents found, processing...');
         // Filter for JSON files (posts) and exclude index.json
         const postFiles = directoryContents.filter(item => 
           item.type === 'file' && 
@@ -2500,13 +2442,11 @@ class SimpleBlog {
           item.name !== 'index.json'
         );
         
-        console.log('loadPosts V2.0: Found', postFiles.length, 'post files in repository');
-        
         // Fetch and parse each post file to get metadata
         const posts = [];
         for (const postFile of postFiles) {
           try {
-            const postResponse = await fetch(postFile.download_url);
+            const postResponse = await fetch(postFile.download_url + (postFile.download_url.includes('?') ? '&' : '?') + '_cb=' + cacheBust);
             if (postResponse.ok) {
               const postData = await postResponse.json();
               
@@ -2529,9 +2469,7 @@ class SimpleBlog {
           }
         }
         
-        console.log('loadPosts: Successfully loaded', posts.length, 'posts from repository');
-        
-        // Update posts array and cache in localStorage
+                // Update posts array and cache in localStorage
         this.posts = posts;
         localStorage.setItem('posts', JSON.stringify(posts));
         
@@ -2539,24 +2477,19 @@ class SimpleBlog {
           // Sort by date for reference, but don't auto-load most recent
           // (let the init function decide which post to load)
           this.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
-          console.log('loadPosts: Posts sorted by date, ready for loading');
           
           // Don't create submenus on page load - only create them on hover
-          console.log('🧭 loadPosts: Posts loaded, submenus will be created on hover');
         } else {
-          console.log('loadPosts: No posts found in repository');
           this.displayDefaultContent();
         }
       } else {
-        console.warn('loadPosts V2.0: Could not access posts directory with any method');
-        console.log('loadPosts V2.0: directoryContents is null/undefined after trying all methods');
         // Don't clear posts array - keep cached posts if available
         if (!this.posts || this.posts.length === 0) {
           this.displayDefaultContent();
         }
       }
     } catch (error) {
-      console.error('loadPosts: Error scanning repository:', error);
+      console.error('Error scanning repository:', error);
       // Don't clear posts array - keep cached posts if available
       if (!this.posts || this.posts.length === 0) {
         this.displayDefaultContent();
@@ -2614,35 +2547,25 @@ class SimpleBlog {
   }
 
   async loadPost(slug) {
-    console.log(` MAXIMUM TROUBLESHOOTING: loadPost called with slug: ${slug}`);
-    console.log(` this object in loadPost:`, this);
-    console.log(` this.displayPost function:`, this.displayPost);
-    console.log(` this.displayDefaultContent function:`, this.displayDefaultContent);
-    
     try {
-      console.log(` Loading post: ${slug}`);
+      console.log(`Loading post: ${slug}`);
       
       // Use the same reliable method as sitemap (Method 5) - bypass GitHub API entirely
       let post = null;
       
       try {
-        console.log('loadPost: Using raw GitHub URL method (bypassing API)...');
-        
         // Use raw GitHub URL directly - this bypasses all API rate limits and authentication issues
         const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
-        console.log('loadPost: Fetching from raw GitHub URL:', rawUrl);
         
         const response = await fetch(rawUrl);
-        console.log('loadPost: Raw GitHub response status:', response.status, response.statusText);
         
         if (response.ok) {
           const postData = await response.json();
-          console.log('loadPost: Post data loaded from raw GitHub:', postData.title);
           post = postData;
         } else if (response.status === 404) {
-          console.log('loadPost: Post not found on GitHub (404)');
+          console.log('Post not found on GitHub (404)');
         } else {
-          console.log('loadPost: Raw GitHub failed with status:', response.status);
+          console.log('Raw GitHub failed with status:', response.status);
         }
       } catch (rawError) {
         console.log('Raw GitHub method failed:', rawError);
@@ -2650,8 +2573,6 @@ class SimpleBlog {
       
       // If raw method failed, try the same fallback methods as sitemap
       if (!post) {
-        console.log('loadPost: Raw method failed, trying fallback methods...');
-        
         // Method 1: Try GitHub API with headers
         try {
           const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`, {
@@ -2664,10 +2585,9 @@ class SimpleBlog {
             const githubData = await response.json();
             const content = atob(githubData.content);
             post = JSON.parse(content);
-            console.log('loadPost: Method 1 successful - loaded via GitHub API with headers');
           }
         } catch (error) {
-          console.log('loadPost: Method 1 failed:', error);
+          // Method 1 failed silently
         }
         
         // Method 2: Try GitHub Tree API
@@ -2685,12 +2605,11 @@ class SimpleBlog {
                 const postResponse = await fetch(rawUrl);
                 if (postResponse.ok) {
                   post = await postResponse.json();
-                  console.log('loadPost: Method 2 successful - loaded via tree API');
                 }
               }
             }
           } catch (error) {
-            console.log('loadPost: Method 2 failed:', error);
+            // Method 2 failed silently
           }
         }
       }
@@ -2702,13 +2621,12 @@ class SimpleBlog {
         // Store the current post slug in localStorage for the GitHub button
         if (post.slug) {
           localStorage.setItem('current_post_slug', post.slug);
-          console.log(` Stored current post slug in localStorage: ${post.slug}`);
         }
         
-        console.log(` Post loaded successfully: ${post.title}`);
+        console.log(`Post loaded successfully: ${post.title}`);
         return post;
       } else {
-        console.error(` Failed to load post ${slug}: Post not found`);
+        console.error(`Failed to load post ${slug}: Post not found`);
         this.displayDefaultContent();
       }
     } catch (error) {
@@ -2718,35 +2636,25 @@ class SimpleBlog {
   }
 
   displayPost(post) {
-    console.log('MAXIMUM TROUBLESHOOTING: displayPost called with:', post);
-    
     // Update URL to reflect current post (for direct linking and sharing)
     if (post && post.slug) {
       const newUrl = `${window.location.origin}${window.location.pathname}#${post.slug}`;
       window.history.pushState({ postSlug: post.slug }, post.title, newUrl);
-      console.log(' Updated URL to:', newUrl);
+      console.log('Updated URL to:', newUrl);
     }
     
     const titleElement = document.getElementById('post-title');
     const dateElement = document.getElementById('post-date');
     const contentElement = document.getElementById('post-content');
 
-    console.log('DOM elements found:', { 
-      titleElement: !!titleElement, 
-      dateElement: !!dateElement, 
-      contentElement: !!contentElement 
-    });
-
     if (titleElement) {
       titleElement.textContent = post.title || 'Untitled';
-      console.log('Set title to:', post.title || 'Untitled');
     } else {
       console.error('titleElement not found!');
     }
     
     if (dateElement) {
       dateElement.textContent = post.date || '';
-      console.log('Set date to:', post.date || '');
     } else {
       console.error('dateElement not found!');
     }
@@ -2804,14 +2712,11 @@ class SimpleBlog {
         padding: 0;
       `;
       contentElement.appendChild(clearfix);
-      
-      console.log('Set content to:', post.content ? post.content.substring(0, 100) + '...' : '');
     } else {
       console.error('contentElement not found!');
     }
     
     // Setup hover notes for the displayed post
-    console.log('Setting up hover notes...');
     this.setupHoverNotes();
     
     // Add navigation controls
