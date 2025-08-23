@@ -2133,46 +2133,15 @@ class SimpleBlog {
       // Since we can't directly list directory contents in the browser,
       // we'll try to load posts we know about and also check for any index.json
       
-      // First try to load local index.json if it exists
-      try {
-        const localIndexResponse = await fetch('posts/index.json');
-        if (localIndexResponse.ok) {
-          const localIndexData = await localIndexResponse.json();
-          const localPosts = Array.isArray(localIndexData) ? localIndexData : (localIndexData.posts || []);
-          console.log('All Posts submenu: Found local index.json with posts:', localPosts.length);
-          
-          // Add these posts to our list
-          for (const post of localPosts) {
-            if (post && post.slug && !allPosts.find(p => p.slug === post.slug)) {
-              allPosts.push(post);
-            }
-          }
-        }
-      } catch (localIndexError) {
-        console.log('All Posts submenu: No local index.json found');
-      }
+      // No more local file scanning - use GitHub repository data
+      console.log('All Posts submenu: Using GitHub repository data instead of local files');
       
-      // Try to load some common post files directly
-      const commonSlugs = ['welcome', 'first-post', 'test-post', 'hello-world'];
-      for (const slug of commonSlugs) {
-        try {
-          const postResponse = await fetch(`posts/${slug}.json`);
-          if (postResponse.ok) {
-            const postData = await postResponse.json();
-            if (!allPosts.find(p => p.slug === slug)) {
-              const post = {
-                slug: slug,
-                title: postData.title || slug,
-                date: postData.date || 'Unknown date',
-                keywords: postData.keywords || 'general'
-              };
-              allPosts.push(post);
-              console.log('All Posts submenu: Loaded local post:', post);
-            }
-          }
-        } catch (postError) {
-          // Post file doesn't exist, continue
-        }
+      // The posts should already be loaded from GitHub in this.posts
+      if (this.posts && this.posts.length > 0) {
+        console.log('All Posts submenu: Using', this.posts.length, 'posts from GitHub repository');
+        // Posts are already loaded and available
+      } else {
+        console.log('All Posts submenu: No posts loaded yet, will load from GitHub');
       }
       
       console.log('All Posts submenu: Local directory scan complete, total posts:', allPosts.length);
@@ -2354,20 +2323,10 @@ class SimpleBlog {
         console.log('GitHub error details:', githubError);
       }
       
-      // Try local posts if GitHub failed or returned error
+      // No local fallback - only use GitHub repository
       if (!post) {
-        try {
-          console.log('loadPost: Trying local post file...');
-          const localResponse = await fetch(`posts/${slug}.json`);
-          if (localResponse.ok) {
-            post = await localResponse.json();
-            console.log('Post loaded from local:', post.title);
-          } else {
-            console.log('loadPost: Local post file not found:', localResponse.status);
-          }
-        } catch (localError) {
-          console.warn('Local post loading failed:', localError);
-        }
+        console.log('loadPost: GitHub API failed, no local fallback available');
+        console.log('loadPost: Posts must be loaded from GitHub repository');
       }
       
       if (post) {
@@ -8363,10 +8322,12 @@ class SimpleBlog {
     // Dynamically scan GitHub repository contents for sitemap (no indexing needed)
     const loadPostsForSiteMap = async () => {
       try {
-        console.log('Site map: Scanning GitHub repository contents directly...');
+        console.log('Site map: Starting dynamic repository scan...');
+        console.log('Site map: No index.json needed - scanning posts directory directly');
         
         // Fetch the contents of the posts directory from GitHub
         const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
+        console.log('Site map: GitHub API response status:', response.status);
         if (response.ok) {
           const directoryContents = await response.json();
           
