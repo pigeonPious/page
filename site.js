@@ -5542,11 +5542,22 @@ class SimpleBlog {
       let updatedIndex;
       
       if (isEdit) {
-        // For edits: update existing entry
-        updatedIndex = currentIndex.map(post => 
-          post.slug === postData.slug ? newIndexEntry : post
-        );
-        console.log('Updated existing post in index:', postData.slug);
+        // For edits: check if slug changed due to title change
+        const originalSlug = localStorage.getItem('editPostData') ? 
+          JSON.parse(localStorage.getItem('editPostData')).slug : null;
+        
+        if (originalSlug && originalSlug !== postData.slug) {
+          // Title changed significantly - remove old entry and add new one
+          updatedIndex = currentIndex.filter(post => post.slug !== originalSlug);
+          updatedIndex = [newIndexEntry, ...updatedIndex];
+          console.log('Title changed - removed old entry and added new one:', originalSlug, '->', postData.slug);
+        } else {
+          // Same slug - update existing entry
+          updatedIndex = currentIndex.map(post => 
+            post.slug === postData.slug ? newIndexEntry : post
+          );
+          console.log('Updated existing post in index:', postData.slug);
+        }
       } else {
         // For new posts: add to beginning (newest first)
         updatedIndex = [newIndexEntry, ...currentIndex];
@@ -5588,6 +5599,60 @@ class SimpleBlog {
     } catch (error) {
       console.error('Error updating posts index:', error);
       return false;
+    }
+  }
+
+  // Function to delete an old post file when title changes significantly
+  async deleteOldPostFile(oldSlug) {
+    console.log('Deleting old post file:', oldSlug);
+    
+    try {
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        console.error('No GitHub token found for file deletion');
+        throw new Error('No GitHub token found');
+      }
+      
+      // Get the current SHA of the file to delete
+      const fileResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${oldSlug}.json`, {
+        headers: {
+          'Authorization': `token ${token}`,
+        }
+      });
+      
+      if (!fileResponse.ok) {
+        console.warn('Could not fetch file for deletion (may already be deleted):', fileResponse.status);
+        return; // File may already not exist
+      }
+      
+      const fileData = await fileResponse.json();
+      const currentSha = fileData.sha;
+      
+      // Delete the file using GitHub API
+      const deleteResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${oldSlug}.json`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Delete old post file: ${oldSlug} (title changed)`,
+          sha: currentSha,
+          branch: 'main'
+        })
+      });
+      
+      if (deleteResponse.ok) {
+        console.log('Old post file deleted successfully:', oldSlug);
+      } else {
+        const error = await deleteResponse.json();
+        console.error('Failed to delete old post file:', error);
+        throw new Error(`Failed to delete file: ${error.message}`);
+      }
+      
+    } catch (error) {
+      console.error('Error deleting old post file:', error);
+      throw error;
     }
   }
 
@@ -6242,9 +6307,9 @@ class SimpleBlog {
         }
       }
       
-      // Create post data - use original slug for edits, new slug for new posts
+      // Create post data - use new slug if title changed significantly, original slug for same-title edits
       const postData = {
-        slug: isEdit ? originalSlug : title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
+        slug: (isEdit && !shouldDeleteOldFile) ? originalSlug : title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
         title: title,
         date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
         keywords: finalFlags,
@@ -6450,138 +6515,7 @@ class SimpleBlog {
     }
   }
 
-  async updatePostsIndex(postData) {
-    try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        console.warn('updatePostsIndex: No GitHub token found');
-        return false;
-      }
-      
-      // Check if this is an edit
-      const editData = localStorage.getItem('editPostData');
-      let isEdit = false;
-      let originalSlug = '';
-      
-      if (editData) {
-        try {
-          const editPost = JSON.parse(editData);
-          originalSlug = editPost.slug;
-          isEdit = true;
-        } catch (error) {
-          console.warn('Could not parse edit data:', error);
-        }
-      }
-      
-      // Get current index
-      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (indexResponse.ok) {
-        const indexData = await indexResponse.json();
-        const currentIndex = JSON.parse(atob(indexData.content));
-        
-        if (isEdit && originalSlug !== postData.slug) {
-          // Handle slug change during edit - remove old entry and add new one
-          const filteredIndex = currentIndex.filter(post => post.slug !== originalSlug);
-          filteredIndex.unshift({
-            slug: postData.slug,
-            title: postData.title,
-            date: postData.date,
-            keywords: postData.keywords
-          });
-          
-          // Update index file
-          await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `token ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: `Update post (slug changed): ${postData.title}`,
-              content: btoa(JSON.stringify(filteredIndex, null, 2)),
-              sha: indexData.sha,
-              branch: 'main'
-            })
-          });
-          
-          console.log('Posts index updated (slug changed)');
-          this.posts = filteredIndex;
-        } else if (isEdit) {
-          // Handle regular edit - update existing entry
-          const existingIndex = currentIndex.findIndex(post => post.slug === postData.slug);
-          if (existingIndex !== -1) {
-            // Update existing entry
-            currentIndex[existingIndex] = {
-              slug: postData.slug,
-              title: postData.title,
-              date: postData.date,
-              keywords: postData.keywords
-            };
-            console.log('Updated existing post in index:', postData.slug);
-          } else {
-            // For edits, we should always find the existing post
-            // If not found, this indicates an error in the edit process
-            console.error('Edit post not found in index:', postData.slug);
-            console.error('Available slugs:', currentIndex.map(p => p.slug));
-            throw new Error(`Edit post '${postData.slug}' not found in posts index. This indicates a synchronization error.`);
-          }
-          
-          // Update index file
-          await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `token ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: `Update post: ${postData.title}`,
-              content: btoa(JSON.stringify(currentIndex, null, 2)),
-              sha: indexData.sha,
-              branch: 'main'
-            })
-          });
-          
-          console.log('Posts index updated (edit)');
-          this.posts = currentIndex;
-        } else {
-          // Handle new post - add new entry
-          currentIndex.unshift({
-            slug: postData.slug,
-            title: postData.title,
-            date: postData.date,
-            keywords: postData.keywords
-          });
-          
-          // Update index file
-          await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/index.json`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `token ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: `Add post: ${postData.title}`,
-              content: btoa(JSON.stringify(currentIndex, null, 2)),
-              sha: indexData.sha,
-              branch: 'main'
-            })
-          });
-          
-          console.log('Posts index updated (new post)');
-          this.posts = currentIndex;
-        }
-        
-        return true;
-      }
-    } catch (error) {
-      console.error('Error updating posts index:', error);
-    }
-  }
+
 
   async checkAuthentication() {
     try {
