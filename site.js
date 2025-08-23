@@ -2278,43 +2278,77 @@ class SimpleBlog {
     try {
       console.log(` Loading post: ${slug}`);
       
-      // Try GitHub API first, then local fallback
+      // Use the same reliable method as sitemap (Method 5) - bypass GitHub API entirely
       let post = null;
       
       try {
-        // Try GitHub API first (public access, no authentication required)
-        const timestamp = Date.now();
-        const githubUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json?t=${timestamp}`;
-        console.log('loadPost: Fetching from GitHub API (public):', githubUrl);
+        console.log('loadPost: Using raw GitHub URL method (bypassing API)...');
         
-        const githubResponse = await fetch(githubUrl);
-        console.log('loadPost: GitHub API response status:', githubResponse.status, githubResponse.statusText);
+        // Use raw GitHub URL directly - this bypasses all API rate limits and authentication issues
+        const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
+        console.log('loadPost: Fetching from raw GitHub URL:', rawUrl);
         
-        if (githubResponse.ok) {
-          const githubData = await githubResponse.json();
-          console.log('loadPost: GitHub API response data:', githubData);
-          
-          const content = atob(githubData.content); // Decode base64 content
-          console.log('loadPost: Decoded content:', content);
-          
-          post = JSON.parse(content);
-          console.log('Post loaded from GitHub API:', post.title);
-        } else if (githubResponse.status === 403) {
-          console.log('loadPost: GitHub API 403 Forbidden - this might be a rate limit issue, trying local...');
-        } else if (githubResponse.status === 404) {
-          console.log('loadPost: Post not found on GitHub (404), trying local...');
+        const response = await fetch(rawUrl);
+        console.log('loadPost: Raw GitHub response status:', response.status, response.statusText);
+        
+        if (response.ok) {
+          const postData = await response.json();
+          console.log('loadPost: Post data loaded from raw GitHub:', postData.title);
+          post = postData;
+        } else if (response.status === 404) {
+          console.log('loadPost: Post not found on GitHub (404)');
         } else {
-          console.log('loadPost: GitHub API failed with status:', githubResponse.status);
+          console.log('loadPost: Raw GitHub failed with status:', response.status);
         }
-      } catch (githubError) {
-        console.log('GitHub API failed, trying local...');
-        console.log('GitHub error details:', githubError);
+      } catch (rawError) {
+        console.log('Raw GitHub method failed:', rawError);
       }
       
-      // No local fallback - only use GitHub repository
+      // If raw method failed, try the same fallback methods as sitemap
       if (!post) {
-        console.log('loadPost: GitHub API failed, no local fallback available');
-        console.log('loadPost: Posts must be loaded from GitHub repository');
+        console.log('loadPost: Raw method failed, trying fallback methods...');
+        
+        // Method 1: Try GitHub API with headers
+        try {
+          const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`, {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'SimpleBlog/1.0'
+            }
+          });
+          if (response.ok) {
+            const githubData = await response.json();
+            const content = atob(githubData.content);
+            post = JSON.parse(content);
+            console.log('loadPost: Method 1 successful - loaded via GitHub API with headers');
+          }
+        } catch (error) {
+          console.log('loadPost: Method 1 failed:', error);
+        }
+        
+        // Method 2: Try GitHub Tree API
+        if (!post) {
+          try {
+            const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+            if (response.ok) {
+              const treeData = await response.json();
+              const postFile = treeData.tree.find(item => 
+                item.path === `posts/${slug}.json`
+              );
+              
+              if (postFile) {
+                const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
+                const postResponse = await fetch(rawUrl);
+                if (postResponse.ok) {
+                  post = await postResponse.json();
+                  console.log('loadPost: Method 2 successful - loaded via tree API');
+                }
+              }
+            }
+          } catch (error) {
+            console.log('loadPost: Method 2 failed:', error);
+          }
+        }
       }
       
       if (post) {
