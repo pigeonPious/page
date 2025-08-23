@@ -987,44 +987,161 @@ class SimpleBlog {
     console.log('🕊️ Navigating to most recent post...');
     
     try {
-      // Use the same reliable method as sitemap (Method 5)
-      const knownPosts = [
-        'i-vibe-coded-this-blog-and-it-was-miserable-',
-        'about',
-        'contact'
-      ];
+      // Use dynamic GitHub repository scanning to find ALL posts
+      console.log('🕊️ Scanning GitHub repository for all posts...');
       
-      let mostRecentPost = null;
-      let mostRecentDate = new Date(0);
+      // Method 1: Try GitHub API first
+      let directoryContents = null;
+      try {
+        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
+        if (response.ok) {
+          directoryContents = await response.json();
+          console.log('🕊️ Method 1 successful - found', directoryContents.length, 'items via GitHub API');
+        }
+      } catch (error) {
+        console.log('🕊️ Method 1 failed:', error);
+      }
       
-      // Check each known post to find the most recent
-      for (const postSlug of knownPosts) {
+      // Method 2: Try with headers if Method 1 failed
+      if (!directoryContents) {
         try {
-          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
-          const response = await fetch(postUrl);
-          
-          if (response.ok) {
-            const postData = await response.json();
-            if (postData && postData.date) {
-              const postDate = new Date(postData.date);
-              if (postDate > mostRecentDate) {
-                mostRecentDate = postDate;
-                mostRecentPost = postSlug;
-              }
+          const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts', {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'SimpleBlog/1.0'
             }
+          });
+          if (response.ok) {
+            directoryContents = await response.json();
+            console.log('🕊️ Method 2 successful - found', directoryContents.length, 'items via GitHub API with headers');
           }
         } catch (error) {
-          console.warn(`Could not fetch post ${postSlug}:`, error);
+          console.log('🕊️ Method 2 failed:', error);
         }
       }
       
-      if (mostRecentPost) {
-        console.log(`🕊️ Most recent post found: ${mostRecentPost} (${mostRecentDate.toDateString()})`);
-        window.location.href = `index.html#${mostRecentPost}`;
-      } else {
-        console.log('🕊️ No recent posts found, staying on homepage');
-        // Stay on current page if no posts found
+      // Method 3: Try GitHub Tree API if Methods 1-2 failed
+      if (!directoryContents) {
+        try {
+          const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+          if (response.ok) {
+            const treeData = await response.json();
+            // Filter for posts in the posts directory
+            const postFiles = treeData.tree.filter(item => 
+              item.path.startsWith('posts/') && 
+              item.path.endsWith('.json') && 
+              item.path !== 'posts/index.json'
+            );
+            
+            if (postFiles.length > 0) {
+              console.log('🕊️ Method 3 successful - found', postFiles.length, 'posts via tree API');
+              // Convert tree format to directory format for compatibility
+              directoryContents = postFiles.map(item => ({
+                type: 'file',
+                name: item.path.replace('posts/', ''),
+                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
+              }));
+            }
+          }
+        } catch (error) {
+          console.log('🕊️ Method 3 failed:', error);
+        }
       }
+      
+      // Method 4: Try using the repository's default branch contents
+      if (!directoryContents) {
+        try {
+          const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts?ref=main');
+          if (response.ok) {
+            directoryContents = await response.json();
+            console.log('🕊️ Method 4 successful');
+          }
+        } catch (error) {
+          console.log('🕊️ Method 4 failed:', error);
+        }
+      }
+      
+      // Method 5: Bypass API entirely - use raw GitHub URLs directly
+      if (!directoryContents) {
+        try {
+          console.log('🕊️ Method 5 - bypassing GitHub API, using raw URLs');
+          
+          // Since we know the repository structure, we can construct URLs directly
+          // This bypasses all API rate limits and authentication issues
+          const knownPosts = [
+            'about.json',
+            'contact.json',
+            'editing-debug-test-2.json',
+            'edited-debug-test.json',
+            'edited-title-test-today.json',
+            'today-test-two.json',
+            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
+            'edited-title.json',
+            'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
+            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
+            'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
+            'testing-testing-testing.json',
+            'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
+            'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
+            'i-vibe-coded-this-blog-and-it-was-miserable-.json'
+          ];
+          
+          // Convert to directory format for compatibility
+          directoryContents = knownPosts.map(filename => ({
+            type: 'file',
+            name: filename,
+            download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+          }));
+          
+          console.log('🕊️ Method 5 successful - using known post list');
+        } catch (error) {
+          console.log('🕊️ Method 5 failed:', error);
+        }
+      }
+      
+      if (directoryContents) {
+        // Filter for JSON files (posts) and exclude index.json
+        const postFiles = directoryContents.filter(item => 
+          item.type === 'file' && 
+          item.name.endsWith('.json') && 
+          item.name !== 'index.json'
+        );
+        
+        console.log('🕊️ Found', postFiles.length, 'post files in repository');
+        
+        let mostRecentPost = null;
+        let mostRecentDate = new Date(0);
+        
+        // Fetch and check each post to find the most recent
+        for (const postFile of postFiles) {
+          try {
+            const postResponse = await fetch(postFile.download_url);
+            if (postResponse.ok) {
+              const postData = await postResponse.json();
+              
+              if (postData && postData.date) {
+                const postDate = new Date(postData.date);
+                if (postDate > mostRecentDate) {
+                  mostRecentDate = postDate;
+                  mostRecentPost = postFile.name.replace('.json', '');
+                }
+              }
+            }
+          } catch (error) {
+            console.warn(`Could not fetch post ${postFile.name}:`, error);
+          }
+        }
+        
+        if (mostRecentPost) {
+          console.log(`🕊️ Most recent post found: ${mostRecentPost} (${mostRecentDate.toDateString()})`);
+          window.location.href = `index.html#${mostRecentPost}`;
+          return;
+        }
+      }
+      
+      console.log('🕊️ No recent posts found, staying on homepage');
+      // Stay on current page if no posts found
+      
     } catch (error) {
       console.error('🕊️ Error navigating to most recent post:', error);
     }
