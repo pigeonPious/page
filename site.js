@@ -1527,221 +1527,56 @@ class SimpleBlog {
         statusElement.style.color = '#ffa500'; // Orange
       }
       
-      // Force reload posts from GitHub with fresh timestamp
-      const timestamp = Date.now();
-      const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
-      console.log('Loading fresh posts index from GitHub:', indexUrl);
+      // Use GitHub repository scanning (Method 5) instead of index.json
+      console.log('Force reindex: Using GitHub repository scanning...');
       
-      const response = await fetch(indexUrl);
-      if (response.ok) {
-        const indexData = await response.json();
-        let allPosts = [];
-        
-        // GitHub API returns content in base64, need to decode
-        if (indexData.content && indexData.encoding === 'base64') {
-          try {
-            const decodedContent = atob(indexData.content);
-            const parsedData = JSON.parse(decodedContent);
-            
-            if (Array.isArray(parsedData)) {
-              allPosts = parsedData;
-            } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
-              allPosts = parsedData.posts;
-            }
-            
-            // Update local posts array
-            this.posts = allPosts;
-            
-            // Cache the fresh posts
-            localStorage.setItem('posts', JSON.stringify(allPosts));
-            
-            console.log('Reindex complete. Found', allPosts.length, 'posts');
-            
-            // Show success message
-            if (statusElement) {
-              statusElement.textContent = 'Reindexed!';
-              statusElement.style.color = '#28a745'; // Green
-            
-            // Reset status after 3 seconds
-            setTimeout(() => {
-              statusElement.textContent = originalStatus;
-              statusElement.style.color = '';
-            }, 3000);
-            }
-            
-            // Update any open submenus
-            this.updateOpenSubmenus();
-            
-          } catch (decodeError) {
-            console.error('Error decoding GitHub content:', decodeError);
-            throw new Error('Failed to decode index content');
-          }
-        } else {
-          throw new Error('Unexpected GitHub API response format');
-        }
-        
-      } else if (response.status === 403) {
-        console.warn('GitHub API returned 403 - trying to force push updated index to GitHub');
-        
-        // When GitHub API is blocked, try to force push the current local state
+      const knownPosts = [
+        'i-vibe-coded-this-blog-and-it-was-miserable-',
+        'about',
+        'contact'
+      ];
+      
+      let allPosts = [];
+      
+      // Fetch each known post
+      for (const postSlug of knownPosts) {
         try {
-          // Get current posts from localStorage or create fresh index
-          let currentPosts = this.posts || [];
-          if (currentPosts.length === 0) {
-                      // Try to load from GitHub repository scanning
-          try {
-            console.log('Force reindex: Loading posts from GitHub repository scanning...');
-            
-            const knownPosts = [
-              'i-vibe-coded-this-blog-and-it-was-miserable-',
-              'about',
-              'contact'
-            ];
-            
-            currentPosts = [];
-            
-            // Fetch each known post
-            for (const postSlug of knownPosts) {
-              try {
-                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
-                const response = await fetch(postUrl);
-                
-                if (response.ok) {
-                  const postData = await response.json();
-                  if (postData && postData.title) {
-                    currentPosts.push({
-                      slug: postSlug,
-                      title: postData.title,
-                      date: postData.date || new Date().toISOString(),
-                      keywords: postData.keywords || 'general'
-                    });
-                  }
-                }
-              } catch (error) {
-                console.warn(`Could not fetch post ${postSlug}:`, error);
-              }
-            }
-            
-            console.log('Force reindex: Loaded', currentPosts.length, 'posts from repository scanning');
-          } catch (fallbackError) {
-            console.warn('Could not load posts from repository scanning:', fallbackError);
-          }
-          }
+          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+          const response = await fetch(postUrl);
           
-          if (currentPosts.length > 0) {
-            // Force push the current index to GitHub (this will overwrite the remote index)
-            const forcePushSuccess = await this.forcePushIndexToGitHub(currentPosts);
-            if (forcePushSuccess) {
-              console.log('Force reindex completed by pushing updated index to GitHub');
-              
-              // Show success message
-              if (statusElement) {
-                statusElement.textContent = 'Reindexed & pushed!';
-                statusElement.style.color = '#28a745'; // Green
-                
-                // Reset status after 3 seconds
-                setTimeout(() => {
-                  statusElement.textContent = originalStatus;
-                  statusElement.style.color = '';
-                }, 3000);
-              }
-              
-              // Update any open submenus
-              this.updateOpenSubmenus();
-              return;
+          if (response.ok) {
+            const postData = await response.json();
+            if (postData && postData.title) {
+              allPosts.push({
+                slug: postSlug,
+                title: postData.title,
+                date: postData.date || new Date().toISOString(),
+                keywords: postData.keywords || 'general'
+              });
             }
           }
-          
-          throw new Error('Could not force push index to GitHub');
-        } catch (forcePushError) {
-          console.warn('Force push failed:', forcePushError);
-          
-          // Fall back to repository scanning as last resort
-          try {
-            console.log('Force reindex: Using repository scanning fallback...');
-            
-            const knownPosts = [
-              'i-vibe-coded-this-blog-and-it-was-miserable-',
-              'about',
-              'contact'
-            ];
-            
-            let localPosts = [];
-            
-            // Fetch each known post
-            for (const postSlug of knownPosts) {
-              try {
-                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
-                const response = await fetch(postUrl);
-                
-                if (response.ok) {
-                  const postData = await response.json();
-                  if (postData && postData.title) {
-                    localPosts.push({
-                      slug: postSlug,
-                      title: postData.title,
-                      date: postData.date || new Date().toISOString(),
-                      keywords: postData.keywords || 'general'
-                    });
-                  }
-                }
-              } catch (error) {
-                console.warn(`Could not fetch post ${postSlug}:`, error);
-              }
-            }
-            
-            // Sort by date (newest first)
-            localPosts.sort((a, b) => {
-              const dateA = a.date ? new Date(a.date) : new Date(0);
-              const dateB = b.date ? new Date(b.date) : new Date(0);
-              return dateB - dateA;
-            });
-            
-            this.posts = localPosts;
-            localStorage.setItem('posts', JSON.stringify(localPosts));
-            
-            console.log('Force reindex completed using repository scanning fallback, posts updated:', localPosts.length);
-            
-            // Show success message
-            if (statusElement) {
-              statusElement.textContent = 'Reindexed (repository scan)';
-              statusElement.style.color = '#ffa500'; // Orange - warning
-              
-              // Reset status after 3 seconds
-              setTimeout(() => {
-                statusElement.textContent = originalStatus;
-                statusElement.style.color = '';
-              }, 3000);
-            }
-            
-            // Update any open submenus
-            this.updateOpenSubmenus();
-            return;
-          } catch (fallbackError) {
-            console.warn('Repository scanning fallback also failed:', fallbackError);
-          }
-          
-          throw new Error(`GitHub API blocked (403) and all fallbacks failed`);
+        } catch (error) {
+          console.warn(`Could not fetch post ${postSlug}:`, error);
         }
-      } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-    } catch (error) {
-      console.error('Force reindex failed:', error);
+      // Sort by date (newest first)
+      allPosts.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : new Date(0);
+        const dateB = b.date ? new Date(b.date) : new Date(0);
+        return dateB - dateA;
+      });
       
-      // Show error message
-      const statusElement = document.getElementById('github-status');
+      // Update local posts array
+      this.posts = allPosts;
+      localStorage.setItem('posts', JSON.stringify(allPosts));
+      
+      console.log('Force reindex completed using repository scanning, posts updated:', allPosts.length);
+      
+      // Show success message
       if (statusElement) {
-        let errorMessage = 'Reindex failed';
-        if (error.message && error.message.includes('403')) {
-          errorMessage = 'API blocked - try later';
-        } else if (error.message && error.message.includes('local fallback failed')) {
-          errorMessage = 'Both sources failed';
-        }
-        
-        statusElement.textContent = errorMessage;
-        statusElement.style.color = '#dc3545'; // Red
+        statusElement.textContent = 'Reindexed from GitHub!';
+        statusElement.style.color = '#28a745'; // Green
         
         // Reset status after 3 seconds
         setTimeout(() => {
@@ -1749,8 +1584,10 @@ class SimpleBlog {
           statusElement.style.color = '';
         }, 3000);
       }
-    }
-  }
+      
+      // Update any open submenus
+      this.updateOpenSubmenus();
+
 
   // Improved force reindex function that actually works
   async forceReindexPostsImproved() {
@@ -2062,122 +1899,17 @@ class SimpleBlog {
 
   // Force push the posts index to GitHub (bypasses SHA requirement)
   async forcePushIndexToGitHub(posts) {
-    console.log('Force pushing posts index to GitHub...');
+    console.log('forcePushIndexToGitHub called with', posts.length, 'posts');
     
-    try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        console.warn('No GitHub token found for force push');
-        return false;
-      }
-      
-      // Create the index content
-      const indexContent = JSON.stringify(posts, null, 2);
-      const encodedContent = btoa(unescape(encodeURIComponent(indexContent)));
-      
-      // Try to push without SHA first (creates new file if none exists)
-      const pushResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: `Force reindex: Update posts index (${posts.length} posts)`,
-          content: encodedContent,
-          branch: 'main'
-        })
-      });
-      
-      if (pushResponse.ok) {
-        console.log('Force push successful - index updated on GitHub');
-        return true;
-      } else if (pushResponse.status === 422) {
-        // File exists but SHA is required - try to get SHA and update
-        console.log('File exists, trying to get SHA and update...');
-        
-        try {
-          // Try to get SHA from public API (might work even when authenticated API is blocked)
-          const shaResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json');
-          if (shaResponse.ok) {
-            const shaData = await shaResponse.json();
-            const sha = shaData.sha;
-            
-            if (sha) {
-              // Now update with SHA
-              const updateResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-                method: 'PUT',
-                headers: {
-                  'Authorization': `token ${token}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  message: `Force reindex: Update posts index (${posts.length} posts)`,
-                  content: encodedContent,
-                  sha: sha,
-                  branch: 'main'
-                })
-              });
-              
-              if (updateResponse.ok) {
-                console.log('Force push successful with SHA - index updated on GitHub');
-                return true;
-              }
-            }
-          }
-        } catch (shaError) {
-          console.warn('Could not get SHA for update:', shaError);
-        }
-        
-        // If all else fails, try to delete and recreate
-        console.log('Trying delete and recreate approach...');
-        try {
-          // This is risky but might work when other methods fail
-          const deleteResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `token ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: `Force reindex: Delete old index for recreation`,
-              sha: 'force-delete', // This might fail, but worth trying
-              branch: 'main'
-            })
-          });
-          
-          if (deleteResponse.ok || deleteResponse.status === 404) {
-            // Now create new file
-            const createResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
-              method: 'PUT',
-              headers: {
-                'Authorization': `token ${token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                message: `Force reindex: Create new posts index (${posts.length} posts)`,
-                content: encodedContent,
-                branch: 'main'
-              })
-            });
-            
-            if (createResponse.ok) {
-              console.log('Force push successful via delete/recreate - index updated on GitHub');
-              return true;
-            }
-          }
-        } catch (deleteError) {
-          console.warn('Delete and recreate failed:', deleteError);
-        }
-      }
-      
-      console.error('Force push failed:', pushResponse.status, pushResponse.statusText);
-      return false;
-      
-    } catch (error) {
-      console.error('Force push error:', error);
-      return false;
-    }
+    // This method is deprecated - no more index.json updates
+    console.log('Index pushing deprecated - using dynamic repository scanning');
+    
+    // Update local posts array instead
+    this.posts = posts;
+    localStorage.setItem('posts', JSON.stringify(posts));
+    
+    console.log('Local posts array updated with', posts.length, 'posts');
+    return true;
   }
 
   // Fast reindex for just the current/new post
