@@ -1026,43 +1026,44 @@ class SimpleBlog {
         }
       }
       
-      // Method 5: Bypass API entirely - use raw GitHub URLs directly
-      if (!directoryContents) {
-        try {
-          console.log('🕊️ Method 5 - bypassing GitHub API, using raw URLs');
-          
-          // Since we know the repository structure, we can construct URLs directly
-          // This bypasses all API rate limits and authentication issues
-          const knownPosts = [
-            'about.json',
-            'contact.json',
-            'editing-debug-test-2.json',
-            'edited-debug-test.json',
-            'edited-title-test-today.json',
-            'today-test-two.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
-            'edited-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
-            'testing-testing-testing.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable-.json'
-          ];
-          
-          // Convert to directory format for compatibility
-          directoryContents = knownPosts.map(filename => ({
-            type: 'file',
-            name: filename,
-            download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-          }));
-          
-          console.log('🕊️ Method 5 successful - using known post list');
-        } catch (error) {
-          console.log('🕊️ Method 5 failed:', error);
+                        // Method 5: Bypass API entirely - use raw GitHub URLs directly
+        if (!directoryContents) {
+          try {
+            console.log('🕊️ Method 5 - bypassing GitHub API, using raw URLs');
+            
+            // Since we know the repository structure, we can construct URLs directly
+            // This bypasses all API rate limits and authentication issues
+            const knownPosts = [
+              'about.json',
+              'contact.json',
+              'first-post.json',
+              'editing-debug-test-2.json',
+              'edited-debug-test.json',
+              'edited-title-test-today.json',
+              'today-test-two.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
+              'edited-title.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
+              'testing-testing-testing.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable-.json'
+            ];
+            
+            // Convert to directory format for compatibility
+            directoryContents = knownPosts.map(filename => ({
+              type: 'file',
+              name: filename,
+              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+            }));
+            
+            console.log('🕊️ Method 5 successful - using known post list');
+          } catch (error) {
+            console.log('🕊️ Method 5 failed:', error);
+          }
         }
-      }
       
       if (directoryContents) {
         // Filter for JSON files (posts) and exclude index.json
@@ -1084,12 +1085,13 @@ class SimpleBlog {
             if (postResponse.ok) {
               const postData = await postResponse.json();
               
-              if (postData && postData.date) {
-                const postDate = new Date(postData.date);
-                if (postDate > mostRecentDate) {
-                  mostRecentDate = postDate;
-                  mostRecentPost = postFile.name.replace('.json', '');
-                }
+              // Get the actual commit date from GitHub instead of using hardcoded date
+              const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
+              const postDate = new Date(commitDate);
+              
+              if (postDate > mostRecentDate) {
+                mostRecentDate = postDate;
+                mostRecentPost = postFile.name.replace('.json', '');
               }
             }
           } catch (error) {
@@ -1605,6 +1607,7 @@ class SimpleBlog {
           const knownPosts = [
             'about.json',
             'contact.json',
+            'first-post.json',
             'editing-debug-test-2.json',
             'edited-debug-test.json',
             'edited-title-test-today.json',
@@ -1652,10 +1655,13 @@ class SimpleBlog {
             if (postResponse.ok) {
               const postData = await postResponse.json();
               if (postData && postData.title) {
+                // Get the actual commit date from GitHub instead of using hardcoded date
+                const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
+                
                 allPosts.push({
                   slug: postFile.name.replace('.json', ''),
                   title: postData.title,
-                  date: postData.date || new Date().toISOString(),
+                  date: commitDate, // Use actual GitHub commit date
                   keywords: postData.keywords || 'general'
                 });
               }
@@ -1809,6 +1815,7 @@ class SimpleBlog {
           const knownPosts = [
             'about.json',
             'contact.json',
+            'first-post.json',
             'editing-debug-test-2.json',
             'edited-debug-test.json',
             'edited-title-test-today.json',
@@ -1856,10 +1863,13 @@ class SimpleBlog {
             if (postResponse.ok) {
               const postData = await postResponse.json();
               if (postData && postData.title) {
+                // Get the actual commit date from GitHub instead of using hardcoded date
+                const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
+                
                 allPosts.push({
                   slug: postFile.name.replace('.json', ''),
                   title: postData.title,
-                  date: postData.date || new Date().toISOString(),
+                  date: commitDate, // Use actual GitHub commit date
                   keywords: postData.keywords || 'general'
                 });
               }
@@ -2332,7 +2342,26 @@ class SimpleBlog {
     }
   }
 
-
+  // Get the commit date for a specific file from GitHub
+  async getCommitDate(filePath) {
+    try {
+      // Try to get the commit history for the specific file
+      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/commits?path=${filePath}&per_page=1`);
+      if (response.ok) {
+        const commits = await response.json();
+        if (commits && commits.length > 0) {
+          // Get the most recent commit date for this file
+          const commitDate = new Date(commits[0].commit.author.date);
+          return commitDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+        }
+      }
+    } catch (error) {
+      console.warn(`Could not fetch commit date for ${filePath}:`, error);
+    }
+    
+    // Fallback to current date if commit date cannot be fetched
+    return new Date().toISOString().split('T')[0];
+  }
 
   async loadPosts() {
     const cacheBust = Date.now();
@@ -2419,6 +2448,7 @@ class SimpleBlog {
           const knownPosts = [
             'about.json',
             'contact.json',
+            'first-post.json',
             'editing-debug-test-2.json',
             'edited-debug-test.json',
             'edited-title-test-today.json',
@@ -2466,11 +2496,14 @@ class SimpleBlog {
               // Extract slug from filename (remove .json extension)
               const slug = postFile.name.replace('.json', '');
               
+              // Get the actual commit date from GitHub instead of using hardcoded date
+              const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
+              
               // Create post object with all necessary data
               const post = {
                 slug: slug,
                 title: postData.title || 'Untitled',
-                date: postData.date || 'Unknown Date',
+                date: commitDate, // Use actual GitHub commit date
                 keywords: postData.keywords || 'general',
                 content: postData.content || ''
               };
@@ -8785,6 +8818,7 @@ class SimpleBlog {
             const knownPosts = [
               'about.json',
               'contact.json',
+              'first-post.json',
               'editing-debug-test-2.json',
               'edited-debug-test.json',
               'edited-title-test-today.json',
@@ -8834,11 +8868,14 @@ class SimpleBlog {
                 // Extract slug from filename (remove .json extension)
                 const slug = postFile.name.replace('.json', '');
                 
+                // Get the actual commit date from GitHub instead of using hardcoded date
+                const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
+                
                 // Create post object with all necessary data
                 const post = {
                   slug: slug,
                   title: postData.title || 'Untitled',
-                  date: postData.date || 'Unknown Date',
+                  date: commitDate, // Use actual GitHub commit date
                   keywords: postData.keywords || 'general',
                   content: postData.content || ''
                 };
