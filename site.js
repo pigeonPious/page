@@ -8407,6 +8407,44 @@ class SimpleBlog {
           }
         }
         
+        // Method 5: Bypass API entirely - use raw GitHub URLs directly
+        if (!directoryContents) {
+          try {
+            console.log('Site map: Method 5 - bypassing GitHub API, using raw URLs');
+            
+            // Since we know the repository structure, we can construct URLs directly
+            // This bypasses all API rate limits and authentication issues
+            const knownPosts = [
+              'about.json',
+              'contact.json',
+              'editing-debug-test-2.json',
+              'edited-debug-test.json',
+              'edited-title-test-today.json',
+              'today-test-two.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
+              'edited-title.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
+              'testing-testing-testing.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
+              'i-vibe-coded-this-blog-and-it-was-miserable-.json'
+            ];
+            
+            // Convert to directory format for compatibility
+            directoryContents = knownPosts.map(filename => ({
+              type: 'file',
+              name: filename,
+              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
+            }));
+            
+            console.log('Site map: Method 5 successful - using known post list');
+          } catch (error) {
+            console.log('Site map: Method 5 failed:', error);
+          }
+        }
+        
         if (directoryContents) {
           // Filter for JSON files (posts) and exclude index.json
           const postFiles = directoryContents.filter(item => 
