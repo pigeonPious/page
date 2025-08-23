@@ -1,8 +1,8 @@
 [
   {
-    "slug": "first-post",
-    "title": "First Post",
-    "date": "2024-01-21",
+    "slug": "first-post-new-title",
+    "title": "First Post New Title",
+    "date": "2025-08-23",
     "keywords": "general, coding, AI, blog"
   },
   {
@@ -97,5 +97,11 @@
     "filename": "about.json",
     "date": "2024-07-25T12:00:00Z",
     "tags": "about"
+  },
+  {
+    "slug": "first-post",
+    "title": "First Post",
+    "date": "2024-01-21",
+    "keywords": "general, coding, AI, blog"
   }
 ]
