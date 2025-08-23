@@ -6260,6 +6260,7 @@ class SimpleBlog {
       const editData = localStorage.getItem('editPostData');
       let isEdit = false;
       let originalSlug = '';
+      let originalTitle = '';
       let currentSha = null;
       let shouldDeleteOldFile = false;
       
@@ -6267,6 +6268,7 @@ class SimpleBlog {
         try {
           const editPost = JSON.parse(editData);
           originalSlug = editPost.slug;
+          originalTitle = editPost.title;
           isEdit = true;
           
           // Check if title has changed significantly (which would change the slug)
