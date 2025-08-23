@@ -73,6 +73,10 @@ class SimpleBlog {
             const mostRecent = this.posts[0]; // Already sorted by date
             console.log(` No stored post, loading most recent: ${mostRecent.title}`);
             this.loadPost(mostRecent.slug);
+          } else {
+            // No posts loaded yet, show default content
+            console.log('No posts available yet, showing default content');
+            this.displayDefaultContent();
           }
         }
       }
@@ -83,6 +87,15 @@ class SimpleBlog {
           // Only show site map automatically if user hasn't manually toggled it or hidden it
           if (!this.siteMapManuallyToggled && !this.siteMapManuallyHidden) {
             this.showSiteMap();
+          }
+          
+          // If no specific post is loaded and we have posts, load the most recent one
+          if (!this.currentPost && this.posts && this.posts.length > 0) {
+            console.log('No specific post loaded, loading most recent post');
+            const mostRecent = this.posts[0];
+            if (mostRecent && mostRecent.slug) {
+              this.loadPost(mostRecent.slug);
+            }
           }
         }, 500);
       } else {
@@ -2856,6 +2869,17 @@ class SimpleBlog {
     const dateElement = document.getElementById('post-date');
     const contentElement = document.getElementById('post-content');
 
+    // Try to load the most recent post if we have posts available
+    if (this.posts && this.posts.length > 0) {
+      const mostRecent = this.posts[0];
+      if (mostRecent && mostRecent.slug) {
+        console.log('Loading most recent post as default content:', mostRecent.title);
+        this.loadPost(mostRecent.slug);
+        return;
+      }
+    }
+
+    // Fallback to generic welcome message if no posts available
     if (titleElement) titleElement.textContent = '# Blog';
     if (dateElement) dateElement.textContent = '';
     if (contentElement) contentElement.innerHTML = '<p>Welcome to the blog! Posts will appear here once loaded.</p>';
@@ -6242,8 +6266,8 @@ class SimpleBlog {
         }
       }
       
-      // Create post data - for edits, always use the original slug to update the existing file
-      // This ensures that editing a post updates the same file rather than creating a new one
+      // Create post data - for edits, use the original slug but allow title/content updates
+      // This ensures that editing a post updates the existing file with new content
       const postData = {
         slug: isEdit ? originalSlug : title.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
         title: title,
@@ -6254,6 +6278,11 @@ class SimpleBlog {
       
       console.log('Post data prepared:', postData);
       console.log('Is edit:', isEdit, 'Original slug:', originalSlug, 'Final slug:', postData.slug);
+      if (isEdit) {
+        console.log('Editing existing post - will update file:', originalSlug);
+        console.log('New title:', title);
+        console.log('New content length:', content.length);
+      }
       
       // Check for duplicate posts (only for new posts, not edits)
       // For edits, we always update the existing file using the original slug
@@ -6369,8 +6398,12 @@ class SimpleBlog {
       if (currentSha) {
         requestBody.sha = currentSha;
         console.log('Including SHA for update:', currentSha);
+        console.log('This will update the existing file:', postData.slug);
       } else {
         console.log('No SHA available - creating new file');
+        if (isEdit) {
+          console.warn('⚠️ WARNING: No SHA available for edit - this might fail if the file already exists');
+        }
       }
       
       console.log('Publishing with request body:', requestBody);
@@ -6394,17 +6427,17 @@ class SimpleBlog {
         
         // Update the posts index incrementally instead of rebuilding from scratch
         console.log('Updating posts index incrementally...');
+        console.log('Post data for index update:', { slug: postData.slug, title: postData.title, isEdit });
         const indexUpdated = await this.updatePostsIndexIncrementally(postData, isEdit);
         
         if (indexUpdated) {
           // Clear edit data after successful publish
           if (isEdit) {
             localStorage.removeItem('editPostData');
-            console.log(' Edit data cleared after successful publish');
+            console.log('✅ Edit data cleared after successful publish');
           }
           
-
-          
+          console.log('✅ Index updated successfully');
           this.showMenuStyle1Message(` Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nIndex updated efficiently with minimal API calls.`, 'success');
           
           // Redirect to the published post after a short delay
@@ -6412,6 +6445,7 @@ class SimpleBlog {
             window.location.href = `index.html?post=${postData.slug}`;
           }, 3000);
         } else {
+          console.error('❌ Index update failed');
           this.showMenuStyle1Message(' Post published but index update failed. Please refresh the page to see updated navigation.', 'warning');
         }
       } else {
@@ -9397,7 +9431,7 @@ class SimpleBlog {
       }
       
       // Add event listener to title field to update localStorage as user types
-      // For edits, we preserve the original slug to ensure the post updates the existing file
+      // For edits, we preserve the original slug but allow title updates
       if (titleField) {
         titleField.addEventListener('input', () => {
           const currentTitle = titleField.value.trim();
@@ -9406,8 +9440,10 @@ class SimpleBlog {
             const isEditing = editPost && editPost.slug;
             if (isEditing) {
               // For edits, keep the original slug to update the existing file
+              // but allow the title to be updated in the post content
               localStorage.setItem('current_post_slug', editPost.slug);
               console.log('Preserved original slug for editing:', editPost.slug);
+              console.log('Title updated to:', currentTitle);
             } else {
               // For new posts, update slug based on title
               const slug = currentTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-');
