@@ -5550,35 +5550,23 @@ class SimpleBlog {
       let updatedIndex;
       
               if (isEdit) {
-          // For edits: check if title changed
+          // For edits: always remove old entry and add new one
           const editData = localStorage.getItem('editPostData');
           if (editData) {
             try {
               const editPost = JSON.parse(editData);
-              if (editPost.title !== postData.title) {
-                // Title changed - remove old entry and add new one
-                updatedIndex = currentIndex.filter(post => post.slug !== editPost.slug);
-                updatedIndex = [newIndexEntry, ...updatedIndex];
-                console.log('Title changed - removed old entry and added new one:', editPost.slug, '->', postData.slug);
-              } else {
-                // Same title - update existing entry
-                updatedIndex = currentIndex.map(post => 
-                  post.slug === editPost.slug ? newIndexEntry : post
-                );
-                console.log('Updated existing post in index:', editPost.slug);
-              }
+              // Remove old entry and add new one
+              updatedIndex = currentIndex.filter(post => post.slug !== editPost.slug);
+              updatedIndex = [newIndexEntry, ...updatedIndex];
+              console.log('Edit mode - removed old entry and added new one:', editPost.slug, '->', postData.slug);
             } catch (error) {
               console.warn('Could not parse edit data for index update:', error);
-              // Fallback: update existing entry
-              updatedIndex = currentIndex.map(post => 
-                post.slug === postData.slug ? newIndexEntry : post
-              );
+              // Fallback: add new entry
+              updatedIndex = [newIndexEntry, ...currentIndex];
             }
           } else {
-            // No edit data - update existing entry
-            updatedIndex = currentIndex.map(post => 
-              post.slug === postData.slug ? newIndexEntry : post
-            );
+            // No edit data - add new entry
+            updatedIndex = [newIndexEntry, ...currentIndex];
           }
         } else {
         // For new posts: add to beginning (newest first)
@@ -6261,8 +6249,6 @@ class SimpleBlog {
       let isEdit = false;
       let originalSlug = '';
       let originalTitle = '';
-      let currentSha = null;
-      let shouldDeleteOldFile = false;
       
       if (editData) {
         try {
@@ -6270,74 +6256,7 @@ class SimpleBlog {
           originalSlug = editPost.slug;
           originalTitle = editPost.title;
           isEdit = true;
-          
-          // Check if title has changed significantly (which would change the slug)
-          const newSlug = title.toLowerCase().replace(/[^a-z0-9]/gi, '-');
-          console.log('Comparing slugs - original:', originalSlug, 'new:', newSlug, 'areEqual:', newSlug === originalSlug);
-          if (newSlug !== originalSlug) {
-            console.log('Title changed significantly - old slug:', originalSlug, 'new slug:', newSlug);
-            shouldDeleteOldFile = true;
-            console.log('shouldDeleteOldFile set to:', shouldDeleteOldFile);
-            // Don't get SHA for old file since we'll delete it
-          } else {
-            console.log('This is an edit of existing post with same slug:', originalSlug);
-            
-            // For edits with same slug, we need to get the current SHA of the post file
-            // Try multiple approaches to get the SHA
-            let shaFound = false;
-            
-            // Method 1: Try GitHub API with auth
-            try {
-              const postResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`, {
-                headers: {
-                  'Authorization': `token ${githubToken}`,
-                }
-              });
-              
-              if (postResponse.ok) {
-                const postData = await postResponse.json();
-                currentSha = postData.sha;
-                shaFound = true;
-                console.log('Got current SHA for edit (GitHub API):', currentSha);
-              } else {
-                console.warn('GitHub API returned status for SHA fetch:', postResponse.status);
-              }
-            } catch (error) {
-              console.warn('Error getting SHA from GitHub API:', error);
-            }
-            
-            // Method 2: Try GitHub API without auth (public access)
-            if (!shaFound) {
-              try {
-                const publicResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${originalSlug}.json`);
-                
-                if (publicResponse.ok) {
-                  const postData = await publicResponse.json();
-                  currentSha = postData.sha;
-                  shaFound = true;
-                  console.log('Got current SHA for edit (public API):', currentSha);
-                } else {
-                  console.warn('Public API returned status for SHA fetch:', publicResponse.status);
-                }
-              } catch (error) {
-                console.warn('Error getting SHA from public API:', error);
-              }
-            }
-            
-            // Method 3: Try to get SHA from local posts cache
-            if (!shaFound && this.posts && this.posts.length > 0) {
-              const localPost = this.posts.find(p => p.slug === originalSlug);
-              if (localPost && localPost.sha) {
-                currentSha = localPost.sha;
-                shaFound = true;
-                console.log('Got current SHA for edit (local cache):', currentSha);
-              }
-            }
-            
-            if (!shaFound) {
-              console.warn('Could not get SHA for edit - will try to create new file');
-            }
-          }
+          console.log('Editing post - will create new file and delete old one:', originalSlug);
         } catch (error) {
           console.warn('Could not parse edit data:', error);
         }
@@ -6353,7 +6272,7 @@ class SimpleBlog {
       };
       
       console.log('Post data prepared:', postData);
-      console.log('Title check - original:', originalTitle, 'new:', title, 'changed:', originalTitle !== title);
+      console.log('Edit mode - original slug:', originalSlug, 'new slug:', postData.slug);
       
       // Check for duplicate posts (only for new posts, not edits)
       if (!isEdit) {
@@ -6462,13 +6381,8 @@ class SimpleBlog {
         branch: 'main'
       };
       
-      // Include SHA if we have it (for edits or overwrites)
-      if (currentSha) {
-        requestBody.sha = currentSha;
-        console.log('Including SHA for update:', currentSha);
-      } else {
-        console.log('No SHA available - creating new file');
-      }
+      // Always creating new file (no SHA needed)
+      console.log('Creating new post file (edit mode always creates new files)');
       
       console.log('Publishing with request body:', requestBody);
               console.log('API endpoint:', `https://api.github.com/repos/pigeonPious/page/contents/posts/${postData.slug}.json`);
@@ -6494,9 +6408,9 @@ class SimpleBlog {
         const indexUpdated = await this.updatePostsIndexIncrementally(postData, isEdit);
         
         if (indexUpdated) {
-          // If this was an edit and the title changed, delete the old file
-          if (isEdit && originalTitle !== title) {
-            console.log('Title changed - deleting old file:', originalSlug);
+          // If this was an edit, always delete the old file
+          if (isEdit && originalSlug) {
+            console.log('Edit mode - deleting old file:', originalSlug);
             try {
               await this.deleteOldPostFile(originalSlug);
               console.log('Old post file deleted successfully');
@@ -6504,8 +6418,6 @@ class SimpleBlog {
               console.warn('Failed to delete old post file:', deleteError);
               // Don't fail the entire operation if deletion fails
             }
-          } else if (isEdit) {
-            console.log('No title change - keeping existing file');
           } else {
             console.log('This is a new post - no old file to delete');
           }
