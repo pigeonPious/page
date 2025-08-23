@@ -2373,21 +2373,24 @@ class SimpleBlog {
 
 
   async loadPosts() {
-    console.log('loadPosts: Dynamically scanning GitHub repository contents...');
+    console.log('loadPosts: Dynamically scanning GitHub repository contents... (CACHE BUST: ' + Date.now() + ' - VERSION 2.0)');
     
     try {
       // Use the same reliable method as sitemap (Method 5) - bypass GitHub API entirely
       let directoryContents = null;
       
       // Method 1: Try GitHub API first
+      console.log('loadPosts V2.0: Trying Method 1 - GitHub API...');
       try {
         const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
         if (response.ok) {
           directoryContents = await response.json();
-          console.log('loadPosts: Method 1 successful - found', directoryContents.length, 'items via GitHub API');
+          console.log('loadPosts V2.0: Method 1 successful - found', directoryContents.length, 'items via GitHub API');
+        } else {
+          console.log('loadPosts V2.0: Method 1 failed with status:', response.status);
         }
       } catch (error) {
-        console.log('loadPosts: Method 1 failed:', error);
+        console.log('loadPosts V2.0: Method 1 failed:', error);
       }
       
       // Method 2: Try with headers if Method 1 failed
@@ -2451,8 +2454,9 @@ class SimpleBlog {
       
       // Method 5: Bypass API entirely - use raw GitHub URLs directly
       if (!directoryContents) {
+        console.log('loadPosts V2.0: Trying Method 5 - raw GitHub URLs...');
         try {
-          console.log('loadPosts: Method 5 - bypassing GitHub API, using raw URLs');
+          console.log('loadPosts V2.0: Method 5 - bypassing GitHub API, using raw URLs');
           
           // Since we know the repository structure, we can construct URLs directly
           // This bypasses all API rate limits and authentication issues
@@ -2488,6 +2492,7 @@ class SimpleBlog {
       }
       
       if (directoryContents) {
+        console.log('loadPosts V2.0: directoryContents found, processing...');
         // Filter for JSON files (posts) and exclude index.json
         const postFiles = directoryContents.filter(item => 
           item.type === 'file' && 
@@ -2495,7 +2500,7 @@ class SimpleBlog {
           item.name !== 'index.json'
         );
         
-        console.log('loadPosts: Found', postFiles.length, 'post files in repository');
+        console.log('loadPosts V2.0: Found', postFiles.length, 'post files in repository');
         
         // Fetch and parse each post file to get metadata
         const posts = [];
@@ -2543,7 +2548,8 @@ class SimpleBlog {
           this.displayDefaultContent();
         }
       } else {
-        console.warn('loadPosts: Could not access posts directory with any method');
+        console.warn('loadPosts V2.0: Could not access posts directory with any method');
+        console.log('loadPosts V2.0: directoryContents is null/undefined after trying all methods');
         // Don't clear posts array - keep cached posts if available
         if (!this.posts || this.posts.length === 0) {
           this.displayDefaultContent();
