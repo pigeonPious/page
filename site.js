@@ -1031,8 +1031,9 @@ class SimpleBlog {
           try {
             console.log('🕊️ Using GitHub public directory browsing...');
             
-            // Use GitHub's public directory browsing to discover posts
-            const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+            // Use GitHub's public directory browsing to discover posts (with CORS proxy)
+            const corsProxy = 'https://corsproxy.io/?';
+            const postsDirResponse = await fetch(corsProxy + 'https://github.com/pigeonPious/page/tree/main/posts');
             if (postsDirResponse.ok) {
               const htmlContent = await postsDirResponse.text();
               
@@ -1603,8 +1604,9 @@ class SimpleBlog {
         try {
           console.log('Submenu: Using GitHub public directory browsing...');
           
-          // Use GitHub's public directory browsing to discover posts
-          const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+          // Use GitHub's public directory browsing to discover posts (with CORS proxy)
+          const corsProxy = 'https://corsproxy.io/?';
+          const postsDirResponse = await fetch(corsProxy + 'https://github.com/pigeonPious/page/tree/main/posts');
           if (postsDirResponse.ok) {
             const htmlContent = await postsDirResponse.text();
             
@@ -1812,8 +1814,9 @@ class SimpleBlog {
         try {
           console.log('Force reindex: Using GitHub public directory browsing...');
           
-          // Use GitHub's public directory browsing to discover posts
-          const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+          // Use GitHub's public directory browsing to discover posts (with CORS proxy)
+          const corsProxy = 'https://corsproxy.io/?';
+          const postsDirResponse = await fetch(corsProxy + 'https://github.com/pigeonPious/page/tree/main/posts');
           if (postsDirResponse.ok) {
             const htmlContent = await postsDirResponse.text();
             
@@ -2472,8 +2475,9 @@ class SimpleBlog {
         try {
           console.log('loadPosts V2.0: Using GitHub public directory browsing...');
           
-          // Use GitHub's public directory browsing to discover posts
-          const postsDirResponse = await fetch(`https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
+          // Use GitHub's public directory browsing to discover posts (with CORS proxy)
+          const corsProxy = 'https://corsproxy.io/?';
+          const postsDirResponse = await fetch(corsProxy + `https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
           if (postsDirResponse.ok) {
             const htmlContent = await postsDirResponse.text();
             
@@ -6271,11 +6275,12 @@ class SimpleBlog {
     try {
       console.log('Rebuilding posts index using dynamic GitHub discovery...');
       
-      // Use GitHub's public directory browsing to discover posts
-      const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
-      if (!postsDirResponse.ok) {
-        throw new Error(`GitHub directory browsing failed with status: ${postsDirResponse.status}`);
-      }
+              // Use GitHub's public directory browsing to discover posts (with CORS proxy)
+        const corsProxy = 'https://corsproxy.io/?';
+        const postsDirResponse = await fetch(corsProxy + 'https://github.com/pigeonPious/page/tree/main/posts');
+        if (!postsDirResponse.ok) {
+          throw new Error(`GitHub directory browsing failed with status: ${postsDirResponse.status}`);
+        }
       
       const htmlContent = await postsDirResponse.text();
       
@@ -8800,8 +8805,9 @@ class SimpleBlog {
       try {
         console.log('Site map: Starting dynamic GitHub discovery...');
         
-        // Use GitHub's public directory browsing to discover posts
-        const postsDirResponse = await fetch('https://github.com/pigeonPious/page/tree/main/posts');
+        // Use GitHub's public directory browsing to discover posts (with CORS proxy)
+        const corsProxy = 'https://corsproxy.io/?';
+        const postsDirResponse = await fetch(corsProxy + 'https://github.com/pigeonPious/page/tree/main/posts');
         if (!postsDirResponse.ok) {
           throw new Error(`GitHub directory browsing failed with status: ${postsDirResponse.status}`);
         }
