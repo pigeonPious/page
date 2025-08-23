@@ -147,6 +147,15 @@ class SimpleBlog {
     // Check authentication status
     this.checkAndUpdateAuthStatus();
     
+    // Setup console commands for logo management
+    this.setupConsoleCommands();
+    
+    // Load logo from configuration
+    this.loadLogoFromConfig();
+    
+    // Ensure logo is applied when DOM is ready
+    setTimeout(() => this.ensureLogoApplied(), 1000);
+    
     console.log('SimpleBlog initialized successfully');
   }
 
@@ -4834,35 +4843,40 @@ class SimpleBlog {
   setupImageMagazineButtons() {
     // Get the existing buttons from HTML
     const importBtn = document.getElementById('import-image-btn');
+    const reloadBtn = document.getElementById('reload-images-btn');
     const closeBtn = document.getElementById('close-magazine-btn');
     
-    console.log('Found import button:', !!importBtn);
-    console.log('Found close button:', !!closeBtn);
-    
-    if (!importBtn || !closeBtn) {
+    if (!importBtn || !reloadBtn || !closeBtn) {
       console.log('Buttons not found - cannot setup functionality');
       return;
     }
     
     // Remove any existing event listeners
     importBtn.replaceWith(importBtn.cloneNode(true));
+    reloadBtn.replaceWith(reloadBtn.cloneNode(true));
     closeBtn.replaceWith(closeBtn.cloneNode(true));
     
     // Get fresh references after cloning
     const newImportBtn = document.getElementById('import-image-btn');
+    const newReloadBtn = document.getElementById('reload-images-btn');
     const newCloseBtn = document.getElementById('close-magazine-btn');
     
     // Setup import button
     newImportBtn.addEventListener('click', (e) => {
-      console.log('Import button CLICKED!');
       e.stopPropagation();
       e.preventDefault();
       this.importImages();
     });
     
+    // Setup reload button
+    newReloadBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      this.loadImagesToMagazine();
+    });
+    
     // Setup close button
     newCloseBtn.addEventListener('click', (e) => {
-      console.log('Close button CLICKED!');
       e.stopPropagation();
       e.preventDefault();
       
@@ -4870,12 +4884,23 @@ class SimpleBlog {
       if (magazine) {
         magazine.style.display = 'none';
         magazine.classList.add('hidden');
-        console.log('Magazine closed via close button');
       }
     });
     
     // Button style 1: Clean text-only buttons (no frame, no background)
     newImportBtn.style.cssText = `
+      background: transparent;
+      color: #fff;
+      border: none;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: color 0.2s;
+      outline: none;
+    `;
+    
+    newReloadBtn.style.cssText = `
       background: transparent;
       color: #fff;
       border: none;
@@ -4904,6 +4929,8 @@ class SimpleBlog {
     // Add hover effects (color change only)
     newImportBtn.addEventListener('mouseenter', () => { newImportBtn.style.color = '#ccc'; });
     newImportBtn.addEventListener('mouseleave', () => { newImportBtn.style.color = '#fff'; });
+    newReloadBtn.addEventListener('mouseenter', () => { newReloadBtn.style.color = '#ccc'; });
+    newReloadBtn.addEventListener('mouseleave', () => { newReloadBtn.style.color = '#fff'; });
     newCloseBtn.addEventListener('mouseenter', () => { newCloseBtn.style.color = '#ccc'; });
     newCloseBtn.addEventListener('mouseleave', () => { newCloseBtn.style.color = '#fff'; });
     
@@ -5191,7 +5218,8 @@ class SimpleBlog {
     
     try {
       // Try to get the actual assets directory listing from GitHub
-      const assetsUrl = 'https://api.github.com/repos/pigeonPious/page/contents/assets';
+      const cacheBust = Date.now();
+      const assetsUrl = `https://api.github.com/repos/pigeonPious/page/contents/assets?_cb=${cacheBust}`;
       const response = await fetch(assetsUrl);
       
       let images = [];
@@ -5252,7 +5280,7 @@ class SimpleBlog {
         `;
         
         const img = document.createElement('img');
-        img.src = `assets/${filename}`;
+        img.src = `assets/${filename}?_cb=${Date.now()}`;
         img.style.cssText = `
           width: 100%;
           height: 100%;
@@ -5319,11 +5347,365 @@ class SimpleBlog {
     return imageExtensions.some(ext => lowerFilename.endsWith(ext));
   }
   
+  // Console command system for logo management
+  setupConsoleCommands() {
+    // Override console.log to capture logo commands
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    
+    // Create a custom console that can handle logo commands
+    window.customConsole = {
+      logo: (filename) => {
+        if (filename) {
+          this.changeLogo(filename);
+        } else {
+          console.log('Usage: logo <filename>');
+          console.log('Example: logo my-animation.gif');
+          console.log('Current logo:', localStorage.getItem('ppPage_logo') || 'default giphy gif');
+        }
+      },
+      help: () => {
+        console.log('Available console commands:');
+        console.log('  logo <filename> - Change the corner logo to a file from assets folder');
+        console.log('  resetLogo() - Reset logo back to default giphy gif');
+        console.log('  help - Show this help message');
+        console.log('  clear - Clear console');
+      }
+    };
+    
+    // Override console methods to handle custom commands
+    console.log = (...args) => {
+      const message = args.join(' ');
+      
+      // Check for logo command
+      if (message.startsWith('logo ')) {
+        const filename = message.substring(5).trim();
+        if (filename) {
+          this.changeLogo(filename);
+          return;
+        }
+      }
+      
+      // Check for help command
+      if (message === 'help') {
+        window.customConsole.help();
+        return;
+      }
+      
+      // Default behavior
+      originalLog.apply(console, args);
+    };
+    
+    // Add logo command to window for direct access
+    window.logo = (filename) => window.customConsole.logo(filename);
+    window.resetLogo = () => this.resetToDefaultLogo();
+    window.logoStatus = () => this.showLogoStatus();
+    window.listAvailableLogos = () => this.listAvailableLogos();
+    
+    // Show help on first load
+    setTimeout(() => {
+      console.log('🎭 Logo Console Commands Available:');
+      console.log('Type "logo <filename>" to change the corner logo');
+      console.log('Type "resetLogo()" to return to default logo');
+      console.log('Type "logoStatus()" to check current logo status');
+      console.log('Type "help" for more commands');
+    }, 2000);
+  }
+  
+  // Change the logo to a specific file from assets
+  async changeLogo(filename) {
+    try {
+      console.log(`🔄 Changing logo to: ${filename}`);
+      
+      // First check if the file exists in GitHub assets
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        console.error('❌ No GitHub token found. Please set up GitHub publishing first.');
+        return;
+      }
+      
+      // Check if file exists in assets
+      const assetsUrl = `https://api.github.com/repos/pigeonPious/page/contents/assets/${filename}`;
+      const response = await fetch(assetsUrl, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`❌ File ${filename} not found in assets folder`);
+        console.log('Available files in assets:');
+        await this.listAvailableLogos();
+        return;
+      }
+      
+      // File exists, now update the logo
+      const logoUrl = `assets/${filename}`;
+      
+      // Store the logo preference in localStorage
+      localStorage.setItem('ppPage_logo', filename);
+      
+      // Apply the logo immediately
+      this.applyLogo(logoUrl);
+      
+      // Publish the logo change to GitHub for all viewers
+      await this.publishLogoChange(filename, logoUrl);
+      
+      console.log(`✅ Logo changed to ${filename} and published to GitHub!`);
+      console.log(`All viewers will now see the new logo.`);
+      
+    } catch (error) {
+      console.error('❌ Error changing logo:', error);
+    }
+  }
+  
+  // Apply logo to the corner GIF element
+  applyLogo(logoUrl) {
+    const cornerGif = document.getElementById('cornerGif');
+    if (cornerGif) {
+      // Add cache busting to ensure fresh image
+      const cacheBust = Date.now();
+      const logoUrlWithCache = `${logoUrl}?_cb=${cacheBust}`;
+      
+      cornerGif.style.background = `#000 url('${logoUrlWithCache}') center/cover no-repeat`;
+      console.log(`🎭 Logo applied: ${logoUrl}`);
+    } else {
+      console.warn('⚠️ Corner GIF element not found');
+    }
+  }
+  
+  // Publish logo change to GitHub for all viewers
+  async publishLogoChange(filename, logoUrl) {
+    try {
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        console.error('❌ No GitHub token found');
+        return;
+      }
+      
+      // Create a logo configuration file in the repository
+      const logoConfig = {
+        filename: filename,
+        url: logoUrl,
+        timestamp: new Date().toISOString(),
+        updatedBy: 'console-command'
+      };
+      
+      const configUrl = 'https://api.github.com/repos/pigeonPious/page/contents/logo-config.json';
+      
+      // Check if config file already exists
+      const existingResponse = await fetch(configUrl, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      let sha = null;
+      if (existingResponse.ok) {
+        const existingData = await existingResponse.json();
+        sha = existingData.sha;
+      }
+      
+      // Upload the logo configuration
+      const response = await fetch(configUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Update logo to ${filename}`,
+          content: btoa(JSON.stringify(logoConfig, null, 2)),
+          sha: sha,
+          branch: 'main'
+        })
+      });
+      
+      if (response.ok) {
+        console.log(`📤 Logo configuration published to GitHub`);
+      } else {
+        console.warn(`⚠️ Could not publish logo config: ${response.status}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error publishing logo change:', error);
+    }
+  }
+  
+  // List available logo files in assets
+  async listAvailableLogos() {
+    try {
+      const token = localStorage.getItem('github_token');
+      if (!token) {
+        console.log('📁 Assets folder contents (public):');
+        // Try public access
+        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/assets');
+        if (response.ok) {
+          const assets = await response.json();
+          const imageFiles = assets
+            .filter(item => item.type === 'file' && this.isImageFile(item.name))
+            .map(item => item.name);
+          
+          if (imageFiles.length > 0) {
+            console.log('Available images:', imageFiles.join(', '));
+          } else {
+            console.log('No image files found in assets folder');
+          }
+        }
+        return;
+      }
+      
+      // Use authenticated access for more details
+      const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/assets', {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      
+      if (response.ok) {
+        const assets = await response.json();
+        const imageFiles = assets
+          .filter(item => item.type === 'file' && this.isImageFile(item.name))
+          .map(item => item.name);
+        
+        if (imageFiles.length > 0) {
+          console.log('📁 Available logo files in assets:');
+          imageFiles.forEach(file => {
+            console.log(`  • ${file}`);
+          });
+          console.log(`\nUse: logo ${imageFiles[0]} (or any filename above)`);
+        } else {
+          console.log('📁 No image files found in assets folder');
+          console.log('Upload some images first using the Image Magazine!');
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error listing available logos:', error);
+    }
+  }
+  
+  // Load logo from configuration on page load
+  async loadLogoFromConfig() {
+    try {
+      // First check localStorage for user preference
+      const userLogo = localStorage.getItem('ppPage_logo');
+      if (userLogo) {
+        console.log(`🎭 Loading user's logo preference: ${userLogo}`);
+        this.applyLogo(`assets/${userLogo}`);
+        return;
+      }
+      
+      // Try to load from GitHub logo config
+      const response = await fetch('https://raw.githubusercontent.com/pigeonPious/page/main/logo-config.json');
+      if (response.ok) {
+        const config = await response.json();
+        if (config.filename && config.url) {
+          console.log(`🎭 Loading logo from GitHub config: ${config.filename}`);
+          this.applyLogo(config.url);
+          return;
+        }
+      }
+      
+      // Fallback to default giphy gif
+      console.log('🎭 Using default logo');
+      
+    } catch (error) {
+      // Silently fall back to default
+      console.log('🎭 Using default logo (config load failed)');
+    }
+  }
+  
+  // Ensure logo is applied when DOM is ready
+  ensureLogoApplied() {
+    // Try to apply logo multiple times in case DOM isn't ready
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const tryApplyLogo = () => {
+      attempts++;
+      const userLogo = localStorage.getItem('ppPage_logo');
+      if (userLogo) {
+        this.applyLogo(`assets/${userLogo}`);
+        return true;
+      }
+      
+      if (attempts < maxAttempts) {
+        setTimeout(tryApplyLogo, 500);
+      }
+      return false;
+    };
+    
+    tryApplyLogo();
+  }
+  
+  // Reset logo back to default giphy gif
+  async resetToDefaultLogo() {
+    try {
+      console.log('🔄 Resetting logo to default...');
+      
+      // Remove user logo preference
+      localStorage.removeItem('ppPage_logo');
+      
+      // Reset the corner GIF to default
+      const cornerGif = document.getElementById('cornerGif');
+      if (cornerGif) {
+        cornerGif.style.background = '#000 url(\'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdT1n/3o7btPCcdNniyf0ArS/giphy.gif\') center/cover no-repeat';
+        console.log('✅ Logo reset to default giphy gif');
+      }
+      
+      // Publish the reset to GitHub for all viewers
+      await this.publishLogoChange('default', 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdT1n/3o7btPCcdNniyf0ArS/giphy.gif');
+      
+    } catch (error) {
+      console.error('❌ Error resetting logo:', error);
+    }
+  }
+  
+  // Show current logo status
+  showLogoStatus() {
+    const userLogo = localStorage.getItem('ppPage_logo');
+    const cornerGif = document.getElementById('cornerGif');
+    
+    console.log('🎭 Current Logo Status:');
+    if (userLogo) {
+      console.log(`  • User preference: ${userLogo}`);
+      console.log(`  • Source: assets/${userLogo}`);
+    } else {
+      console.log('  • User preference: default giphy gif');
+      console.log('  • Source: Giphy (online)');
+    }
+    
+    if (cornerGif) {
+      const background = cornerGif.style.background;
+      if (background.includes('assets/')) {
+        const filename = background.match(/assets\/([^?]+)/)?.[1];
+        console.log(`  • Currently displayed: ${filename || 'unknown'}`);
+      } else if (background.includes('giphy')) {
+        console.log('  • Currently displayed: default giphy gif');
+      } else {
+        console.log('  • Currently displayed: custom background');
+      }
+    } else {
+      console.log('  • Corner GIF element: not found');
+    }
+    
+    console.log('\nCommands:');
+    console.log('  • logo <filename> - Change logo');
+    console.log('  • resetLogo() - Reset to default');
+    console.log('  • listAvailableLogos() - See available files');
+  }
+
   // Scan local assets folder for images
   async scanLocalAssetsFolder() {
     try {
       // Try to fetch the local assets directory
-      const response = await fetch('assets/');
+      const cacheBust = Date.now();
+      const response = await fetch(`assets/?_cb=${cacheBust}`);
       if (response.ok) {
         const html = await response.text();
         
@@ -5371,7 +5753,7 @@ class SimpleBlog {
     
     // Create image element
     const img = document.createElement('img');
-    img.src = `assets/${filename}`;
+    img.src = `assets/${filename}?_cb=${Date.now()}`;
     img.style.cssText = `
       width: 100%;
       height: auto;
@@ -6101,6 +6483,7 @@ class SimpleBlog {
           // Refresh the image magazine
           if (successCount > 0) {
             setTimeout(() => {
+              // Force a fresh reload with cache busting
               this.loadImagesToMagazine();
             }, 1000);
           }
