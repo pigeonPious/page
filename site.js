@@ -4457,6 +4457,22 @@ class SimpleBlog {
       this.startAddProjectLink();
     } else if (command === 'project') {
       this.enterProjectMode();
+    } else if (command === 'logo') {
+      this.printToConsole('Usage: logo <filename> - Change the corner logo to a file from assets folder');
+      this.printToConsole('Example: logo my-animation.gif');
+    } else if (command.startsWith('logo ')) {
+      const filename = command.substring(5).trim();
+      if (filename) {
+        this.changeLogo(filename);
+      } else {
+        this.printToConsole('Usage: logo <filename>');
+      }
+    } else if (command === 'resetLogo') {
+      this.resetToDefaultLogo();
+    } else if (command === 'logoStatus') {
+      this.showLogoStatus();
+    } else if (command === 'listAvailableLogos') {
+      this.listAvailableLogos();
     } else {
       this.printToConsole(`Unknown command: ${command}`);
     }
@@ -4481,6 +4497,10 @@ class SimpleBlog {
     this.printToConsole(' logout - Logout of GitHub');
     this.printToConsole(' link - Add a new project link');
     this.printToConsole(' project - Enter project mode for advanced project management');
+    this.printToConsole(' logo <filename> - Change the corner logo to a file from assets folder');
+    this.printToConsole(' resetLogo - Reset logo back to default giphy gif');
+    this.printToConsole(' logoStatus - Check current logo status');
+    this.printToConsole(' listAvailableLogos - List available logo files in assets');
     this.printToConsole('');
   }
 
@@ -5378,88 +5398,28 @@ class SimpleBlog {
       }
     };
     
-    // Override console methods to handle custom commands
-    console.log = (...args) => {
-      const message = args.join(' ');
-      
-      // Check for logo command
-      if (message.startsWith('logo ')) {
-        const filename = message.substring(5).trim();
-        if (filename) {
-          this.changeLogo(filename);
-          return;
-        }
-      }
-      
-      // Check for help command
-      if (message === 'help') {
-        window.customConsole.help();
-        return;
-      }
-      
-      // Default behavior
-      originalLog.apply(console, args);
-    };
+    // Logo commands are now integrated into the main console system
+    // No need to override console.log anymore
     
-    // Add logo command to window for direct access
-    window.logo = (filename) => window.customConsole.logo(filename);
-    window.resetLogo = () => this.resetToDefaultLogo();
-    window.logoStatus = () => this.showLogoStatus();
-    window.listAvailableLogos = () => this.listAvailableLogos();
-    
-    // Debug: Confirm commands are set
-    console.log('🔧 Logo console commands setup complete:');
-    console.log('  • window.logo:', typeof window.logo);
-    console.log('  • window.resetLogo:', typeof window.resetLogo);
-    console.log('  • window.logoStatus:', typeof window.logoStatus);
-    console.log('  • window.listAvailableLogos:', typeof window.listAvailableLogos);
-    
-    // Test the logo command immediately
-    console.log('🧪 Testing logo command availability...');
-    try {
-      if (typeof window.logo === 'function') {
-        console.log('✅ Logo command test: SUCCESS');
-        console.log('Try typing: logo piousPigeon_logo_bird-expor-flipt.png');
-      } else {
-        console.log('❌ Logo command test: FAILED');
-      }
-    } catch (error) {
-      console.error('❌ Logo command test error:', error);
-    }
-    
-    // Show help on first load
-    setTimeout(() => {
-      console.log('🎭 Logo Console Commands Available:');
-      console.log('Type "logo <filename>" to change the corner logo');
-      console.log('Type "resetLogo()" to return to default logo');
-      console.log('Type "logoStatus()" to check current logo status');
-      console.log('Type "help" for more commands');
-      
-      // Debug: Check if commands are actually available
-      console.log('🔍 Debug: Checking logo commands...');
-      console.log('window.logo function:', typeof window.logo);
-      console.log('window.resetLogo function:', typeof window.resetLogo);
-      console.log('window.logoStatus function:', typeof window.logoStatus);
-      console.log('window.listAvailableLogos function:', typeof window.listAvailableLogos);
-      
-      // Test the logo command
-      if (typeof window.logo === 'function') {
-        console.log('✅ Logo command is available!');
-      } else {
-        console.log('❌ Logo command is NOT available!');
-      }
-    }, 2000);
+    // Logo commands are now integrated into the main console system
+    console.log('🎭 Logo console commands integrated into main console system');
+    console.log('Available commands:');
+    console.log('  • logo <filename> - Change the corner logo');
+    console.log('  • resetLogo - Reset to default giphy gif');
+    console.log('  • logoStatus - Check current logo status');
+    console.log('  • listAvailableLogos - See available files');
+    console.log('  • help - Show all available commands');
   }
   
   // Change the logo to a specific file from assets
   async changeLogo(filename) {
     try {
-      console.log(`🔄 Changing logo to: ${filename}`);
+      this.printToConsole(`🔄 Changing logo to: ${filename}`);
       
       // First check if the file exists in GitHub assets
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.error('❌ No GitHub token found. Please set up GitHub publishing first.');
+        this.printToConsole('❌ No GitHub token found. Please set up GitHub publishing first.');
         return;
       }
       
@@ -5473,8 +5433,8 @@ class SimpleBlog {
       });
       
       if (!response.ok) {
-        console.error(`❌ File ${filename} not found in assets folder`);
-        console.log('Available files in assets:');
+        this.printToConsole(`❌ File ${filename} not found in assets folder`);
+        this.printToConsole('Available files in assets:');
         await this.listAvailableLogos();
         return;
       }
@@ -5491,11 +5451,11 @@ class SimpleBlog {
       // Publish the logo change to GitHub for all viewers
       await this.publishLogoChange(filename, logoUrl);
       
-      console.log(`✅ Logo changed to ${filename} and published to GitHub!`);
-      console.log(`All viewers will now see the new logo.`);
+      this.printToConsole(`✅ Logo changed to ${filename} and published to GitHub!`);
+      this.printToConsole(`All viewers will now see the new logo.`);
       
     } catch (error) {
-      console.error('❌ Error changing logo:', error);
+      this.printToConsole(`❌ Error changing logo: ${error.message}`);
     }
   }
   
@@ -5508,9 +5468,9 @@ class SimpleBlog {
       const logoUrlWithCache = `${logoUrl}?_cb=${cacheBust}`;
       
       cornerGif.style.background = `#000 url('${logoUrlWithCache}') center/cover no-repeat`;
-      console.log(`🎭 Logo applied: ${logoUrl}`);
+      this.printToConsole(`🎭 Logo applied: ${logoUrl}`);
     } else {
-      console.warn('⚠️ Corner GIF element not found');
+      this.printToConsole('⚠️ Corner GIF element not found');
     }
   }
   
@@ -5563,13 +5523,13 @@ class SimpleBlog {
       });
       
       if (response.ok) {
-        console.log(`📤 Logo configuration published to GitHub`);
+        this.printToConsole(`📤 Logo configuration published to GitHub`);
       } else {
-        console.warn(`⚠️ Could not publish logo config: ${response.status}`);
+        this.printToConsole(`⚠️ Could not publish logo config: ${response.status}`);
       }
       
     } catch (error) {
-      console.error('❌ Error publishing logo change:', error);
+      this.printToConsole(`❌ Error publishing logo change: ${error.message}`);
     }
   }
   
@@ -5578,7 +5538,7 @@ class SimpleBlog {
     try {
       const token = localStorage.getItem('github_token');
       if (!token) {
-        console.log('📁 Assets folder contents (public):');
+        this.printToConsole('📁 Assets folder contents (public):');
         // Try public access
         const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/assets');
         if (response.ok) {
@@ -5588,9 +5548,9 @@ class SimpleBlog {
             .map(item => item.name);
           
           if (imageFiles.length > 0) {
-            console.log('Available images:', imageFiles.join(', '));
+            this.printToConsole('Available images: ' + imageFiles.join(', '));
           } else {
-            console.log('No image files found in assets folder');
+            this.printToConsole('No image files found in assets folder');
           }
         }
         return;
@@ -5611,19 +5571,19 @@ class SimpleBlog {
           .map(item => item.name);
         
         if (imageFiles.length > 0) {
-          console.log('📁 Available logo files in assets:');
+          this.printToConsole('📁 Available logo files in assets:');
           imageFiles.forEach(file => {
-            console.log(`  • ${file}`);
+            this.printToConsole(`  • ${file}`);
           });
-          console.log(`\nUse: logo ${imageFiles[0]} (or any filename above)`);
+          this.printToConsole(`\nUse: logo ${imageFiles[0]} (or any filename above)`);
         } else {
-          console.log('📁 No image files found in assets folder');
-          console.log('Upload some images first using the Image Magazine!');
+          this.printToConsole('📁 No image files found in assets folder');
+          this.printToConsole('Upload some images first using the Image Magazine!');
         }
       }
       
     } catch (error) {
-      console.error('❌ Error listing available logos:', error);
+      this.printToConsole(`❌ Error listing available logos: ${error.message}`);
     }
   }
   
@@ -5684,7 +5644,7 @@ class SimpleBlog {
   // Reset logo back to default giphy gif
   async resetToDefaultLogo() {
     try {
-      console.log('🔄 Resetting logo to default...');
+      this.printToConsole('🔄 Resetting logo to default...');
       
       // Remove user logo preference
       localStorage.removeItem('ppPage_logo');
@@ -5693,14 +5653,14 @@ class SimpleBlog {
       const cornerGif = document.getElementById('cornerGif');
       if (cornerGif) {
         cornerGif.style.background = '#000 url(\'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdT1n/3o7btPCcdNniyf0ArS/giphy.gif\') center/cover no-repeat';
-        console.log('✅ Logo reset to default giphy gif');
+        this.printToConsole('✅ Logo reset to default giphy gif');
       }
       
       // Publish the reset to GitHub for all viewers
       await this.publishLogoChange('default', 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdT1n/3o7btPCcdNniyf0ArS/giphy.gif');
       
     } catch (error) {
-      console.error('❌ Error resetting logo:', error);
+      this.printToConsole(`❌ Error resetting logo: ${error.message}`);
     }
   }
   
@@ -5709,33 +5669,34 @@ class SimpleBlog {
     const userLogo = localStorage.getItem('ppPage_logo');
     const cornerGif = document.getElementById('cornerGif');
     
-    console.log('🎭 Current Logo Status:');
+    this.printToConsole('🎭 Current Logo Status:');
     if (userLogo) {
-      console.log(`  • User preference: ${userLogo}`);
-      console.log(`  • Source: assets/${userLogo}`);
+      this.printToConsole(`  • User preference: ${userLogo}`);
+      this.printToConsole(`  • Source: assets/${userLogo}`);
     } else {
-      console.log('  • User preference: default giphy gif');
-      console.log('  • Source: Giphy (online)');
+      this.printToConsole('  • User preference: default giphy gif');
+      this.printToConsole('  • Source: Giphy (online)');
     }
     
     if (cornerGif) {
       const background = cornerGif.style.background;
       if (background.includes('assets/')) {
         const filename = background.match(/assets\/([^?]+)/)?.[1];
-        console.log(`  • Currently displayed: ${filename || 'unknown'}`);
+        this.printToConsole(`  • Currently displayed: ${filename || 'unknown'}`);
       } else if (background.includes('giphy')) {
-        console.log('  • Currently displayed: default giphy gif');
+        this.printToConsole('  • Currently displayed: default giphy gif');
       } else {
-        console.log('  • Currently displayed: custom background');
+        this.printToConsole('  • Currently displayed: custom background');
       }
     } else {
-      console.log('  • Corner GIF element: not found');
+      this.printToConsole('  • Corner GIF element: not found');
     }
     
-    console.log('\nCommands:');
-    console.log('  • logo <filename> - Change logo');
-    console.log('  • resetLogo() - Reset to default');
-    console.log('  • listAvailableLogos() - See available files');
+    this.printToConsole('\nCommands:');
+    this.printToConsole('  • logo <filename> - Change logo');
+    this.printToConsole('  • resetLogo - Reset to default');
+    this.printToConsole('  • logoStatus - See current status');
+    this.printToConsole('  • listAvailableLogos - See available files');
   }
 
   // Scan local assets folder for images
