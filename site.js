@@ -6249,9 +6249,11 @@ class SimpleBlog {
           
           // Check if title has changed significantly (which would change the slug)
           const newSlug = title.toLowerCase().replace(/[^a-z0-9]/gi, '-');
+          console.log('Comparing slugs - original:', originalSlug, 'new:', newSlug, 'areEqual:', newSlug === originalSlug);
           if (newSlug !== originalSlug) {
             console.log('Title changed significantly - old slug:', originalSlug, 'new slug:', newSlug);
             shouldDeleteOldFile = true;
+            console.log('shouldDeleteOldFile set to:', shouldDeleteOldFile);
             // Don't get SHA for old file since we'll delete it
           } else {
             console.log('This is an edit of existing post with same slug:', originalSlug);
@@ -6327,6 +6329,7 @@ class SimpleBlog {
       };
       
       console.log('Post data prepared:', postData);
+      console.log('Slug decision - isEdit:', isEdit, 'shouldDeleteOldFile:', shouldDeleteOldFile, 'originalSlug:', originalSlug, 'finalSlug:', postData.slug);
       
       // Check for duplicate posts (only for new posts, not edits)
       if (!isEdit) {
