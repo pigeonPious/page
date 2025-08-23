@@ -184,6 +184,8 @@ class SimpleBlog {
             <div class="menu-dropdown">
               <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
               <div class="menu-separator"></div>
+              <div class="menu-entry editor-only admin-only" id="delete-post-button">Delete Post</div>
+              <div class="menu-separator"></div>
 
               <div class="menu-entry editor-only admin-only" id="images-btn">Images</div>
               <div class="menu-entry editor-only admin-only" id="keywords-btn">Flags</div>
@@ -197,6 +199,7 @@ class SimpleBlog {
               <div class="menu-entry" id="contact-btn">Contact</div>
               <div class="menu-separator"></div>
               <div class="menu-entry has-submenu" id="all-posts-menu" style="position: relative;">All Posts ></div>
+              <div class="menu-entry" id="most-recent-post">Most Recent</div>
               <div class="menu-entry" id="random-post">Random Post</div>
               <div class="menu-separator"></div>
               <div class="menu-entry" id="show-site-map">Site Map</div>
@@ -855,6 +858,11 @@ class SimpleBlog {
   this.addClickHandler('#keywords-btn', () => {
     console.log('Flags button clicked');
     this.showFlagsModal();
+  });
+
+  this.addClickHandler('#delete-post-button', () => {
+    console.log('Delete post button clicked');
+    this.showDeletePostConfirmation();
   });
 
   this.addClickHandler('#open-console-btn', () => {
@@ -7412,6 +7420,200 @@ class SimpleBlog {
     }, 100);
   }
 
+  showDeletePostConfirmation() {
+    console.log('Showing delete post confirmation...');
+    
+    // Check if we're editing a post
+    const editData = localStorage.getItem('editPostData');
+    if (!editData) {
+      this.showMenuStyle1Message('No post is currently being edited.', 'error');
+      return;
+    }
+    
+    try {
+      const editPost = JSON.parse(editData);
+      
+      // Create confirmation modal
+      const confirmBox = document.createElement('div');
+      confirmBox.className = 'menu-style-1-confirm';
+      confirmBox.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--menu-bg);
+        border: 1px solid var(--border);
+        padding: 16px 20px;
+        z-index: 10000;
+        min-width: 400px;
+        text-align: center;
+      `;
+      
+      const message = document.createElement('div');
+      message.style.cssText = `
+        color: var(--menu-fg);
+        font-size: 14px;
+        margin-bottom: 16px;
+        line-height: 1.4;
+      `;
+      message.innerHTML = `Are you sure you want to delete this post?<br><br><strong>${editPost.title}</strong><br><br>This action cannot be undone.<br><br>Press <strong>Y</strong> to confirm or <strong>N</strong> to cancel`;
+      
+      confirmBox.appendChild(message);
+      document.body.appendChild(confirmBox);
+      
+      // Handle keyboard input
+      const handleKeydown = (e) => {
+        if (e.key.toLowerCase() === 'y') {
+          this.deleteCurrentPost();
+          confirmBox.remove();
+          document.removeEventListener('keydown', handleKeydown);
+        } else if (e.key.toLowerCase() === 'n' || e.key === 'Escape') {
+          confirmBox.remove();
+          document.removeEventListener('keydown', handleKeydown);
+        }
+      };
+      
+      document.addEventListener('keydown', handleKeydown);
+      
+      // Close on outside click
+      const outsideClick = (e) => {
+        if (!confirmBox.contains(e.target)) {
+          confirmBox.remove();
+          document.removeEventListener('click', outsideClick);
+          document.removeEventListener('keydown', handleKeydown);
+        }
+      };
+      
+      setTimeout(() => {
+        document.addEventListener('click', outsideClick);
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error parsing edit data:', error);
+      this.showMenuStyle1Message('Error loading post data for deletion.', 'error');
+    }
+  }
+
+  async deleteCurrentPost() {
+    console.log('Deleting current post...');
+    
+    try {
+      // Get the post data being edited
+      const editData = localStorage.getItem('editPostData');
+      if (!editData) {
+        this.showMenuStyle1Message('No post is currently being edited.', 'error');
+        return;
+      }
+      
+      const editPost = JSON.parse(editData);
+      const postSlug = editPost.slug;
+      
+      // Check if user is authenticated
+      const githubToken = localStorage.getItem('github_token');
+      if (!githubToken) {
+        this.showMenuStyle1Message('You must be authenticated with GitHub to delete posts.', 'error');
+        return;
+      }
+      
+      // Get the current SHA of the post file to delete
+      const fileResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postSlug}.json`, {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+        }
+      });
+      
+      if (!fileResponse.ok) {
+        this.showMenuStyle1Message(`Could not access post file: ${fileResponse.status}`, 'error');
+        return;
+      }
+      
+      const fileData = await fileResponse.json();
+      const currentSha = fileData.sha;
+      
+      // Delete the post file using GitHub API
+      const deleteResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${postSlug}.json`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Delete post: ${editPost.title}`,
+          sha: currentSha,
+          branch: 'main'
+        })
+      });
+      
+      if (!deleteResponse.ok) {
+        const error = await deleteResponse.json();
+        console.error('Failed to delete post file:', error);
+        this.showMenuStyle1Message(`Failed to delete post: ${error.message}`, 'error');
+        return;
+      }
+      
+      console.log('Post file deleted successfully');
+      
+      // Now remove the post from the index
+      const indexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+        }
+      });
+      
+      if (!indexResponse.ok) {
+        this.showMenuStyle1Message('Post deleted but could not update index.', 'warning');
+        return;
+      }
+      
+      const indexData = await indexResponse.json();
+      const currentIndex = JSON.parse(atob(indexData.content));
+      
+      // Remove the deleted post from the index
+      const updatedIndex = currentIndex.filter(post => post.slug !== postSlug);
+      
+      // Update the index file
+      const updateIndexResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts/index.json', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Remove deleted post from index: ${editPost.title}`,
+          content: btoa(JSON.stringify(updatedIndex, null, 2)),
+          sha: indexData.sha,
+          branch: 'main'
+        })
+      });
+      
+      if (!updateIndexResponse.ok) {
+        this.showMenuStyle1Message('Post deleted but index update failed.', 'warning');
+        return;
+      }
+      
+      console.log('Index updated successfully');
+      
+      // Update local posts array
+      this.posts = updatedIndex;
+      localStorage.setItem('posts', JSON.stringify(updatedIndex));
+      
+      // Clear edit data
+      localStorage.removeItem('editPostData');
+      
+      // Show success message
+      this.showMenuStyle1Message(`Post "${editPost.title}" deleted successfully!`, 'success');
+      
+      // Redirect back to the main blog
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      this.showMenuStyle1Message(`Error deleting post: ${error.message}`, 'error');
+    }
+  }
+
   openCurrentPostInGitHub() {
           console.log('Opening current post in GitHub...');
     
@@ -8401,20 +8603,30 @@ class SimpleBlog {
           }
         });
         
-        // Show uncategorized posts (always expanded)
+        // Show uncategorized posts (collapsed by default, unless current post is uncategorized)
         const uncategorized = posts.filter(post => !post.keywords || !post.keywords.trim());
         if (uncategorized.length > 0) {
-          treeHTML += `<div style="margin-bottom: 6px;">`;
-          treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
-          uncategorized.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
-            const isCurrentPost = post.slug === currentSlug;
-            treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
-            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
-            treeHTML += `   ├─${post.title}`;
-            treeHTML += `</span>`;
+          const isCurrentUncategorized = currentSlug && uncategorized.some(p => p.slug === currentSlug);
+          
+          if (isCurrentUncategorized) {
+            // Show expanded uncategorized if current post is in it
+            treeHTML += `<div style="margin-bottom: 6px;">`;
+            treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
+            uncategorized.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
+              const isCurrentPost = post.slug === currentSlug;
+              treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
+              treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
+              treeHTML += `   ├─${post.title}`;
+              treeHTML += `</span>`;
+              treeHTML += `</div>`;
+            });
             treeHTML += `</div>`;
-          });
-          treeHTML += `</div>`;
+          } else {
+            // Show collapsed uncategorized
+            treeHTML += `<div style="margin-bottom: 4px;">`;
+            treeHTML += `<span class="category-link" data-category="uncategorized" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─Uncategorized</span>`;
+            treeHTML += `</div>`;
+          }
         }
         
         content.innerHTML = treeHTML;
