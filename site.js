@@ -1120,9 +1120,9 @@ class SimpleBlog {
       elements.forEach(element => {
         element.addEventListener('click', handler);
       });
-          } else {
+    } else {
         // No elements found for selector
-      }
+    }
   }
 
   setupGlobalEvents() {
@@ -1593,8 +1593,8 @@ class SimpleBlog {
           if (response.ok) {
             directoryContents = await response.json();
             console.log('Submenu: Method 4 successful');
-          }
-        } catch (error) {
+      }
+    } catch (error) {
           console.log('Submenu: Method 4 failed:', error);
         }
       }
@@ -1649,8 +1649,8 @@ class SimpleBlog {
         );
         
         console.log('Submenu: Found', postFiles.length, 'post files in repository');
-        
-        let allPosts = [];
+          
+          let allPosts = [];
         
         // Fetch each post file to get metadata
         for (const postFile of postFiles) {
@@ -1683,20 +1683,20 @@ class SimpleBlog {
         });
         
         console.log('Submenu: Loaded posts from repository scanning:', allPosts.length);
-        
-        // Update local posts array to keep in sync
-        this.posts = allPosts;
-        
-        // Display posts in submenu
-        this.displayPostsInSubmenu(submenu, allPosts);
-        return;
-      } else {
+          
+          // Update local posts array to keep in sync
+          this.posts = allPosts;
+          
+          // Display posts in submenu
+          this.displayPostsInSubmenu(submenu, allPosts);
+          return;
+        } else {
         console.error('Submenu: Could not access posts directory with any method');
         submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
-      }
+        }
     } catch (error) {
       console.error('Submenu: Repository scanning failed:', error);
-      submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
+        submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
     }
   }
   // Force reindex all posts across the site (admin only)
@@ -1898,21 +1898,21 @@ class SimpleBlog {
       localStorage.setItem('posts', JSON.stringify(allPosts));
       
       console.log('Force reindex completed using repository scanning, posts updated:', allPosts.length);
-      
-      // Show success message
-      if (statusElement) {
+              
+              // Show success message
+              if (statusElement) {
         statusElement.textContent = 'Reindexed from GitHub!';
         statusElement.style.color = '#28a745'; // Green
-        
-        // Reset status after 3 seconds
-        setTimeout(() => {
-          statusElement.textContent = originalStatus;
-          statusElement.style.color = '';
-        }, 3000);
-      }
-      
-      // Update any open submenus
-      this.updateOpenSubmenus();
+                
+                // Reset status after 3 seconds
+                setTimeout(() => {
+                  statusElement.textContent = originalStatus;
+                  statusElement.style.color = '';
+                }, 3000);
+              }
+              
+              // Update any open submenus
+              this.updateOpenSubmenus();
       
     } catch (error) {
       console.error('Force reindex failed:', error);
@@ -2080,21 +2080,21 @@ class SimpleBlog {
               for (const postFile of postFiles) {
                 try {
                   const postResponse = await fetch(`https://raw.githubusercontent.com/pigeonPious/page/main/${postFile.path}`);
-                  if (postResponse.ok) {
-                    const postData = await postResponse.json();
-                    if (postData && postData.title) {
-                      localPosts.push({
-                        title: postData.title,
+              if (postResponse.ok) {
+                const postData = await postResponse.json();
+                if (postData && postData.title) {
+                  localPosts.push({
+                    title: postData.title,
                         slug: postData.slug || postFile.path.replace('posts/', '').replace('.json', ''),
                         filename: postFile.path.replace('posts/', ''),
-                        date: postData.date || new Date().toISOString(),
-                        tags: postData.keywords || postData.tags || []
-                      });
-                    }
-                  }
-                } catch (postError) {
-                  console.warn('Could not load post file:', postFile.path, postError);
+                    date: postData.date || new Date().toISOString(),
+                    tags: postData.keywords || postData.tags || []
+                  });
                 }
+              }
+            } catch (postError) {
+                  console.warn('Could not load post file:', postFile.path, postError);
+            }
               }
             }
           } catch (fallbackError) {
@@ -2277,7 +2277,7 @@ class SimpleBlog {
     localStorage.setItem('posts', JSON.stringify(posts));
     
     console.log('Local posts array updated with', posts.length, 'posts');
-    return true;
+                return true;
   }
 
   // Fast reindex for just the current/new post
@@ -2410,7 +2410,7 @@ class SimpleBlog {
         if (response.ok) {
           directoryContents = await response.json();
         }
-      } catch (error) {
+    } catch (error) {
         // Method 1 failed silently
       }
       
@@ -2462,7 +2462,7 @@ class SimpleBlog {
       if (!directoryContents) {
         try {
           const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts?ref=main');
-          if (response.ok) {
+      if (response.ok) {
             directoryContents = await response.json();
           }
         } catch (error) {
@@ -2560,7 +2560,7 @@ class SimpleBlog {
           
           // Don't create submenus on page load - only create them on hover
         } else {
-          this.displayDefaultContent();
+            this.displayDefaultContent();
         }
       } else {
         // Don't clear posts array - keep cached posts if available
@@ -2664,15 +2664,15 @@ class SimpleBlog {
           if (response.ok) {
             const githubData = await response.json();
             const content = atob(githubData.content);
-            post = JSON.parse(content);
+          post = JSON.parse(content);
           }
         } catch (error) {
           // Method 1 failed silently
         }
         
         // Method 2: Try GitHub Tree API
-        if (!post) {
-          try {
+      if (!post) {
+        try {
             const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
             if (response.ok) {
               const treeData = await response.json();
@@ -5774,7 +5774,7 @@ class SimpleBlog {
     this.printToConsole('  • logoStatus - See current status');
     this.printToConsole('  • listAvailableLogos - See available files');
   }
-
+  
   // Scan local assets folder for images
   async scanLocalAssetsFolder() {
     try {
@@ -6332,12 +6332,12 @@ class SimpleBlog {
         return dateB - dateA;
       });
       
-      // Update local posts array
+        // Update local posts array
       this.posts = allPosts;
       localStorage.setItem('posts', JSON.stringify(allPosts));
       
       console.log('Posts index rebuilt using repository scanning, posts updated:', allPosts.length);
-      return true;
+        return true;
       
     } catch (error) {
       console.error('Error rebuilding posts index:', error);
@@ -6801,7 +6801,7 @@ class SimpleBlog {
       console.log('Current flags from localStorage:', currentFlags);
       console.log('Final flags for post:', finalFlags);
       
-            // Check if this is an edit (check for existing post data)
+      // Check if this is an edit (check for existing post data)
       const editData = localStorage.getItem('editPostData');
       let isEdit = false;
       let originalSlug = '';
@@ -6916,18 +6916,18 @@ class SimpleBlog {
           console.log('🟡 isEdit:', isEdit, 'originalSlug:', originalSlug);
         }
         
-        // Clear edit data after successful publish
-        if (isEdit) {
-          localStorage.removeItem('editPostData');
-          console.log(' Edit data cleared after successful publish');
-        }
-        
+          // Clear edit data after successful publish
+          if (isEdit) {
+            localStorage.removeItem('editPostData');
+            console.log(' Edit data cleared after successful publish');
+          }
+          
         this.showMenuStyle1Message(` Post published successfully!\n\nTitle: ${title}\nSlug: ${postData.slug}\n\nYour post is now live on GitHub!\n\nNo indexing needed - sitemap updates automatically!`, 'success');
-        
-        // Redirect to the published post after a short delay
-        setTimeout(() => {
-          window.location.href = `index.html?post=${postData.slug}`;
-        }, 3000);
+          
+          // Redirect to the published post after a short delay
+          setTimeout(() => {
+            window.location.href = `index.html?post=${postData.slug}`;
+          }, 3000);
       } else {
         const error = await response.json();
         console.error('Failed to publish post:', error);
@@ -7125,7 +7125,7 @@ class SimpleBlog {
     
     // This method is deprecated - no more index.json updates
     console.log('Index updating deprecated - using dynamic repository scanning');
-    return true;
+          return true;
   }
   shareToBluesky() {
     console.log('🔵 shareToBluesky: Starting Bluesky share...');
@@ -8800,86 +8800,49 @@ class SimpleBlog {
       padding-right: 8px;
     `;
     
-    // Dynamically discover posts from GitHub's public directory browsing
+    // Simple approach: just load the posts we know exist
     const loadPostsForSiteMap = async () => {
       try {
-        console.log('Site map: Starting dynamic GitHub discovery...');
+        console.log('Site map: Loading posts directly...');
         
-        // Use GitHub's public directory browsing to discover posts (with CORS proxy)
-        const corsProxy = 'https://corsproxy.io/?';
-        const postsDirResponse = await fetch(corsProxy + 'https://github.com/pigeonPious/page/tree/main/posts');
-        if (!postsDirResponse.ok) {
-          throw new Error(`GitHub directory browsing failed with status: ${postsDirResponse.status}`);
-        }
+        // Since we know the posts exist, just load them directly
+        const posts = [];
+        const knownSlugs = ['about', 'contact', 'first-post'];
         
-        const htmlContent = await postsDirResponse.text();
-        
-        // Parse HTML to find all JSON files in the posts directory
-        const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
-        if (!jsonFileMatches) {
-          throw new Error('No JSON files found in posts directory');
-        }
-        
-        // Extract and filter post filenames
-        const postFiles = jsonFileMatches
-          .map(match => match.match(/href="([^"]+)"/)[1])
-          .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
-          .map(href => {
-            const filename = href.split('/').pop();
-            return {
-              type: 'file',
-              name: filename,
-              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-            };
-          });
-        
-        console.log(`Site map: Found ${postFiles.length} post files in repository`);
-        
-        if (postFiles.length > 0) {
-          // Fetch and parse each post file to get metadata
-          const posts = [];
-          for (const postFile of postFiles) {
-            try {
-              const postResponse = await fetch(postFile.download_url);
-              if (postResponse.ok) {
-                const postData = await postResponse.json();
-                
-                // Extract slug from filename (remove .json extension)
-                const slug = postFile.name.replace('.json', '');
-                
-                // Get the actual commit date from GitHub instead of using hardcoded date
-                const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
-                
-                // Create post object with all necessary data
-                const post = {
-                  slug: slug,
-                  title: postData.title || 'Untitled',
-                  date: commitDate, // Use actual GitHub commit date
-                  keywords: postData.keywords || 'general',
-                  content: postData.content || ''
-                };
-                
-                posts.push(post);
-              }
-            } catch (postError) {
-              console.warn('Could not parse post file:', postFile.name, postError);
+        for (const slug of knownSlugs) {
+          try {
+            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
+            const response = await fetch(postUrl);
+            
+            if (response.ok) {
+              const postData = await response.json();
+              
+              // Get the actual commit date from GitHub
+              const commitDate = await this.getCommitDate(`posts/${slug}.json`);
+              
+              posts.push({
+                slug: slug,
+                title: postData.title || 'Untitled',
+                date: commitDate,
+                keywords: postData.keywords || 'general',
+                content: postData.content || ''
+              });
             }
+          } catch (error) {
+            console.warn(`Could not load post ${slug}:`, error);
           }
-          
-          console.log('Site map: Successfully loaded', posts.length, 'posts from repository');
-          
-          // Update local state to match GitHub
-          this.posts = posts;
-          localStorage.setItem('posts', JSON.stringify(posts));
-          console.log('Site map: Updated local posts state to match repository');
-          
-          return posts;
-        } else {
-          throw new Error('No post files found in repository');
         }
+        
+        console.log('Site map: Successfully loaded', posts.length, 'posts');
+        
+        // Update local state
+        this.posts = posts;
+        localStorage.setItem('posts', JSON.stringify(posts));
+        
+        return posts;
       } catch (error) {
-        console.error('Site map: GitHub discovery failed, cannot generate sitemap:', error);
-        this.showMenuStyle1Message('Could not load sitemap: GitHub discovery unavailable', 'error');
+        console.error('Site map: Failed to load posts:', error);
+        this.showMenuStyle1Message('Could not load sitemap', 'error');
         return [];
       }
     };
@@ -8955,17 +8918,17 @@ class SimpleBlog {
           
           if (isCurrentUncategorized) {
             // Show expanded uncategorized if current post is in it
-            treeHTML += `<div style="margin-bottom: 6px;">`;
-            treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
-            uncategorized.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
-              const isCurrentPost = post.slug === currentSlug;
-              treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
-              treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
-              treeHTML += `   ├─${post.title}`;
-              treeHTML += `</span>`;
-              treeHTML += `</div>`;
-            });
+          treeHTML += `<div style="margin-bottom: 6px;">`;
+          treeHTML += `<div style="font-weight: bold; margin-bottom: 1px;">└─Uncategorized</div>`;
+          uncategorized.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
+            const isCurrentPost = post.slug === currentSlug;
+            treeHTML += `<div style="margin-left: 12px; margin-bottom: 1px;">`;
+            treeHTML += `<span class="post-link" data-slug="${post.slug}" style="cursor: pointer; pointer-events: auto; ${isCurrentPost ? 'font-weight: bold;' : ''}">`;
+            treeHTML += `   ├─${post.title}`;
+            treeHTML += `</span>`;
             treeHTML += `</div>`;
+          });
+          treeHTML += `</div>`;
           } else {
             // Show collapsed uncategorized
             treeHTML += `<div style="margin-bottom: 4px;">`;
@@ -9870,8 +9833,8 @@ class SimpleBlog {
       if (response.ok) {
         const postData = await response.json();
         console.log(`Loaded post data from GitHub: ${postData.title}`);
-        this.populateEditorWithPost(postData);
-        return;
+          this.populateEditorWithPost(postData);
+          return;
       }
     } catch (githubError) {
       console.log('GitHub raw URL failed:', githubError);
