@@ -1029,37 +1029,30 @@ class SimpleBlog {
                         // Method 5: Bypass API entirely - use raw GitHub URLs directly
         if (!directoryContents) {
           try {
-            console.log('🕊️ Method 5 - bypassing GitHub API, using raw URLs');
+            console.log('🕊️ Method 5 - using GitHub public tree API');
             
-            // Since we know the repository structure, we can construct URLs directly
-            // This bypasses all API rate limits and authentication issues
-            const knownPosts = [
-              'about.json',
-              'contact.json',
-              'first-post.json',
-              'editing-debug-test-2.json',
-              'edited-debug-test.json',
-              'edited-title-test-today.json',
-              'today-test-two.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
-              'edited-title.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
-              'testing-testing-testing.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable-.json'
-            ];
-            
-            // Convert to directory format for compatibility
-            directoryContents = knownPosts.map(filename => ({
-              type: 'file',
-              name: filename,
-              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-            }));
-            
-            console.log('🕊️ Method 5 successful - using known post list');
+            const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+            if (treeResponse.ok) {
+              const treeData = await treeResponse.json();
+              
+              // Filter for JSON files in the posts directory
+              const postFiles = treeData.tree.filter(item => 
+                item.path.startsWith('posts/') && 
+                item.path.endsWith('.json') && 
+                item.path !== 'posts/index.json'
+              );
+              
+              // Convert to directory format for compatibility
+              directoryContents = postFiles.map(item => ({
+                type: 'file',
+                name: item.path.replace('posts/', ''),
+                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
+              }));
+              
+              console.log('🕊️ Method 5 successful - using GitHub tree API');
+            } else {
+              console.log('🕊️ Method 5 failed with status:', treeResponse.status);
+            }
           } catch (error) {
             console.log('🕊️ Method 5 failed:', error);
           }
@@ -1597,40 +1590,33 @@ class SimpleBlog {
         }
       }
       
-      // Method 5: Bypass API entirely - use raw GitHub URLs directly
+      // Method 5: Fallback to GitHub public tree API (no authentication required)
       if (!directoryContents) {
         try {
-          console.log('Submenu: Method 5 - bypassing GitHub API, using raw URLs');
+          console.log('Submenu: Method 5 - using GitHub public tree API');
           
-          // Since we know the repository structure, we can construct URLs directly
-          // This bypasses all API rate limits and authentication issues
-          const knownPosts = [
-            'about.json',
-            'contact.json',
-            'first-post.json',
-            'editing-debug-test-2.json',
-            'edited-debug-test.json',
-            'edited-title-test-today.json',
-            'today-test-two.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
-            'edited-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
-            'testing-testing-testing.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable-.json'
-          ];
-          
-          // Convert to directory format for compatibility
-          directoryContents = knownPosts.map(filename => ({
-            type: 'file',
-            name: filename,
-            download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-          }));
-          
-          console.log('Submenu: Method 5 successful - using known post list');
+          const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+          if (treeResponse.ok) {
+            const treeData = await treeResponse.json();
+            
+            // Filter for JSON files in the posts directory
+            const postFiles = treeData.tree.filter(item => 
+              item.path.startsWith('posts/') && 
+              item.path.endsWith('.json') && 
+              item.path !== 'posts/index.json'
+            );
+            
+            // Convert to directory format for compatibility
+            directoryContents = postFiles.map(item => ({
+              type: 'file',
+              name: item.path.replace('posts/', ''),
+              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
+            }));
+            
+            console.log('Submenu: Method 5 successful - using GitHub tree API');
+          } else {
+            console.log('Submenu: Method 5 failed with status:', treeResponse.status);
+          }
         } catch (error) {
           console.log('Submenu: Method 5 failed:', error);
         }
@@ -1805,40 +1791,33 @@ class SimpleBlog {
         }
       }
       
-      // Method 5: Bypass API entirely - use raw GitHub URLs directly
+      // Method 5: Fallback to GitHub public tree API (no authentication required)
       if (!directoryContents) {
         try {
-          console.log('Force reindex: Method 5 - bypassing GitHub API, using raw URLs');
+          console.log('Force reindex: Method 5 - using GitHub public tree API');
           
-          // Since we know the repository structure, we can construct URLs directly
-          // This bypasses all API rate limits and authentication issues
-          const knownPosts = [
-            'about.json',
-            'contact.json',
-            'first-post.json',
-            'editing-debug-test-2.json',
-            'edited-debug-test.json',
-            'edited-title-test-today.json',
-            'today-test-two.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
-            'edited-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
-            'testing-testing-testing.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable-.json'
-          ];
-          
-          // Convert to directory format for compatibility
-          directoryContents = knownPosts.map(filename => ({
-            type: 'file',
-            name: filename,
-            download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-          }));
-          
-          console.log('Force reindex: Method 5 successful - using known post list');
+          const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+          if (treeResponse.ok) {
+            const treeData = await treeResponse.json();
+            
+            // Filter for JSON files in the posts directory
+            const postFiles = treeData.tree.filter(item => 
+              item.path.startsWith('posts/') && 
+              item.path.endsWith('.json') && 
+              item.path !== 'posts/index.json'
+            );
+            
+            // Convert to directory format for compatibility
+            directoryContents = postFiles.map(item => ({
+              type: 'file',
+              name: item.path.replace('posts/', ''),
+              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
+            }));
+            
+            console.log('Force reindex: Method 5 successful - using GitHub tree API');
+          } else {
+            console.log('Force reindex: Method 5 failed with status:', treeResponse.status);
+          }
         } catch (error) {
           console.log('Force reindex: Method 5 failed:', error);
         }
@@ -1954,36 +1933,49 @@ class SimpleBlog {
         console.log('Improved force reindex: Using GitHub repository scanning...');
         this.printToConsole('Using GitHub repository scanning...');
         
-        const knownPosts = [
-          'i-vibe-coded-this-blog-and-it-was-miserable-',
-          'about',
-          'contact'
-        ];
-        
-        // Fetch each known post
-        for (const postSlug of knownPosts) {
-          try {
-            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
-            const response = await fetch(postUrl);
-            
-            if (response.ok) {
-              const postData = await response.json();
-              if (postData && postData.title) {
-                localPosts.push({
-                  slug: postSlug,
-                  title: postData.title,
-                  date: postData.date || new Date().toISOString(),
-                  keywords: postData.keywords || 'general'
-                });
+        // Use GitHub tree API to get all posts dynamically
+        const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+        if (treeResponse.ok) {
+          const treeData = await treeResponse.json();
+          
+          // Filter for JSON files in the posts directory
+          const postFiles = treeData.tree.filter(item => 
+            item.path.startsWith('posts/') && 
+            item.path.endsWith('.json') && 
+            item.path !== 'posts/index.json'
+          );
+          
+          // Fetch each post file
+          for (const postFile of postFiles) {
+            try {
+              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/${postFile.path}`;
+              const response = await fetch(postUrl);
+              
+              if (response.ok) {
+                const postData = await response.json();
+                if (postData && postData.title) {
+                  // Get the actual commit date from GitHub
+                  const commitDate = await this.getCommitDate(postFile.path);
+                  
+                  localPosts.push({
+                    slug: postFile.path.replace('posts/', '').replace('.json', ''),
+                    title: postData.title,
+                    date: commitDate,
+                    keywords: postData.keywords || 'general'
+                  });
+                }
               }
+            } catch (error) {
+              console.warn(`Could not fetch post ${postFile.path}:`, error);
             }
-          } catch (error) {
-            console.warn(`Could not fetch post ${postSlug}:`, error);
           }
+          
+          console.log('Found', localPosts.length, 'posts from repository scanning');
+          this.printToConsole(`Found ${localPosts.length} posts from repository scanning`);
+        } else {
+          console.warn('GitHub tree API failed with status:', treeResponse.status);
+          this.printToConsole('GitHub tree API failed');
         }
-        
-        console.log('Found', localPosts.length, 'posts from repository scanning');
-        this.printToConsole(`Found ${localPosts.length} posts from repository scanning`);
       } catch (fallbackError) {
         console.warn('Could not load posts from repository scanning:', fallbackError);
         this.printToConsole('Could not load posts from repository scanning');
@@ -2045,30 +2037,42 @@ class SimpleBlog {
           console.log('Trying manual fallback scan...');
           this.printToConsole('Trying manual fallback scan...');
           
-          const knownPosts = [
-            'i-vibe-coded-this-blog-and-it-was-miserable-.json',
-            'about.json',
-            'contact.json'
-          ];
-          
-          for (const postFile of knownPosts) {
-            try {
-              const postResponse = await fetch(`posts/${postFile}`);
-              if (postResponse.ok) {
-                const postData = await postResponse.json();
-                if (postData && postData.title) {
-                  localPosts.push({
-                    title: postData.title,
-                    slug: postData.slug || postFile.replace('.json', ''),
-                    filename: postFile,
-                    date: postData.date || new Date().toISOString(),
-                    tags: postData.keywords || postData.tags || []
-                  });
+          // Try one more time with GitHub tree API as fallback
+          try {
+            const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+            if (treeResponse.ok) {
+              const treeData = await treeResponse.json();
+              
+              // Filter for JSON files in the posts directory
+              const postFiles = treeData.tree.filter(item => 
+                item.path.startsWith('posts/') && 
+                item.path.endsWith('.json') && 
+                item.path !== 'posts/index.json'
+              );
+              
+              for (const postFile of postFiles) {
+                try {
+                  const postResponse = await fetch(`https://raw.githubusercontent.com/pigeonPious/page/main/${postFile.path}`);
+                  if (postResponse.ok) {
+                    const postData = await postResponse.json();
+                    if (postData && postData.title) {
+                      localPosts.push({
+                        title: postData.title,
+                        slug: postData.slug || postFile.path.replace('posts/', '').replace('.json', ''),
+                        filename: postFile.path.replace('posts/', ''),
+                        date: postData.date || new Date().toISOString(),
+                        tags: postData.keywords || postData.tags || []
+                      });
+                    }
+                  }
+                } catch (postError) {
+                  console.warn('Could not load post file:', postFile.path, postError);
                 }
               }
-            } catch (postError) {
-              console.warn('Could not load post file:', postFile, postError);
             }
+          } catch (fallbackError) {
+            console.warn('Final fallback also failed:', fallbackError);
+            this.printToConsole('Final fallback also failed');
           }
           
           if (localPosts.length > 0) {
@@ -2439,39 +2443,33 @@ class SimpleBlog {
         }
       }
       
-      // Method 5: Bypass API entirely - use raw GitHub URLs directly
+      // Method 5: Fallback to GitHub public tree API (no authentication required)
       if (!directoryContents) {
         try {
+          console.log('loadPosts V2.0: Method 5 - using GitHub public tree API');
           
-          // Since we know the repository structure, we can construct URLs directly
-          // This bypasses all API rate limits and authentication issues
-          const knownPosts = [
-            'about.json',
-            'contact.json',
-            'first-post.json',
-            'editing-debug-test-2.json',
-            'edited-debug-test.json',
-            'edited-title-test-today.json',
-            'today-test-two.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
-            'edited-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
-            'testing-testing-testing.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
-            'i-vibe-coded-this-blog-and-it-was-miserable-.json'
-          ];
-          
-          // Convert to directory format for compatibility
-          directoryContents = knownPosts.map(filename => ({
-            type: 'file',
-            name: filename,
-            download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}?_cb=${cacheBust}`
-          }));
-          
-          console.log('loadPosts V2.0: Method 5 successful - using known post list');
+          const treeResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1&_cb=${cacheBust}`);
+          if (treeResponse.ok) {
+            const treeData = await treeResponse.json();
+            
+            // Filter for JSON files in the posts directory
+            const postFiles = treeData.tree.filter(item => 
+              item.path.startsWith('posts/') && 
+              item.path.endsWith('.json') && 
+              item.path !== 'posts/index.json'
+            );
+            
+            // Convert to directory format for compatibility
+            directoryContents = postFiles.map(item => ({
+              type: 'file',
+              name: item.path.replace('posts/', ''),
+              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}?_cb=${cacheBust}`
+            }));
+            
+            console.log('loadPosts V2.0: Method 5 successful - using GitHub tree API');
+          } else {
+            console.log('loadPosts V2.0: Method 5 failed with status:', treeResponse.status);
+          }
         } catch (error) {
           console.log('loadPosts: Method 5 failed:', error);
         }
@@ -6239,33 +6237,47 @@ class SimpleBlog {
     
     // Update local posts array using repository scanning
     try {
-      const knownPosts = [
-        'i-vibe-coded-this-blog-and-it-was-miserable-',
-        'about',
-        'contact'
-      ];
+      console.log('Rebuilding posts index using GitHub tree API...');
+      
+      // Use GitHub tree API to get all posts dynamically
+      const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+      if (!treeResponse.ok) {
+        throw new Error(`GitHub tree API failed with status: ${treeResponse.status}`);
+      }
+      
+      const treeData = await treeResponse.json();
+      
+      // Filter for JSON files in the posts directory
+      const postFiles = treeData.tree.filter(item => 
+        item.path.startsWith('posts/') && 
+        item.path.endsWith('.json') && 
+        item.path !== 'posts/index.json'
+      );
       
       let allPosts = [];
       
-      // Fetch each known post
-      for (const postSlug of knownPosts) {
+      // Fetch each post file
+      for (const postFile of postFiles) {
         try {
-          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postSlug}.json`;
+          const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/${postFile.path}`;
           const response = await fetch(postUrl);
           
           if (response.ok) {
             const postData = await response.json();
             if (postData && postData.title) {
+              // Get the actual commit date from GitHub
+              const commitDate = await this.getCommitDate(postFile.path);
+              
               allPosts.push({
-                slug: postSlug,
+                slug: postFile.path.replace('posts/', '').replace('.json', ''),
                 title: postData.title,
-                date: postData.date || new Date().toISOString(),
+                date: commitDate,
                 keywords: postData.keywords || 'general'
               });
             }
           }
         } catch (error) {
-          console.warn(`Could not fetch post ${postSlug}:`, error);
+          console.warn(`Could not fetch post ${postFile.path}:`, error);
         }
       }
       
@@ -8832,40 +8844,33 @@ class SimpleBlog {
           }
         }
         
-        // Method 5: Bypass API entirely - use raw GitHub URLs directly
+        // Method 5: Fallback to GitHub public tree API (no authentication required)
         if (!directoryContents) {
           try {
-            console.log('Site map: Method 5 - bypassing GitHub API, using raw URLs');
+            console.log('Site map: Method 5 - using GitHub public tree API');
             
-            // Since we know the repository structure, we can construct URLs directly
-            // This bypasses all API rate limits and authentication issues
-            const knownPosts = [
-              'about.json',
-              'contact.json',
-              'first-post.json',
-              'editing-debug-test-2.json',
-              'edited-debug-test.json',
-              'edited-title-test-today.json',
-              'today-test-two.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--new-new-new-title.json',
-              'edited-title.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--heloooo.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--new-new-title.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--testing-testing-testign.json',
-              'testing-testing-testing.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--new-title.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable--this-is-the-title.json',
-              'i-vibe-coded-this-blog-and-it-was-miserable-.json'
-            ];
-            
-            // Convert to directory format for compatibility
-            directoryContents = knownPosts.map(filename => ({
-              type: 'file',
-              name: filename,
-              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-            }));
-            
-            console.log('Site map: Method 5 successful - using known post list');
+            const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+            if (treeResponse.ok) {
+              const treeData = await treeResponse.json();
+              
+              // Filter for JSON files in the posts directory
+              const postFiles = treeData.tree.filter(item => 
+                item.path.startsWith('posts/') && 
+                item.path.endsWith('.json') && 
+                item.path !== 'posts/index.json'
+              );
+              
+              // Convert to directory format for compatibility
+              directoryContents = postFiles.map(item => ({
+                type: 'file',
+                name: item.path.replace('posts/', ''),
+                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
+              }));
+              
+              console.log('Site map: Method 5 successful - using GitHub tree API');
+            } else {
+              console.log('Site map: Method 5 failed with status:', treeResponse.status);
+            }
           } catch (error) {
             console.log('Site map: Method 5 failed:', error);
           }
