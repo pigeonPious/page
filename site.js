@@ -9,12 +9,14 @@
 class SimpleBlog {
   constructor() {
     // Version check and cache busting
-    const currentVersion = '2.0';
+    const currentVersion = '2.1';
     const storedVersion = localStorage.getItem('ppPage_js_version');
     if (storedVersion !== currentVersion) {
+      console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
       localStorage.setItem('ppPage_js_version', currentVersion);
       // Force a reload if this is a major version change
       if (storedVersion && storedVersion !== currentVersion) {
+        console.log('🔄 Major version change detected, forcing reload...');
         setTimeout(() => window.location.reload(true), 100);
         return;
       }
@@ -148,7 +150,9 @@ class SimpleBlog {
     this.checkAndUpdateAuthStatus();
     
     // Setup console commands for logo management
+    console.log('🔧 Setting up logo console commands...');
     this.setupConsoleCommands();
+    console.log('🔧 Logo console commands setup called');
     
     // Load logo from configuration
     this.loadLogoFromConfig();
@@ -5403,6 +5407,26 @@ class SimpleBlog {
     window.logoStatus = () => this.showLogoStatus();
     window.listAvailableLogos = () => this.listAvailableLogos();
     
+    // Debug: Confirm commands are set
+    console.log('🔧 Logo console commands setup complete:');
+    console.log('  • window.logo:', typeof window.logo);
+    console.log('  • window.resetLogo:', typeof window.resetLogo);
+    console.log('  • window.logoStatus:', typeof window.logoStatus);
+    console.log('  • window.listAvailableLogos:', typeof window.listAvailableLogos);
+    
+    // Test the logo command immediately
+    console.log('🧪 Testing logo command availability...');
+    try {
+      if (typeof window.logo === 'function') {
+        console.log('✅ Logo command test: SUCCESS');
+        console.log('Try typing: logo piousPigeon_logo_bird-expor-flipt.png');
+      } else {
+        console.log('❌ Logo command test: FAILED');
+      }
+    } catch (error) {
+      console.error('❌ Logo command test error:', error);
+    }
+    
     // Show help on first load
     setTimeout(() => {
       console.log('🎭 Logo Console Commands Available:');
@@ -5410,6 +5434,20 @@ class SimpleBlog {
       console.log('Type "resetLogo()" to return to default logo');
       console.log('Type "logoStatus()" to check current logo status');
       console.log('Type "help" for more commands');
+      
+      // Debug: Check if commands are actually available
+      console.log('🔍 Debug: Checking logo commands...');
+      console.log('window.logo function:', typeof window.logo);
+      console.log('window.resetLogo function:', typeof window.resetLogo);
+      console.log('window.logoStatus function:', typeof window.logoStatus);
+      console.log('window.listAvailableLogos function:', typeof window.listAvailableLogos);
+      
+      // Test the logo command
+      if (typeof window.logo === 'function') {
+        console.log('✅ Logo command is available!');
+      } else {
+        console.log('❌ Logo command is NOT available!');
+      }
     }, 2000);
   }
   
