@@ -8362,18 +8362,48 @@ class SimpleBlog {
           }
         }
         
-        // Method 3: Try using raw GitHub URL if both methods failed
+        // Method 3: Try using repository tree API if both methods failed
         if (!directoryContents) {
           try {
-            response = await fetch('https://raw.githubusercontent.com/pigeonPious/page/main/posts/');
+            response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
             console.log('Site map: Method 3 response status:', response.status);
             
             if (response.ok) {
-              // This won't work for directory listing, but let's try
-              console.log('Site map: Method 3 attempted (raw GitHub)');
+              const treeData = await response.json();
+              // Filter for posts in the posts directory
+              const postFiles = treeData.tree.filter(item => 
+                item.path.startsWith('posts/') && 
+                item.path.endsWith('.json') && 
+                item.path !== 'posts/index.json'
+              );
+              
+              if (postFiles.length > 0) {
+                console.log('Site map: Method 3 successful - found', postFiles.length, 'posts via tree API');
+                // Convert tree format to directory format for compatibility
+                directoryContents = postFiles.map(item => ({
+                  type: 'file',
+                  name: item.path.replace('posts/', ''),
+                  download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
+                }));
+              }
             }
           } catch (error) {
             console.log('Site map: Method 3 failed:', error);
+          }
+        }
+        
+        // Method 4: Try using the repository's default branch contents
+        if (!directoryContents) {
+          try {
+            response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts?ref=main');
+            console.log('Site map: Method 4 response status:', response.status);
+            
+            if (response.ok) {
+              directoryContents = await response.json();
+              console.log('Site map: Method 4 successful');
+            }
+          } catch (error) {
+            console.log('Site map: Method 4 failed:', error);
           }
         }
         
