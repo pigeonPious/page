@@ -2667,6 +2667,21 @@ class SimpleBlog {
         // Store the current post slug in localStorage for the GitHub button
         if (post.slug) {
           localStorage.setItem('current_post_slug', post.slug);
+          
+          // Clear old edit data if we're loading a different post
+          const oldEditData = localStorage.getItem('editPostData');
+          if (oldEditData) {
+            try {
+              const oldEdit = JSON.parse(oldEditData);
+              if (oldEdit.slug !== post.slug) {
+                console.log(`Clearing old edit data for ${oldEdit.slug} - now viewing ${post.slug}`);
+                localStorage.removeItem('editPostData');
+              }
+            } catch (error) {
+              console.warn('Could not parse old edit data:', error);
+              localStorage.removeItem('editPostData');
+            }
+          }
         }
         
         console.log(`Post loaded successfully: ${post.title}`);
@@ -9972,6 +9987,15 @@ class SimpleBlog {
     try {
       const editPost = JSON.parse(editData);
       console.log('Loading edit data:', editPost);
+      
+      // Validate that the edit data matches the current post
+      const currentPostSlug = localStorage.getItem('current_post_slug');
+      if (currentPostSlug && editPost.slug !== currentPostSlug) {
+        console.log(`Edit data mismatch: edit data is for ${editPost.slug}, but current post is ${currentPostSlug}`);
+        console.log('Clearing stale edit data');
+        localStorage.removeItem('editPostData');
+        return;
+      }
       
       // Populate the form fields
       const titleField = document.getElementById('postTitle');
