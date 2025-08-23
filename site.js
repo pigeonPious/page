@@ -8325,12 +8325,59 @@ class SimpleBlog {
         console.log('Site map: Starting dynamic repository scan...');
         console.log('Site map: No index.json needed - scanning posts directory directly');
         
-        // Fetch the contents of the posts directory from GitHub
-        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
-        console.log('Site map: GitHub API response status:', response.status);
-        if (response.ok) {
-          const directoryContents = await response.json();
+        // Try multiple approaches to get repository contents
+        let directoryContents = null;
+        let response = null;
+        
+        // Method 1: Try with proper headers
+        try {
+          response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts', {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'SimpleBlog/1.0'
+            }
+          });
+          console.log('Site map: Method 1 response status:', response.status);
           
+          if (response.ok) {
+            directoryContents = await response.json();
+            console.log('Site map: Method 1 successful');
+          }
+        } catch (error) {
+          console.log('Site map: Method 1 failed:', error);
+        }
+        
+        // Method 2: Try without headers if Method 1 failed
+        if (!directoryContents) {
+          try {
+            response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
+            console.log('Site map: Method 2 response status:', response.status);
+            
+            if (response.ok) {
+              directoryContents = await response.json();
+              console.log('Site map: Method 2 successful');
+            }
+          } catch (error) {
+            console.log('Site map: Method 2 failed:', error);
+          }
+        }
+        
+        // Method 3: Try using raw GitHub URL if both methods failed
+        if (!directoryContents) {
+          try {
+            response = await fetch('https://raw.githubusercontent.com/pigeonPious/page/main/posts/');
+            console.log('Site map: Method 3 response status:', response.status);
+            
+            if (response.ok) {
+              // This won't work for directory listing, but let's try
+              console.log('Site map: Method 3 attempted (raw GitHub)');
+            }
+          } catch (error) {
+            console.log('Site map: Method 3 failed:', error);
+          }
+        }
+        
+        if (directoryContents) {
           // Filter for JSON files (posts) and exclude index.json
           const postFiles = directoryContents.filter(item => 
             item.type === 'file' && 
