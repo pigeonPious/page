@@ -4498,7 +4498,7 @@ class SimpleBlog {
     this.printToConsole(' link - Add a new project link');
     this.printToConsole(' project - Enter project mode for advanced project management');
     this.printToConsole(' logo <filename> - Change the corner logo to a file from assets folder');
-    this.printToConsole(' resetLogo - Reset logo back to default giphy gif');
+    this.printToConsole(' resetLogo - Reset logo back to default (no image)');
     this.printToConsole(' logoStatus - Check current logo status');
     this.printToConsole(' listAvailableLogos - List available logo files in assets');
     this.printToConsole('');
@@ -5373,30 +5373,8 @@ class SimpleBlog {
   
   // Console command system for logo management
   setupConsoleCommands() {
-    // Override console.log to capture logo commands
-    const originalLog = console.log;
-    const originalWarn = console.warn;
-    const originalError = console.error;
-    
-    // Create a custom console that can handle logo commands
-    window.customConsole = {
-      logo: (filename) => {
-        if (filename) {
-          this.changeLogo(filename);
-        } else {
-          console.log('Usage: logo <filename>');
-          console.log('Example: logo my-animation.gif');
-          console.log('Current logo:', localStorage.getItem('ppPage_logo') || 'default giphy gif');
-        }
-      },
-      help: () => {
-        console.log('Available console commands:');
-        console.log('  logo <filename> - Change the corner logo to a file from assets folder');
-        console.log('  resetLogo() - Reset logo back to default giphy gif');
-        console.log('  help - Show this help message');
-        console.log('  clear - Clear console');
-      }
-    };
+    // Logo commands are now integrated into the main console system
+    // No need for custom console objects anymore
     
     // Logo commands are now integrated into the main console system
     // No need to override console.log anymore
@@ -5405,7 +5383,7 @@ class SimpleBlog {
     console.log('🎭 Logo console commands integrated into main console system');
     console.log('Available commands:');
     console.log('  • logo <filename> - Change the corner logo');
-    console.log('  • resetLogo - Reset to default giphy gif');
+    console.log('  • resetLogo - Reset to default (no image)');
     console.log('  • logoStatus - Check current logo status');
     console.log('  • listAvailableLogos - See available files');
     console.log('  • help - Show all available commands');
@@ -5467,7 +5445,8 @@ class SimpleBlog {
       const cacheBust = Date.now();
       const logoUrlWithCache = `${logoUrl}?_cb=${cacheBust}`;
       
-      cornerGif.style.background = `#000 url('${logoUrlWithCache}') center/cover no-repeat`;
+      // Use transparent background and contain scaling for proper logo display
+      cornerGif.style.background = `transparent url('${logoUrlWithCache}') center/contain no-repeat`;
       this.printToConsole(`🎭 Logo applied: ${logoUrl}`);
     } else {
       this.printToConsole('⚠️ Corner GIF element not found');
@@ -5609,17 +5588,23 @@ class SimpleBlog {
         }
       }
       
-      // Fallback to default giphy gif
-      console.log('🎭 Using default logo');
+      // Fallback to default (no image)
+      console.log('🎭 Using default logo (no image)');
       
     } catch (error) {
       // Silently fall back to default
-      console.log('🎭 Using default logo (config load failed)');
+      console.log('🎭 Using default logo (no image, config load failed)');
     }
   }
   
   // Ensure logo is applied when DOM is ready
   ensureLogoApplied() {
+    // First, ensure the cornerGif element has no background image to prevent flash
+    const cornerGif = document.getElementById('cornerGif');
+    if (cornerGif) {
+      cornerGif.style.background = 'transparent center/contain no-repeat';
+    }
+    
     // Try to apply logo multiple times in case DOM isn't ready
     let attempts = 0;
     const maxAttempts = 10;
@@ -5649,15 +5634,15 @@ class SimpleBlog {
       // Remove user logo preference
       localStorage.removeItem('ppPage_logo');
       
-      // Reset the corner GIF to default
+      // Reset the corner GIF to default (no image)
       const cornerGif = document.getElementById('cornerGif');
       if (cornerGif) {
-        cornerGif.style.background = '#000 url(\'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdT1n/3o7btPCcdNniyf0ArS/giphy.gif\') center/cover no-repeat';
-        this.printToConsole('✅ Logo reset to default giphy gif');
+        cornerGif.style.background = 'transparent center/contain no-repeat';
+        this.printToConsole('✅ Logo reset to default (no image)');
       }
       
       // Publish the reset to GitHub for all viewers
-      await this.publishLogoChange('default', 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdT1n/3o7btPCcdNniyf0ArS/giphy.gif');
+      await this.publishLogoChange('default', '');
       
     } catch (error) {
       this.printToConsole(`❌ Error resetting logo: ${error.message}`);
@@ -5674,8 +5659,8 @@ class SimpleBlog {
       this.printToConsole(`  • User preference: ${userLogo}`);
       this.printToConsole(`  • Source: assets/${userLogo}`);
     } else {
-      this.printToConsole('  • User preference: default giphy gif');
-      this.printToConsole('  • Source: Giphy (online)');
+      this.printToConsole('  • User preference: default (no image)');
+      this.printToConsole('  • Source: None (black background)');
     }
     
     if (cornerGif) {
@@ -5683,10 +5668,10 @@ class SimpleBlog {
       if (background.includes('assets/')) {
         const filename = background.match(/assets\/([^?]+)/)?.[1];
         this.printToConsole(`  • Currently displayed: ${filename || 'unknown'}`);
-      } else if (background.includes('giphy')) {
-        this.printToConsole('  • Currently displayed: default giphy gif');
+      } else if (background.includes('url(')) {
+        this.printToConsole('  • Currently displayed: custom image');
       } else {
-        this.printToConsole('  • Currently displayed: custom background');
+        this.printToConsole('  • Currently displayed: default (black background)');
       }
     } else {
       this.printToConsole('  • Corner GIF element: not found');

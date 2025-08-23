@@ -707,24 +707,34 @@ body {
   box-shadow: none;
 }
 
-/* Bottom-right GIF slot */
+/* Bottom-right logo slot */
 #cornerGif {
   position: fixed;
   right: 18px;
   bottom: 18px;
   z-index: 500;
-  width: 160px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   border: 1px solid var(--border);
-  background: #000 url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZWRoMmNud2U2YWMza2lqaGQxZ2dzNzF3MnhkNGN6b2ZxM3p3d2RrMiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btPCcdNniyf0ArS/giphy.gif') center/cover no-repeat;
+  background: transparent center/contain no-repeat;
   opacity: .85;
   border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure logo images scale properly within the container */
+#cornerGif[style*="url(")] {
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
 }
 
 @media (max-width: 900px) {
   #cornerGif {
-    width: 120px;
-    height: 90px;
+    width: 80px;
+    height: 80px;
     right: 12px;
     bottom: 12px;
   }
