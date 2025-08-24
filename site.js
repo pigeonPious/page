@@ -5134,6 +5134,12 @@ class SimpleBlog {
   cycleFont() {
     console.log('Cycling font...');
     
+    // Ensure fonts array is initialized
+    if (!this.fonts) {
+      console.log('Fonts array not initialized, initializing now...');
+      this.initializeFontFamily();
+    }
+    
     // Move to next font
     this.currentFontIndex = (this.currentFontIndex + 1) % this.fonts.length;
     
@@ -5151,6 +5157,12 @@ class SimpleBlog {
   }
   
   applyFont(fontIndex) {
+    // Ensure fonts array is initialized
+    if (!this.fonts) {
+      console.log('Fonts array not initialized, initializing now...');
+      this.initializeFontFamily();
+    }
+    
     if (fontIndex < 0 || fontIndex >= this.fonts.length) {
       console.warn('Invalid font index:', fontIndex);
       return;
@@ -5164,6 +5176,28 @@ class SimpleBlog {
     
     // Also apply to CSS custom property for consistency
     document.documentElement.style.setProperty('--font-family', selectedFont);
+    
+    // Apply to all major elements to ensure font change is visible
+    const elementsToStyle = [
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'p', 'div', 'span', 'a', 'li', 'td', 'th',
+      '.post-content', '.post-title', '.menu-entry', '.label'
+    ];
+    
+    elementsToStyle.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(el => {
+        el.style.fontFamily = selectedFont;
+      });
+    });
+    
+    // Force a repaint by temporarily changing and restoring a property
+    document.body.style.transform = 'translateZ(0)';
+    setTimeout(() => {
+      document.body.style.transform = '';
+    }, 10);
+    
+    console.log('Font applied to all elements:', selectedFont);
   }
 
   // Cleanup method to prevent memory leaks
