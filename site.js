@@ -166,9 +166,12 @@ class SimpleBlog {
         <div class="menu-bar-inner">
           <div class="menu-star" id="star-button" title="Home">*</div>
           
-
-          
-
+          <div class="menu-item" data-menu="edit">
+            <div class="label">Edit</div>
+            <div class="menu-dropdown">
+              <div class="menu-entry" id="open-github-btn">Open GitHub</div>
+            </div>
+          </div>
           
           <div class="menu-item" data-menu="navigation">
             <div class="label">Navigation</div>
@@ -224,6 +227,7 @@ class SimpleBlog {
     // Bind events after taskbar is in the DOM
     this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
     this.bindEventListener(document.getElementById('contact-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('contact'); });
+    this.bindEventListener(document.getElementById('open-github-btn'), 'click', (e) => { e.preventDefault(); this.openCurrentPostInGitHub(); });
   }
 
   // Helper Methods
@@ -2922,6 +2926,25 @@ class SimpleBlog {
     this.siteMapManuallyHidden = false;
     
     console.log('Post displayed successfully:', post.title);
+  }
+
+  // Open the currently viewed post in GitHub
+  openCurrentPostInGitHub() {
+    // Get the current post slug from the URL hash
+    const currentHash = window.location.hash;
+    const currentSlug = currentHash.replace('#', '');
+    
+    if (currentSlug && currentSlug !== '') {
+      // Construct the GitHub URL for the post
+      const githubUrl = `https://github.com/pigeonPious/page/blob/main/posts/${currentSlug}.txt`;
+      
+      // Open in a new tab
+      window.open(githubUrl, '_blank');
+    } else {
+      // If no post is currently viewed, open the main posts directory
+      const postsUrl = 'https://github.com/pigeonPious/page/tree/main/posts';
+      window.open(postsUrl, '_blank');
+    }
   }
 
   // Setup image click handlers for full preview functionality
