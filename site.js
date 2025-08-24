@@ -3488,24 +3488,26 @@ class SimpleBlog {
       return;
     }
     
-    // Group posts by devlog category
-    const groupedPosts = {};
-    const generalPosts = [];
-    
+    // Use the exact same categorization logic as sitemap
+    const categories = {};
     allPosts.forEach(post => {
-      if (post.keywords && post.keywords.includes('devlog')) {
-        let category = 'devlog';
-        if (post.keywords.includes('devlog:')) {
-          const devlogMatch = post.keywords.match(/devlog:([^,]+)/);
-          category = devlogMatch ? `devlog:${devlogMatch[1]}` : 'devlog';
-        }
+      if (post.keywords && post.keywords.trim()) {
+        // Split flags by comma and process each one
+        const flags = post.keywords.split(',').map(f => f.trim()).filter(f => f.length > 0);
         
-        if (!groupedPosts[category]) {
-          groupedPosts[category] = [];
-        }
-        groupedPosts[category].push(post);
-      } else {
-        generalPosts.push(post);
+        flags.forEach(flag => {
+          // Capitalize first letter of the flag
+          let displayName = flag.charAt(0).toUpperCase() + flag.slice(1).toLowerCase();
+          
+          if (!categories[displayName]) {
+            categories[displayName] = [];
+          }
+          
+          // Only add post if it's not already in this category
+          if (!categories[displayName].find(p => p.slug === post.slug)) {
+            categories[displayName].push(post);
+          }
+        });
       }
     });
     
@@ -3543,9 +3545,9 @@ class SimpleBlog {
     `;
     submenu.appendChild(bufferZone);
     
-    // Add devlog category groups first
-    Object.keys(groupedPosts).sort().forEach(category => {
-      const posts = groupedPosts[category];
+    // Add all categories with posts
+    Object.keys(categories).sort().forEach(category => {
+      const posts = categories[category];
       
       // Add category separator with label
       const categorySeparator = document.createElement('div');
@@ -3582,19 +3584,9 @@ class SimpleBlog {
         `;
         
         postEntry.addEventListener('click', () => {
-          // Check if we're in the editor
-          console.log('Current pathname:', window.location.pathname);
-          console.log('Current href:', window.location.href);
-          if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
-            console.log('In editor - redirecting to main blog with post:', post.slug);
-            // Redirect to main blog with the selected post
-            window.location.href = `index.html?post=${post.slug}`;
-          } else {
-            console.log('🏠 On main blog - loading post normally:', post.slug);
-            // We're on the main blog, load post normally
-            this.loadPost(post.slug);
-            this.closeAllMenus();
-          }
+          console.log('🏠 Loading post from All Posts submenu:', post.slug);
+          this.loadPost(post.slug);
+          this.closeAllMenus();
         });
         
         // Add hover effects
@@ -3612,12 +3604,13 @@ class SimpleBlog {
       });
     });
     
-    // Add general posts at the end (if any)
-    if (generalPosts.length > 0) {
-      // Add general separator
-      const generalSeparator = document.createElement('div');
-      generalSeparator.className = 'category-separator';
-      generalSeparator.style.cssText = `
+    // Show uncategorized posts at the end (if any)
+    const uncategorized = allPosts.filter(post => !post.keywords || !post.keywords.trim());
+    if (uncategorized.length > 0) {
+      // Add uncategorized separator
+      const uncategorizedSeparator = document.createElement('div');
+      uncategorizedSeparator.className = 'category-separator';
+      uncategorizedSeparator.style.cssText = `
         padding: 6px 12px;
         background: var(--menu-bg, #333);
         color: var(--accent-color, #4a9eff);
@@ -3629,11 +3622,11 @@ class SimpleBlog {
         border-top: 2px solid var(--accent-color, #4a9eff);
         text-shadow: 0 0 8px var(--accent-color, #4a9eff);
       `;
-      generalSeparator.textContent = 'general';
-      submenu.appendChild(generalSeparator);
+      uncategorizedSeparator.textContent = 'Uncategorized';
+      submenu.appendChild(uncategorizedSeparator);
       
-      // Add general posts
-      generalPosts.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
+      // Add uncategorized posts
+      uncategorized.sort((a, b) => (a.title || '').localeCompare(b.title || '')).forEach(post => {
         const postEntry = document.createElement('div');
         postEntry.className = 'menu-entry';
         postEntry.textContent = post.title || post.slug;
@@ -3649,19 +3642,9 @@ class SimpleBlog {
         `;
         
         postEntry.addEventListener('click', () => {
-          // Check if we're in the editor
-          console.log('Current pathname:', window.location.pathname);
-          console.log('Current href:', window.location.href);
-          if (window.location.pathname.includes('editor.html') || window.location.href.includes('editor.html')) {
-            console.log('In editor - redirecting to main blog with post:', post.slug);
-            // Redirect to main blog with the selected post
-            window.location.href = `index.html?post=${post.slug}`;
-          } else {
-            console.log('🏠 On main blog - loading post normally:', post.slug);
-            // We're on the main blog, load post normally
-            this.loadPost(post.slug);
-            this.closeAllMenus();
-          }
+          console.log('🏠 Loading uncategorized post from All Posts submenu:', post.slug);
+          this.loadPost(post.slug);
+          this.closeAllMenus();
         });
         
         // Add hover effects
@@ -3715,7 +3698,7 @@ class SimpleBlog {
     allPostsMenu.addEventListener('mouseleave', closeSubmenu);
     submenu.addEventListener('mouseleave', closeSubmenu);
     
-    console.log('All Posts submenu updated with grouped posts:', Object.keys(groupedPosts).length, 'categories +', generalPosts.length, 'general posts');
+    console.log('All Posts submenu updated with', allPosts.length, 'posts in', Object.keys(categories).length, 'categories');
   }
 
   updateProjectsSubmenu(allPosts) {
