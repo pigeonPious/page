@@ -2452,39 +2452,40 @@ class SimpleBlog {
       // Parse the first few lines for metadata
       let inContent = false;
       for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
+        const line = lines[i];
+        const trimmedLine = line.trim();
         
         if (!inContent) {
           // Look for title (first non-empty line or line starting with #)
-          if (line.startsWith('# ')) {
-            title = line.substring(2).trim();
+          if (trimmedLine.startsWith('# ')) {
+            title = trimmedLine.substring(2).trim();
             continue;
-          } else if (line.startsWith('Title: ')) {
-            title = line.substring(7).trim();
+          } else if (trimmedLine.startsWith('Title: ')) {
+            title = trimmedLine.substring(7).trim();
             continue;
           }
           
           // Look for date
-          if (line.startsWith('Date: ')) {
-            date = line.substring(6).trim();
+          if (trimmedLine.startsWith('Date: ')) {
+            date = trimmedLine.substring(6).trim();
             continue;
           }
           
           // Look for keywords
-          if (line.startsWith('Keywords: ')) {
-            keywords = line.substring(10).trim();
+          if (trimmedLine.startsWith('Keywords: ')) {
+            keywords = trimmedLine.substring(10).trim();
             continue;
           }
           
           // If we hit a blank line or content starts, switch to content mode
-          if (line === '' || line.startsWith('---')) {
+          if (trimmedLine === '' || trimmedLine.startsWith('---')) {
             inContent = true;
             continue;
           }
           
           // If this is the first non-empty line and no title found, use it as title
-          if (title === 'Untitled' && line !== '') {
-            title = line;
+          if (title === 'Untitled' && trimmedLine !== '') {
+            title = trimmedLine;
             continue;
           }
         }
@@ -2517,12 +2518,29 @@ class SimpleBlog {
       return `<span class="hover-note" data-hover="${hoverContent.trim()}">${displayText.trim()}</span>`;
     });
     
-    // Process images: [IMAGE]
+    // Process images with alignment options
     let imageIndex = 0;
+    
+    // Process [IMAGER] - right aligned (default)
+    content = content.replace(/\[IMAGER\]/g, () => {
+      imageIndex++;
+      return `<div class="post-image post-image-right" data-post="${slug}" data-index="${imageIndex}"></div>`;
+    });
+    
+    // Process [IMAGEL] - left aligned
+    content = content.replace(/\[IMAGEL\]/g, () => {
+      imageIndex++;
+      return `<div class="post-image post-image-left" data-post="${slug}" data-index="${imageIndex}"></div>`;
+    });
+    
+    // Process [IMAGE] - right aligned (default)
     content = content.replace(/\[IMAGE\]/g, () => {
       imageIndex++;
-      return `<div class="post-image" data-post="${slug}" data-index="${imageIndex}"></div>`;
+      return `<div class="post-image post-image-right" data-post="${slug}" data-index="${imageIndex}"></div>`;
     });
+    
+    // Convert line breaks to HTML breaks to preserve formatting
+    content = content.replace(/\n/g, '<br>');
     
     return content;
   }
@@ -2662,7 +2680,19 @@ class SimpleBlog {
       margin: 1em 0;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      cursor: pointer;
     `;
+    
+    // Add click handler for full preview
+    img.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Image clicked:', img.src);
+      this.showImagePreview(img.src, img.alt || 'Image');
+    });
+    
+    // Add visual indication that image is clickable
+    img.title = 'Click to view full size';
     
     // Replace the placeholder with the actual image
     placeholder.parentNode.replaceChild(img, placeholder);
