@@ -38,11 +38,11 @@
     const script = document.createElement('script');
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(7);
-    script.src = 'site.js?v=' + timestamp + '&r=' + random + '&v=2.1';
+    script.src = 'site.js?v=' + timestamp + '&r=' + random + '&v=2.5';
     script.setAttribute('data-cache-bust', timestamp);
     document.body.appendChild(script);
     
-    // Cache busting applied with timestamp, random parameter, and version 2.1
+    // Cache busting applied with timestamp, random parameter, and version 2.5
     
   </script>
 </body>
