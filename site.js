@@ -1883,184 +1883,56 @@ class SimpleBlog {
         console.log(`loadImagesForPost: GitHub API error:`, error);
       }
       
-      // Method 2: Fallback to public directory browsing
+      // Method 2: Simple fallback - try to access the post folder directly
       if (imageFiles.length === 0) {
         try {
-          console.log(`loadImagesForPost: Trying public directory browsing for folder: posts/${slug}`);
-          const corsProxy = 'https://corsproxy.io/?';
+          console.log(`loadImagesForPost: Trying direct folder access for posts/${slug}`);
+          
+          // Try to access the post folder directly to see what's there
           const folderUrl = `https://github.com/pigeonPious/page/tree/main/posts/${slug}`;
-          const response = await fetch(corsProxy + folderUrl);
+          const response = await fetch(folderUrl);
           
           if (response.ok) {
             const htmlContent = await response.text();
-            console.log(`loadImagesForPost: Directory browsing returned content length: ${htmlContent.length}`);
+            console.log(`loadImagesForPost: Direct folder access returned content length: ${htmlContent.length}`);
             
-            // Look for media files (common image and video extensions)
-            const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
+            // Look for any file links in the HTML
+            const fileLinkRegex = /href="([^"]*\.(png|jpg|jpeg|gif|webp|svg|mp4|mov|avi|webm))"/gi;
+            const fileMatches = htmlContent.match(fileLinkRegex);
             
-            mediaExtensions.forEach(ext => {
-              // Look specifically for files in the posts/slug folder, not GitHub's general assets
-              // The regex needs to be more specific to avoid GitHub's favicon files
-              const regex = new RegExp(`href="[^"]*/posts/${slug}/[^"]*\\.${ext}"`, 'gi');
-              const matches = htmlContent.match(regex);
-              if (matches) {
-                console.log(`loadImagesForPost: Found ${matches.length} matches for .${ext} files in posts/${slug}/`);
-                matches.forEach(match => {
-                  const href = match.match(/href="([^"]+)"/)[1];
-                  console.log(`loadImagesForPost: Processing href: ${href}`);
-                  
-                  // Extract just the filename from the full path
-                  const pathParts = href.split('/');
-                  const filename = pathParts[pathParts.length - 1];
-                  
-                  // Double-check this is actually a file in our post folder
-                  if (href.includes(`/posts/${slug}/`) && filename.endsWith(`.${ext}`)) {
-                    console.log(`loadImagesForPost: Processing file ${filename}, detected type: ${ext}`);
-                    imageFiles.push({
-                      name: filename,
-                      url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`,
-                      type: ext
-                    });
-                    console.log(`loadImagesForPost: Added media via browsing: ${filename} with type ${ext}`);
-                  }
-                });
-              }
-            });
-            
-            // If we still haven't found any images, let's debug what's in the HTML
-            if (imageFiles.length === 0) {
-              console.log(`loadImagesForPost: No images found via directory browsing, debugging HTML content...`);
+            if (fileMatches) {
+              console.log(`loadImagesForPost: Found ${fileMatches.length} file links in HTML`);
               
-              // Look for any links that contain our post folder
-              const postFolderRegex = new RegExp(`href="[^"]*/posts/${slug}/[^"]*"`, 'gi');
-              const postFolderMatches = htmlContent.match(postFolderRegex);
-              if (postFolderMatches) {
-                console.log(`loadImagesForPost: Found ${postFolderMatches.length} links in posts/${slug}/ folder:`, postFolderMatches);
-              } else {
-                console.log(`loadImagesForPost: No links found in posts/${slug}/ folder`);
-              }
+              // Filter for files that are actually in our post folder
+              const postFiles = [];
+              fileMatches.forEach(match => {
+                const href = match.match(/href="([^"]+)"/)[1];
+                if (href.includes(`/posts/${slug}/`)) {
+                  const filename = href.split('/').pop();
+                  const ext = filename.split('.').pop().toLowerCase();
+                  console.log(`loadImagesForPost: Found file in post folder: ${filename}`);
+                  
+                  postFiles.push({
+                    name: filename,
+                    url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`,
+                    type: ext
+                  });
+                }
+              });
               
-              // Also try to find any file links in the HTML that might be media files
-              const fileLinkRegex = /href="([^"]*\.(png|jpg|jpeg|gif|webp|mp4|mov|avi|webm))"/gi;
-              const fileMatches = htmlContent.match(fileLinkRegex);
-              if (fileMatches) {
-                console.log(`loadImagesForPost: Found ${fileMatches.length} file links in HTML:`, fileMatches);
-                
-                // Check if any of these are actually in our post folder
-                fileMatches.forEach(match => {
-                  const href = match.match(/href="([^"]+)"/)[1];
-                  if (href.includes(`/posts/${slug}/`)) {
-                    console.log(`loadImagesForPost: Found potential file in post folder: ${href}`);
-                  }
-                });
-              }
+              // Sort files alphabetically and add to imageFiles
+              postFiles.sort((a, b) => a.name.localeCompare(b.name));
+              imageFiles.push(...postFiles);
+              
+              console.log(`loadImagesForPost: Added ${postFiles.length} files in alphabetical order`);
+            } else {
+              console.log(`loadImagesForPost: No file links found in folder HTML`);
             }
           } else {
-            console.log(`loadImagesForPost: Directory browsing failed with status: ${response.status}`);
+            console.log(`loadImagesForPost: Direct folder access failed with status: ${response.status}`);
           }
         } catch (error) {
-          console.log(`loadImagesForPost: Directory browsing error:`, error);
-        }
-      }
-      
-      // Method 3: Direct raw GitHub access for common image types
-      if (imageFiles.length === 0) {
-        try {
-          console.log(`loadImagesForPost: Trying direct raw GitHub access for common image types`);
-          
-          // Common image extensions to try
-          const commonExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
-          
-          for (const ext of commonExtensions) {
-            // Try to find files by checking if they exist at raw GitHub URLs
-            const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/`;
-            
-            // We'll try a few common naming patterns
-            const testNames = [
-              `image.${ext}`,
-              `1.${ext}`,
-              `img.${ext}`,
-              `photo.${ext}`,
-              `screenshot.${ext}`,
-              `Screenshot.${ext}`,
-              `IMG.${ext}`,
-              `Photo.${ext}`
-            ];
-            
-            for (const testName of testNames) {
-              try {
-                const response = await fetch(testUrl + testName, { method: 'HEAD' });
-                if (response.ok) {
-                  console.log(`loadImagesForPost: Found file via direct access: ${testName}`);
-                  imageFiles.push({
-                    name: testName,
-                    url: testUrl + testName,
-                    type: ext
-                  });
-                  break; // Found one, move to next extension
-                }
-              } catch (error) {
-                // Continue to next test name
-              }
-            }
-            
-            if (imageFiles.length > 0) {
-              break; // Found some images, stop trying more extensions
-            }
-          }
-        } catch (error) {
-          console.log(`loadImagesForPost: Direct access method failed:`, error);
-        }
-      }
-      
-      // Method 4: Try to find any media files by scanning common extensions
-      if (imageFiles.length === 0) {
-        try {
-          console.log(`loadImagesForPost: Trying to scan for any media files in posts/${slug}/ folder`);
-          
-          // Common media extensions to scan
-          const scanExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'mov', 'avi', 'webm'];
-          
-          for (const ext of scanExtensions) {
-            // Try a few common naming patterns to find any files
-            const testPatterns = [
-              `1.${ext}`,
-              `image.${ext}`,
-              `img.${ext}`,
-              `photo.${ext}`,
-              `screenshot.${ext}`,
-              `Screenshot.${ext}`,
-              `IMG.${ext}`,
-              `Photo.${ext}`,
-              `video.${ext}`,
-              `movie.${ext}`,
-              `clip.${ext}`
-            ];
-            
-            for (const pattern of testPatterns) {
-              const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${pattern}`;
-              try {
-                const response = await fetch(testUrl, { method: 'HEAD' });
-                if (response.ok) {
-                  console.log(`loadImagesForPost: Found media file via scanning: ${pattern}`);
-                  imageFiles.push({
-                    name: pattern,
-                    url: testUrl,
-                    type: ext
-                  });
-                  break; // Found one with this extension, move to next
-                }
-              } catch (error) {
-                // Continue to next pattern
-              }
-            }
-            
-            if (imageFiles.length > 0) {
-              break; // Found some files, stop scanning
-            }
-          }
-        } catch (error) {
-          console.log(`loadImagesForPost: File scanning method failed:`, error);
+          console.log(`loadImagesForPost: Direct folder access error:`, error);
         }
       }
       
