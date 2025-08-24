@@ -37,6 +37,9 @@ class SimpleBlog {
     this.createTaskbar();
     this.bindEvents();
     
+    // Check for repository updates and clear cache if needed
+    this.checkRepositoryUpdates();
+    
     // Try to load cached posts first for immediate submenu access
     const cachedPosts = localStorage.getItem('posts');
     if (cachedPosts) {
@@ -117,6 +120,19 @@ class SimpleBlog {
       } else {
         // No specific post in URL, show most recent
         this.loadMostRecentPost();
+      }
+    });
+
+    // Set up periodic repository update checks (every 5 minutes)
+    setInterval(() => {
+      this.checkRepositoryUpdates();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    // Also check for updates when user becomes active (returns to tab)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        console.log('🔍 Tab became visible, checking for updates...');
+        this.checkRepositoryUpdates();
       }
     });
     
@@ -202,6 +218,7 @@ class SimpleBlog {
               <div class="menu-entry" id="random-post">Random Post</div>
               <div class="menu-separator"></div>
               <div class="menu-entry" id="show-site-map">Site Map</div>
+              <div class="menu-entry" id="clear-cache-btn">Clear Cache</div>
             </div>
           </div>
           
@@ -268,12 +285,147 @@ class SimpleBlog {
       e.stopPropagation(); // Prevent menu from closing
       /* Twitter link to be added later */ 
     });
+
+    // Bind clear cache button
+    this.bindEventListener(document.getElementById('clear-cache-btn'), 'click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🧹 Manual cache clear requested');
+      
+      // Show loading state
+      const button = e.target;
+      const originalText = button.textContent;
+      button.textContent = 'Clearing...';
+      button.style.opacity = '0.6';
+      button.style.pointerEvents = 'none';
+      
+      this.clearAllCache();
+      
+      // Force reload after clearing cache
+      setTimeout(() => {
+        button.textContent = 'Refreshing...';
+        window.location.reload(true);
+      }, 500);
+    });
   }
 
   // Helper Methods
   bindEventListener(element, event, handler) {
     if (element) {
       element.addEventListener(event, handler);
+    }
+  }
+
+  // Check for repository updates and clear cache if needed
+  async checkRepositoryUpdates() {
+    try {
+      console.log('🔍 Checking for repository updates...');
+      
+      // Get the last commit date from GitHub API
+      const response = await fetch('https://api.github.com/repos/pigeonPious/page/commits?per_page=1');
+      if (response.ok) {
+        const commits = await response.json();
+        if (commits && commits.length > 0) {
+          const latestCommitDate = commits[0].commit.author.date;
+          const latestCommitHash = commits[0].sha.substring(0, 8);
+          
+          console.log('🔍 Latest commit:', latestCommitHash, 'at', latestCommitDate);
+          
+          // Check if we have a stored commit hash
+          const storedCommitHash = localStorage.getItem('ppPage_last_commit_hash');
+          const storedCommitDate = localStorage.getItem('ppPage_last_commit_date');
+          
+          if (storedCommitHash && storedCommitHash !== latestCommitHash) {
+            console.log('🔄 Repository updated! Clearing cache...');
+            console.log('🔄 Old commit:', storedCommitHash, 'New commit:', latestCommitHash);
+            
+            // Show user notification
+            this.showUserMessage(`Repository updated! Refreshing page for latest content...`, 'info');
+            
+            // Clear all cached data
+            this.clearAllCache();
+            
+            // Store new commit info
+            localStorage.setItem('ppPage_last_commit_hash', latestCommitHash);
+            localStorage.setItem('ppPage_last_commit_date', latestCommitDate);
+            
+            // Force reload to get fresh content
+            console.log('🔄 Forcing page reload for fresh content...');
+            setTimeout(() => window.location.reload(true), 2000);
+            return;
+          } else if (!storedCommitHash) {
+            // First time visit, store current commit info
+            localStorage.setItem('ppPage_last_commit_hash', latestCommitHash);
+            localStorage.setItem('ppPage_last_commit_date', latestCommitDate);
+            console.log('🔍 First visit, stored commit info:', latestCommitHash);
+          } else {
+            console.log('✅ Repository is up to date');
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Could not check repository updates:', error);
+      // Don't fail the page load if this check fails
+    }
+  }
+
+  // Clear all cached data
+  clearAllCache() {
+    console.log('🧹 Clearing all cached data...');
+    
+    // Clear posts cache
+    localStorage.removeItem('posts');
+    localStorage.removeItem('current_post_slug');
+    
+    // Clear theme cache (keep user preferences)
+    // localStorage.removeItem('ppPage_theme');
+    // localStorage.removeItem('ppPage_custom_href');
+    // localStorage.removeItem('ppPage_random_theme');
+    
+    // Clear font size cache
+    localStorage.removeItem('ppPage_font_size');
+    
+    // Clear site map state
+    localStorage.removeItem('ppPage_site_map_hidden');
+    localStorage.removeItem('ppPage_site_map_manually_toggled');
+    
+    // Clear console cache
+    localStorage.removeItem('ppPage_console_history');
+    
+    // Clear any other potential caches
+    localStorage.removeItem('ppPage_js_version');
+    
+    // Try to clear browser HTTP cache for critical resources
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => {
+          if (name.includes('posts') || name.includes('site')) {
+            caches.delete(name);
+            console.log('🧹 Cleared HTTP cache:', name);
+          }
+        });
+      });
+    }
+    
+    // Show user-friendly message
+    this.showUserMessage('Cache cleared! Refreshing page...', 'success');
+    
+    console.log('🧹 Cache cleared successfully');
+  }
+
+  // Show user-friendly message (fallback if showMenuStyle1Message doesn't exist)
+  showUserMessage(message, type = 'info') {
+    try {
+      // Try to use existing method if it exists
+      if (typeof this.showMenuStyle1Message === 'function') {
+        this.showMenuStyle1Message(message, type);
+      } else {
+        // Fallback: show alert
+        alert(`${type.toUpperCase()}: ${message}`);
+      }
+    } catch (error) {
+      // Ultimate fallback: console log
+      console.log(`[${type.toUpperCase()}] ${message}`);
     }
   }
 
