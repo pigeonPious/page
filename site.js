@@ -5,11 +5,11 @@
 
 // CACHE BUST: This file was last modified at 2025-01-23
 // If you see this comment, the file is being served fresh
-// Version: 2.4 - Dynamic GitHub Repository Scanning with Video Thumbnails and Full-Screen Preview
+// Version: 2.5 - Simplified Image Loading with Direct Folder Access
 class SimpleBlog {
   constructor() {
     // Version check and cache busting
-    const currentVersion = '2.4';
+    const currentVersion = '2.5';
     const storedVersion = localStorage.getItem('ppPage_js_version');
     if (storedVersion !== currentVersion) {
       console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
