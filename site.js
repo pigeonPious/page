@@ -114,6 +114,9 @@ class SimpleBlog {
     // Initialize font size
     this.initializeFontSize();
     
+    // Initialize font family
+    this.initializeFontFamily();
+    
     // If custom theme, check for saved HSL values and apply them
     if (this.theme === 'custom') {
       const savedHSL = localStorage.getItem('ppPage_custom_hsl');
@@ -201,6 +204,8 @@ class SimpleBlog {
               <div class="menu-entry" data-mode="light">Light</div>
               <div class="menu-entry" data-mode="custom">Custom…</div>
               <div class="menu-entry" data-mode="random">Random</div>
+              <div class="menu-separator"></div>
+              <div class="menu-entry" id="font-cycle-btn">Font</div>
             </div>
           </div>
           
@@ -289,6 +294,9 @@ class SimpleBlog {
     // These will be overridden by theme-specific CSS rules
     root.style.setProperty('--muted', '#888888');
     root.style.setProperty('--border', '#555555');
+    
+    // Font family variable
+    root.style.setProperty('--font-family', 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
     
     console.log('CSS variables setup complete');
   }
@@ -695,6 +703,12 @@ class SimpleBlog {
       }
       
       this.setTheme(mode, mode === 'custom'); // Open HSL picker only for custom theme
+    });
+
+    // Font button
+    this.addClickHandler('#font-cycle-btn', () => {
+      console.log('Font button clicked');
+      this.cycleFont();
     });
 
     // Navigation buttons
@@ -3235,7 +3249,7 @@ class SimpleBlog {
     // Open in a new tab
     window.open(githubUrl, '_blank');
   }
-  setPostFlags(flags) {
+  async setPostFlags(flags) {
     console.log('Setting post flags:', flags);
     
     // Store flags for the current post
@@ -3251,7 +3265,7 @@ class SimpleBlog {
     localStorage.setItem('current_post_flags', flags);
     
     // Update navigation menu with new flags
-    this.updateNavigationMenu(flagArray);
+    await this.updateNavigationMenu(flagArray);
     
     console.log('Post flags saved:', flags);
   }
@@ -3264,7 +3278,7 @@ class SimpleBlog {
     console.log('🧭 Total posts available for navigation:', allPosts.length);
     
     // Update All Posts submenu
-    this.updateAllPostsSubmenu();
+    await this.updateAllPostsSubmenu();
     
 
     
@@ -5092,6 +5106,64 @@ class SimpleBlog {
 
   warn(message) {
     this.log(message, 'warn');
+  }
+
+  // Font family management methods
+  initializeFontFamily() {
+    console.log('Initializing font family...');
+    
+    // Define the 5 fonts to cycle through
+    this.fonts = [
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', // Default system font
+      'Georgia, "Times New Roman", serif', // Serif font
+      'Monaco, "Courier New", monospace', // Monospace font
+      'Arial, Helvetica, sans-serif', // Sans-serif font
+      'Palatino, "Palatino Linotype", "Palatino LT STD", serif' // Elegant serif
+    ];
+    
+    // Get saved font index from localStorage
+    const savedFontIndex = localStorage.getItem('ppPage_font_index');
+    this.currentFontIndex = savedFontIndex ? parseInt(savedFontIndex) : 0;
+    
+    // Apply the saved font
+    this.applyFont(this.currentFontIndex);
+    
+    console.log('Font family initialized with index:', this.currentFontIndex);
+  }
+  
+  cycleFont() {
+    console.log('Cycling font...');
+    
+    // Move to next font
+    this.currentFontIndex = (this.currentFontIndex + 1) % this.fonts.length;
+    
+    // Save to localStorage
+    localStorage.setItem('ppPage_font_index', this.currentFontIndex.toString());
+    
+    // Apply the new font
+    this.applyFont(this.currentFontIndex);
+    
+    console.log('Font cycled to index:', this.currentFontIndex);
+    
+    // Show feedback to user
+    const fontNames = ['System', 'Serif', 'Monospace', 'Sans-serif', 'Elegant'];
+    this.showMessage(`Font changed to: ${fontNames[this.currentFontIndex]}`, 'success');
+  }
+  
+  applyFont(fontIndex) {
+    if (fontIndex < 0 || fontIndex >= this.fonts.length) {
+      console.warn('Invalid font index:', fontIndex);
+      return;
+    }
+    
+    const selectedFont = this.fonts[fontIndex];
+    console.log('Applying font:', selectedFont);
+    
+    // Apply to document body
+    document.body.style.fontFamily = selectedFont;
+    
+    // Also apply to CSS custom property for consistency
+    document.documentElement.style.setProperty('--font-family', selectedFont);
   }
 
   // Cleanup method to prevent memory leaks
