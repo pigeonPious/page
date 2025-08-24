@@ -2754,6 +2754,7 @@ class SimpleBlog {
     const hoverNotes = document.querySelectorAll('.hover-note');
     hoverNotes.forEach(note => {
       note.style.color = textColor;
+      note.style.borderBottomColor = textColor;
     });
     
     // Update all hyperlinks
@@ -2765,6 +2766,7 @@ class SimpleBlog {
     // Update CSS custom properties for future elements
     document.documentElement.style.setProperty('--hover-note-color', textColor);
     document.documentElement.style.setProperty('--hyperlink-color', textColor);
+    document.documentElement.style.setProperty('--hover-note-border-color', textColor);
     
     console.log('Hover note and hyperlink colors updated');
   }
