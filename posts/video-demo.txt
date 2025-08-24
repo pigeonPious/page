@@ -19,10 +19,11 @@ This will automatically load and display the first video file found in the post 
 
 ## Features
 
-- Videos are displayed with native browser controls
+- **Video thumbnails** - Videos display as 120x120px square thumbnails in posts
+- **No inline playback** - Videos cannot be played in the small preview
 - **Video preview frames** - Shows first frame as preview before clicking
 - **Play button overlay** - Clear visual indication that videos are clickable
-- Click any video to view it in full-screen overlay
+- **Click to expand** - Click any video to view it in full-screen overlay with controls
 - Responsive design that works on all devices
 - Automatic format detection
 

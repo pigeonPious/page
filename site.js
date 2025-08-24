@@ -5,11 +5,11 @@
 
 // CACHE BUST: This file was last modified at 2025-01-23
 // If you see this comment, the file is being served fresh
-// Version: 2.3 - Dynamic GitHub Repository Scanning with Video Support and Poster Generation
+// Version: 2.4 - Dynamic GitHub Repository Scanning with Video Thumbnails and Full-Screen Preview
 class SimpleBlog {
   constructor() {
     // Version check and cache busting
-    const currentVersion = '2.3';
+    const currentVersion = '2.4';
     const storedVersion = localStorage.getItem('ppPage_js_version');
     if (storedVersion !== currentVersion) {
       console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
@@ -1970,20 +1970,23 @@ class SimpleBlog {
     const isVideo = ['mp4', 'mov', 'avi', 'webm'].includes(mediaType);
     
     if (isVideo) {
-      // Create video element
+      // Create video element for thumbnail display only
       const video = document.createElement('video');
       video.src = mediaUrl;
-      video.controls = true;
+      video.controls = false; // No controls in thumbnail
       video.preload = 'metadata';
-      video.className = 'post-media-content post-video-content';
+      video.muted = true; // Mute to prevent autoplay issues
+      video.className = 'post-media-content post-video-content post-video-thumbnail';
       video.style.cssText = `
-        max-width: 100%;
-        height: auto;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
         display: block;
         margin: 1em 0;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         cursor: pointer;
+        pointer-events: none; // Disable video interaction in thumbnail
       `;
       
       // Generate poster frame from first frame of video
@@ -2018,24 +2021,18 @@ class SimpleBlog {
         }
       });
       
-      // Track play/pause state for play button overlay
-      video.addEventListener('play', () => {
-        video.setAttribute('paused', 'false');
-      });
+      // Create clickable wrapper div for the video
+      const videoWrapper = document.createElement('div');
+      videoWrapper.className = 'post-video-wrapper';
+      videoWrapper.style.cssText = `
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        margin: 1em 0;
+      `;
       
-      video.addEventListener('pause', () => {
-        video.setAttribute('paused', 'true');
-      });
-      
-      video.addEventListener('ended', () => {
-        video.setAttribute('paused', 'true');
-      });
-      
-      // Set initial paused state
-      video.setAttribute('paused', 'true');
-      
-      // Add click handler for full preview
-      video.addEventListener('click', (e) => {
+      // Add click handler to wrapper for full preview
+      videoWrapper.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         console.log('Video clicked:', video.src);
@@ -2043,10 +2040,49 @@ class SimpleBlog {
       });
       
       // Add visual indication that video is clickable
-      video.title = 'Click to view full size';
+      videoWrapper.title = 'Click to view full size';
       
-      // Replace the placeholder with the actual video
-      placeholder.parentNode.replaceChild(video, placeholder);
+      // Add play button overlay to wrapper
+      const playButton = document.createElement('div');
+      playButton.className = 'post-video-play-button';
+      playButton.innerHTML = '▶';
+      playButton.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        pointer-events: none;
+        opacity: 0.9;
+        transition: opacity 0.2s ease;
+        z-index: 1;
+      `;
+      
+      // Add hover effect to wrapper
+      videoWrapper.addEventListener('mouseenter', () => {
+        playButton.style.opacity = '1';
+        playButton.style.background = 'rgba(0, 0, 0, 0.8)';
+      });
+      
+      videoWrapper.addEventListener('mouseleave', () => {
+        playButton.style.opacity = '0.9';
+        playButton.style.background = 'rgba(0, 0, 0, 0.7)';
+      });
+      
+      // Assemble video wrapper
+      videoWrapper.appendChild(video);
+      videoWrapper.appendChild(playButton);
+      
+      // Replace the placeholder with the video wrapper
+      placeholder.parentNode.replaceChild(videoWrapper, placeholder);
     } else {
       // Create image element (existing logic)
       const img = document.createElement('img');
