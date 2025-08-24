@@ -3646,6 +3646,28 @@ class SimpleBlog {
     console.log('Projects submenu updated with simple category list');
   }
 
+  async loadProjectsFromGitHub() {
+    try {
+      console.log('loadProjectsFromGitHub: Loading projects from projects.json');
+      
+      // Try to load from projects.json file
+      const response = await fetch('projects.json');
+      
+      if (response.ok) {
+        const projects = await response.json();
+        console.log('loadProjectsFromGitHub: Loaded', projects.length, 'projects');
+        return projects;
+      } else {
+        console.log('projects.json not found, returning empty array');
+        return [];
+      }
+      
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      return [];
+    }
+  }
+
   updateProjectsMenu(projects) {
     const projectsDropdown = document.getElementById('projects-dropdown');
     if (!projectsDropdown) return;
