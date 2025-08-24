@@ -764,6 +764,13 @@ body {
   text-decoration: underline;
 }
 
+/* PiousPigeon dropdown positioning - anchor to right side and extend left */
+.menu-item[data-menu="pigeon"] > .menu-dropdown {
+  left: auto;
+  right: 0;
+  min-width: 200px;
+}
+
 /* Bottom-right logo slot */
 #cornerGif {
   position: fixed;
