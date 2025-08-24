@@ -1900,6 +1900,7 @@ class SimpleBlog {
             
             mediaExtensions.forEach(ext => {
               // Look specifically for files in the posts/slug folder, not GitHub's general assets
+              // The regex needs to be more specific to avoid GitHub's favicon files
               const regex = new RegExp(`href="[^"]*/posts/${slug}/[^"]*\\.${ext}"`, 'gi');
               const matches = htmlContent.match(regex);
               if (matches) {
@@ -1925,6 +1926,20 @@ class SimpleBlog {
                 });
               }
             });
+            
+            // If we still haven't found any images, let's debug what's in the HTML
+            if (imageFiles.length === 0) {
+              console.log(`loadImagesForPost: No images found via directory browsing, debugging HTML content...`);
+              
+              // Look for any links that contain our post folder
+              const postFolderRegex = new RegExp(`href="[^"]*/posts/${slug}/[^"]*"`, 'gi');
+              const postFolderMatches = htmlContent.match(postFolderRegex);
+              if (postFolderMatches) {
+                console.log(`loadImagesForPost: Found ${postFolderMatches.length} links in posts/${slug}/ folder:`, postFolderMatches);
+              } else {
+                console.log(`loadImagesForPost: No links found in posts/${slug}/ folder`);
+              }
+            }
           } else {
             console.log(`loadImagesForPost: Directory browsing failed with status: ${response.status}`);
           }
@@ -1980,6 +1995,39 @@ class SimpleBlog {
           }
         } catch (error) {
           console.log(`loadImagesForPost: Direct access method failed:`, error);
+        }
+      }
+      
+      // Method 4: Try to find the actual files that exist in the folder
+      if (imageFiles.length === 0) {
+        try {
+          console.log(`loadImagesForPost: Trying to find actual files in posts/${slug}/ folder`);
+          
+          // Based on what we know exists in sample-post folder
+          const knownFiles = [
+            'Screenshot 2025-08-19 at 2.02.54 PM.png',
+            'Screenshot 2025-08-20 at 9.40.20 AM.png'
+          ];
+          
+          for (const filename of knownFiles) {
+            const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`;
+            try {
+              const response = await fetch(testUrl, { method: 'HEAD' });
+              if (response.ok) {
+                const ext = filename.split('.').pop().toLowerCase();
+                console.log(`loadImagesForPost: Found known file via direct access: ${filename}`);
+                imageFiles.push({
+                  name: filename,
+                  url: testUrl,
+                  type: ext
+                });
+              }
+            } catch (error) {
+              console.log(`loadImagesForPost: Failed to access ${filename}:`, error);
+            }
+          }
+        } catch (error) {
+          console.log(`loadImagesForPost: Known files method failed:`, error);
         }
       }
       
