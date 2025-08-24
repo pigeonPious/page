@@ -751,43 +751,17 @@ body {
   clear: both;
 }
 
-/* PiousPigeon dropdown menu */
-.pigeon-label {
-  position: relative;
-}
-
-.pigeon-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: var(--menu-bg, #333);
-  border: 1px solid var(--border, #555);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  min-width: 200px;
-  z-index: 1000;
-  display: none;
-  margin-top: 4px;
-}
-
-.pigeon-label:hover .pigeon-dropdown {
-  display: block;
-}
-
-.pigeon-dropdown .menu-entry {
-  padding: 8px 12px;
-  color: var(--menu-fg, #fff);
+/* PiousPigeon menu styling */
+.menu-item[data-menu="pigeon"] > .label {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--fg);
   cursor: pointer;
-  transition: background-color 0.15s ease;
-  border-bottom: 1px solid var(--border, #555);
+  user-select: none;
 }
 
-.pigeon-dropdown .menu-entry:last-child {
-  border-bottom: none;
-}
-
-.pigeon-dropdown .menu-entry:hover {
-  background: var(--hover-bg, #555);
+.menu-item[data-menu="pigeon"]:hover > .label {
+  text-decoration: underline;
 }
 
 /* Bottom-right logo slot */

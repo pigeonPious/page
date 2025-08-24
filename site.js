@@ -147,12 +147,12 @@ class SimpleBlog {
     this.setupSelectionMonitoring();
     
     // Check authentication status
-    this.checkAndUpdateAuthStatus();
+
     
 
     
     // Load logo from configuration
-    this.loadLogoFromConfig();
+
     
     // Ensure logo is applied when DOM is ready
     setTimeout(() => this.ensureLogoApplied(), 1000);
@@ -213,9 +213,9 @@ class SimpleBlog {
           </div>
           
         
-        <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: pointer; user-select: none; position: relative;">
-          PiousPigeon
-          <div class="pigeon-dropdown">
+        <div class="menu-item" data-menu="pigeon" style="margin-left: auto;">
+          <div class="label">PiousPigeon</div>
+          <div class="menu-dropdown">
             <div class="menu-entry" id="bluesky-link">Bluesky: @piouspigeon.bsky.social</div>
             <div class="menu-entry" id="twitter-link">Twitter</div>
             <div class="menu-entry" id="itch-link">Itch: piouspigeon.itch.io</div>
@@ -235,9 +235,21 @@ class SimpleBlog {
     this.bindEventListener(document.getElementById('open-github-btn'), 'click', (e) => { e.preventDefault(); this.openCurrentPostInGitHub(); });
     
     // Bind PiousPigeon dropdown events
-    this.bindEventListener(document.getElementById('bluesky-link'), 'click', (e) => { e.preventDefault(); window.open('https://bsky.app/profile/piouspigeon.bsky.social', '_blank'); });
-    this.bindEventListener(document.getElementById('itch-link'), 'click', (e) => { e.preventDefault(); window.open('https://piouspigeon.itch.io', '_blank'); });
-    this.bindEventListener(document.getElementById('twitter-link'), 'click', (e) => { e.preventDefault(); /* Twitter link to be added later */ });
+    this.bindEventListener(document.getElementById('bluesky-link'), 'click', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation(); // Prevent menu from closing
+      window.open('https://bsky.app/profile/piouspigeon.bsky.social', '_blank'); 
+    });
+    this.bindEventListener(document.getElementById('itch-link'), 'click', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation(); // Prevent menu from closing
+      window.open('https://piouspigeon.itch.io', '_blank'); 
+    });
+    this.bindEventListener(document.getElementById('twitter-link'), 'click', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation(); // Prevent menu from closing
+      /* Twitter link to be added later */ 
+    });
   }
 
   // Helper Methods
@@ -249,90 +261,9 @@ class SimpleBlog {
 
 
 
-  // Enhanced cache clearer for new builds
-  clearAllCache() {
-    console.log(' Clearing all cache for new build...');
-    
-    // Clear all localStorage items
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        keysToRemove.push(key);
-      }
-    }
-    
-    console.log(' Clearing localStorage keys:', keysToRemove);
-    
-    keysToRemove.forEach(key => {
-      const oldValue = localStorage.getItem(key);
-      localStorage.removeItem(key);
-      console.log(` Cleared: ${key} = ${oldValue}`);
-    });
-    
-    // Clear sessionStorage
-    sessionStorage.clear();
-    console.log(' Cleared sessionStorage');
-    
-    // Clear any cached data in memory
-    this.posts = [];
-    this.currentPost = null;
-    
-    // Force reload to ensure fresh state
-    console.log(' Cache cleared, reloading page...');
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-    
-    console.log('All cache cleared and page will reload');
-  }
-  
-  // Function to increment build word (called automatically on new builds)
-  incrementBuildWord() {
-    console.log('Incrementing build word for new build...');
-    
-    // Get current build counter
-    const currentCounter = parseInt(localStorage.getItem('buildCounter') || '1');
-    const newCounter = currentCounter + 1;
-    
-    // Update build counter
-    localStorage.setItem('buildCounter', newCounter.toString());
-    
-    // Update build word display
-    const buildWordElement = document.getElementById('build-word');
-    if (buildWordElement) {
-      buildWordElement.textContent = `build-${newCounter}`;
-    }
-    
-    console.log(` Build word incremented from ${currentCounter} to ${newCounter}`);
-    console.log('Build word updated successfully');
-  }
 
-  async validateGitHubToken() {
-    try {
-      const token = localStorage.getItem('github_token');
-      if (!token) {
-        alert('No GitHub token found in localStorage');
-        return;
-      }
-      
-      console.log('Testing GitHub token...');
-      const response = await fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        console.log('GitHub token valid:', userData);
-      } else {
-        console.log('GitHub token invalid:', response.status, response.statusText);
-      }
-    } catch (error) {
-      console.error('Error testing GitHub token:', error);
-    }
-  }
+
+
 
 
 
@@ -728,17 +659,9 @@ class SimpleBlog {
       this.captureSelectionAndMakeNote();
     });
     
-    // Force reindex button
-    this.addClickHandler('#force-reindex-button', () => {
-      console.log('Force reindex button clicked');
-      this.forceReindexPostsImproved();
-    });
+
     
-    // Check rate limit button
-    this.addClickHandler('#check-rate-limit', () => {
-      console.log('Check rate limit button clicked');
-      this.checkRateLimit();
-    });
+
     
     // Edit post button
     this.addClickHandler('#edit-post-button', () => {
@@ -797,11 +720,7 @@ class SimpleBlog {
       this.openCurrentPostInGitHub();
     });
 
-    // PiousPigeon logo click - go to most recent post
-    this.addClickHandler('#piousPigeon-logo', () => {
-      console.log('🕊️ PiousPigeon logo clicked - navigating to most recent post');
-      this.navigateToMostRecentPost();
-    });
+
 
 
 
@@ -871,7 +790,7 @@ class SimpleBlog {
     
     this.addClickHandler('#test-github-token', () => {
       console.log('Test GitHub token button clicked');
-      this.validateGitHubToken();
+  
     });
     
     // Social sharing buttons
@@ -901,168 +820,7 @@ class SimpleBlog {
     });
   }
 
-  // Navigate to the most recent post
-  async navigateToMostRecentPost() {
-    try {
-      // Use dynamic GitHub repository scanning to find ALL posts
-      
-      // Method 1: Try GitHub API first
-      let directoryContents = null;
-      try {
-        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
-        if (response.ok) {
-          directoryContents = await response.json();
-        }
-      } catch (error) {
-        // Method 1 failed silently
-      }
-      
-      // Method 2: Try with headers if Method 1 failed
-      if (!directoryContents) {
-        try {
-          const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts', {
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'User-Agent': 'SimpleBlog/1.0'
-            }
-          });
-          if (response.ok) {
-            directoryContents = await response.json();
-            console.log('🕊️ Method 2 successful - found', directoryContents.length, 'items via GitHub API with headers');
-          }
-        } catch (error) {
-          console.log('🕊️ Method 2 failed:', error);
-        }
-      }
-      
-      // Method 3: Try GitHub Tree API if Methods 1-2 failed
-      if (!directoryContents) {
-        try {
-          const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-          if (response.ok) {
-            const treeData = await response.json();
-            // Filter for posts in the posts directory
-            const postFiles = treeData.tree.filter(item => 
-              item.path.startsWith('posts/') && 
-              item.path.endsWith('.json') && 
-              item.path !== 'posts/index.json'
-            );
-            
-            if (postFiles.length > 0) {
-              console.log('🕊️ Method 3 successful - found', postFiles.length, 'posts via tree API');
-              // Convert tree format to directory format for compatibility
-              directoryContents = postFiles.map(item => ({
-                type: 'file',
-                name: item.path.replace('posts/', ''),
-                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
-              }));
-            }
-          }
-        } catch (error) {
-          console.log('🕊️ Method 3 failed:', error);
-        }
-      }
-      
-      // Method 4: Try using the repository's default branch contents
-      if (!directoryContents) {
-        try {
-          const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts?ref=main');
-          if (response.ok) {
-            directoryContents = await response.json();
-            console.log('🕊️ Method 4 successful');
-          }
-        } catch (error) {
-          console.log('🕊️ Method 4 failed:', error);
-        }
-      }
-      
-                        // Use GitHub's public directory browsing to discover posts
-        if (!directoryContents) {
-          try {
-            console.log('🕊️ Using GitHub public directory browsing...');
-            
-            // Use GitHub's public directory browsing to discover posts (with CORS proxy)
-            const corsProxy = 'https://corsproxy.io/?';
-            const postsDirResponse = await fetch(corsProxy + 'https://github.com/pigeonPious/page/tree/main/posts');
-            if (postsDirResponse.ok) {
-              const htmlContent = await postsDirResponse.text();
-              
-              // Parse HTML to find all JSON files in the posts directory
-              const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
-              if (jsonFileMatches) {
-                const postFiles = jsonFileMatches
-                  .map(match => match.match(/href="([^"]+)"/)[1])
-                  .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
-                  .map(href => {
-                    const filename = href.split('/').pop();
-                    return {
-                      type: 'file',
-                      name: filename,
-                      download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-                    };
-                  });
-                
-                if (postFiles.length > 0) {
-                  directoryContents = postFiles;
-                  console.log('🕊️ Successfully discovered posts via GitHub directory browsing');
-                }
-              }
-            }
-            
-            if (!directoryContents) {
-              console.log('🕊️ GitHub directory browsing failed');
-            }
-          } catch (error) {
-            console.log('🕊️ GitHub directory browsing failed:', error);
-          }
-        }
-      
-      if (directoryContents) {
-        // Filter for JSON files (posts) and exclude index.json
-        const postFiles = directoryContents.filter(item => 
-          item.type === 'file' && 
-          item.name.endsWith('.json') && 
-          item.name !== 'index.json'
-        );
-        
-        console.log('🕊️ Found', postFiles.length, 'post files in repository');
-        
-        let mostRecentPost = null;
-        let mostRecentDate = new Date(0);
-        
-        // Fetch and check each post to find the most recent
-        for (const postFile of postFiles) {
-          try {
-            const postResponse = await fetch(postFile.download_url);
-            if (postResponse.ok) {
-              const postData = await postResponse.json();
-              
-              // Get the actual commit date from GitHub instead of using hardcoded date
-              const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
-              const postDate = new Date(commitDate);
-              
-              if (postDate > mostRecentDate) {
-                mostRecentDate = postDate;
-                mostRecentPost = postFile.name.replace('.json', '');
-              }
-            }
-          } catch (error) {
-            console.warn(`Could not fetch post ${postFile.name}:`, error);
-          }
-        }
-        
-        if (mostRecentPost) {
-          window.location.href = `index.html#${mostRecentPost}`;
-          return;
-        }
-      }
-      
-      // Stay on current page if no posts found
-      
-    } catch (error) {
-      console.error('Error navigating to most recent post:', error);
-    }
-  }
+
 
   addClickHandler(selector, handler) {
     const elements = document.querySelectorAll(selector);
@@ -1106,12 +864,7 @@ class SimpleBlog {
     });
     
     // Check authentication status for admin items
-    this.checkAuthentication().then(isAuthenticated => {
-      this.isAuthenticated = isAuthenticated;
-      adminOnlyItems.forEach(item => {
-        item.style.display = isAuthenticated ? 'block' : 'none';
-      });
-    });
+    
     
     // Setup hover note preview if we're on the editor page
     if (isEditorPage) {
@@ -1610,680 +1363,14 @@ class SimpleBlog {
       submenu.innerHTML = '<div class="menu-entry" style="padding: 8px 15px; color: var(--danger-color, #dc3545); font-style: italic;">Error loading posts</div>';
     }
   }
+
+
+
+
   
-  // Force reindex all posts across the site (admin only)
-  async forceReindexPosts() {
-    console.log('Force reindex started');
-    
-    // Check if user is admin
-    if (!this.isAdmin()) {
-      console.log('Non-admin user attempted to force reindex');
-      const statusElement = document.getElementById('github-status');
-      if (statusElement) {
-        statusElement.textContent = 'Admin only';
-        statusElement.style.color = '#dc3545'; // Red
-        
-        // Reset status after 3 seconds
-        setTimeout(() => {
-          statusElement.textContent = 'not connected';
-          statusElement.style.color = '';
-        }, 3000);
-      }
-      return;
-    }
-    
-    try {
-      // Clear cached posts
-      this.posts = null;
-      localStorage.removeItem('posts');
-      
-      // Show loading message
-      const statusElement = document.getElementById('github-status');
-      const originalStatus = statusElement ? statusElement.textContent : 'not connected';
-      if (statusElement) {
-        statusElement.textContent = 'Reindexing...';
-        statusElement.style.color = '#ffa500'; // Orange
-      }
-      
-      // Use dynamic GitHub repository scanning (Method 5) instead of index.json
-      console.log('Force reindex: Using dynamic GitHub repository scanning...');
-      
-      // Use the same reliable method as sitemap (Method 5) - bypass GitHub API entirely
-      let directoryContents = null;
-      
-      // Method 1: Try GitHub API first
-      try {
-        const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
-        if (response.ok) {
-          directoryContents = await response.json();
-          console.log('Force reindex: Method 1 successful - found', directoryContents.length, 'items via GitHub API');
-        }
-      } catch (error) {
-        console.log('Force reindex: Method 1 failed:', error);
-      }
-      
-      // Method 2: Try with headers if Method 1 failed
-      if (!directoryContents) {
-        try {
-          const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts', {
-            headers: {
-              'Accept': 'application/vnd.github.v3+json',
-              'User-Agent': 'SimpleBlog/1.0'
-            }
-          });
-          if (response.ok) {
-            directoryContents = await response.json();
-            console.log('Force reindex: Method 2 successful - found', directoryContents.length, 'items via GitHub API with headers');
-          }
-        } catch (error) {
-          console.log('Force reindex: Method 2 failed:', error);
-        }
-      }
-      
-      // Method 3: Try GitHub Tree API if Methods 1-2 failed
-      if (!directoryContents) {
-        try {
-          const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-          if (response.ok) {
-            const treeData = await response.json();
-            // Filter for posts in the posts directory
-            const postFiles = treeData.tree.filter(item => 
-              item.path.startsWith('posts/') && 
-              item.path.endsWith('.json') && 
-              item.path !== 'posts/index.json'
-            );
-            
-            if (postFiles.length > 0) {
-              console.log('Force reindex: Method 3 successful - found', postFiles.length, 'posts via tree API');
-              // Convert tree format to directory format for compatibility
-              directoryContents = postFiles.map(item => ({
-                type: 'file',
-                name: item.path.replace('posts/', ''),
-                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}`
-              }));
-            }
-          }
-        } catch (error) {
-          console.log('Force reindex: Method 3 failed:', error);
-        }
-      }
-      
-      // Method 4: Try using the repository's default branch contents
-      if (!directoryContents) {
-        try {
-          const response = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts?ref=main');
-          if (response.ok) {
-            directoryContents = await response.json();
-            console.log('Force reindex: Method 4 successful');
-          }
-        } catch (error) {
-          console.log('Force reindex: Method 4 failed:', error);
-        }
-      }
-      
-      // Use GitHub's public directory browsing to discover posts
-      if (!directoryContents) {
-        try {
-          console.log('Force reindex: Using GitHub public directory browsing...');
-          
-          // Use GitHub's public directory browsing to discover posts (with CORS proxy)
-          const corsProxy = 'https://corsproxy.io/?';
-          const postsDirResponse = await fetch(corsProxy + 'https://github.com/pigeonPious/page/tree/main/posts');
-          if (postsDirResponse.ok) {
-            const htmlContent = await postsDirResponse.text();
-            
-            // Parse HTML to find all JSON files in the posts directory
-            const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
-            if (jsonFileMatches) {
-              const postFiles = jsonFileMatches
-                .map(match => match.match(/href="([^"]+)"/)[1])
-                .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
-                .map(href => {
-                  const filename = href.split('/').pop();
-                  return {
-                    type: 'file',
-                    name: filename,
-                    download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}`
-                  };
-                });
-              
-              if (postFiles.length > 0) {
-                directoryContents = postFiles;
-                console.log('Force reindex: Successfully discovered posts via GitHub directory browsing');
-              }
-            }
-          }
-          
-          if (!directoryContents) {
-            console.log('Force reindex: GitHub directory browsing failed');
-          }
-        } catch (error) {
-          console.log('Force reindex: GitHub directory browsing failed:', error);
-        }
-      }
-      
-      if (directoryContents) {
-        // Filter for JSON files (posts) and exclude index.json
-        const postFiles = directoryContents.filter(item => 
-          item.type === 'file' && 
-          item.name.endsWith('.json') && 
-          item.name !== 'index.json'
-        );
-        
-        console.log('Force reindex: Found', postFiles.length, 'post files in repository');
-        
-        let allPosts = [];
-        
-        // Fetch each post file to get metadata
-        for (const postFile of postFiles) {
-          try {
-            const postResponse = await fetch(postFile.download_url);
-            if (postResponse.ok) {
-              const postData = await postResponse.json();
-              if (postData && postData.title) {
-                // Get the actual commit date from GitHub instead of using hardcoded date
-                const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
-                
-                allPosts.push({
-                  slug: postFile.name.replace('.json', ''),
-                  title: postData.title,
-                  date: commitDate, // Use actual GitHub commit date
-                  keywords: postData.keywords || 'general'
-                });
-              }
-            }
-          } catch (error) {
-            console.warn(`Could not fetch post ${postFile.name}:`, error);
-          }
-        }
-      }
-      
-      // Sort by date (newest first)
-      allPosts.sort((a, b) => {
-        const dateA = a.date ? new Date(a.date) : new Date(0);
-        const dateB = b.date ? new Date(b.date) : new Date(0);
-        return dateB - dateA;
-      });
-      
-      // Update local posts array
-      this.posts = allPosts;
-      localStorage.setItem('posts', JSON.stringify(allPosts));
-      
-      console.log('Force reindex completed using repository scanning, posts updated:', allPosts.length);
-              
-              // Show success message
-              if (statusElement) {
-        statusElement.textContent = 'Reindexed from GitHub!';
-        statusElement.style.color = '#28a745'; // Green
-                
-                // Reset status after 3 seconds
-                setTimeout(() => {
-                  statusElement.textContent = originalStatus;
-                  statusElement.style.color = '';
-                }, 3000);
-              }
-              
-              // Update any open submenus
-              this.updateOpenSubmenus();
-      
-    } catch (error) {
-      console.error('Force reindex failed:', error);
-      
-      // Show error message
-      const statusElement = document.getElementById('github-status');
-      if (statusElement) {
-        statusElement.textContent = 'Reindex failed';
-        statusElement.style.color = '#dc3545'; // Red
-        
-        // Reset status after 3 seconds
-        setTimeout(() => {
-          statusElement.textContent = originalStatus;
-          statusElement.style.color = '';
-        }, 3000);
-      }
-    }
-  }
 
-  // Improved force reindex function that actually works
-  async forceReindexPostsImproved() {
-    console.log('Improved force reindex started');
-    
-    // Check if user is admin
-    if (!this.isAdmin()) {
-      console.log('Non-admin user attempted to force reindex');
-      this.printToConsole('Admin only - you need to be authenticated with GitHub');
-      return;
-    }
-    
-    try {
-      this.printToConsole('Starting improved force reindex...');
-      
-      // Clear cached posts
-      this.posts = null;
-      localStorage.removeItem('posts');
-      
-      // First, try to scan the local posts directory to see what files actually exist
-      console.log('Scanning local posts directory...');
-      this.printToConsole('Scanning local posts directory...');
-      
-      // Use GitHub repository scanning (Method 5)
-      let localPosts = [];
-      try {
-        console.log('Improved force reindex: Using GitHub repository scanning...');
-        this.printToConsole('Using GitHub repository scanning...');
-        
-        // Use GitHub tree API to get all posts dynamically
-        const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-        if (treeResponse.ok) {
-          const treeData = await treeResponse.json();
-          
-          // Filter for JSON files in the posts directory
-          const postFiles = treeData.tree.filter(item => 
-            item.path.startsWith('posts/') && 
-            item.path.endsWith('.json') && 
-            item.path !== 'posts/index.json'
-          );
-          
-          // Fetch each post file
-          for (const postFile of postFiles) {
-            try {
-              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/${postFile.path}`;
-              const response = await fetch(postUrl);
-              
-              if (response.ok) {
-                const postData = await response.json();
-                if (postData && postData.title) {
-                  // Get the actual commit date from GitHub
-                  const commitDate = await this.getCommitDate(postFile.path);
-                  
-                  localPosts.push({
-                    slug: postFile.path.replace('posts/', '').replace('.json', ''),
-                    title: postData.title,
-                    date: commitDate,
-                    keywords: postData.keywords || 'general'
-                  });
-                }
-              }
-            } catch (error) {
-              console.warn(`Could not fetch post ${postFile.path}:`, error);
-            }
-          }
-          
-          console.log('Found', localPosts.length, 'posts from repository scanning');
-          this.printToConsole(`Found ${localPosts.length} posts from repository scanning`);
-        } else {
-          console.warn('GitHub tree API failed with status:', treeResponse.status);
-          this.printToConsole('GitHub tree API failed');
-        }
-      } catch (fallbackError) {
-        console.warn('Could not load posts from repository scanning:', fallbackError);
-        this.printToConsole('Could not load posts from repository scanning');
-      }
-      
-      // If no local index.json, try to scan the posts directory directly
-      if (localPosts.length === 0) {
-        console.log('No local index.json found, scanning posts directory...');
-        this.printToConsole('No local index.json found, scanning posts directory...');
-        
-        try {
-          // Try to fetch the posts directory listing
-          const postsResponse = await fetch('posts/');
-          if (postsResponse.ok) {
-            const postsText = await postsResponse.text();
-            
-            // Parse the directory listing to find .json files
-            const jsonFiles = postsText.match(/href="([^"]+\.json)"/g);
-            if (jsonFiles) {
-              const postFiles = jsonFiles
-                .map(href => href.match(/href="([^"]+)"/)[1])
-                .filter(file => file !== 'index.json' && file.endsWith('.json'));
-              
-              console.log('Found', postFiles.length, 'post files in directory');
-              this.printToConsole(`Found ${postFiles.length} post files in directory`);
-              
-              // Load each post file to build the index
-              localPosts = [];
-              for (const postFile of postFiles) {
-                try {
-                  const postResponse = await fetch(`posts/${postFile}`);
-                  if (postResponse.ok) {
-                    const postData = await postResponse.json();
-                    if (postData && postData.title) {
-                      localPosts.push({
-                        title: postData.title,
-                        filename: postFile,
-                        date: postData.date || new Date().toISOString(),
-                        tags: postData.tags || []
-                      });
-                    }
-                  }
-                } catch (postError) {
-                  console.warn('Could not load post file:', postFile, postError);
-                }
-              }
-              
-              console.log('Built local index from', localPosts.length, 'post files');
-              this.printToConsole(`Built local index from ${localPosts.length} post files`);
-            }
-          }
-        } catch (dirError) {
-          console.warn('Could not scan posts directory:', dirError);
-          this.printToConsole('Could not scan posts directory');
-        }
-        
-        // If still no local posts found, try manual fallback regardless
-        if (localPosts.length === 0) {
-          console.log('Trying manual fallback scan...');
-          this.printToConsole('Trying manual fallback scan...');
-          
-          // Try one more time with GitHub tree API as fallback
-          try {
-            const treeResponse = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-            if (treeResponse.ok) {
-              const treeData = await treeResponse.json();
-              
-              // Filter for JSON files in the posts directory
-              const postFiles = treeData.tree.filter(item => 
-                item.path.startsWith('posts/') && 
-                item.path.endsWith('.json') && 
-                item.path !== 'posts/index.json'
-              );
-              
-              for (const postFile of postFiles) {
-                try {
-                  const postResponse = await fetch(`https://raw.githubusercontent.com/pigeonPious/page/main/${postFile.path}`);
-              if (postResponse.ok) {
-                const postData = await postResponse.json();
-                if (postData && postData.title) {
-                  localPosts.push({
-                    title: postData.title,
-                        slug: postData.slug || postFile.path.replace('posts/', '').replace('.json', ''),
-                        filename: postFile.path.replace('posts/', ''),
-                    date: postData.date || new Date().toISOString(),
-                    tags: postData.keywords || postData.tags || []
-                  });
-                }
-              }
-            } catch (postError) {
-                  console.warn('Could not load post file:', postFile.path, postError);
-            }
-              }
-            }
-          } catch (fallbackError) {
-            console.warn('Final fallback also failed:', fallbackError);
-            this.printToConsole('Final fallback also failed');
-          }
-          
-          if (localPosts.length > 0) {
-            console.log('Manual fallback successful, found', localPosts.length, 'posts');
-            this.printToConsole(`Manual fallback successful, found ${localPosts.length} posts`);
-            
-            // Create a local index.json file for future use
-            try {
-              const indexContent = JSON.stringify(localPosts, null, 2);
-              const blob = new Blob([indexContent], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              
-              // Create a download link to save the index.json
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = 'index.json';
-              a.style.display = 'none';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-              
-              console.log('Created index.json with', localPosts.length, 'posts');
-              this.printToConsole(`Created index.json with ${localPosts.length} posts - save this to posts/ directory`);
-            } catch (saveError) {
-              console.warn('Could not create index.json:', saveError);
-              this.printToConsole('Could not create index.json automatically');
-            }
-          }
-        }
-      }
-      
-      // Now try to get fresh data from GitHub
-      console.log('Attempting to fetch fresh posts from GitHub...');
-      this.printToConsole('Attempting to fetch fresh posts from GitHub...');
-      
-      const timestamp = Date.now();
-      const indexUrl = `https://api.github.com/repos/pigeonPious/page/contents/posts/index.json?t=${timestamp}`;
-      
-      const response = await fetch(indexUrl);
-      if (response.ok) {
-        const indexData = await response.json();
-        let allPosts = [];
-        
-        // GitHub API returns content in base64, need to decode
-        if (indexData.content && indexData.encoding === 'base64') {
-          try {
-            const decodedContent = atob(indexData.content);
-            const parsedData = JSON.parse(decodedContent);
-            
-            if (Array.isArray(parsedData)) {
-              allPosts = parsedData;
-            } else if (parsedData.posts && Array.isArray(parsedData.posts)) {
-              allPosts = parsedData.posts;
-            }
-            
-            console.log('GitHub API returned', allPosts.length, 'posts');
-            this.printToConsole(`GitHub API returned ${allPosts.length} posts`);
-            
-          } catch (decodeError) {
-            console.error('Error decoding GitHub content:', decodeError);
-            this.printToConsole('Error decoding GitHub content');
-            throw new Error('Failed to decode index content');
-          }
-        } else {
-          throw new Error('Unexpected GitHub API response format');
-        }
-        
-        // Update local posts array
-        this.posts = allPosts;
-        
-        // Cache the fresh posts
-        localStorage.setItem('posts', JSON.stringify(allPosts));
-        
-        console.log('Reindex complete. Found', allPosts.length, 'posts');
-        this.printToConsole(`Reindex complete. Found ${allPosts.length} posts`);
-        
-        // Update any open submenus
-        this.updateOpenSubmenus();
-        
-        // Force refresh the site map if it's open
-        if (this.currentSiteMap) {
-          console.log('Refreshing open site map...');
-          this.printToConsole('Refreshing open site map...');
-          this.hideSiteMap();
-          this.showSiteMap();
-        }
-        
-        return;
-        
-      } else if (response.status === 403 || response.status === 404) {
-        console.log(`GitHub API returned ${response.status} - using local posts as fallback`);
-        this.printToConsole(`GitHub API blocked (${response.status}) - using local posts as fallback`);
-        
-        // Use local posts when GitHub API is blocked
-        if (localPosts.length > 0) {
-          this.posts = localPosts;
-          localStorage.setItem('posts', JSON.stringify(localPosts));
-          
-          console.log('Reindex completed using local posts:', localPosts.length);
-          this.printToConsole(`Reindex completed using local posts: ${localPosts.length}`);
-          
-          // Try to save the rebuilt index back to the posts directory
-          try {
-            const indexContent = JSON.stringify(localPosts, null, 2);
-            const blob = new Blob([indexContent], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            // Create a download link to save the index.json
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'index.json';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            console.log('Index.json download initiated');
-            this.printToConsole('Index.json download initiated - save this to posts/ directory');
-          } catch (saveError) {
-            console.warn('Could not save index.json:', saveError);
-            this.printToConsole('Could not save index.json automatically');
-          }
-          
-          // Update any open submenus
-          this.updateOpenSubmenus();
-          
-          // Force refresh the site map if it's open
-          if (this.currentSiteMap) {
-            console.log('Refreshing open site map...');
-            this.printToConsole('Refreshing open site map...');
-            this.hideSiteMap();
-            this.showSiteMap();
-          }
-          
-          return;
-        } else {
-          // Try one more fallback - check if we have any posts in memory
-          if (this.posts && this.posts.length > 0) {
-            console.log('Using posts from memory as final fallback:', this.posts.length);
-            this.printToConsole(`Using posts from memory as final fallback: ${this.posts.length}`);
-            localPosts = this.posts;
-          } else {
-            throw new Error('No local posts found and GitHub API blocked. Try refreshing the page first.');
-          }
-        }
-        
-      } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-    } catch (error) {
-      console.error('Force reindex failed:', error);
-      this.printToConsole(`Force reindex failed: ${error.message}`);
-      
-      // Try to use whatever posts we have as last resort
-      if (this.posts && this.posts.length > 0) {
-        console.log('Using existing posts as fallback');
-        this.printToConsole('Using existing posts as fallback');
-        this.updateOpenSubmenus();
-      }
-    }
-  }
 
-  // Force push the posts index to GitHub (bypasses SHA requirement)
-  async forcePushIndexToGitHub(posts) {
-    console.log('forcePushIndexToGitHub called with', posts.length, 'posts');
-    
-    // This method is deprecated - no more index.json updates
-    console.log('Index pushing deprecated - using dynamic repository scanning');
-    
-    // Update local posts array instead
-    this.posts = posts;
-    localStorage.setItem('posts', JSON.stringify(posts));
-    
-    console.log('Local posts array updated with', posts.length, 'posts');
-                return true;
-  }
 
-  // Fast reindex for just the current/new post
-  async fastReindexCurrentPost() {
-    console.log('⚡ Fast reindex for current post');
-    
-    try {
-      // Get current post data from editor
-      const postTitle = document.getElementById('postTitle')?.value || '';
-      const postContent = document.getElementById('visualEditor')?.innerHTML || '';
-      const currentFlags = localStorage.getItem('current_post_flags') || '';
-      
-      if (!postTitle.trim()) {
-        console.log('No title found for fast reindex');
-        return;
-      }
-      
-      // Create a temporary post object for the current post
-      const currentPost = {
-        slug: postTitle.toLowerCase().replace(/[^a-z0-9]/gi, '-'),
-        title: postTitle,
-        date: new Date().toISOString().split('T')[0].replace(/-/g, '-'),
-        keywords: currentFlags,
-        content: postContent
-      };
-      
-      // Update local posts array
-      if (!this.posts) this.posts = [];
-      
-      // Find if this post already exists
-      const existingIndex = this.posts.findIndex(p => p.slug === currentPost.slug);
-      if (existingIndex >= 0) {
-        // Update existing post
-        this.posts[existingIndex] = { ...this.posts[existingIndex], ...currentPost };
-        console.log('Updated existing post in local index');
-      } else {
-        // Add new post
-        this.posts.unshift(currentPost); // Add to beginning
-        console.log('Added new post to local index');
-      }
-      
-      // Update localStorage cache
-      localStorage.setItem('posts', JSON.stringify(this.posts));
-      
-      // Update any open submenus
-      this.updateOpenSubmenus();
-      
-      console.log('⚡ Fast reindex completed for:', currentPost.title);
-      
-    } catch (error) {
-      console.error('Fast reindex error:', error);
-    }
-  }
-  
-  // Update any open submenus with fresh data
-  updateOpenSubmenus() {
-    // Update All Posts submenu if open
-    const allPostsSubmenu = document.querySelector('#all-posts-menu .submenu');
-    if (allPostsSubmenu && this.posts) {
-      this.displayPostsInSubmenu(allPostsSubmenu, this.posts);
-    }
-    
-    // Update Categories submenu if open
-    const categoriesSubmenu = document.querySelector('#categories-menu .submenu');
-    if (categoriesSubmenu && this.posts) {
-      this.displayCategoriesInSubmenu(categoriesSubmenu, this.posts);
-    }
-  }
-
-  async scanLocalPostsDirectory(allPosts) {
-    try {
-      console.log('All Posts submenu: Scanning local posts directory...');
-      
-      // Try to get a list of local posts by checking common post files
-      // Since we can't directly list directory contents in the browser,
-      // we'll try to load posts we know about and also check for any index.json
-      
-      // No more local file scanning - use GitHub repository data
-      console.log('All Posts submenu: Using GitHub repository data instead of local files');
-      
-      // The posts should already be loaded from GitHub in this.posts
-      if (this.posts && this.posts.length > 0) {
-        console.log('All Posts submenu: Using', this.posts.length, 'posts from GitHub repository');
-        // Posts are already loaded and available
-      } else {
-        console.log('All Posts submenu: No posts loaded yet, will load from GitHub');
-      }
-      
-      console.log('All Posts submenu: Local directory scan complete, total posts:', allPosts.length);
-      
-    } catch (error) {
-      console.error('All Posts submenu: Error scanning local directory:', error);
-    }
-  }
 
   // Get the commit date for a specific file from GitHub
   async getCommitDate(filePath) {
@@ -4642,9 +3729,6 @@ class SimpleBlog {
     } else if (command === 'posts') {
       this.showPostsInfo();
     } else if (command === 'force-reindex') {
-      this.forceReindexPostsImproved();
-    } else if (command === 'check-rate-limit') {
-      this.checkRateLimit();
     } else if (command === 'logout') {
       this.logout();
     } else if (command === 'link') {
@@ -5268,36 +4352,7 @@ class SimpleBlog {
     }
   }
   
-  // Load logo from configuration on page load
-  async loadLogoFromConfig() {
-    try {
-      // First check localStorage for user preference
-      const userLogo = localStorage.getItem('ppPage_logo');
-      if (userLogo) {
-        console.log(`🎭 Loading user's logo preference: ${userLogo}`);
-        this.applyLogo(`assets/${userLogo}`);
-        return;
-      }
-      
-      // Try to load from GitHub logo config
-      const response = await fetch('https://raw.githubusercontent.com/pigeonPious/page/main/logo-config.json');
-      if (response.ok) {
-        const config = await response.json();
-        if (config.filename && config.url) {
-          console.log(`🎭 Loading logo from GitHub config: ${config.filename}`);
-          this.applyLogo(config.url);
-          return;
-        }
-      }
-      
-      // Fallback to default (no image)
-      console.log('🎭 Using default logo (no image)');
-      
-    } catch (error) {
-      // Silently fall back to default
-      console.log('🎭 Using default logo (no image, config load failed)');
-    }
-  }
+
   
   // Ensure logo is applied when DOM is ready
   ensureLogoApplied() {
@@ -6394,16 +5449,7 @@ class SimpleBlog {
         return;
       }
       
-      // Check if user is authenticated
-              console.log('Checking authentication...');
-      const isAuthenticated = await this.checkAuthentication();
-              console.log('Authentication result:', isAuthenticated);
-      if (!isAuthenticated) {
-        console.log('User not authenticated, redirecting to login');
-        this.showGitHubLogin();
-        return;
-      }
-      console.log('Authentication successful, proceeding with publish...');
+
       
       // Get current flags from localStorage (more reliable than DOM)
       const currentFlags = localStorage.getItem('current_post_flags') || '';
@@ -6582,62 +5628,7 @@ class SimpleBlog {
 
 
 
-  async checkAuthentication() {
-    try {
-      // Check for OAuth token first, then fall back to PAT
-      const oauthToken = localStorage.getItem('github_oauth_token');
-      const patToken = localStorage.getItem('github_token');
-      const tokenType = localStorage.getItem('github_token_type');
-      
-      let token = null;
-      let authMethod = null;
-      
-      if (oauthToken && tokenType === 'oauth') {
-        token = oauthToken;
-        authMethod = 'OAuth';
-      } else if (patToken) {
-        token = patToken;
-        authMethod = 'PAT';
-      }
-      
-      if (!token) {
-        console.log('No GitHub token found in localStorage');
-        return false;
-      }
-      
-      // Verify token by making a test API call
-      const response = await fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        // Check if user is the admin (pigeonPious)
-        const isAdmin = userData.login === 'pigeonPious';
-        console.log(`Authentication check: ${isAdmin ? 'SUCCESS' : 'FAILED'} - User: ${userData.login} (${authMethod})`);
-        return isAdmin;
-      } else {
-                  console.log(`Token validation failed with status: ${response.status} (${authMethod})`);
-        // Token might be expired, remove it
-        if (authMethod === 'OAuth') {
-          localStorage.removeItem('github_oauth_token');
-          localStorage.removeItem('github_token_type');
-        } else {
-          localStorage.removeItem('github_token');
-        }
-        return false;
-      }
-    } catch (error) {
-      console.error('Error checking authentication:', error);
-      // On error, remove the token to force re-authentication
-      localStorage.removeItem('github_oauth_token');
-      localStorage.removeItem('github_token');
-      localStorage.removeItem('github_token_type');
-      return false;
-    }
-  }
+
 
   // Helper method to check if current user is admin
   isAdmin() {
@@ -6670,74 +5661,9 @@ class SimpleBlog {
     return null;
   }
 
-  async deletePost(slug) {
-    try {
-      const tokenInfo = this.getCurrentToken();
-      if (!tokenInfo) {
-        console.warn('deletePost: No GitHub token found');
-        return false;
-      }
-      
-      const token = tokenInfo.token;
-      console.log(` deletePost: Using ${tokenInfo.type} token`);
-      
-      // First, get the current SHA of the post file
-      const postResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`, {
-        headers: {
-          'Authorization': `token ${token}`,
-        }
-      });
-      
-      if (!postResponse.ok) {
-        console.error('deletePost: Post file not found:', postResponse.status);
-        return false;
-      }
-      
-      const postData = await postResponse.json();
-      
-      // Delete the post file
-      const deleteResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: `Delete post: ${slug}`,
-          sha: postData.sha,
-          branch: 'main'
-        })
-      });
-      
-      if (deleteResponse.ok) {
-        console.log('Post file deleted successfully');
-        
-        // Now update the index to remove the deleted post
-        const indexUpdated = await this.removePostFromIndex(slug);
-        if (indexUpdated) {
-          console.log('Post removed from index successfully');
-        } else {
-          console.warn('Failed to remove post from index');
-        }
-        
-        return true;
-      } else {
-        console.error('deletePost: Failed to delete post file:', deleteResponse.status);
-        return false;
-      }
-    } catch (error) {
-      console.error('deletePost: Error deleting post:', error);
-      return false;
-    }
-  }
 
-  async removePostFromIndex(slug) {
-    console.log('removePostFromIndex called for:', slug);
-    
-    // This method is deprecated - no more index.json updates
-    console.log('Index updating deprecated - using dynamic repository scanning');
-          return true;
-  }
+
+
   shareToBluesky() {
     console.log('🔵 shareToBluesky: Starting Bluesky share...');
     
@@ -6955,15 +5881,7 @@ class SimpleBlog {
           helpText.textContent = 'Authenticating...';
           helpText.style.color = 'var(--accent)';
           
-          try {
-            await this.authenticateWithToken(token);
-            // Success - page will reload
-          } catch (error) {
-            // Show error message
-            helpText.textContent = `Login failed: ${error.message}`;
-            helpText.style.color = 'var(--danger-color)';
-            input.focus();
-          }
+
         }
       } else if (e.key === 'Escape') {
         this.removeInputBox(inputBox);
@@ -6985,53 +5903,7 @@ class SimpleBlog {
     }, 100);
   }
 
-  // Check GitHub API rate limit status
-  async checkRateLimit() {
-    try {
-      const tokenInfo = this.getCurrentToken();
-      let headers = {
-        'Accept': 'application/vnd.github.v3+json'
-      };
-      
-      if (tokenInfo && tokenInfo.token) {
-        headers['Authorization'] = `token ${tokenInfo.token}`;
-      }
-      
-      const response = await fetch('https://api.github.com/rate_limit', { headers });
-      
-      if (response.ok) {
-        const rateLimitData = await response.json();
-        const core = rateLimitData.resources.core;
-        const search = rateLimitData.resources.search;
-        
-        console.log('Rate Limit Status:', {
-          core: {
-            limit: core.limit,
-            remaining: core.remaining,
-            reset: new Date(core.reset * 1000).toLocaleString(),
-            used: core.used
-          },
-          search: {
-            limit: search.limit,
-            remaining: search.remaining,
-            reset: new Date(search.reset * 1000).toLocaleString(),
-            used: search.used
-          }
-        });
-        
-        // Show rate limit status in the UI
-        this.showRateLimitStatus(core, search);
-        
-        return { core, search };
-      } else {
-        console.warn('Could not fetch rate limit info:', response.status);
-        return null;
-      }
-    } catch (error) {
-      console.error('Error checking rate limit:', error);
-      return null;
-    }
-  }
+
 
   // Show rate limit status in the UI
   showRateLimitStatus(core, search) {
@@ -7121,50 +5993,7 @@ class SimpleBlog {
     }, 10000);
   }
 
-  async authenticateWithToken(token) {
-    if (!token) {
-      throw new Error('Please enter a GitHub token');
-    }
-    
-    // Test the token with GitHub API
-    console.log('Testing GitHub token...');
-    
-    try {
-      // Test user info
-      const userResponse = await fetch('https://api.github.com/user', {
-        headers: { 'Authorization': `token ${token}` }
-      });
-      
-      if (!userResponse.ok) {
-        throw new Error(`Token validation failed: ${userResponse.status}`);
-      }
-      
-      const userData = await userResponse.json();
-      console.log('Token validated for user:', userData.login);
-      
-      // Test repository access
-      const repoResponse = await fetch('https://api.github.com/repos/pigeonPious/page', {
-        headers: { 'Authorization': `token ${token}` }
-      });
-      
-      if (!repoResponse.ok) {
-        throw new Error(`Repository access failed: ${repoResponse.status}`);
-      }
-      
-      console.log('Repository access confirmed');
-      
-      // Store the token
-      localStorage.setItem('github_token', token);
-      localStorage.setItem('github_user', userData.login);
-      
-      // Reload page immediately without confirmation
-      location.reload();
-      
-    } catch (error) {
-      console.error('Token validation failed:', error);
-      throw error; // Re-throw the error so the caller can handle it
-    }
-  }
+
 
   loadSavedFlags() {
     const savedFlags = localStorage.getItem('current_post_flags');
@@ -7228,24 +6057,7 @@ class SimpleBlog {
     console.log(` Hover note preview setup for ${noteLinks.length} elements`);
   }
 
-  async checkAndUpdateAuthStatus() {
-    try {
-      const isAuthenticated = await this.checkAuthentication();
-      this.updateAuthStatus(isAuthenticated);
-      
-      // Check if we're returning from OAuth callback
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('auth') === 'success') {
-        console.log('OAuth callback successful');
-        this.updateAuthStatus(true);
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      this.updateAuthStatus(false);
-    }
-  }
+
 
   updateAuthStatus(isAuthenticated) {
     const githubStatus = document.getElementById('github-status');
@@ -9978,13 +8790,7 @@ class SimpleBlog {
   async saveDraft() {
     console.log('Saving draft...');
     
-    // Check authentication first
-    const isAuthenticated = await this.checkAuthentication();
-    if (!isAuthenticated) {
-      this.showMenuStyle1Message('GitHub authentication required to save drafts', 'error');
-      this.showGitHubLogin();
-      return;
-    }
+
     
     const token = localStorage.getItem('github_token');
     if (!token) {
