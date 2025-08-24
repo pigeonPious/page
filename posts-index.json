@@ -1,6 +1,6 @@
 {
-  "generated_at": "2024-12-19T10:00:00",
-  "total_posts": 4,
+  "generated_at": "2025-01-23T10:00:00",
+  "total_posts": 5,
   "posts": [
     {
       "slug": "flags-demo",
@@ -33,6 +33,14 @@
       "keywords": "sample, demo, test",
       "filename": "sample-post.txt",
       "last_modified": "2024-12-19T10:00:00"
+    },
+    {
+      "slug": "video-demo",
+      "title": "Video Demo Post",
+      "date": "2025-01-23",
+      "keywords": "demo, video, tutorial, media",
+      "filename": "video-demo.txt",
+      "last_modified": "2025-01-23T10:00:00"
     }
   ]
 }

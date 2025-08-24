@@ -1,0 +1,39 @@
+# Video Demo Post
+
+This post demonstrates the new video support in the [IMAGE] syntax!
+
+## How it works
+
+The [IMAGE] syntax now supports both images and videos. Simply place your video files (like .mov, .mp4, .avi, or .webm) in the same folder as your post, and use [IMAGE] to display them.
+
+## Example
+
+[IMAGE]
+
+This will automatically load and display the first video file found in the post folder.
+
+## Supported formats
+
+- **Images**: jpg, jpeg, png, gif, webp, svg
+- **Videos**: mp4, mov, avi, webm
+
+## Features
+
+- Videos are displayed with native browser controls
+- Click any video to view it in full-screen overlay
+- Responsive design that works on all devices
+- Automatic format detection
+
+## Multiple videos
+
+[IMAGE]
+
+[IMAGE]
+
+You can use multiple [IMAGE] tags to display multiple videos or mix videos and images in the same post.
+
+## Notes
+
+- Videos are preloaded with metadata for better performance
+- The system automatically detects file types and renders them appropriately
+- All existing image functionality remains unchanged

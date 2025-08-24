@@ -653,6 +653,39 @@ body {
   pointer-events: auto; /* Allow image clicks */
 }
 
+/* Video preview overlay styles */
+#video-preview-overlay {
+  backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease;
+  overflow: hidden; /* Prevent any content from extending beyond overlay */
+  /* Ensure overlay is visible and clickable */
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+}
+
+#video-preview-overlay video {
+  transition: transform 0.2s ease;
+  display: block; /* Ensure proper block display */
+}
+
+#video-preview-overlay video:hover {
+  transform: scale(1.02);
+}
+
+/* Ensure video container properly constrains content */
+#video-preview-overlay > div {
+  overflow: hidden; /* Prevent video overflow */
+  max-width: 100%;
+  max-height: 100%;
+  pointer-events: none; /* Allow clicks to pass through to overlay */
+}
+
+/* Ensure videos can receive clicks */
+#video-preview-overlay video {
+  pointer-events: auto; /* Allow video clicks */
+}
+
 /* Ensure images in posts show they're clickable */
 .post-content img {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -715,7 +748,22 @@ body {
   color: var(--fg);
 }
 
-/* Post image styling */
+/* Post media styling */
+.post-media-content {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.post-media-content:hover {
+  transform: scale(1.02);
+}
+
+/* Post image styling (backward compatibility) */
 .post-image-content {
   max-width: 100%;
   height: auto;
@@ -727,6 +775,21 @@ body {
 }
 
 .post-image-content:hover {
+  transform: scale(1.02);
+}
+
+/* Post video styling */
+.post-video-content {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.post-video-content:hover {
   transform: scale(1.02);
 }
 

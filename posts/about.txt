@@ -14,7 +14,7 @@ PPPage is a minimalist blog platform designed for simplicity and ease of use. In
 
 - **Plain Text Posts**: Write in simple .txt format
 - **Hover Notes**: Add interactive notes using [display text:note content] syntax
-- **Image Support**: Embed images with [IMAGE], [IMAGEL], or [IMAGER] syntax
+- **Media Support**: Embed images and videos with [IMAGE], [IMAGEL], or [IMAGER] syntax
 - **Dynamic Discovery**: Automatically finds posts from your GitHub repository
 - **Responsive Design**: Works on all devices
 

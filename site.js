@@ -5,11 +5,11 @@
 
 // CACHE BUST: This file was last modified at 2025-01-23
 // If you see this comment, the file is being served fresh
-// Version: 2.0 - Dynamic GitHub Repository Scanning
+// Version: 2.2 - Dynamic GitHub Repository Scanning with Video Support
 class SimpleBlog {
   constructor() {
     // Version check and cache busting
-    const currentVersion = '2.1';
+    const currentVersion = '2.2';
     const storedVersion = localStorage.getItem('ppPage_js_version');
     if (storedVersion !== currentVersion) {
       console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
@@ -1855,15 +1855,16 @@ class SimpleBlog {
           const contents = await response.json();
           console.log(`loadImagesForPost: GitHub API returned ${contents.length} items`);
           
-          // Filter for image files
-          const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+          // Filter for media files (images and videos)
+          const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
           contents.forEach(item => {
-            if (item.type === 'file' && imageExtensions.some(ext => item.name.toLowerCase().endsWith(ext))) {
+            if (item.type === 'file' && mediaExtensions.some(ext => item.name.toLowerCase().endsWith(ext))) {
               imageFiles.push({
                 name: item.name,
-                url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${item.name}`
+                url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${item.name}`,
+                type: mediaExtensions.find(ext => item.name.toLowerCase().endsWith(ext))
               });
-              console.log(`loadImagesForPost: Added image via API: ${item.name}`);
+              console.log(`loadImagesForPost: Added media via API: ${item.name}`);
             }
           });
           
@@ -1890,10 +1891,10 @@ class SimpleBlog {
             const htmlContent = await response.text();
             console.log(`loadImagesForPost: Directory browsing returned content length: ${htmlContent.length}`);
             
-            // Look for image files (common image extensions)
-            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+            // Look for media files (common image and video extensions)
+            const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
             
-            imageExtensions.forEach(ext => {
+            mediaExtensions.forEach(ext => {
               const regex = new RegExp(`href="[^"]*\\.${ext}"`, 'gi');
               const matches = htmlContent.match(regex);
               if (matches) {
@@ -1905,9 +1906,10 @@ class SimpleBlog {
                     const filename = href.split('/').pop();
                     imageFiles.push({
                       name: filename,
-                      url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`
+                      url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`,
+                      type: ext
                     });
-                    console.log(`loadImagesForPost: Added image via browsing: ${filename}`);
+                    console.log(`loadImagesForPost: Added media via browsing: ${filename}`);
                   }
                 });
               }
@@ -1945,14 +1947,14 @@ class SimpleBlog {
           if (index < images.length) {
             // Use the image at this index
             const image = images[index];
-            console.log(`loadAndDisplayImages: Displaying image ${index}: ${image.name}`);
-            this.displayImage(placeholder, image.url, image.name);
+            console.log(`loadAndDisplayImages: Displaying media ${index}: ${image.name}`);
+            this.displayMedia(placeholder, image.url, image.name, image.type);
           } else {
             // If we have more placeholders than images, randomly select from available images
             const randomIndex = Math.floor(Math.random() * images.length);
             const image = images[randomIndex];
-            console.log(`loadAndDisplayImages: Displaying random image for placeholder ${index}: ${image.name}`);
-            this.displayImage(placeholder, image.url, image.name);
+            console.log(`loadAndDisplayImages: Displaying random media for placeholder ${index}: ${image.name}`);
+            this.displayMedia(placeholder, image.url, image.name, image.type);
           }
         });
       } else {
@@ -1963,34 +1965,70 @@ class SimpleBlog {
     }
   }
 
-  displayImage(placeholder, imageUrl, imageName) {
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.alt = imageName || 'Post image';
-    img.className = 'post-image-content';
-    img.style.cssText = `
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 1em 0;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      cursor: pointer;
-    `;
+  displayMedia(placeholder, mediaUrl, mediaName, mediaType) {
+    // Determine if this is a video or image
+    const isVideo = ['mp4', 'mov', 'avi', 'webm'].includes(mediaType);
     
-    // Add click handler for full preview
-    img.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('Image clicked:', img.src);
-      this.showImagePreview(img.src, img.alt || 'Image');
-    });
-    
-    // Add visual indication that image is clickable
-    img.title = 'Click to view full size';
-    
-    // Replace the placeholder with the actual image
-    placeholder.parentNode.replaceChild(img, placeholder);
+    if (isVideo) {
+      // Create video element
+      const video = document.createElement('video');
+      video.src = mediaUrl;
+      video.controls = true;
+      video.preload = 'metadata';
+      video.className = 'post-media-content post-video-content';
+      video.style.cssText = `
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1em 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+      `;
+      
+      // Add click handler for full preview
+      video.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Video clicked:', video.src);
+        this.showVideoPreview(video.src, mediaName || 'Video');
+      });
+      
+      // Add visual indication that video is clickable
+      video.title = 'Click to view full size';
+      
+      // Replace the placeholder with the actual video
+      placeholder.parentNode.replaceChild(video, placeholder);
+    } else {
+      // Create image element (existing logic)
+      const img = document.createElement('img');
+      img.src = mediaUrl;
+      img.alt = mediaName || 'Post image';
+      img.className = 'post-media-content post-image-content';
+      img.style.cssText = `
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1em 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+      `;
+      
+      // Add click handler for full preview
+      img.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Image clicked:', img.src);
+        this.showImagePreview(img.src, img.alt || 'Image');
+      });
+      
+      // Add visual indication that image is clickable
+      img.title = 'Click to view full size';
+      
+      // Replace the placeholder with the actual image
+      placeholder.parentNode.replaceChild(img, placeholder);
+    }
   }
 
   async filterAvailablePosts(posts) {
@@ -2507,6 +2545,135 @@ class SimpleBlog {
     overlay.addEventListener('remove', () => {
       document.removeEventListener('keydown', escapeHandler);
       window.removeEventListener('resize', resizeHandler);
+    });
+  }
+
+  // Show full-size video preview
+  showVideoPreview(videoSrc, videoName) {
+    console.log('showVideoPreview called with:', { videoSrc, videoName });
+    
+    // Remove existing preview if any
+    const existingPreview = document.getElementById('video-preview-overlay');
+    if (existingPreview) {
+      existingPreview.remove();
+      console.log('Removed existing video preview');
+    }
+    
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'video-preview-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 50px;
+      box-sizing: border-box;
+    `;
+    
+    // Create video container
+    const videoContainer = document.createElement('div');
+    videoContainer.style.cssText = `
+      position: relative;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    `;
+    
+    // Create video element with proper sizing
+    const fullVideo = document.createElement('video');
+    fullVideo.src = videoSrc;
+    fullVideo.controls = true;
+    fullVideo.autoplay = false;
+    fullVideo.preload = 'metadata';
+    fullVideo.style.cssText = `
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    `;
+    
+    // Create close button
+    const closeButton = document.createElement('div');
+    closeButton.innerHTML = '×';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 32px;
+      height: 32px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s ease;
+    `;
+    
+    // Add hover effect to close button
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.backgroundColor = 'var(--accent)';
+      closeButton.style.color = 'white';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.backgroundColor = 'var(--bg)';
+      closeButton.style.color = 'var(--fg)';
+    });
+    
+    // Add click handlers
+    closeButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      overlay.remove();
+    });
+    
+    // Close overlay when clicking anywhere (including on the video)
+    overlay.addEventListener('click', () => {
+      overlay.remove();
+    });
+    
+    // Also close when clicking on the video itself
+    fullVideo.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent closing when clicking on video controls
+    });
+    
+    // Assemble and add to DOM
+    videoContainer.appendChild(fullVideo);
+    videoContainer.appendChild(closeButton);
+    overlay.appendChild(videoContainer);
+    document.body.appendChild(overlay);
+    
+    console.log('Video preview overlay added to DOM');
+    
+    // Add escape key handler
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Clean up event listeners when overlay is removed
+    overlay.addEventListener('remove', () => {
+      document.removeEventListener('keydown', escapeHandler);
     });
   }
 
