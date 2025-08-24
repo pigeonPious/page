@@ -4423,6 +4423,13 @@ class SimpleBlog {
         return true;
       }
       
+      // If no user logo is set, try to load a default logo
+      if (!userLogo) {
+        // Try to load logo.png as default
+        this.applyLogo('assets/logo.png');
+        return true;
+      }
+      
       if (attempts < maxAttempts) {
         setTimeout(tryApplyLogo, 500);
       }
