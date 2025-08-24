@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+      <title>PPBlog</title>
+  <link rel="stylesheet" href="style.css?v=20250130">
+  <script>
+    // Force cache busting for CSS
+    const link = document.querySelector('link[href*="style.css"]');
+    if (link) {
+      link.href = link.href.split('?')[0] + '?v=' + Date.now();
+    }
+  </script>
+</head>
+<body>
+<!-- Taskbar will be loaded by SimpleBlog -->
+
+<div class="page-container">
+  <main class="main-column">
+    <header class="post-header">
+      <h1 class="post-title" id="post-title"># Blog</h1>
+      <div class="post-date" id="post-date"></div>
+    </header>
+    <section class="post-content" id="post-content"></section>
+  </main>
+</div>
+
+<div id="hoverNote" role="tooltip"></div>
+<div id="cornerGif" aria-hidden="true" title="Corner Logo" style="background: transparent center/contain no-repeat; width: 100px; height: 100px;"></div>
+
+<!-- Simple, Reliable Blog System -->
+  <script>
+    // Force cache busting for site.js with multiple strategies
+    const script = document.createElement('script');
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    script.src = 'site.js?v=' + timestamp + '&r=' + random + '&v=2.1';
+    script.setAttribute('data-cache-bust', timestamp);
+    document.body.appendChild(script);
+    
+    // Cache busting applied with timestamp, random parameter, and version 2.1
+    console.log('🔄 Loading site.js with cache busting:', script.src);
+  </script>
+</body>
+</html>
