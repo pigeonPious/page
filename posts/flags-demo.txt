@@ -1,4 +1,4 @@
-# Demo Post with FLAGS Syntax [FLAGS: demo, programming, tutorial]
+# Demo Post with FLAGS Syntax [FLAGS: Testing New Flags]
 
 Date: 2024-12-19
 
