@@ -213,8 +213,13 @@ class SimpleBlog {
           </div>
           
         
-        <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: default; user-select: none;">
+        <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: pointer; user-select: none; position: relative;">
           PiousPigeon
+          <div class="pigeon-dropdown">
+            <div class="menu-entry" id="bluesky-link">Bluesky: @piouspigeon.bsky.social</div>
+            <div class="menu-entry" id="twitter-link">Twitter</div>
+            <div class="menu-entry" id="itch-link">Itch: piouspigeon.itch.io</div>
+          </div>
         </div>
         </div>
       </div>
@@ -228,6 +233,11 @@ class SimpleBlog {
     this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
     this.bindEventListener(document.getElementById('contact-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('contact'); });
     this.bindEventListener(document.getElementById('open-github-btn'), 'click', (e) => { e.preventDefault(); this.openCurrentPostInGitHub(); });
+    
+    // Bind PiousPigeon dropdown events
+    this.bindEventListener(document.getElementById('bluesky-link'), 'click', (e) => { e.preventDefault(); window.open('https://bsky.app/profile/piouspigeon.bsky.social', '_blank'); });
+    this.bindEventListener(document.getElementById('itch-link'), 'click', (e) => { e.preventDefault(); window.open('https://piouspigeon.itch.io', '_blank'); });
+    this.bindEventListener(document.getElementById('twitter-link'), 'click', (e) => { e.preventDefault(); /* Twitter link to be added later */ });
   }
 
   // Helper Methods

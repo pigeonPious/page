@@ -1,0 +1,35 @@
+# About
+
+Date: 2025-01-30
+Keywords: about, info
+
+Welcome to PPPage!
+
+This is a simplified blog system that reads posts from .txt files and displays them with hover notes and embedded images.
+
+## What This Is
+
+PPPage is a minimalist blog platform designed for simplicity and ease of use. Instead of complex content management systems, posts are written in plain text files and uploaded directly to GitHub.
+
+## Features
+
+- **Plain Text Posts**: Write in simple .txt format
+- **Hover Notes**: Add interactive notes using [display text:note content] syntax
+- **Image Support**: Embed images with [IMAGE], [IMAGEL], or [IMAGER] syntax
+- **Dynamic Discovery**: Automatically finds posts from your GitHub repository
+- **Responsive Design**: Works on all devices
+
+## How It Works
+
+1. Write your posts in .txt files
+2. Upload them to the `posts/` directory on GitHub
+3. Add images to corresponding folders
+4. The site automatically discovers and displays your content
+
+## Technical Details
+
+Built with vanilla JavaScript, HTML, and CSS. No frameworks, no databases - just simple, reliable web technology.
+
+---
+
+*This is a stub about page. Feel free to customize it with your own content!*
