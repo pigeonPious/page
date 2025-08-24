@@ -145,8 +145,7 @@ class SimpleBlog {
       this.updateHoverNoteColors('#000000');
     }
     
-    // Initialize font size
-    this.initializeFontSize();
+
     
     // If custom theme, check for saved HSL values and apply them
     if (this.theme === 'custom') {
@@ -193,6 +192,8 @@ class SimpleBlog {
     
     console.log('SimpleBlog initialized successfully');
   }
+
+
 
   createTaskbar() {
     const taskbarHTML = `
@@ -923,7 +924,7 @@ class SimpleBlog {
     
     this.addClickHandler('#font-size-button', () => {
       console.log(' Font size button clicked');
-      this.showFontSizeWindow();
+      // Font size functionality removed
     });
     
 
@@ -1840,6 +1841,92 @@ class SimpleBlog {
     return content;
   }
 
+  async autoRenameMediaFiles(slug, filesToRename, mediaExtensions) {
+    try {
+      console.log(`autoRenameMediaFiles: Starting automatic renaming for ${filesToRename.length} files in posts/${slug}`);
+      
+      // Sort all files by their original names for consistent sequential numbering
+      const sortedFiles = filesToRename.sort((a, b) => a.name.localeCompare(b.name));
+      
+      // Rename files in sequence based on their sorted names
+      for (let i = 0; i < sortedFiles.length; i++) {
+        const file = sortedFiles[i];
+        const ext = mediaExtensions.find(ext => file.name.toLowerCase().endsWith(ext));
+        const newName = `${i + 1}.${ext}`;
+        
+        if (file.name !== newName) {
+          console.log(`autoRenameMediaFiles: Renaming ${file.name} to ${newName}`);
+          
+          try {
+            // Note: This would require GitHub API with write permissions
+            // For now, we'll log the suggested rename and provide instructions
+            console.log(`autoRenameMediaFiles: SUGGESTED RENAME: ${file.name} → ${newName}`);
+            console.log(`autoRenameMediaFiles: To complete renaming, manually rename the file in GitHub or use the GitHub API with write permissions`);
+            
+            // You can also show a user-friendly message
+            this.showRenameSuggestion(slug, file.name, newName);
+          } catch (error) {
+            console.error(`autoRenameMediaFiles: Error renaming ${file.name}:`, error);
+          }
+        }
+      }
+      
+      console.log(`autoRenameMediaFiles: Automatic renaming suggestions completed for posts/${slug}`);
+      
+    } catch (error) {
+      console.error('Error in autoRenameMediaFiles:', error);
+    }
+  }
+
+  showRenameSuggestion(slug, oldName, newName) {
+    // Create a notification to suggest the rename
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--menu-bg, #2d2d2d);
+      border: 1px solid var(--border, #555);
+      padding: 15px;
+      border-radius: 5px;
+      color: var(--menu-fg, #fff);
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 10000;
+      max-width: 300px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+    
+    notification.innerHTML = `
+      <div style="margin-bottom: 10px; font-weight: bold;">📁 File Rename Suggestion</div>
+      <div style="margin-bottom: 5px;"><strong>Post:</strong> ${slug}</div>
+      <div style="margin-bottom: 5px;"><strong>Current:</strong> ${oldName}</div>
+      <div style="margin-bottom: 10px;"><strong>Suggested:</strong> ${newName}</div>
+      <div style="font-size: 11px; opacity: 0.8;">
+        Rename this file in GitHub for better compatibility with the image loading system.
+      </div>
+      <button onclick="this.parentElement.remove()" style="
+        margin-top: 10px;
+        padding: 5px 10px;
+        background: var(--accent, #4a9eff);
+        border: none;
+        color: white;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 11px;
+      ">Dismiss</button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.remove();
+      }
+    }, 10000);
+  }
+
   async loadImagesForPost(slug) {
     try {
       console.log(`loadImagesForPost: Looking for images in post folder: ${slug}`);
@@ -1857,68 +1944,102 @@ class SimpleBlog {
           
           // Filter for media files (images and videos)
           const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
-          contents.forEach(item => {
-            if (item.type === 'file' && mediaExtensions.some(ext => item.name.toLowerCase().endsWith(ext))) {
+          const mediaFiles = contents.filter(item => 
+            item.type === 'file' && mediaExtensions.some(ext => item.name.toLowerCase().endsWith(ext))
+          );
+          
+          if (mediaFiles.length > 0) {
+            console.log(`loadImagesForPost: Found ${mediaFiles.length} media files via GitHub API`);
+            
+            // Check if any files need automatic renaming to numeric format
+            const filesToRename = mediaFiles.filter(file => {
+              const filename = file.name;
+              const ext = mediaExtensions.find(ext => filename.toLowerCase().endsWith(ext));
+              const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
+              // Check if filename is already numeric (1, 2, 3, etc.)
+              return !/^\d+$/.test(nameWithoutExt);
+            });
+            
+            if (filesToRename.length > 0) {
+              console.log(`loadImagesForPost: ${filesToRename.length} files need automatic renaming to numeric format`);
+              await this.autoRenameMediaFiles(slug, filesToRename, mediaExtensions);
+            }
+            
+            // Now load the files (either original or renamed)
+            mediaFiles.forEach(item => {
               imageFiles.push({
                 name: item.name,
                 url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${item.name}`,
                 type: mediaExtensions.find(ext => item.name.toLowerCase().endsWith(ext))
               });
               console.log(`loadImagesForPost: Added media via API: ${item.name}`);
-            }
-          });
-          
-          if (imageFiles.length > 0) {
-            console.log(`loadImagesForPost: Found ${imageFiles.length} images via GitHub API`);
+            });
+            
+            console.log(`loadImagesForPost: Successfully loaded ${imageFiles.length} images via GitHub API`);
             return imageFiles;
           }
         } else {
           console.log(`loadImagesForPost: GitHub API failed with status: ${response.status}`);
+          if (response.status === 403) {
+            console.log(`loadImagesForPost: GitHub API rate limited or authentication required. This is normal for public repositories.`);
+          }
         }
       } catch (error) {
         console.log(`loadImagesForPost: GitHub API error:`, error);
       }
       
-      // Method 2: Fallback to public directory browsing
+      // Method 2: Try to construct URLs based on common file patterns
       if (imageFiles.length === 0) {
-        try {
-          console.log(`loadImagesForPost: Trying public directory browsing for folder: posts/${slug}`);
-          const corsProxy = 'https://corsproxy.io/?';
-          const folderUrl = `https://github.com/pigeonPious/page/tree/main/posts/${slug}`;
-          const response = await fetch(corsProxy + folderUrl);
-          
-          if (response.ok) {
-            const htmlContent = await response.text();
-            console.log(`loadImagesForPost: Directory browsing returned content length: ${htmlContent.length}`);
-            
-            // Look for media files (common image and video extensions)
-            const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
-            
-            mediaExtensions.forEach(ext => {
-              const regex = new RegExp(`href="[^"]*\\.${ext}"`, 'gi');
-              const matches = htmlContent.match(regex);
-              if (matches) {
-                console.log(`loadImagesForPost: Found ${matches.length} matches for .${ext} files`);
-                matches.forEach(match => {
-                  const href = match.match(/href="([^"]+)"/)[1];
-                  console.log(`loadImagesForPost: Processing href: ${href}`);
-                  if (href.includes(`/posts/${slug}/`) && href.endsWith(`.${ext}`)) {
-                    const filename = href.split('/').pop();
-                    imageFiles.push({
-                      name: filename,
-                      url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`,
-                      type: ext
-                    });
-                    console.log(`loadImagesForPost: Added media via browsing: ${filename}`);
-                  }
+        console.log(`loadImagesForPost: Trying to construct URLs for common media files in posts/${slug}`);
+        
+        // Common media file extensions
+        const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
+        
+        // Try to find media files by constructing URLs and checking if they exist
+        for (const ext of mediaExtensions) {
+          // Try numeric filenames first (1.png, 2.mp4, etc.) - much more reliable
+          for (let i = 1; i <= 10; i++) {
+            const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${i}.${ext}`;
+            console.log(`loadImagesForPost: Testing numeric URL: ${testUrl}`);
+            try {
+              const response = await fetch(testUrl, { method: 'HEAD' });
+              if (response.ok) {
+                imageFiles.push({
+                  name: `${i}.${ext}`,
+                  url: testUrl,
+                  type: ext
                 });
+                console.log(`loadImagesForPost: Found media file via numeric URL: ${i}.${ext}`);
+              } else {
+                console.log(`loadImagesForPost: File not found: ${testUrl} (status: ${response.status})`);
               }
-            });
-          } else {
-            console.log(`loadImagesForPost: Directory browsing failed with status: ${response.status}`);
+            } catch (error) {
+              console.log(`loadImagesForPost: Error checking ${testUrl}:`, error.message);
+            }
           }
-        } catch (error) {
-          console.log(`loadImagesForPost: Directory browsing error:`, error);
+          
+          // If no numeric files found, try some common descriptive names as fallback
+          if (imageFiles.length === 0) {
+            const commonNames = ['image', 'video', 'media', 'screenshot', 'recording', 'demo'];
+            for (const name of commonNames) {
+              const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${name}.${ext}`;
+              console.log(`loadImagesForPost: Testing descriptive URL: ${testUrl}`);
+              try {
+                const response = await fetch(testUrl, { method: 'HEAD' });
+                if (response.ok) {
+                  imageFiles.push({
+                    name: `${name}.${ext}`,
+                    url: testUrl,
+                    type: ext
+                  });
+                  console.log(`loadImagesForPost: Found media file via descriptive URL: ${name}.${ext}`);
+                  break; // Found one file with this extension, move to next extension
+                }
+              } catch (error) {
+                console.log(`loadImagesForPost: Error checking ${testUrl}:`, error.message);
+              }
+            }
+          }
         }
       }
       
