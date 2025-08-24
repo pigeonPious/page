@@ -16,7 +16,7 @@ A simplified blog system that reads posts from .txt files and displays them with
 Posts are written in .txt files with the following structure:
 
 ```
-# Post Title
+# Post Title [FLAGS: category1, category2]
 
 Date: 2025-01-30
 Keywords: category1, category2
@@ -36,6 +36,8 @@ You can use markdown-style headers.
 More content with another image.
 
 [IMAGE]
+
+You can also add [FLAGS: additional, categories] anywhere in the content.
 ```
 
 ### Metadata
@@ -43,11 +45,22 @@ More content with another image.
 - **Title**: First line starting with `#` or first non-empty line
 - **Date**: Line starting with `Date:` (defaults to today if not specified)
 - **Keywords**: Line starting with `Keywords:` (used for categorization)
+- **FLAGS**: Use `[FLAGS: category1, category2]` syntax in title or content for automatic categorization
 - **Content**: Everything after metadata or after 10 lines
 
 ### Hover Notes
 
 Use the syntax `[DISPLAY TEXT:HOVERNOTE CONTENT HERE]` to create interactive tooltips.
+
+### FLAGS Syntax
+
+Use `[FLAGS: category1, category2]` syntax for automatic categorization:
+
+- **In Title**: `# My Post [FLAGS: programming, tutorial]`
+- **In Content**: Add `[FLAGS: additional, categories]` anywhere in the post
+- **Multiple Locations**: You can use both title and content flags - they'll be combined
+- **Automatic Removal**: The `[FLAGS: ...]` syntax is automatically removed from the displayed post
+- **Sitemap Integration**: Posts automatically appear in the correct categories in the sitemap
 
 ### Images
 

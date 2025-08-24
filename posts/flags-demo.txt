@@ -1,0 +1,31 @@
+# Demo Post with FLAGS Syntax [FLAGS: demo, programming, tutorial]
+
+Date: 2024-12-19
+
+This is a demonstration post showing how to use the new [FLAGS: category1, category2] syntax for automatic categorization.
+
+## How it works:
+
+1. **In the title**: You can add `[FLAGS: category1, category2]` directly in the title
+2. **In the content**: You can also add `[FLAGS: category1, category2]` anywhere in the post content
+3. **Multiple locations**: You can use both title and content flags - they'll be combined
+4. **Automatic removal**: The `[FLAGS: ...]` syntax is automatically removed from the displayed post
+
+## Example categories you can use:
+
+- `programming` - for coding-related posts
+- `design` - for design and UI posts  
+- `tutorial` - for how-to guides
+- `devlog` - for development logs
+- `website` - for website-related content
+- `personal` - for personal updates
+- `tech` - for general tech posts
+
+## Benefits:
+
+- **Automatic categorization**: Posts automatically appear in the correct sitemap categories
+- **No manual setup**: Just write `[FLAGS: category1, category2]` and you're done
+- **Flexible placement**: Can be in title, content, or both
+- **Clean display**: The syntax is removed from the final post display
+
+This post will automatically appear in the "demo", "programming", and "tutorial" categories in the sitemap!

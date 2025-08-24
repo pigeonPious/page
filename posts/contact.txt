@@ -1,7 +1,6 @@
-# Contact
+# Contact [FLAGS: contact, info, reach]
 
 Date: 2025-01-30
-Keywords: contact, info, reach
 
 ## Get In Touch
 

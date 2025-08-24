@@ -1,7 +1,6 @@
-# About
+# About [FLAGS: about, info]
 
 Date: 2025-01-30
-Keywords: about, info
 
 Welcome to PPPage!
 

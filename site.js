@@ -1593,6 +1593,34 @@ class SimpleBlog {
         }
       }
       
+      // Check for [FLAGS: category1, category2] syntax in title and content
+      const flagsMatch = title.match(/\[FLAGS:\s*([^\]]+)\]/);
+      if (flagsMatch) {
+        const extractedFlags = flagsMatch[1].trim();
+        // If we already have keywords, append the new flags
+        if (keywords && keywords !== 'general') {
+          keywords = `${keywords}, ${extractedFlags}`;
+        } else {
+          keywords = extractedFlags;
+        }
+        // Remove the [FLAGS: ...] from the title
+        title = title.replace(/\[FLAGS:\s*[^\]]+\]/, '').trim();
+      }
+      
+      // Also check for [FLAGS: ...] in the content body
+      const contentFlagsMatch = postContent.match(/\[FLAGS:\s*([^\]]+)\]/);
+      if (contentFlagsMatch) {
+        const extractedContentFlags = contentFlagsMatch[1].trim();
+        // If we already have keywords, append the new flags
+        if (keywords && keywords !== 'general') {
+          keywords = `${keywords}, ${extractedContentFlags}`;
+        } else {
+          keywords = extractedContentFlags;
+        }
+        // Remove the [FLAGS: ...] from the content
+        postContent = postContent.replace(/\[FLAGS:\s*[^\]]+\]/, '');
+      }
+      
       // Process content for hover notes and images
       postContent = this.processPostContent(postContent, slug);
       
@@ -1635,6 +1663,9 @@ class SimpleBlog {
       imageIndex++;
       return `<div class="post-image post-image-right" data-post="${slug}" data-index="${imageIndex}"></div>`;
     });
+    
+    // Final cleanup: Remove any remaining [FLAGS: ...] syntax that might have been missed
+    content = content.replace(/\[FLAGS:\s*[^\]]+\]/g, '');
     
     // Convert line breaks to HTML breaks to preserve formatting
     content = content.replace(/\n/g, '<br>');
