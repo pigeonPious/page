@@ -5,22 +5,12 @@
 
 // CACHE BUST: This file was last modified at 2025-01-23
 // If you see this comment, the file is being served fresh
-// Version: 2.5 - Simplified Image Loading with Direct Folder Access
+// Automatic cache busting enabled - no hardcoded versions needed
 class SimpleBlog {
   constructor() {
-    // Version check and cache busting
-    const currentVersion = '2.5';
-    const storedVersion = localStorage.getItem('ppPage_js_version');
-    if (storedVersion !== currentVersion) {
-      console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
-      localStorage.setItem('ppPage_js_version', currentVersion);
-      // Force a reload if this is a major version change
-      if (storedVersion && storedVersion !== currentVersion) {
-        console.log('🔄 Major version change detected, forcing reload...');
-        setTimeout(() => window.location.reload(true), 100);
-        return;
-      }
-    }
+    // Automatic cache busting - no hardcoded versions needed
+    // Cache is automatically cleared on every page load via HTML timestamp parameters
+    console.log('🚀 SimpleBlog initialized - automatic cache busting enabled');
     
     this.currentPost = null;
     this.posts = [];
