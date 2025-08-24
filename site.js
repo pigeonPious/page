@@ -299,12 +299,39 @@ class SimpleBlog {
     
     console.log('CSS variables setup complete');
   }
+  
+  setupResponsiveDesign() {
+    console.log('Setting up responsive design...');
+    
+    // Function to update navigation text based on screen width
+    const updateNavigationText = () => {
+      const navigationLabel = document.querySelector('.menu-item[data-menu="navigation"] .label');
+      if (navigationLabel) {
+        if (window.innerWidth <= 768) {
+          navigationLabel.textContent = 'Nav';
+        } else {
+          navigationLabel.textContent = 'Navigation';
+        }
+      }
+    };
+    
+    // Update on page load
+    updateNavigationText();
+    
+    // Update on window resize
+    window.addEventListener('resize', updateNavigationText);
+    
+    console.log('Responsive design setup complete');
+  }
 
   bindEvents() {
     console.log('bindEvents() called');
     
     // Setup CSS variables
     this.setupCSSVariables();
+    
+    // Setup responsive design
+    this.setupResponsiveDesign();
     
     // Menu system
     this.setupMenuSystem();

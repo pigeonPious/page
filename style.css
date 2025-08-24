@@ -1166,4 +1166,40 @@ body.dark-mode .draft-btn.delete {
   font-size: 12px;
 }
 
+/* Responsive design for narrow screens (mobile) */
+@media (max-width: 768px) {
+  /* Hide Edit menu and star button on narrow screens */
+  .menu-item[data-menu="edit"],
+  .menu-star {
+    display: none !important;
+  }
+  
+  /* Condense Navigation text to 'Nav' */
+  .menu-item[data-menu="navigation"] .label {
+    font-size: 11px;
+  }
+  
+  /* Adjust spacing for remaining menu items */
+  .menu-item[data-menu="navigation"] {
+    margin-left: 0;
+  }
+  
+  .menu-item[data-menu="projects"] {
+    margin-left: 0;
+  }
+  
+  .menu-item[data-menu="view"] {
+    margin-left: 0;
+  }
+  
+  .menu-item[data-menu="connect"] {
+    margin-left: 0;
+  }
+  
+  /* Ensure PiousPigeon menu stays on the right */
+  .menu-item[data-menu="pigeon"] {
+    margin-left: auto;
+  }
+}
+
 
