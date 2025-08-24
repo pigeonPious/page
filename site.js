@@ -323,8 +323,8 @@ class SimpleBlog {
     
     // Menu toggle - store reference for cleanup
     this.globalClickHandler = (e) => {
-      // Don't close menus when clicking on theme buttons
-      if (e.target.closest('[data-mode]')) {
+      // Don't close menus when clicking on theme buttons or font button
+      if (e.target.closest('[data-mode]') || e.target.closest('#font-cycle-btn')) {
         return;
       }
       
