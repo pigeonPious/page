@@ -2525,64 +2525,121 @@ class SimpleBlog {
 
   async loadImagesForPost(slug) {
     try {
-      // Try to discover images in the post's folder
-      const corsProxy = 'https://corsproxy.io/?';
-      const folderUrl = `https://github.com/pigeonPious/page/tree/main/posts/${slug}`;
-      const response = await fetch(corsProxy + folderUrl);
+      console.log(`loadImagesForPost: Looking for images in post folder: ${slug}`);
       
-      if (response.ok) {
-        const htmlContent = await response.text();
+      let imageFiles = [];
+      
+      // Method 1: Try GitHub API first (most reliable)
+      try {
+        console.log(`loadImagesForPost: Trying GitHub API for folder: posts/${slug}`);
+        const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}`);
         
-        // Look for image files (common image extensions)
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-        const imageFiles = [];
-        
-        imageExtensions.forEach(ext => {
-          const regex = new RegExp(`href="[^"]*\\.${ext}"`, 'gi');
-          const matches = htmlContent.match(regex);
-          if (matches) {
-            matches.forEach(match => {
-              const href = match.match(/href="([^"]+)"/)[1];
-              if (href.includes(`/posts/${slug}/`) && href.endsWith(`.${ext}`)) {
-                const filename = href.split('/').pop();
-                imageFiles.push({
-                  name: filename,
-                  url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`
+        if (response.ok) {
+          const contents = await response.json();
+          console.log(`loadImagesForPost: GitHub API returned ${contents.length} items`);
+          
+          // Filter for image files
+          const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+          contents.forEach(item => {
+            if (item.type === 'file' && imageExtensions.some(ext => item.name.toLowerCase().endsWith(ext))) {
+              imageFiles.push({
+                name: item.name,
+                url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${item.name}`
+              });
+              console.log(`loadImagesForPost: Added image via API: ${item.name}`);
+            }
+          });
+          
+          if (imageFiles.length > 0) {
+            console.log(`loadImagesForPost: Found ${imageFiles.length} images via GitHub API`);
+            return imageFiles;
+          }
+        } else {
+          console.log(`loadImagesForPost: GitHub API failed with status: ${response.status}`);
+        }
+      } catch (error) {
+        console.log(`loadImagesForPost: GitHub API error:`, error);
+      }
+      
+      // Method 2: Fallback to public directory browsing
+      if (imageFiles.length === 0) {
+        try {
+          console.log(`loadImagesForPost: Trying public directory browsing for folder: posts/${slug}`);
+          const corsProxy = 'https://corsproxy.io/?';
+          const folderUrl = `https://github.com/pigeonPious/page/tree/main/posts/${slug}`;
+          const response = await fetch(corsProxy + folderUrl);
+          
+          if (response.ok) {
+            const htmlContent = await response.text();
+            console.log(`loadImagesForPost: Directory browsing returned content length: ${htmlContent.length}`);
+            
+            // Look for image files (common image extensions)
+            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+            
+            imageExtensions.forEach(ext => {
+              const regex = new RegExp(`href="[^"]*\\.${ext}"`, 'gi');
+              const matches = htmlContent.match(regex);
+              if (matches) {
+                console.log(`loadImagesForPost: Found ${matches.length} matches for .${ext} files`);
+                matches.forEach(match => {
+                  const href = match.match(/href="([^"]+)"/)[1];
+                  console.log(`loadImagesForPost: Processing href: ${href}`);
+                  if (href.includes(`/posts/${slug}/`) && href.endsWith(`.${ext}`)) {
+                    const filename = href.split('/').pop();
+                    imageFiles.push({
+                      name: filename,
+                      url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`
+                    });
+                    console.log(`loadImagesForPost: Added image via browsing: ${filename}`);
+                  }
                 });
               }
             });
+          } else {
+            console.log(`loadImagesForPost: Directory browsing failed with status: ${response.status}`);
           }
-        });
-        
-        return imageFiles;
+        } catch (error) {
+          console.log(`loadImagesForPost: Directory browsing error:`, error);
+        }
       }
+      
+      console.log(`loadImagesForPost: Total images found: ${imageFiles.length}`);
+      return imageFiles;
+      
     } catch (error) {
       console.log('Could not load images for post:', slug, error);
+      return [];
     }
-    
-    return [];
   }
 
   async loadAndDisplayImages(slug, contentElement) {
     try {
+      console.log(`loadAndDisplayImages: Starting for post: ${slug}`);
+      
       const images = await this.loadImagesForPost(slug);
+      console.log(`loadAndDisplayImages: Got ${images.length} images`);
       
       if (images.length > 0) {
         // Find all image placeholders in the content
         const imagePlaceholders = contentElement.querySelectorAll('.post-image');
+        console.log(`loadAndDisplayImages: Found ${imagePlaceholders.length} image placeholders`);
         
         imagePlaceholders.forEach((placeholder, index) => {
           if (index < images.length) {
             // Use the image at this index
             const image = images[index];
+            console.log(`loadAndDisplayImages: Displaying image ${index}: ${image.name}`);
             this.displayImage(placeholder, image.url, image.name);
           } else {
             // If we have more placeholders than images, randomly select from available images
             const randomIndex = Math.floor(Math.random() * images.length);
             const image = images[randomIndex];
+            console.log(`loadAndDisplayImages: Displaying random image for placeholder ${index}: ${image.name}`);
             this.displayImage(placeholder, image.url, image.name);
           }
         });
+      } else {
+        console.log(`loadAndDisplayImages: No images found for post: ${slug}`);
       }
     } catch (error) {
       console.error('Error loading images for post:', slug, error);
