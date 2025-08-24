@@ -4515,7 +4515,7 @@ class SimpleBlog {
     });
     
     // Create collapsed category HTML
-    const collapsedHTML = `<div style="margin-bottom: 4px;"><span class="category-link" data-category="${categoryName}" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─${categoryName} (${categoryPosts.length})</span></div>`;
+    const collapsedHTML = `<div style="margin-bottom: 4px;"><span class="category-link" data-category="${categoryName}" style="cursor: pointer; pointer-events: auto; font-weight: bold;">└─${categoryName}</span></div>`;
     
     // Replace the expanded category with collapsed content
     const categoryContainer = expandedCategory.closest('div');
