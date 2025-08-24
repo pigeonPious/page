@@ -2273,13 +2273,22 @@ class SimpleBlog {
     // Determine if this is a video or image
     const isVideo = ['mp4', 'mov', 'avi', 'webm'].includes(mediaType);
     
+    // Preserve alignment classes from the placeholder
+    const alignmentClasses = [];
+    if (placeholder.classList.contains('post-image-right')) {
+      alignmentClasses.push('post-image-right');
+    }
+    if (placeholder.classList.contains('post-image-left')) {
+      alignmentClasses.push('post-image-left');
+    }
+    
     if (isVideo) {
       // Create video element
       const video = document.createElement('video');
       video.src = mediaUrl;
       video.controls = true;
       video.preload = 'metadata';
-      video.className = 'post-media-content post-video-content';
+      video.className = `post-media-content post-video-content ${alignmentClasses.join(' ')}`;
       video.style.cssText = `
         max-width: 100%;
         height: auto;
@@ -2308,7 +2317,7 @@ class SimpleBlog {
       const img = document.createElement('img');
       img.src = mediaUrl;
       img.alt = mediaName || 'Post image';
-      img.className = 'post-media-content post-image-content';
+      img.className = `post-media-content post-image-content ${alignmentClasses.join(' ')}`;
       img.style.cssText = `
         max-width: 100%;
         height: auto;
