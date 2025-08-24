@@ -1,7 +1,9 @@
 // js/taskbar.js
 import { toggleTheme } from './themer.js';
 import * as editor from './editor.js';
+import { renderSitemap } from './ui.js';
 
+// A helper to check if we are on the editor page
 const isEditorPage = !!document.getElementById('visualEditor');
 
 const siteMenu = [
@@ -9,6 +11,9 @@ const siteMenu = [
         label: 'File',
         items: [
             { label: 'New Post', action: () => { window.location.href = 'editor.html'; } },
+            { type: 'separator' },
+            { label: 'About', action: () => { window.location.href = '?post=about'; } },
+            { label: 'Contact', action: () => { window.location.href = '?post=contact'; } },
         ]
     },
     {
@@ -16,6 +21,25 @@ const siteMenu = [
         items: [
             { label: 'Toggle Theme', action: toggleTheme },
         ]
+    },
+    {
+        label: 'Projects',
+        items: [
+             // This can be populated dynamically from projects.json later
+            { label: 'View All Projects', action: () => { console.log('View all projects'); } },
+        ]
+    },
+    {
+        label: 'Socials',
+        items: [
+             // Replace with your actual social media links
+            { label: 'GitHub', action: () => window.open('https://github.com/your-username', '_blank') },
+            { label: 'Twitter', action: () => window.open('https://twitter.com/your-username', '_blank') },
+        ]
+    },
+    {
+        label: 'Sitemap',
+        action: renderSitemap
     }
 ];
 
@@ -50,10 +74,20 @@ function renderMenuItem(item) {
     }
     const link = document.createElement('a');
     link.href = '#';
-    link.className = 'menu-entry';
+
+    if (item.action && !item.items) {
+        link.className = 'label';
+    } else {
+        link.className = 'menu-entry';
+    }
+    
     link.textContent = item.label;
     link.onclick = (e) => {
         e.preventDefault();
+        const parentMenuItem = link.closest('.menu-item');
+        if (parentMenuItem) {
+            parentMenuItem.classList.remove('open');
+        }
         if (item.action) {
             item.action();
         }
@@ -62,6 +96,14 @@ function renderMenuItem(item) {
 }
 
 function renderDropdown(menu) {
+    if (menu.action && !menu.items) {
+        return `
+            <div class="menu-item">
+                ${renderMenuItem(menu)}
+            </div>
+        `;
+    }
+
     return `
         <div class="menu-item">
             <span class="label">${menu.label}</span>
@@ -86,18 +128,20 @@ export function renderTaskbar() {
     taskbarContainer.innerHTML = taskbarHTML;
 
     // Add event listeners for showing/hiding dropdowns
-    document.querySelectorAll('.menu-item').forEach(item => {
-        const label = item.querySelector('.label');
-        const dropdown = item.querySelector('.menu-dropdown');
-        
+    document.querySelectorAll('.menu-item > .label').forEach(label => {
         label.addEventListener('click', (e) => {
-            const isOpen = item.classList.contains('open');
+            const parent = label.parentElement;
+            if (!parent.querySelector('.menu-dropdown')) return; // Not a dropdown menu
+
+            const isOpen = parent.classList.contains('open');
+            
             // Close all other dropdowns
             document.querySelectorAll('.menu-item.open').forEach(openItem => {
                 openItem.classList.remove('open');
             });
+
             if (!isOpen) {
-                item.classList.add('open');
+                parent.classList.add('open');
             }
         });
     });

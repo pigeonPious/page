@@ -1,4 +1,5 @@
 // js/ui.js
+import { loadPost } from './post-loader.js';
 
 // --- Corner Logo ---
 export function initializeCornerLogo() {
@@ -37,4 +38,61 @@ export function initializeHoverNotes() {
             hoverNote.style.top = `${e.clientY + 15}px`;
         }
     }
+}
+
+// --- Sitemap ---
+async function fetchAllPosts() {
+    // This is a simplified example. A real implementation might fetch a manifest file
+    // or use the GitHub API to list all posts.
+    // For now, we'll assume a known list of posts.
+    const postIds = ['first-post', 'about', 'contact'];
+    const posts = [];
+    for (const id of postIds) {
+        try {
+            const res = await fetch(`posts/${id}.json`);
+            if (res.ok) {
+                posts.push(await res.json());
+            }
+        } catch (error) {
+            console.error(`Could not fetch post: ${id}`, error);
+        }
+    }
+    return posts;
+}
+
+export async function renderSitemap() {
+    const contentArea = document.getElementById('post-content');
+    const titleArea = document.getElementById('post-title');
+    if (!contentArea || !titleArea) return;
+
+    titleArea.textContent = 'Sitemap';
+    document.getElementById('post-date').textContent = '';
+    contentArea.innerHTML = '<em>Loading sitemap...</em>';
+
+    const posts = await fetchAllPosts();
+    if (posts.length === 0) {
+        contentArea.innerHTML = '<p>No posts found.</p>';
+        return;
+    }
+
+    const postsByCategory = posts.reduce((acc, post) => {
+        const category = post.category || 'Uncategorized';
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(post);
+        return acc;
+    }, {});
+
+    let sitemapHTML = '';
+    for (const category in postsByCategory) {
+        sitemapHTML += `<h3 class="sitemap-category">${category}</h3><ul>`;
+        postsByCategory[category].forEach(post => {
+            // Generate a file name from title to link to the post
+            const postLink = `?post=${post.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')}`;
+            sitemapHTML += `<li><a href="${postLink}">${post.title}</a></li>`;
+        });
+        sitemapHTML += `</ul>`;
+    }
+    contentArea.innerHTML = sitemapHTML;
 }
