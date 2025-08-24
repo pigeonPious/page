@@ -111,11 +111,15 @@ class SimpleBlog {
     
     this.setTheme(this.theme, false); // Don't open HSL picker on page load
     
+    // Ensure hover note colors are set for the current theme
+    if (this.theme === 'dark') {
+      this.updateHoverNoteColors('#ffffff');
+    } else if (this.theme === 'light') {
+      this.updateHoverNoteColors('#000000');
+    }
+    
     // Initialize font size
     this.initializeFontSize();
-    
-    // Initialize font family
-    this.initializeFontFamily();
     
     // If custom theme, check for saved HSL values and apply them
     if (this.theme === 'custom') {
@@ -204,8 +208,6 @@ class SimpleBlog {
               <div class="menu-entry" data-mode="light">Light</div>
               <div class="menu-entry" data-mode="custom">Custom…</div>
               <div class="menu-entry" data-mode="random">Random</div>
-              <div class="menu-separator"></div>
-              <div class="menu-entry" id="font-cycle-btn">Font</div>
             </div>
           </div>
           
@@ -295,9 +297,6 @@ class SimpleBlog {
     root.style.setProperty('--muted', '#888888');
     root.style.setProperty('--border', '#555555');
     
-    // Font family variable
-    root.style.setProperty('--font-family', 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
-    
     console.log('CSS variables setup complete');
   }
 
@@ -323,8 +322,8 @@ class SimpleBlog {
     
     // Menu toggle - store reference for cleanup
     this.globalClickHandler = (e) => {
-      // Don't close menus when clicking on theme buttons or font button
-      if (e.target.closest('[data-mode]') || e.target.closest('#font-cycle-btn')) {
+      // Don't close menus when clicking on theme buttons
+      if (e.target.closest('[data-mode]')) {
         return;
       }
       
@@ -705,11 +704,7 @@ class SimpleBlog {
       this.setTheme(mode, mode === 'custom'); // Open HSL picker only for custom theme
     });
 
-    // Font button
-    this.addClickHandler('#font-cycle-btn', () => {
-      console.log('Font button clicked');
-      this.cycleFont();
-    });
+
 
     // Navigation buttons
     this.addClickHandler('#most-recent-post', () => {
@@ -2485,9 +2480,13 @@ class SimpleBlog {
     if (mode === 'dark') {
       document.body.classList.add('dark-mode');
       console.log(' Added dark-mode class');
+      // Update hover note colors for dark theme
+      this.updateHoverNoteColors('#ffffff');
     } else if (mode === 'light') {
       document.body.classList.add('light-mode');
       console.log('Added light-mode class');
+      // Update hover note colors for light theme
+      this.updateHoverNoteColors('#000000');
     } else if (mode === 'custom') {
       document.body.classList.add('custom-mode');
       
@@ -2748,6 +2747,28 @@ class SimpleBlog {
     console.log('HSL color picker opened in menu style 1');
   }
 
+  updateHoverNoteColors(textColor) {
+    console.log('Updating hover note and hyperlink colors to:', textColor);
+    
+    // Update all hover note elements
+    const hoverNotes = document.querySelectorAll('.hover-note');
+    hoverNotes.forEach(note => {
+      note.style.color = textColor;
+    });
+    
+    // Update all hyperlinks
+    const hyperlinks = document.querySelectorAll('a');
+    hyperlinks.forEach(link => {
+      link.style.color = textColor;
+    });
+    
+    // Update CSS custom properties for future elements
+    document.documentElement.style.setProperty('--hover-note-color', textColor);
+    document.documentElement.style.setProperty('--hyperlink-color', textColor);
+    
+    console.log('Hover note and hyperlink colors updated');
+  }
+
   applyCustomTheme(h, s, l) {
     const bgColor = `hsl(${h}, ${s}%, ${l}%)`;
     const bgHex = this.hslToHex(h, s, l);
@@ -2780,6 +2801,9 @@ class SimpleBlog {
     document.body.style.setProperty('--danger-color', '#dc3545');
     document.body.style.setProperty('--danger-hover-color', '#c82333');
     document.body.style.setProperty('--btn-text-color', fgColor);
+    
+    // Update hover note and hyperlink colors
+    this.updateHoverNoteColors(fgColor);
     
     // Save custom theme HSL values to localStorage
     localStorage.setItem('ppPage_custom_hsl', JSON.stringify({ h, s, l }));
@@ -5108,97 +5132,7 @@ class SimpleBlog {
     this.log(message, 'warn');
   }
 
-  // Font family management methods
-  initializeFontFamily() {
-    console.log('Initializing font family...');
-    
-    // Define the 5 fonts to cycle through
-    this.fonts = [
-      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', // Default system font
-      'Georgia, "Times New Roman", serif', // Serif font
-      'Monaco, "Courier New", monospace', // Monospace font
-      'Arial, Helvetica, sans-serif', // Sans-serif font
-      'Palatino, "Palatino Linotype", "Palatino LT STD", serif' // Elegant serif
-    ];
-    
-    // Get saved font index from localStorage
-    const savedFontIndex = localStorage.getItem('ppPage_font_index');
-    this.currentFontIndex = savedFontIndex ? parseInt(savedFontIndex) : 0;
-    
-    // Apply the saved font
-    this.applyFont(this.currentFontIndex);
-    
-    console.log('Font family initialized with index:', this.currentFontIndex);
-  }
-  
-  cycleFont() {
-    console.log('Cycling font...');
-    
-    // Ensure fonts array is initialized
-    if (!this.fonts) {
-      console.log('Fonts array not initialized, initializing now...');
-      this.initializeFontFamily();
-    }
-    
-    // Move to next font
-    this.currentFontIndex = (this.currentFontIndex + 1) % this.fonts.length;
-    
-    // Save to localStorage
-    localStorage.setItem('ppPage_font_index', this.currentFontIndex.toString());
-    
-    // Apply the new font
-    this.applyFont(this.currentFontIndex);
-    
-    console.log('Font cycled to index:', this.currentFontIndex);
-    
-    // Show feedback to user
-    const fontNames = ['System', 'Serif', 'Monospace', 'Sans-serif', 'Elegant'];
-    this.showMessage(`Font changed to: ${fontNames[this.currentFontIndex]}`, 'success');
-  }
-  
-  applyFont(fontIndex) {
-    // Ensure fonts array is initialized
-    if (!this.fonts) {
-      console.log('Fonts array not initialized, initializing now...');
-      this.initializeFontFamily();
-    }
-    
-    if (fontIndex < 0 || fontIndex >= this.fonts.length) {
-      console.warn('Invalid font index:', fontIndex);
-      return;
-    }
-    
-    const selectedFont = this.fonts[fontIndex];
-    console.log('Applying font:', selectedFont);
-    
-    // Apply to document body
-    document.body.style.fontFamily = selectedFont;
-    
-    // Also apply to CSS custom property for consistency
-    document.documentElement.style.setProperty('--font-family', selectedFont);
-    
-    // Apply to all major elements to ensure font change is visible
-    const elementsToStyle = [
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'p', 'div', 'span', 'a', 'li', 'td', 'th',
-      '.post-content', '.post-title', '.menu-entry', '.label'
-    ];
-    
-    elementsToStyle.forEach(selector => {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach(el => {
-        el.style.fontFamily = selectedFont;
-      });
-    });
-    
-    // Force a repaint by temporarily changing and restoring a property
-    document.body.style.transform = 'translateZ(0)';
-    setTimeout(() => {
-      document.body.style.transform = '';
-    }, 10);
-    
-    console.log('Font applied to all elements:', selectedFont);
-  }
+
 
   // Cleanup method to prevent memory leaks
   destroy() {
