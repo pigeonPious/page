@@ -1,4 +1,4 @@
-# Contact [FLAGS: contact, info, reach]
+# Contact [FLAGS:_Contact]
 
 Date: 2025-01-30
 
