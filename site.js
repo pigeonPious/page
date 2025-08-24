@@ -5,12 +5,22 @@
 
 // CACHE BUST: This file was last modified at 2025-01-23
 // If you see this comment, the file is being served fresh
-// Automatic cache busting enabled - no hardcoded versions needed
+// Version: 2.3 - Dynamic GitHub Repository Scanning with Video Support and Poster Generation
 class SimpleBlog {
   constructor() {
-    // Automatic cache busting - no hardcoded versions needed
-    // Cache is automatically cleared on every page load via HTML timestamp parameters
-    console.log('🚀 SimpleBlog initialized - automatic cache busting enabled');
+    // Version check and cache busting
+    const currentVersion = '2.3';
+    const storedVersion = localStorage.getItem('ppPage_js_version');
+    if (storedVersion !== currentVersion) {
+      console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
+      localStorage.setItem('ppPage_js_version', currentVersion);
+      // Force a reload if this is a major version change
+      if (storedVersion && storedVersion !== currentVersion) {
+        console.log('🔄 Major version change detected, forcing reload...');
+        setTimeout(() => window.location.reload(true), 100);
+        return;
+      }
+    }
     
     this.currentPost = null;
     this.posts = [];
@@ -1849,16 +1859,12 @@ class SimpleBlog {
           const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
           contents.forEach(item => {
             if (item.type === 'file' && mediaExtensions.some(ext => item.name.toLowerCase().endsWith(ext))) {
-              // Find the matching extension
-              const matchedExt = mediaExtensions.find(ext => item.name.toLowerCase().endsWith(ext));
-              console.log(`loadImagesForPost: Processing file ${item.name}, detected type: ${matchedExt}`);
-              
               imageFiles.push({
                 name: item.name,
                 url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${item.name}`,
-                type: matchedExt
+                type: mediaExtensions.find(ext => item.name.toLowerCase().endsWith(ext))
               });
-              console.log(`loadImagesForPost: Added media via API: ${item.name} with type ${matchedExt}`);
+              console.log(`loadImagesForPost: Added media via API: ${item.name}`);
             }
           });
           
@@ -1873,111 +1879,46 @@ class SimpleBlog {
         console.log(`loadImagesForPost: GitHub API error:`, error);
       }
       
-      // Method 2: Simple fallback - try to access the post folder directly
+      // Method 2: Fallback to public directory browsing
       if (imageFiles.length === 0) {
         try {
-          console.log(`loadImagesForPost: Trying direct folder access for posts/${slug}`);
-          
-          // Try to access the post folder directly to see what's there
+          console.log(`loadImagesForPost: Trying public directory browsing for folder: posts/${slug}`);
+          const corsProxy = 'https://corsproxy.io/?';
           const folderUrl = `https://github.com/pigeonPious/page/tree/main/posts/${slug}`;
-          const response = await fetch(folderUrl);
+          const response = await fetch(corsProxy + folderUrl);
           
           if (response.ok) {
             const htmlContent = await response.text();
-            console.log(`loadImagesForPost: Direct folder access returned content length: ${htmlContent.length}`);
+            console.log(`loadImagesForPost: Directory browsing returned content length: ${htmlContent.length}`);
             
-            // Look for any file links in the HTML
-            const fileLinkRegex = /href="([^"]*\.(png|jpg|jpeg|gif|webp|svg|mp4|mov|avi|webm))"/gi;
-            const fileMatches = htmlContent.match(fileLinkRegex);
+            // Look for media files (common image and video extensions)
+            const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
             
-            if (fileMatches) {
-              console.log(`loadImagesForPost: Found ${fileMatches.length} file links in HTML`);
-              
-              // Filter for files that are actually in our post folder
-              const postFiles = [];
-              fileMatches.forEach(match => {
-                const href = match.match(/href="([^"]+)"/)[1];
-                if (href.includes(`/posts/${slug}/`)) {
-                  const filename = href.split('/').pop();
-                  const ext = filename.split('.').pop().toLowerCase();
-                  console.log(`loadImagesForPost: Found file in post folder: ${filename}`);
-                  
-                  postFiles.push({
-                    name: filename,
-                    url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`,
-                    type: ext
-                  });
-                }
-              });
-              
-              // Sort files alphabetically and add to imageFiles
-              postFiles.sort((a, b) => a.name.localeCompare(b.name));
-              imageFiles.push(...postFiles);
-              
-              console.log(`loadImagesForPost: Added ${postFiles.length} files in alphabetical order`);
-            } else {
-              console.log(`loadImagesForPost: No file links found in folder HTML`);
-            }
-          } else {
-            console.log(`loadImagesForPost: Direct folder access failed with status: ${response.status}`);
-          }
-        } catch (error) {
-          console.log(`loadImagesForPost: Direct folder access error:`, error);
-        }
-      }
-      
-      // Method 3: Try to find any media files by checking raw URLs directly
-      if (imageFiles.length === 0) {
-        try {
-          console.log(`loadImagesForPost: Trying direct raw URL access for posts/${slug}`);
-          
-          // Common media extensions to check
-          const mediaExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
-          
-          for (const ext of mediaExtensions) {
-            // Try to access the raw GitHub URL directly
-            const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/`;
-            
-            // We'll try a few common naming patterns
-            const testPatterns = [
-              `1.${ext}`,
-              `image.${ext}`,
-              `img.${ext}`,
-              `photo.${ext}`,
-              `screenshot.${ext}`,
-              `Screenshot.${ext}`,
-              `IMG.${ext}`,
-              `Photo.${ext}`,
-              `video.${ext}`,
-              `movie.${ext}`,
-              `clip.${ext}`,
-              `Screen Recording.${ext}`,
-              `Screen Recording 2025-07-04 at 5.03.24 PM.${ext}`
-            ];
-            
-            for (const pattern of testPatterns) {
-              try {
-                const response = await fetch(rawUrl + pattern, { method: 'HEAD' });
-                if (response.ok) {
-                  console.log(`loadImagesForPost: Found media file via direct raw access: ${pattern}`);
-                  imageFiles.push({
-                    name: pattern,
-                    url: rawUrl + pattern,
-                    type: ext
-                  });
-                  break; // Found one with this extension, move to next
-                }
-              } catch (error) {
-                // Continue to next pattern
+            mediaExtensions.forEach(ext => {
+              const regex = new RegExp(`href="[^"]*\\.${ext}"`, 'gi');
+              const matches = htmlContent.match(regex);
+              if (matches) {
+                console.log(`loadImagesForPost: Found ${matches.length} matches for .${ext} files`);
+                matches.forEach(match => {
+                  const href = match.match(/href="([^"]+)"/)[1];
+                  console.log(`loadImagesForPost: Processing href: ${href}`);
+                  if (href.includes(`/posts/${slug}/`) && href.endsWith(`.${ext}`)) {
+                    const filename = href.split('/').pop();
+                    imageFiles.push({
+                      name: filename,
+                      url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`,
+                      type: ext
+                    });
+                    console.log(`loadImagesForPost: Added media via browsing: ${filename}`);
+                  }
+                });
               }
-            }
-            
-            if (imageFiles.length > 0) {
-              break; // Found some files, stop scanning
-            }
+            });
+          } else {
+            console.log(`loadImagesForPost: Directory browsing failed with status: ${response.status}`);
           }
         } catch (error) {
-          console.log(`loadImagesForPost: Direct raw access method failed:`, error);
+          console.log(`loadImagesForPost: Directory browsing error:`, error);
         }
       }
       
@@ -2025,40 +1966,24 @@ class SimpleBlog {
   }
 
   displayMedia(placeholder, mediaUrl, mediaName, mediaType) {
-    console.log('displayMedia called with:', { mediaUrl, mediaName, mediaType });
-    
     // Determine if this is a video or image
-    // If mediaType is undefined, try to detect from URL extension
-    let detectedType = mediaType;
-    if (!detectedType && mediaUrl) {
-      const urlParts = mediaUrl.split('.');
-      if (urlParts.length > 1) {
-        detectedType = urlParts[urlParts.length - 1].toLowerCase();
-        console.log('Detected type from URL:', detectedType);
-      }
-    }
-    
-    const isVideo = ['mp4', 'mov', 'avi', 'webm'].includes(detectedType);
-    console.log('Media type detection:', { mediaType, detectedType, isVideo });
+    const isVideo = ['mp4', 'mov', 'avi', 'webm'].includes(mediaType);
     
     if (isVideo) {
-      // Create video element for thumbnail display only
+      // Create video element
       const video = document.createElement('video');
       video.src = mediaUrl;
-      video.controls = false; // No controls in thumbnail
+      video.controls = true;
       video.preload = 'metadata';
-      video.muted = true; // Mute to prevent autoplay issues
-      video.className = 'post-media-content post-video-content post-video-thumbnail';
+      video.className = 'post-media-content post-video-content';
       video.style.cssText = `
-        width: 120px;
-        height: 120px;
-        object-fit: cover;
+        max-width: 100%;
+        height: auto;
         display: block;
         margin: 1em 0;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         cursor: pointer;
-        pointer-events: none; // Disable video interaction in thumbnail
       `;
       
       // Generate poster frame from first frame of video
@@ -2093,18 +2018,24 @@ class SimpleBlog {
         }
       });
       
-      // Create clickable wrapper div for the video
-      const videoWrapper = document.createElement('div');
-      videoWrapper.className = 'post-video-wrapper';
-      videoWrapper.style.cssText = `
-        position: relative;
-        display: inline-block;
-        cursor: pointer;
-        margin: 1em 0;
-      `;
+      // Track play/pause state for play button overlay
+      video.addEventListener('play', () => {
+        video.setAttribute('paused', 'false');
+      });
       
-      // Add click handler to wrapper for full preview
-      videoWrapper.addEventListener('click', (e) => {
+      video.addEventListener('pause', () => {
+        video.setAttribute('paused', 'true');
+      });
+      
+      video.addEventListener('ended', () => {
+        video.setAttribute('paused', 'true');
+      });
+      
+      // Set initial paused state
+      video.setAttribute('paused', 'true');
+      
+      // Add click handler for full preview
+      video.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         console.log('Video clicked:', video.src);
@@ -2112,52 +2043,12 @@ class SimpleBlog {
       });
       
       // Add visual indication that video is clickable
-      videoWrapper.title = 'Click to view full size';
+      video.title = 'Click to view full size';
       
-      // Add play button overlay to wrapper
-      const playButton = document.createElement('div');
-      playButton.className = 'post-video-play-button';
-      playButton.innerHTML = '▶';
-      playButton.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        pointer-events: none;
-        opacity: 0.9;
-        transition: opacity 0.2s ease;
-        z-index: 1;
-      `;
-      
-      // Add hover effect to wrapper
-      videoWrapper.addEventListener('mouseenter', () => {
-        playButton.style.opacity = '1';
-        playButton.style.background = 'rgba(0, 0, 0, 0.8)';
-      });
-      
-      videoWrapper.addEventListener('mouseleave', () => {
-        playButton.style.opacity = '0.9';
-        playButton.style.background = 'rgba(0, 0, 0, 0.7)';
-      });
-      
-      // Assemble video wrapper
-      videoWrapper.appendChild(video);
-      videoWrapper.appendChild(playButton);
-      
-      // Replace the placeholder with the video wrapper
-      placeholder.parentNode.replaceChild(videoWrapper, placeholder);
+      // Replace the placeholder with the actual video
+      placeholder.parentNode.replaceChild(video, placeholder);
     } else {
       // Create image element (existing logic)
-      console.log('Creating image element for:', mediaName);
       const img = document.createElement('img');
       img.src = mediaUrl;
       img.alt = mediaName || 'Post image';
