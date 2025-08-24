@@ -1966,8 +1966,21 @@ class SimpleBlog {
   }
 
   displayMedia(placeholder, mediaUrl, mediaName, mediaType) {
+    console.log('displayMedia called with:', { mediaUrl, mediaName, mediaType });
+    
     // Determine if this is a video or image
-    const isVideo = ['mp4', 'mov', 'avi', 'webm'].includes(mediaType);
+    // If mediaType is undefined, try to detect from URL extension
+    let detectedType = mediaType;
+    if (!detectedType && mediaUrl) {
+      const urlParts = mediaUrl.split('.');
+      if (urlParts.length > 1) {
+        detectedType = urlParts[urlParts.length - 1].toLowerCase();
+        console.log('Detected type from URL:', detectedType);
+      }
+    }
+    
+    const isVideo = ['mp4', 'mov', 'avi', 'webm'].includes(detectedType);
+    console.log('Media type detection:', { mediaType, detectedType, isVideo });
     
     if (isVideo) {
       // Create video element for thumbnail display only
@@ -2085,6 +2098,7 @@ class SimpleBlog {
       placeholder.parentNode.replaceChild(videoWrapper, placeholder);
     } else {
       // Create image element (existing logic)
+      console.log('Creating image element for:', mediaName);
       const img = document.createElement('img');
       img.src = mediaUrl;
       img.alt = mediaName || 'Post image';
