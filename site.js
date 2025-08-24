@@ -49,7 +49,13 @@ class SimpleBlog {
     }
     
     // Load posts first, then handle URL parameters
-    this.loadPosts().then(() => {
+    this.loadPosts().then((posts) => {
+      // Store the loaded posts in the instance
+      if (posts && posts.length > 0) {
+        this.posts = posts;
+        localStorage.setItem('posts', JSON.stringify(posts));
+        console.log('Posts loaded and stored:', posts.length);
+      }
       
       // Check for post parameter in URL (from editor navigation)
       const urlParams = new URLSearchParams(window.location.search);
@@ -92,6 +98,11 @@ class SimpleBlog {
       
       // Load and display projects in menu
       this.loadAndDisplayProjects();
+      
+      // Update navigation submenu with loaded posts
+      if (this.posts && this.posts.length > 0) {
+        this.updateAllPostsSubmenu();
+      }
     }).catch(error => {
       console.error('Error loading posts:', error);
     });
@@ -1167,7 +1178,7 @@ class SimpleBlog {
     // Add new submenu
     menuElement.appendChild(submenu);
     
-    // Use cached posts if available, otherwise load
+    // Use cached posts if available, otherwise load using the same method as sitemap
     if (this.posts && this.posts.length > 0) {
       this.displayPostsInSubmenu(submenu, this.posts);
     } else {
@@ -1178,7 +1189,46 @@ class SimpleBlog {
       loadingEntry.style.cssText = 'padding: 8px 15px; color: var(--muted, #888); font-style: italic;';
       submenu.appendChild(loadingEntry);
       
-      // Load and display posts
+      // Load posts using the same method as sitemap to ensure consistency
+      try {
+        // Try to load from the static posts index first
+        const indexResponse = await fetch('posts-index.json');
+        if (indexResponse.ok) {
+          const indexData = await indexResponse.json();
+          console.log('All Posts submenu: Found static index with', indexData.total_posts, 'posts');
+          
+          // Convert index data to post objects
+          const posts = [];
+          for (const postData of indexData.posts) {
+            try {
+              // Load the actual post content
+              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postData.filename}`;
+              const response = await fetch(postUrl);
+              if (response.ok) {
+                const content = await response.text();
+                const post = this.parseTxtPost(content, postData.slug);
+                if (post) {
+                  posts.push(post);
+                }
+              }
+            } catch (error) {
+              console.error('All Posts submenu: Error loading post content:', postData.filename, error);
+            }
+          }
+          
+          if (posts.length > 0) {
+            console.log('All Posts submenu: Successfully loaded', posts.length, 'posts from static index');
+            this.posts = posts;
+            localStorage.setItem('posts', JSON.stringify(posts));
+            this.displayPostsInSubmenu(submenu, posts);
+            return;
+          }
+        }
+      } catch (error) {
+        console.log('All Posts submenu: Static index failed, falling back to live discovery:', error);
+      }
+      
+      // Fallback to live discovery if static index fails
       this.loadPostsForSubmenu(submenu);
     }
     
