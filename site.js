@@ -1394,104 +1394,139 @@ class SimpleBlog {
   }
 
   async loadPosts() {
-    const cacheBust = Date.now();
+    try {
+      console.log('loadPosts: Loading posts from static index...');
+      
+      // Try to load from the static posts index first
+      const indexResponse = await fetch('posts-index.json');
+      if (indexResponse.ok) {
+        const indexData = await indexResponse.json();
+        console.log('loadPosts: Found static index with', indexData.total_posts, 'posts');
+        
+        // Convert index data to post objects
+        const posts = [];
+        for (const postData of indexData.posts) {
+          try {
+            // Load the actual post content
+            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postData.filename}`;
+            const response = await fetch(postUrl);
+            if (response.ok) {
+              const content = await response.text();
+              const post = this.parseTxtPost(content, postData.slug);
+              if (post) {
+                posts.push(post);
+              }
+            }
+          } catch (error) {
+            console.error('Error loading post content:', postData.filename, error);
+          }
+        }
+        
+        if (posts.length > 0) {
+          console.log('loadPosts: Successfully loaded', posts.length, 'posts from static index');
+          return posts;
+        }
+      }
+    } catch (error) {
+      console.log('loadPosts: Static index failed, falling back to live discovery:', error);
+    }
     
+    // Fallback to live discovery if static index fails
+    console.log('loadPosts: Falling back to live repository scanning...');
+    const cacheBust = Date.now();
+    let postFiles = [];
+    
+    // Method 1: Try GitHub API first
     try {
       console.log('loadPosts: Scanning GitHub repository for .txt files...');
-      
-      // Use multiple methods to discover posts
-      let postFiles = [];
-      
-      // Method 1: Try GitHub API first
+      const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts?_cb=${cacheBust}`);
+      if (response.ok) {
+        const contents = await response.json();
+        const txtFiles = contents.filter(item => 
+          item.type === 'file' && item.name.endsWith('.txt')
+        );
+        
+        if (txtFiles.length > 0) {
+          postFiles = txtFiles.map(item => ({
+            name: item.name,
+            download_url: item.download_url
+          }));
+          console.log('loadPosts: Found', postFiles.length, 'posts via GitHub API');
+        }
+      }
+    } catch (error) {
+      console.log('loadPosts: GitHub API method failed:', error);
+    }
+    
+    // Method 2: Fallback to public directory browsing
+    if (postFiles.length === 0) {
       try {
-        const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts?_cb=${cacheBust}`);
+        console.log('loadPosts: Trying public directory browsing...');
+        const corsProxy = 'https://corsproxy.io/?';
+        const postsDirResponse = await fetch(corsProxy + `https://corsproxy.io/?https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
+        
+        if (postsDirResponse.ok) {
+          const htmlContent = await postsDirResponse.text();
+          
+          // Parse HTML to find all .txt files
+          const txtFileMatches = htmlContent.match(/href="[^"]*\.txt"/g);
+          if (txtFileMatches) {
+            const discoveredFiles = txtFileMatches
+              .map(match => match.match(/href="([^"]+)"/)[1])
+              .filter(href => href.includes('/posts/') && href.endsWith('.txt'))
+              .map(href => {
+                const filename = href.split('/').pop();
+                return {
+                  name: filename,
+                  download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}?_cb=${cacheBust}`
+                };
+              });
+            
+            if (discoveredFiles.length > 0) {
+              postFiles = discoveredFiles;
+              console.log('loadPosts: Found', postFiles.length, 'posts via directory browsing');
+            }
+          }
+        }
+      } catch (error) {
+        console.log('loadPosts: Directory browsing failed:', error);
+      }
+    }
+    
+    // Method 3: Try GitHub Tree API as last resort
+    if (postFiles.length === 0) {
+      try {
+        console.log('loadPosts: Trying GitHub Tree API...');
+        const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
         if (response.ok) {
-          const contents = await response.json();
-          const txtFiles = contents.filter(item => 
-            item.type === 'file' && item.name.endsWith('.txt')
+          const treeData = await response.json();
+          const txtFiles = treeData.tree.filter(item => 
+            item.path.startsWith('posts/') && item.path.endsWith('.txt')
           );
           
           if (txtFiles.length > 0) {
             postFiles = txtFiles.map(item => ({
-              name: item.name,
-              download_url: item.download_url
+              name: item.path.replace('posts/', ''),
+              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}?_cb=${cacheBust}`
             }));
-            console.log('loadPosts: Found', postFiles.length, 'posts via GitHub API');
+            console.log('loadPosts: Found', postFiles.length, 'posts via Tree API');
           }
         }
       } catch (error) {
-        console.log('loadPosts: GitHub API method failed:', error);
+        console.log('loadPosts: Tree API failed:', error);
       }
+    }
+    
+    if (postFiles.length > 0) {
+      console.log('loadPosts: Processing', postFiles.length, 'post files...');
       
-      // Method 2: Fallback to public directory browsing
-      if (postFiles.length === 0) {
+      // Fetch and parse each post file
+      const posts = [];
+      for (const postFile of postFiles) {
         try {
-          console.log('loadPosts: Trying public directory browsing...');
-          const corsProxy = 'https://corsproxy.io/?';
-          const postsDirResponse = await fetch(corsProxy + `https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
-          
-          if (postsDirResponse.ok) {
-            const htmlContent = await postsDirResponse.text();
-            
-            // Parse HTML to find all .txt files
-            const txtFileMatches = htmlContent.match(/href="[^"]*\.txt"/g);
-            if (txtFileMatches) {
-              const discoveredFiles = txtFileMatches
-                .map(match => match.match(/href="([^"]+)"/)[1])
-                .filter(href => href.includes('/posts/') && href.endsWith('.txt'))
-                .map(href => {
-                  const filename = href.split('/').pop();
-                  return {
-                    name: filename,
-                    download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}?_cb=${cacheBust}`
-                  };
-                });
-              
-              if (discoveredFiles.length > 0) {
-                postFiles = discoveredFiles;
-                console.log('loadPosts: Found', postFiles.length, 'posts via directory browsing');
-              }
-            }
-          }
-        } catch (error) {
-          console.log('loadPosts: Directory browsing failed:', error);
-        }
-      }
-      
-      // Method 3: Try GitHub Tree API as last resort
-      if (postFiles.length === 0) {
-        try {
-          console.log('loadPosts: Trying GitHub Tree API...');
-          const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-          if (response.ok) {
-            const treeData = await response.json();
-            const txtFiles = treeData.tree.filter(item => 
-              item.path.startsWith('posts/') && item.path.endsWith('.txt')
-            );
-            
-            if (txtFiles.length > 0) {
-              postFiles = txtFiles.map(item => ({
-                name: item.path.replace('posts/', ''),
-                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}?_cb=${cacheBust}`
-              }));
-              console.log('loadPosts: Found', postFiles.length, 'posts via Tree API');
-            }
-          }
-        } catch (error) {
-          console.log('loadPosts: Tree API failed:', error);
-        }
-      }
-      
-      if (postFiles.length > 0) {
-        console.log('loadPosts: Processing', postFiles.length, 'post files...');
-        
-        // Fetch and parse each post file
-        const posts = [];
-        for (const postFile of postFiles) {
-          try {
-            const postResponse = await fetch(postFile.download_url + (postFile.download_url.includes('?') ? '&' : '?') + '_cb=' + cacheBust);
-            if (postResponse.ok) {
-              const postContent = await postResponse.text();
+          const postResponse = await fetch(postFile.download_url + (postFile.download_url.includes('?') ? '&' : '?') + '_cb=' + cacheBust);
+          if (postResponse.ok) {
+            const postContent = await postResponse.text();
               
               // Extract slug from filename (remove .txt extension)
               const slug = postFile.name.replace('.txt', '');
@@ -1509,31 +1544,14 @@ class SimpleBlog {
           }
         }
         
-        // Update posts array and cache in localStorage
-        this.posts = posts;
-        localStorage.setItem('posts', JSON.stringify(posts));
-        
-        if (this.posts.length > 0) {
-          // Sort by date for reference
-          this.posts.sort((a, b) => new Date(b.date) - new Date(a.date));
-          console.log('loadPosts: Successfully loaded', this.posts.length, 'posts');
-        } else {
-          console.log('loadPosts: No posts could be parsed');
-          this.displayDefaultContent();
-        }
-      } else {
-        console.log('loadPosts: No .txt files found in posts directory');
-        // Don't clear posts array - keep cached posts if available
-        if (!this.posts || this.posts.length === 0) {
-          this.displayDefaultContent();
-        }
+        return posts;
       }
+      
+      console.log('loadPosts: No posts found');
+      return [];
     } catch (error) {
       console.error('Error scanning repository:', error);
-      // Don't clear posts array - keep cached posts if available
-      if (!this.posts || this.posts.length === 0) {
-        this.displayDefaultContent();
-      }
+      return [];
     }
   }
 
@@ -7254,12 +7272,49 @@ class SimpleBlog {
       padding-right: 8px;
     `;
     
-    // Load posts for sitemap using the same reliable method as main loadPosts
+    // Load posts for sitemap using the static index first, then fallback to live discovery
     const loadPostsForSiteMap = async () => {
       try {
         console.log('Site map: Loading posts for sitemap...');
         
-        // Use the same method as loadPosts to ensure consistency
+        // Try to load from the static posts index first
+        try {
+          const indexResponse = await fetch('posts-index.json');
+          if (indexResponse.ok) {
+            const indexData = await indexResponse.json();
+            console.log('Site map: Found static index with', indexData.total_posts, 'posts');
+            
+            // Convert index data to post objects
+            const posts = [];
+            for (const postData of indexData.posts) {
+              try {
+                // Load the actual post content
+                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postData.filename}`;
+                const response = await fetch(postUrl);
+                if (response.ok) {
+                  const content = await response.text();
+                  const post = this.parseTxtPost(content, postData.slug);
+                  if (post) {
+                    posts.push(post);
+                    console.log('Site map: Successfully parsed post:', post.title);
+                  }
+                }
+              } catch (error) {
+                console.error('Site map: Error loading post content:', postData.filename, error);
+              }
+            }
+            
+            if (posts.length > 0) {
+              console.log('Site map: Successfully loaded', posts.length, 'posts from static index');
+              return posts;
+            }
+          }
+        } catch (error) {
+          console.log('Site map: Static index failed, falling back to live discovery:', error);
+        }
+        
+        // Fallback to live discovery if static index fails
+        console.log('Site map: Falling back to live repository scanning...');
         const cacheBust = Date.now();
         let postFiles = [];
         

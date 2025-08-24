@@ -1,0 +1,38 @@
+{
+  "generated_at": "2024-12-19T10:00:00",
+  "total_posts": 4,
+  "posts": [
+    {
+      "slug": "flags-demo",
+      "title": "Demo Post with FLAGS Syntax",
+      "date": "2024-12-19",
+      "keywords": "demo, programming, tutorial",
+      "filename": "flags-demo.txt",
+      "last_modified": "2024-12-19T10:00:00"
+    },
+    {
+      "slug": "about",
+      "title": "About",
+      "date": "2025-01-30",
+      "keywords": "about, info",
+      "filename": "about.txt",
+      "last_modified": "2024-12-19T10:00:00"
+    },
+    {
+      "slug": "contact",
+      "title": "Contact",
+      "date": "2025-01-30",
+      "keywords": "contact, info, reach",
+      "filename": "contact.txt",
+      "last_modified": "2024-12-19T10:00:00"
+    },
+    {
+      "slug": "sample-post",
+      "title": "Sample Post",
+      "date": "2024-12-19",
+      "keywords": "sample, demo, test",
+      "filename": "sample-post.txt",
+      "last_modified": "2024-12-19T10:00:00"
+    }
+  ]
+}
