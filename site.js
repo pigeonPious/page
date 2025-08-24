@@ -1859,12 +1859,16 @@ class SimpleBlog {
           const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
           contents.forEach(item => {
             if (item.type === 'file' && mediaExtensions.some(ext => item.name.toLowerCase().endsWith(ext))) {
+              // Find the matching extension
+              const matchedExt = mediaExtensions.find(ext => item.name.toLowerCase().endsWith(ext));
+              console.log(`loadImagesForPost: Processing file ${item.name}, detected type: ${matchedExt}`);
+              
               imageFiles.push({
                 name: item.name,
                 url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${item.name}`,
-                type: mediaExtensions.find(ext => item.name.toLowerCase().endsWith(ext))
+                type: matchedExt
               });
-              console.log(`loadImagesForPost: Added media via API: ${item.name}`);
+              console.log(`loadImagesForPost: Added media via API: ${item.name} with type ${matchedExt}`);
             }
           });
           
@@ -1904,12 +1908,13 @@ class SimpleBlog {
                   console.log(`loadImagesForPost: Processing href: ${href}`);
                   if (href.includes(`/posts/${slug}/`) && href.endsWith(`.${ext}`)) {
                     const filename = href.split('/').pop();
+                    console.log(`loadImagesForPost: Processing file ${filename}, detected type: ${ext}`);
                     imageFiles.push({
                       name: filename,
                       url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`,
                       type: ext
                     });
-                    console.log(`loadImagesForPost: Added media via browsing: ${filename}`);
+                    console.log(`loadImagesForPost: Added media via browsing: ${filename} with type ${ext}`);
                   }
                 });
               }
