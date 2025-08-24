@@ -564,13 +564,6 @@ body {
   text-indent: 0; /* No paragraph indentation */
 }
 
-/* Add a sample note link style for demonstration */
-.note-link {
-    cursor: help;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-}
-
 /* All images in posts - uniform 150x150 square format with text wrapping */
 .post-content img {
   width: 150px !important;
