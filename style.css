@@ -337,6 +337,7 @@ body {
 }
 
 /* Responsive taskbar - reduce spacing on narrow windows */
+/* Star button (sitemap toggle) is hidden at multiple breakpoints for mobile optimization */
 @media (max-width: 1200px) {
   .menu-bar-inner {
     gap: 10px;
@@ -354,11 +355,20 @@ body {
     gap: 6px;
   }
   
-  
-  
   /* Hide PiousPigeon label on very narrow windows */
   .pigeon-label {
     display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .menu-bar-inner {
+    gap: 4px;
+  }
+  
+  /* Hide star button when taskbar gets very condensed */
+  .menu-star {
+    display: none !important;
   }
 }
 
@@ -526,6 +536,11 @@ body {
     width: calc(100vw - calc(var(--unit) * 1));
     max-width: calc(var(--unit) * 6);
   }
+  
+  /* Ensure star button is hidden on very small mobile devices */
+  .menu-star {
+    display: none !important;
+  }
 }
 
 /* Content */
@@ -616,6 +631,19 @@ body {
     width: 36px !important;
     height: 36px !important;
     font-size: 16px !important;
+  }
+  
+  /* Hide star button on small mobile devices */
+  .menu-star {
+    display: none !important;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 500px) {
+  /* Ensure star button is completely hidden on very small screens */
+  .menu-star {
+    display: none !important;
   }
 }
 
