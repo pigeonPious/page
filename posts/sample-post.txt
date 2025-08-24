@@ -1,0 +1,34 @@
+# Sample Post
+
+Date: 2025-01-30
+Keywords: sample, demo, test
+
+This is a sample post to demonstrate the new .txt file format.
+
+## Hover Notes
+
+You can create hover notes using this syntax: [hover over this text:This is the content that appears when you hover over the text!]
+
+Another example: [click here:This will show additional information when you hover over "click here"]
+
+## Images
+
+You can add images using the [IMAGE] syntax. The system will automatically load images from a folder with the same name as this post.
+
+[IMAGE]
+
+Here's some text between images.
+
+[IMAGE]
+
+And another image at the end.
+
+## Formatting
+
+The system automatically parses:
+- Titles (lines starting with # or first non-empty line)
+- Dates (lines starting with Date:)
+- Keywords (lines starting with Keywords:)
+- Content (everything after metadata or after 10 lines)
+
+This makes it easy to write posts in plain text while maintaining structure.

@@ -1,0 +1,11 @@
+This folder would contain image files for the sample-post.
+
+To add actual images:
+1. Upload .jpg, .png, .gif, .webp, or .svg files to this folder
+2. The system will automatically detect and load them
+3. Use [IMAGE] in your .txt file to place them
+
+The system will:
+- Load the first [IMAGE] with the first image found
+- Load the second [IMAGE] with the second image found
+- If there are more [IMAGE] calls than images, it will randomly select from available images

@@ -172,32 +172,13 @@ class SimpleBlog {
           <div class="menu-item" data-menu="file">
             <div class="label">File</div>
             <div class="menu-dropdown">
-              <a class="menu-entry" id="new-post" href="editor.html">New Post</a>
-              <div class="menu-separator"></div>
-              <div class="menu-entry editor-only admin-only" id="open-draft-btn">Open Draft</div>
-              <div class="menu-entry editor-only" id="open-in-github">Open in GitHub</div>
-              <div class="menu-entry editor-only admin-only" id="import-btn">Import</div>
-              <div class="menu-separator"></div>
-              <div class="menu-entry editor-only admin-only" id="save-draft-btn">Save Draft</div>
-              <div class="menu-entry editor-only admin-only" id="export-btn">Export</div>
-              <div class="menu-entry editor-only admin-only" id="publish-btn">Publish</div>
+
               <div class="menu-separator"></div>
               <div class="menu-entry" id="open-console-btn">Open Console</div>
             </div>
           </div>
           
-          <div class="menu-item" data-menu="edit">
-            <div class="label">Edit</div>
-            <div class="menu-dropdown">
-              <div class="menu-entry blog-only admin-only" id="edit-post-button">Edit Post</div>
-              <div class="menu-separator"></div>
-              <div class="menu-entry editor-only admin-only" id="delete-post-button">Delete Post</div>
-              <div class="menu-separator"></div>
 
-              <div class="menu-entry editor-only admin-only" id="images-btn">Images</div>
-              <div class="menu-entry editor-only admin-only" id="keywords-btn">Flags</div>
-            </div>
-          </div>
           
           <div class="menu-item" data-menu="navigation">
             <div class="label">Navigation</div>
@@ -240,8 +221,7 @@ class SimpleBlog {
           
         
         <div class="pigeon-label" style="margin-left: auto; padding: 0 12px; font-size: 12px; color: var(--fg); font-family: monospace; cursor: default; user-select: none;">
-          <span id="github-connect-underscore" style="color: #fff; cursor: pointer; margin-right: 2px;">_</span>PiousPigeon
-          <span id="logout-btn" style="color: var(--muted); cursor: pointer; margin-left: 8px; display: none;">logout</span>
+          PiousPigeon
         </div>
         </div>
       </div>
@@ -254,7 +234,6 @@ class SimpleBlog {
     // Bind events after taskbar is in the DOM
     this.bindEventListener(document.getElementById('about-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('about'); });
     this.bindEventListener(document.getElementById('contact-btn'), 'click', (e) => { e.preventDefault(); this.loadPost('contact'); });
-    this.bindEventListener(document.getElementById('logout-btn'), 'click', () => { this.logout(); });
   }
 
   // Helper Methods
@@ -264,37 +243,7 @@ class SimpleBlog {
     }
   }
 
-  // Logout functionality
-  logout() {
-    console.log('Logging out...');
-    
-    // Check if this was called from console
-    const isFromConsole = new Error().stack?.includes('executeCommand') || false;
-    
-    localStorage.removeItem('github_token');
-    localStorage.removeItem('github_oauth_token');
-    localStorage.removeItem('github_token_type');
-    
-    // Hide logout button
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.style.display = 'none';
-    }
-    
-    // Update GitHub status
-    const underscore = document.getElementById('github-connect-underscore');
-    if (underscore) {
-      underscore.textContent = '_';
-      underscore.style.color = '#fff';
-    }
-    
-    console.log('Logged out successfully');
-    
-    // If called from console, provide feedback
-    if (isFromConsole) {
-      this.printToConsole('Logged out of GitHub successfully');
-    }
-  }
+
 
   // Enhanced cache clearer for new builds
   clearAllCache() {
@@ -2473,20 +2422,20 @@ class SimpleBlog {
       // Use GitHub's public directory browsing to discover posts
       if (!directoryContents) {
         try {
-          console.log('loadPosts V2.0: Using GitHub public directory browsing...');
+          console.log('loadPosts: Using GitHub public directory browsing for .txt files...');
           
-          // Use GitHub's public directory browsing to discover posts (with CORS proxy)
+          // Use GitHub's public directory browsing to discover posts
           const corsProxy = 'https://corsproxy.io/?';
           const postsDirResponse = await fetch(corsProxy + `https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
           if (postsDirResponse.ok) {
             const htmlContent = await postsDirResponse.text();
             
-            // Parse HTML to find all JSON files in the posts directory
-            const jsonFileMatches = htmlContent.match(/href="[^"]*\.json"/g);
-            if (jsonFileMatches) {
-              const postFiles = jsonFileMatches
+            // Parse HTML to find all .txt files in the posts directory
+            const txtFileMatches = htmlContent.match(/href="[^"]*\.txt"/g);
+            if (txtFileMatches) {
+              const postFiles = txtFileMatches
                 .map(match => match.match(/href="([^"]+)"/)[1])
-                .filter(href => href.includes('/posts/') && href.endsWith('.json') && !href.includes('index.json'))
+                .filter(href => href.includes('/posts/') && href.endsWith('.txt'))
                 .map(href => {
                   const filename = href.split('/').pop();
                   return {
@@ -2498,13 +2447,13 @@ class SimpleBlog {
               
               if (postFiles.length > 0) {
                 directoryContents = postFiles;
-                console.log('loadPosts V2.0: Successfully discovered posts via GitHub directory browsing');
+                console.log('loadPosts: Successfully discovered posts via GitHub directory browsing');
               }
             }
           }
           
           if (!directoryContents) {
-            console.log('loadPosts V2.0: GitHub directory browsing failed');
+            console.log('loadPosts: GitHub directory browsing failed');
           }
         } catch (error) {
           console.log('loadPosts: GitHub directory browsing failed:', error);
@@ -2512,37 +2461,29 @@ class SimpleBlog {
       }
       
       if (directoryContents) {
-        // Filter for JSON files (posts) and exclude index.json
+        // Filter for .txt files (posts)
         const postFiles = directoryContents.filter(item => 
           item.type === 'file' && 
-          item.name.endsWith('.json') && 
-          item.name !== 'index.json'
+          item.name.endsWith('.txt')
         );
         
-        // Fetch and parse each post file to get metadata
+        // Fetch and parse each post file
         const posts = [];
         for (const postFile of postFiles) {
           try {
             const postResponse = await fetch(postFile.download_url + (postFile.download_url.includes('?') ? '&' : '?') + '_cb=' + cacheBust);
             if (postResponse.ok) {
-              const postData = await postResponse.json();
+              const postContent = await postResponse.text();
               
-              // Extract slug from filename (remove .json extension)
-              const slug = postFile.name.replace('.json', '');
+              // Extract slug from filename (remove .txt extension)
+              const slug = postFile.name.replace('.txt', '');
               
-              // Get the actual commit date from GitHub instead of using hardcoded date
-              const commitDate = await this.getCommitDate(`posts/${postFile.name}`);
+              // Parse the .txt file content
+              const post = this.parseTxtPost(postContent, slug);
               
-              // Create post object with all necessary data
-              const post = {
-                slug: slug,
-                title: postData.title || 'Untitled',
-                date: commitDate, // Use actual GitHub commit date
-                keywords: postData.keywords || 'general',
-                content: postData.content || ''
-              };
-              
-              posts.push(post);
+              if (post) {
+                posts.push(post);
+              }
             }
           } catch (postError) {
             console.warn('Could not parse post file:', postFile.name, postError);
@@ -2577,6 +2518,177 @@ class SimpleBlog {
     }
   }
 
+  parseTxtPost(content, slug) {
+    try {
+      // Split content into lines
+      const lines = content.split('\n');
+      let title = 'Untitled';
+      let date = new Date().toISOString().split('T')[0]; // Default to today
+      let keywords = 'general';
+      let postContent = '';
+      
+      // Parse the first few lines for metadata
+      let inContent = false;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        if (!inContent) {
+          // Look for title (first non-empty line or line starting with #)
+          if (line.startsWith('# ')) {
+            title = line.substring(2).trim();
+            continue;
+          } else if (line.startsWith('Title: ')) {
+            title = line.substring(7).trim();
+            continue;
+          }
+          
+          // Look for date
+          if (line.startsWith('Date: ')) {
+            date = line.substring(6).trim();
+            continue;
+          }
+          
+          // Look for keywords
+          if (line.startsWith('Keywords: ')) {
+            keywords = line.substring(10).trim();
+            continue;
+          }
+          
+          // If we hit a blank line or content starts, switch to content mode
+          if (line === '' || line.startsWith('---')) {
+            inContent = true;
+            continue;
+          }
+          
+          // If this is the first non-empty line and no title found, use it as title
+          if (title === 'Untitled' && line !== '') {
+            title = line;
+            continue;
+          }
+        }
+        
+        // Add to content
+        if (inContent || i > 10) { // Start content after metadata or after 10 lines
+          postContent += line + '\n';
+        }
+      }
+      
+      // Process content for hover notes and images
+      postContent = this.processPostContent(postContent, slug);
+      
+      return {
+        slug: slug,
+        title: title,
+        date: date,
+        keywords: keywords,
+        content: postContent
+      };
+    } catch (error) {
+      console.error('Error parsing .txt post:', error);
+      return null;
+    }
+  }
+
+  processPostContent(content, slug) {
+    // Process hover notes: [DISPLAY TEXT:HOVERNOTE CONTENT HERE]
+    content = content.replace(/\[([^:]+):([^\]]+)\]/g, (match, displayText, hoverContent) => {
+      return `<span class="hover-note" data-hover="${hoverContent.trim()}">${displayText.trim()}</span>`;
+    });
+    
+    // Process images: [IMAGE]
+    let imageIndex = 0;
+    content = content.replace(/\[IMAGE\]/g, () => {
+      imageIndex++;
+      return `<div class="post-image" data-post="${slug}" data-index="${imageIndex}"></div>`;
+    });
+    
+    return content;
+  }
+
+  async loadImagesForPost(slug) {
+    try {
+      // Try to discover images in the post's folder
+      const corsProxy = 'https://corsproxy.io/?';
+      const folderUrl = `https://github.com/pigeonPious/page/tree/main/posts/${slug}`;
+      const response = await fetch(corsProxy + folderUrl);
+      
+      if (response.ok) {
+        const htmlContent = await response.text();
+        
+        // Look for image files (common image extensions)
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        const imageFiles = [];
+        
+        imageExtensions.forEach(ext => {
+          const regex = new RegExp(`href="[^"]*\\.${ext}"`, 'gi');
+          const matches = htmlContent.match(regex);
+          if (matches) {
+            matches.forEach(match => {
+              const href = match.match(/href="([^"]+)"/)[1];
+              if (href.includes(`/posts/${slug}/`) && href.endsWith(`.${ext}`)) {
+                const filename = href.split('/').pop();
+                imageFiles.push({
+                  name: filename,
+                  url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`
+                });
+              }
+            });
+          }
+        });
+        
+        return imageFiles;
+      }
+    } catch (error) {
+      console.log('Could not load images for post:', slug, error);
+    }
+    
+    return [];
+  }
+
+  async loadAndDisplayImages(slug, contentElement) {
+    try {
+      const images = await this.loadImagesForPost(slug);
+      
+      if (images.length > 0) {
+        // Find all image placeholders in the content
+        const imagePlaceholders = contentElement.querySelectorAll('.post-image');
+        
+        imagePlaceholders.forEach((placeholder, index) => {
+          if (index < images.length) {
+            // Use the image at this index
+            const image = images[index];
+            this.displayImage(placeholder, image.url, image.name);
+          } else {
+            // If we have more placeholders than images, randomly select from available images
+            const randomIndex = Math.floor(Math.random() * images.length);
+            const image = images[randomIndex];
+            this.displayImage(placeholder, image.url, image.name);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading images for post:', slug, error);
+    }
+  }
+
+  displayImage(placeholder, imageUrl, imageName) {
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = imageName || 'Post image';
+    img.className = 'post-image-content';
+    img.style.cssText = `
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1em 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    `;
+    
+    // Replace the placeholder with the actual image
+    placeholder.parentNode.replaceChild(img, placeholder);
+  }
+
   async filterAvailablePosts(posts) {
     if (!Array.isArray(posts)) {
       console.warn('filterAvailablePosts: posts is not an array:', posts);
@@ -2596,14 +2708,14 @@ class SimpleBlog {
         let postExists = false;
         
         try {
-          const githubResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${post.slug}.json`);
+          const githubResponse = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${post.slug}.txt`);
           if (githubResponse.ok) {
             postExists = true;
           }
         } catch (githubError) {
           // Try local fallback
           try {
-            const localResponse = await fetch(`posts/${post.slug}.json`);
+            const localResponse = await fetch(`posts/${post.slug}.txt`);
             if (localResponse.ok) {
               postExists = true;
             }
@@ -2615,7 +2727,7 @@ class SimpleBlog {
         if (postExists) {
           availablePosts.push(post);
         } else {
-          console.warn(` Post file not found: ${post.slug}.json`);
+          console.warn(` Post file not found: ${post.slug}.txt`);
         }
       } catch (error) {
         console.warn(` Error checking post ${post.slug}:`, error);
@@ -2635,13 +2747,13 @@ class SimpleBlog {
       
       try {
         // Use raw GitHub URL directly - this bypasses all API rate limits and authentication issues
-        const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
+        const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.txt`;
         
         const response = await fetch(rawUrl);
         
         if (response.ok) {
-          const postData = await response.json();
-          post = postData;
+          const postContent = await response.text();
+          post = this.parseTxtPost(postContent, slug);
         } else if (response.status === 404) {
           console.log('Post not found on GitHub (404)');
         } else {
@@ -2655,7 +2767,7 @@ class SimpleBlog {
       if (!post) {
         // Method 1: Try GitHub API with headers
         try {
-          const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.json`, {
+          const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.txt`, {
             headers: {
               'Accept': 'application/vnd.github.v3+json',
               'User-Agent': 'SimpleBlog/1.0'
@@ -2664,7 +2776,7 @@ class SimpleBlog {
           if (response.ok) {
             const githubData = await response.json();
             const content = atob(githubData.content);
-          post = JSON.parse(content);
+            post = this.parseTxtPost(content, slug);
           }
         } catch (error) {
           // Method 1 failed silently
@@ -2677,14 +2789,15 @@ class SimpleBlog {
             if (response.ok) {
               const treeData = await response.json();
               const postFile = treeData.tree.find(item => 
-                item.path === `posts/${slug}.json`
+                item.path === `posts/${slug}.txt`
               );
               
               if (postFile) {
-                const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
+                const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.txt`;
                 const postResponse = await fetch(rawUrl);
                 if (postResponse.ok) {
-                  post = await postResponse.json();
+                  const postContent = await postResponse.text();
+                  post = this.parseTxtPost(postContent, slug);
                 }
               }
             }
@@ -2802,6 +2915,9 @@ class SimpleBlog {
         `;
         document.head.appendChild(style);
       }
+      
+      // Load and display images for this post
+      this.loadAndDisplayImages(post.slug, contentElement);
       
       // Setup image click handlers for full preview
       this.setupImageClickHandlers(contentElement);
@@ -3728,58 +3844,7 @@ class SimpleBlog {
     }
   }
 
-  showImagesModal() {
-    console.log('Opening image magazine...');
-    
-    // Check if magazine already exists
-    let magazine = document.getElementById('imageMagazine');
-    
-    if (magazine) {
-      // Remove existing magazine
-      magazine.remove();
-    }
-    
-    // Create new magazine
-    magazine = this.createImageMagazine();
-    document.body.appendChild(magazine);
-    
-    // Position the magazine to the left of the text body in editor
-    const editorContent = document.querySelector('.editor-content') || document.querySelector('main');
-    let initialX = '20px';
-    let initialY = '60px'; // Below taskbar
-    
-    if (editorContent) {
-      const editorRect = editorContent.getBoundingClientRect();
-      // Position magazine to the left of editor content with small buffer
-      initialX = (editorRect.left - 140) + 'px'; // 120px width + 20px buffer
-      initialY = '60px'; // Below taskbar
-    }
-    
-    // Position the magazine
-    magazine.style.position = 'fixed';
-    magazine.style.left = initialX;
-    magazine.style.top = initialY;
-    magazine.style.transform = 'none'; // No centering transform
-    magazine.style.zIndex = '10000';
-    
-    // Show the magazine
-    magazine.style.display = 'flex';
-    magazine.classList.remove('hidden');
-    
-    console.log('Magazine positioned at:', { x: initialX, y: initialY });
-    console.log('Magazine created and positioned');
-    
-    // Load images from assets folder
-    console.log('Loading images...');
-    this.loadImagesToMagazine();
-    
-    // Fix any existing images that might be missing overlays
-    setTimeout(() => {
-      this.fixMissingImageOverlays();
-    }, 200);
-    
-    console.log('Image magazine opened');
-  }
+
 
   showDraftsModal() {
     console.log('Opening drafts modal...');
@@ -4954,506 +5019,14 @@ class SimpleBlog {
 
 
 
-  // This function is no longer needed but keeping for compatibility
-  setupImageMagazineButtons() {
-    // Get the existing buttons from HTML
-    const importBtn = document.getElementById('import-image-btn');
-    const reloadBtn = document.getElementById('reload-images-btn');
-    const closeBtn = document.getElementById('close-magazine-btn');
-    
-    if (!importBtn || !reloadBtn || !closeBtn) {
-      console.log('Buttons not found - cannot setup functionality');
-      return;
-    }
-    
-    // Remove any existing event listeners
-    importBtn.replaceWith(importBtn.cloneNode(true));
-    reloadBtn.replaceWith(reloadBtn.cloneNode(true));
-    closeBtn.replaceWith(closeBtn.cloneNode(true));
-    
-    // Get fresh references after cloning
-    const newImportBtn = document.getElementById('import-image-btn');
-    const newReloadBtn = document.getElementById('reload-images-btn');
-    const newCloseBtn = document.getElementById('close-magazine-btn');
-    
-    // Setup import button
-    newImportBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      this.importImages();
-    });
-    
-    // Setup reload button
-    newReloadBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      this.loadImagesToMagazine();
-    });
-    
-    // Setup close button
-    newCloseBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      
-      const magazine = document.getElementById('imageMagazine');
-      if (magazine) {
-        magazine.style.display = 'none';
-        magazine.classList.add('hidden');
-      }
-    });
-    
-    // Button style 1: Clean text-only buttons (no frame, no background)
-    newImportBtn.style.cssText = `
-      background: transparent;
-      color: #fff;
-      border: none;
-      font-weight: bold;
-      font-size: 12px;
-      padding: 4px 8px;
-      cursor: pointer;
-      transition: color 0.2s;
-      outline: none;
-    `;
-    
-    newReloadBtn.style.cssText = `
-      background: transparent;
-      color: #fff;
-      border: none;
-      font-weight: bold;
-      font-size: 12px;
-      padding: 4px 8px;
-      cursor: pointer;
-      transition: color 0.2s;
-      outline: none;
-    `;
-    
-    newCloseBtn.style.cssText = `
-      background: transparent;
-      color: #fff;
-      border: none;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 4px 8px;
-      cursor: pointer;
-      transition: color 0.2s;
-      outline: none;
-      min-width: 20px;
-      text-align: center;
-    `;
-    
-    // Add hover effects (color change only)
-    newImportBtn.addEventListener('mouseenter', () => { newImportBtn.style.color = '#ccc'; });
-    newImportBtn.addEventListener('mouseleave', () => { newImportBtn.style.color = '#fff'; });
-    newReloadBtn.addEventListener('mouseenter', () => { newReloadBtn.style.color = '#ccc'; });
-    newReloadBtn.addEventListener('mouseleave', () => { newReloadBtn.style.color = '#fff'; });
-    newCloseBtn.addEventListener('mouseenter', () => { newCloseBtn.style.color = '#ccc'; });
-    newCloseBtn.addEventListener('mouseleave', () => { newCloseBtn.style.color = '#fff'; });
-    
-    console.log('Image magazine buttons setup complete');
-    console.log('Buttons now have normal styling and hover effects');
-  }
 
 
 
-  createImageMagazine() {
-    const magazine = document.createElement('div');
-    magazine.id = 'imageMagazine';
-    magazine.className = 'image-magazine-only';
-    magazine.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 120px;
-      height: 500px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      cursor: move;
-    `;
-    
-    // Header with import button
-    const header = document.createElement('div');
-    header.style.cssText = `
-      padding: 4px 8px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg);
-      color: var(--fg);
-      cursor: move;
-      user-select: none;
-    `;
-    
-    // Make entire magazine draggable
-    let isDragging = false;
-    let startX, startY, startLeft, startTop;
-    
-    magazine.addEventListener('mousedown', (e) => {
-      // Don't start drag if clicking on buttons or interactive elements
-      if (e.target.tagName === 'BUTTON' || e.target.classList.contains('image-magazine-btn')) {
-        return;
-      }
-      
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      const rect = magazine.getBoundingClientRect();
-      startLeft = rect.left;
-      startTop = rect.top;
-      magazine.style.cursor = 'grabbing';
-      e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-      
-      magazine.style.left = (startLeft + deltaX) + 'px';
-      magazine.style.top = (startTop + deltaY) + 'px';
-      magazine.style.transform = 'none'; // Remove center transform when dragging
-    });
-    
-    document.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        magazine.style.cursor = 'move';
-      }
-    });
-    
-    const importBtn = document.createElement('button');
-    importBtn.textContent = 'Import';
-    importBtn.type = 'button';
-    importBtn.style.cssText = `
-      font-weight: normal;
-      color: var(--fg);
-      cursor: pointer;
-      font-size: 12px;
-      padding: 2px 6px;
-      background: transparent;
-      border: none;
-      outline: none;
-      font-family: inherit;
-      transition: color 0.2s;
-    `;
-    
-    // Multiple event listeners for maximum compatibility
-    importBtn.addEventListener('click', (e) => {
-      console.log('Import button CLICKED via click event!');
-      e.stopPropagation();
-      e.preventDefault();
-      this.importImages();
-    });
-    
-    importBtn.addEventListener('mousedown', (e) => {
-      console.log('Import button CLICKED via mousedown event!');
-      e.stopPropagation();
-      e.preventDefault();
-      this.importImages();
-    });
-    
-    importBtn.addEventListener('mouseup', (e) => {
-      console.log('Import button CLICKED via mouseup event!');
-      e.stopPropagation();
-      e.preventDefault();
-      this.importImages();
-    });
-    
 
-    
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '×';
-    closeBtn.type = 'button';
-    closeBtn.style.cssText = `
-      color: var(--fg);
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-      padding: 4px 8px;
-      background: transparent;
-      border: none;
-      min-width: 20px;
-      text-align: center;
-      outline: none;
-      font-family: inherit;
-      transition: color 0.2s;
-    `;
-    // Multiple event listeners for maximum compatibility
-    closeBtn.addEventListener('click', (e) => {
-      console.log('Close button CLICKED via click event!');
-      e.stopPropagation(); // Prevent event bubbling
-      e.preventDefault(); // Prevent any default button behavior
-      
-      // Force close the magazine
-      const magazineToClose = document.getElementById('imageMagazine');
-      if (magazineToClose) {
-        magazineToClose.style.display = 'none';
-        magazineToClose.classList.add('hidden');
-        console.log('Magazine closed via close button');
-      } else {
-        console.log('Magazine not found for closing');
-      }
-    });
-    
-    closeBtn.addEventListener('mousedown', (e) => {
-      console.log('Close button CLICKED via mousedown event!');
-      e.stopPropagation();
-      e.preventDefault();
-      
-      const magazineToClose = document.getElementById('imageMagazine');
-      if (magazineToClose) {
-        magazineToClose.style.display = 'none';
-        magazineToClose.classList.add('hidden');
-        console.log('Magazine closed via close button (mousedown)');
-      }
-    });
-    
-    closeBtn.addEventListener('mouseup', (e) => {
-      console.log('Close button CLICKED via mouseup event!');
-      e.stopPropagation();
-      e.preventDefault();
-      
-      const magazineToClose = document.getElementById('imageMagazine');
-      if (magazineToClose) {
-        magazineToClose.style.display = 'none';
-        magazineToClose.classList.add('hidden');
-        console.log('Magazine closed via close button (mouseup)');
-      }
-    });
-    
-    // Add refresh button
-    const refreshBtn = document.createElement('button');
-    refreshBtn.textContent = '↻';
-    refreshBtn.type = 'button';
-    refreshBtn.title = 'Refresh images';
-    refreshBtn.style.cssText = `
-      font-weight: normal;
-      color: var(--fg);
-      cursor: pointer;
-      font-size: 12px;
-      padding: 2px 6px;
-      background: transparent;
-      border: none;
-      outline: none;
-      font-family: inherit;
-      transition: color 0.2s;
-    `;
-    
-    refreshBtn.addEventListener('click', (e) => {
-      console.log('Refresh button clicked');
-      e.stopPropagation();
-      e.preventDefault();
-      this.loadImagesToMagazine();
-    });
-    
-    header.appendChild(importBtn);
-    header.appendChild(refreshBtn);
-    header.appendChild(closeBtn);
-    
-    // Emergency button test
 
-    console.log('Import button text:', importBtn.textContent);
-    console.log('Close button text:', closeBtn.textContent);
-    console.log('Import button type:', importBtn.type);
-    console.log('Close button type:', closeBtn.type);
-    console.log('Import button tagName:', importBtn.tagName);
-    console.log('Close button tagName:', closeBtn.tagName);
-    
-    // Test button properties
-    console.log('Import button disabled:', importBtn.disabled);
-    console.log('Close button disabled:', closeBtn.disabled);
-    console.log('Import button style.display:', importBtn.style.display);
-    console.log('Close button style.display:', closeBtn.style.display);
-    console.log('Import button style.visibility:', importBtn.style.visibility);
-    console.log('Close button style.visibility:', closeBtn.style.visibility);
-    console.log('Import button style.pointerEvents:', closeBtn.style.pointerEvents);
-    
 
-    
-    // Content area
-    const content = document.createElement('div');
-    content.id = 'imageGallery';
-    content.style.cssText = `
-      flex: 1;
-      overflow-y: auto;
-      padding: 4px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 3px;
-      align-content: start;
-    `;
-    
-    magazine.appendChild(header);
-    magazine.appendChild(content);
-    
-    console.log('About to append magazine to document.body...');
-    console.log('document.body exists:', !!document.body);
-    console.log('document.body children count:', document.body.children.length);
-    
-    document.body.appendChild(magazine);
-    
-    console.log('Magazine added to DOM:', magazine);
-    console.log('Magazine parent:', magazine.parentNode);
-    console.log('Magazine parent is body:', magazine.parentNode === document.body);
-    console.log('Magazine computed styles:', window.getComputedStyle(magazine));
-    console.log('Magazine offsetParent:', magazine.offsetParent);
-    console.log('Magazine offsetWidth/Height:', magazine.offsetWidth, magazine.offsetHeight);
-    
-    // Don't start hidden - let showImagesModal control visibility
-    return magazine;
-  }
 
-  async loadImagesToMagazine() {
-    const gallery = document.getElementById('imageGallery');
-    if (!gallery) return;
-    
-    // Clear existing content
-    gallery.innerHTML = '';
-    
-    // Show loading state
-    const loading = document.createElement('div');
-    loading.style.cssText = `
-      grid-column: 1 / -1;
-      text-align: center;
-      color: #888;
-      padding: 20px 10px;
-      font-size: 12px;
-    `;
-    loading.innerHTML = `
-      <p>Loading images...</p>
-    `;
-    gallery.appendChild(loading);
-    
-    try {
-      // Try to get the actual assets directory listing from GitHub
-      const cacheBust = Date.now();
-      const assetsUrl = `https://api.github.com/repos/pigeonPious/page/contents/assets?_cb=${cacheBust}`;
-      const response = await fetch(assetsUrl);
-      
-      let images = [];
-      
-      if (response.ok) {
-        const assetsData = await response.json();
-        
-        // Filter for image files
-        images = assetsData
-          .filter(item => item.type === 'file' && this.isImageFile(item.name))
-          .map(item => item.name);
-        
-        console.log('Found', images.length, 'images in assets folder:', images);
-      } else if (response.status === 403) {
-        // GitHub API blocked, try to scan local assets folder
-        console.log('GitHub API blocked, scanning local assets...');
-        images = await this.scanLocalAssetsFolder();
-      } else {
-        console.warn('Could not fetch assets from GitHub:', response.status);
-        // Fallback to local scanning
-        images = await this.scanLocalAssetsFolder();
-      }
-      
-      // Clear loading state
-      gallery.innerHTML = '';
-      
-      if (images.length === 0) {
-        const noImages = document.createElement('div');
-        noImages.style.cssText = `
-          grid-column: 1 / -1;
-          text-align: center;
-          color: #888;
-          padding: 20px 10px;
-          font-size: 12px;
-        `;
-        noImages.innerHTML = `
-          <p>No images found</p>
-          <p><small>Click Import to add images</small></p>
-        `;
-        gallery.appendChild(noImages);
-        return;
-      }
-    
-          // Create image items
-      images.forEach(filename => {
-        const item = document.createElement('div');
-        item.className = 'image-item';
-        item.style.cssText = `
-          width: 84px;
-          height: 84px;
-          border: 1px solid var(--border);
-          overflow: hidden;
-          cursor: pointer;
-          transition: transform 0.2s;
-          background: transparent;
-          position: relative;
-          margin: 0 auto;
-        `;
-        
-        const img = document.createElement('img');
-        img.src = `assets/${filename}?_cb=${Date.now()}`;
-        img.style.cssText = `
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        `;
-        
-        item.appendChild(img);
-        
-        // Double click to insert image
-        item.addEventListener('dblclick', () => this.insertImageToPost(filename));
-        
-        // Add drag and drop functionality
-        item.draggable = true;
-        item.addEventListener('dragstart', (e) => {
-          // Set both text data and image data for better compatibility
-          e.dataTransfer.setData('text/plain', filename);
-          e.dataTransfer.setData('text/html', `<img src="assets/${filename}" style="max-width: 200px; height: auto;">`);
-          e.dataTransfer.effectAllowed = 'copy';
-          item.style.opacity = '0.5';
-        });
-        
-        item.addEventListener('dragend', () => {
-          item.style.opacity = '1';
-        });
-        
-        // Hover effects
-        item.addEventListener('mouseenter', () => {
-          item.style.transform = 'scale(1.05)';
-        });
-        
-        item.addEventListener('mouseleave', () => {
-          item.style.transform = 'scale(1)';
-        });
-        
-        gallery.appendChild(item);
-      });
-      
-    } catch (error) {
-      console.error('Error loading images:', error);
-      
-      // Clear loading state and show error
-      gallery.innerHTML = '';
-      const errorDiv = document.createElement('div');
-      errorDiv.style.cssText = `
-        grid-column: 1 / -1;
-        text-align: center;
-        color: #dc3545;
-        padding: 20px 10px;
-        font-size: 12px;
-      `;
-      errorDiv.innerHTML = `
-        <p>Error loading images</p>
-        <p><small>${error.message}</small></p>
-      `;
-      gallery.appendChild(errorDiv);
-    }
-  }
+
   
   // Helper function to check if a file is an image
   isImageFile(filename) {
@@ -8805,32 +8378,50 @@ class SimpleBlog {
       try {
         console.log('Site map: Loading posts directly...');
         
-        // Since we know the posts exist, just load them directly
+        // Dynamically discover posts from GitHub
         const posts = [];
-        const knownSlugs = ['about', 'contact', 'first-post'];
         
-        for (const slug of knownSlugs) {
-          try {
-            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.json`;
-            const response = await fetch(postUrl);
+        // Use GitHub's public directory browsing to discover .txt files
+        try {
+          const corsProxy = 'https://corsproxy.io/?';
+          const postsDirResponse = await fetch(corsProxy + `https://github.com/pigeonPious/page/tree/main/posts`);
+          if (postsDirResponse.ok) {
+            const htmlContent = await postsDirResponse.text();
             
-            if (response.ok) {
-              const postData = await response.json();
+            // Parse HTML to find all .txt files in the posts directory
+            const txtFileMatches = htmlContent.match(/href="[^"]*\.txt"/g);
+            if (txtFileMatches) {
+              const postFiles = txtFileMatches
+                .map(match => match.match(/href="([^"]+)"/)[1])
+                .filter(href => href.includes('/posts/') && href.endsWith('.txt'))
+                .map(href => {
+                  const filename = href.split('/').pop();
+                  return filename.replace('.txt', '');
+                });
               
-              // Get the actual commit date from GitHub
-              const commitDate = await this.getCommitDate(`posts/${slug}.json`);
+              console.log('Site map: Found .txt files:', postFiles);
               
-              posts.push({
-                slug: slug,
-                title: postData.title || 'Untitled',
-                date: commitDate,
-                keywords: postData.keywords || 'general',
-                content: postData.content || ''
-              });
+              for (const slug of postFiles) {
+                try {
+                  const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.txt`;
+                  const response = await fetch(postUrl);
+                  
+                  if (response.ok) {
+                    const postContent = await response.text();
+                    const post = this.parseTxtPost(postContent, slug);
+                    
+                    if (post) {
+                      posts.push(post);
+                    }
+                  }
+                } catch (error) {
+                  console.warn(`Could not load post ${slug}:`, error);
+                }
+              }
             }
-          } catch (error) {
-            console.warn(`Could not load post ${slug}:`, error);
           }
+        } catch (error) {
+          console.warn('Could not scan posts directory:', error);
         }
         
         console.log('Site map: Successfully loaded', posts.length, 'posts');
