@@ -1528,31 +1528,27 @@ class SimpleBlog {
           if (postResponse.ok) {
             const postContent = await postResponse.text();
               
-              // Extract slug from filename (remove .txt extension)
-              const slug = postFile.name.replace('.txt', '');
+            // Extract slug from filename (remove .txt extension)
+            const slug = postFile.name.replace('.txt', '');
               
-              // Parse the .txt file content
-              const post = this.parseTxtPost(postContent, slug);
+            // Parse the .txt file content
+            const post = this.parseTxtPost(postContent, slug);
               
-              if (post) {
-                posts.push(post);
-                console.log('loadPosts: Successfully parsed post:', post.title);
-              }
+            if (post) {
+              posts.push(post);
+              console.log('loadPosts: Successfully parsed post:', post.title);
             }
-          } catch (postError) {
-            console.warn('Could not parse post file:', postFile.name, postError);
           }
+        } catch (postError) {
+          console.warn('Could not parse post file:', postFile.name, postError);
         }
-        
-        return posts;
       }
       
-      console.log('loadPosts: No posts found');
-      return [];
-    } catch (error) {
-      console.error('Error scanning repository:', error);
-      return [];
+      return posts;
     }
+    
+    console.log('loadPosts: No posts found');
+    return [];
   }
 
   parseTxtPost(content, slug) {
