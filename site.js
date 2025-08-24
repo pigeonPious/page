@@ -3256,7 +3256,7 @@ class SimpleBlog {
     console.log('Post flags saved:', flags);
   }
 
-  updateNavigationMenu(flags) {
+  async updateNavigationMenu(flags) {
     console.log('🧭 Updating navigation menu with flags:', flags);
     
     // Get all posts to work with
@@ -3264,14 +3264,14 @@ class SimpleBlog {
     console.log('🧭 Total posts available for navigation:', allPosts.length);
     
     // Update All Posts submenu
-    this.updateAllPostsSubmenu(allPosts);
+    this.updateAllPostsSubmenu();
     
 
     
     console.log('Navigation menu fully updated');
   }
-  updateAllPostsSubmenu(allPosts) {
-    console.log('Updating All Posts submenu with', allPosts.length, 'posts');
+  async updateAllPostsSubmenu() {
+    console.log('Updating All Posts submenu...');
     
     // Find the all posts menu item
     const allPostsMenu = document.querySelector('#all-posts-menu');
@@ -3284,6 +3284,136 @@ class SimpleBlog {
     const existingSubmenu = allPostsMenu.querySelector('.submenu');
     if (existingSubmenu) {
       existingSubmenu.remove();
+    }
+    
+    // Load posts using the same method as sitemap
+    let allPosts = [];
+    try {
+      // Try to load from the static posts index first
+      try {
+        const indexResponse = await fetch('posts-index.json');
+        if (indexResponse.ok) {
+          const indexData = await indexResponse.json();
+          console.log('All Posts: Found static index with', indexData.total_posts, 'posts');
+          
+          // Convert index data to post objects
+          for (const postData of indexData.posts) {
+            try {
+              // Load the actual post content
+              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postData.filename}`;
+              const response = await fetch(postUrl);
+              if (response.ok) {
+                const content = await response.text();
+                const post = this.parseTxtPost(content, postData.slug);
+                if (post) {
+                  allPosts.push(post);
+                  console.log('All Posts: Successfully parsed post:', post.title);
+                }
+              }
+            } catch (error) {
+              console.error('All Posts: Error loading post content:', postData.filename, error);
+            }
+          }
+          
+          if (allPosts.length > 0) {
+            console.log('All Posts: Successfully loaded', allPosts.length, 'posts from static index');
+          }
+        }
+      } catch (error) {
+        console.log('All Posts: Static index failed, falling back to live discovery:', error);
+      }
+      
+      // Fallback to live discovery if static index fails
+      if (allPosts.length === 0) {
+        console.log('All Posts: Falling back to live repository scanning...');
+        const cacheBust = Date.now();
+        let postFiles = [];
+        
+        // Method 1: Try GitHub API first
+        try {
+          const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts?_cb=${cacheBust}`);
+          if (response.ok) {
+            const contents = await response.json();
+            const txtFiles = contents.filter(item => 
+              item.type === 'file' && item.name.endsWith('.txt')
+            );
+            
+            if (txtFiles.length > 0) {
+              postFiles = txtFiles.map(item => ({
+                name: item.name,
+                download_url: item.download_url
+              }));
+              console.log('All Posts: Found', postFiles.length, 'posts via GitHub API');
+            }
+          }
+        } catch (error) {
+          console.log('All Posts: GitHub API method failed:', error);
+        }
+        
+        // Method 2: Fallback to public directory browsing
+        if (postFiles.length === 0) {
+          try {
+            console.log('All Posts: Trying public directory browsing...');
+            const corsProxy = 'https://corsproxy.io/?';
+            const postsDirResponse = await fetch(corsProxy + `https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
+            
+            if (postsDirResponse.ok) {
+              const htmlContent = await postsDirResponse.text();
+              
+              // Parse HTML to find all .txt files
+              const txtFileMatches = htmlContent.match(/href="[^"]*\.txt"/g);
+              if (txtFileMatches) {
+                const discoveredFiles = txtFileMatches
+                  .map(match => match.match(/href="([^"]+)"/)[1])
+                  .filter(href => href.includes('/posts/') && href.endsWith('.txt'))
+                  .map(href => {
+                    const filename = href.split('/').pop();
+                    return {
+                      name: filename,
+                      download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}?_cb=${cacheBust}`
+                    };
+                  });
+                
+                if (discoveredFiles.length > 0) {
+                  postFiles = discoveredFiles;
+                  console.log('All Posts: Found', postFiles.length, 'posts via directory browsing');
+                }
+              }
+            }
+          } catch (error) {
+            console.log('All Posts: Directory browsing failed:', error);
+          }
+        }
+        
+        // Process discovered files
+        if (postFiles.length > 0) {
+          console.log('All Posts: Processing', postFiles.length, 'post files...');
+          
+          for (const postFile of postFiles) {
+            try {
+              const postResponse = await fetch(postFile.download_url + (postFile.download_url.includes('?') ? '&' : '?') + '_cb=' + cacheBust);
+              if (postResponse.ok) {
+                const postContent = await postResponse.text();
+                
+                // Extract slug from filename (remove .txt extension)
+                const slug = postFile.name.replace('.txt', '');
+                
+                // Parse the .txt file content
+                const post = this.parseTxtPost(postContent, slug);
+                
+                if (post) {
+                  allPosts.push(post);
+                  console.log('All Posts: Successfully parsed post:', post.title);
+                }
+              }
+            } catch (postError) {
+              console.warn('Could not parse post file:', postFile.name, postError);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('All Posts: Error loading posts:', error);
     }
     
     if (allPosts.length === 0) {
