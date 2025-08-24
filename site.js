@@ -218,7 +218,6 @@ class SimpleBlog {
               <div class="menu-entry" id="random-post">Random Post</div>
               <div class="menu-separator"></div>
               <div class="menu-entry" id="show-site-map">Site Map</div>
-              <div class="menu-entry" id="clear-cache-btn">Clear Cache</div>
             </div>
           </div>
           
@@ -286,27 +285,7 @@ class SimpleBlog {
       /* Twitter link to be added later */ 
     });
 
-    // Bind clear cache button
-    this.bindEventListener(document.getElementById('clear-cache-btn'), 'click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('🧹 Manual cache clear requested');
-      
-      // Show loading state
-      const button = e.target;
-      const originalText = button.textContent;
-      button.textContent = 'Clearing...';
-      button.style.opacity = '0.6';
-      button.style.pointerEvents = 'none';
-      
-      this.clearAllCache();
-      
-      // Force reload after clearing cache
-      setTimeout(() => {
-        button.textContent = 'Refreshing...';
-        window.location.reload(true);
-      }, 500);
-    });
+
   }
 
   // Helper Methods
