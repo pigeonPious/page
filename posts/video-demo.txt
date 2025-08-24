@@ -20,6 +20,8 @@ This will automatically load and display the first video file found in the post 
 ## Features
 
 - Videos are displayed with native browser controls
+- **Video preview frames** - Shows first frame as preview before clicking
+- **Play button overlay** - Clear visual indication that videos are clickable
 - Click any video to view it in full-screen overlay
 - Responsive design that works on all devices
 - Automatic format detection

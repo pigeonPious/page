@@ -5,11 +5,11 @@
 
 // CACHE BUST: This file was last modified at 2025-01-23
 // If you see this comment, the file is being served fresh
-// Version: 2.2 - Dynamic GitHub Repository Scanning with Video Support
+// Version: 2.3 - Dynamic GitHub Repository Scanning with Video Support and Poster Generation
 class SimpleBlog {
   constructor() {
     // Version check and cache busting
-    const currentVersion = '2.2';
+    const currentVersion = '2.3';
     const storedVersion = localStorage.getItem('ppPage_js_version');
     if (storedVersion !== currentVersion) {
       console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
@@ -1985,6 +1985,54 @@ class SimpleBlog {
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         cursor: pointer;
       `;
+      
+      // Generate poster frame from first frame of video
+      video.addEventListener('loadedmetadata', () => {
+        // Seek to 0.1 seconds to avoid black frame at start
+        video.currentTime = 0.1;
+      });
+      
+      video.addEventListener('seeked', () => {
+        // Create canvas to capture the current frame
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size to match video dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw the current video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to data URL and set as poster
+        try {
+          const posterUrl = canvas.toDataURL('image/jpeg', 0.8);
+          video.poster = posterUrl;
+          
+          // Reset video to beginning
+          video.currentTime = 0;
+          
+          console.log('Generated poster for video:', mediaName);
+        } catch (error) {
+          console.log('Could not generate poster for video:', error);
+        }
+      });
+      
+      // Track play/pause state for play button overlay
+      video.addEventListener('play', () => {
+        video.setAttribute('paused', 'false');
+      });
+      
+      video.addEventListener('pause', () => {
+        video.setAttribute('paused', 'true');
+      });
+      
+      video.addEventListener('ended', () => {
+        video.setAttribute('paused', 'true');
+      });
+      
+      // Set initial paused state
+      video.setAttribute('paused', 'true');
       
       // Add click handler for full preview
       video.addEventListener('click', (e) => {
