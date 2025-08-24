@@ -1939,6 +1939,21 @@ class SimpleBlog {
               } else {
                 console.log(`loadImagesForPost: No links found in posts/${slug}/ folder`);
               }
+              
+              // Also try to find any file links in the HTML that might be media files
+              const fileLinkRegex = /href="([^"]*\.(png|jpg|jpeg|gif|webp|mp4|mov|avi|webm))"/gi;
+              const fileMatches = htmlContent.match(fileLinkRegex);
+              if (fileMatches) {
+                console.log(`loadImagesForPost: Found ${fileMatches.length} file links in HTML:`, fileMatches);
+                
+                // Check if any of these are actually in our post folder
+                fileMatches.forEach(match => {
+                  const href = match.match(/href="([^"]+)"/)[1];
+                  if (href.includes(`/posts/${slug}/`)) {
+                    console.log(`loadImagesForPost: Found potential file in post folder: ${href}`);
+                  }
+                });
+              }
             }
           } else {
             console.log(`loadImagesForPost: Directory browsing failed with status: ${response.status}`);
@@ -1998,36 +2013,54 @@ class SimpleBlog {
         }
       }
       
-      // Method 4: Try to find the actual files that exist in the folder
+      // Method 4: Try to find any media files by scanning common extensions
       if (imageFiles.length === 0) {
         try {
-          console.log(`loadImagesForPost: Trying to find actual files in posts/${slug}/ folder`);
+          console.log(`loadImagesForPost: Trying to scan for any media files in posts/${slug}/ folder`);
           
-          // Based on what we know exists in sample-post folder
-          const knownFiles = [
-            'Screenshot 2025-08-19 at 2.02.54 PM.png',
-            'Screenshot 2025-08-20 at 9.40.20 AM.png'
-          ];
+          // Common media extensions to scan
+          const scanExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'mov', 'avi', 'webm'];
           
-          for (const filename of knownFiles) {
-            const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${filename}`;
-            try {
-              const response = await fetch(testUrl, { method: 'HEAD' });
-              if (response.ok) {
-                const ext = filename.split('.').pop().toLowerCase();
-                console.log(`loadImagesForPost: Found known file via direct access: ${filename}`);
-                imageFiles.push({
-                  name: filename,
-                  url: testUrl,
-                  type: ext
-                });
+          for (const ext of scanExtensions) {
+            // Try a few common naming patterns to find any files
+            const testPatterns = [
+              `1.${ext}`,
+              `image.${ext}`,
+              `img.${ext}`,
+              `photo.${ext}`,
+              `screenshot.${ext}`,
+              `Screenshot.${ext}`,
+              `IMG.${ext}`,
+              `Photo.${ext}`,
+              `video.${ext}`,
+              `movie.${ext}`,
+              `clip.${ext}`
+            ];
+            
+            for (const pattern of testPatterns) {
+              const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${pattern}`;
+              try {
+                const response = await fetch(testUrl, { method: 'HEAD' });
+                if (response.ok) {
+                  console.log(`loadImagesForPost: Found media file via scanning: ${pattern}`);
+                  imageFiles.push({
+                    name: pattern,
+                    url: testUrl,
+                    type: ext
+                  });
+                  break; // Found one with this extension, move to next
+                }
+              } catch (error) {
+                // Continue to next pattern
               }
-            } catch (error) {
-              console.log(`loadImagesForPost: Failed to access ${filename}:`, error);
+            }
+            
+            if (imageFiles.length > 0) {
+              break; // Found some files, stop scanning
             }
           }
         } catch (error) {
-          console.log(`loadImagesForPost: Known files method failed:`, error);
+          console.log(`loadImagesForPost: File scanning method failed:`, error);
         }
       }
       
