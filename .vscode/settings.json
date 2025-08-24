@@ -7,13 +7,5 @@
         "**/Thumbs.db": true,
         "**/._*": true
     },
-    "hide-files.files": [],
-    "workbench.colorCustomizations": {
-        "commandCenter.border": "#15202b99",
-        "titleBar.activeBackground": "#25d672",
-        "titleBar.activeForeground": "#15202b",
-        "titleBar.inactiveBackground": "#25d67299",
-        "titleBar.inactiveForeground": "#15202b99"
-    },
-    "peacock.color": "#25d672"
+    "hide-files.files": []
 }

@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<!-- Taskbar will be loaded by site.js -->
+<!-- Taskbar will be loaded by shared-taskbar.js -->
 
 <!-- Main Editor -->
 <div class="frame">
@@ -17,7 +17,7 @@
     <div class="editor-main-column">
       <div class="editor-header">
         <div id="current-flags-display" class="flags-display"></div>
-        <input type="text" id="postTitle" class="title-input" placeholder="Enter post title...">
+        <input type="text" id="postTitle" class="title-input" placeholder="...">
       </div>
       
       <div class="editor-main">
@@ -29,6 +29,151 @@ Select text and press Ctrl+M to add notes.">
       </div>
     </div>
   </main>
+  
+
+</div>
+
+<!-- Security Notice for Public Users -->
+<div id="securityNotice" class="modal">
+  <div class="modal-content">
+    <h3>🔒 Security Notice</h3>
+    <div style="text-align: left; margin: 15px 0;">
+      <p><strong>This editor is safe to use publicly!</strong></p>
+      
+      <p><strong>For Visitors:</strong></p>
+      <ul>
+        <li>✅ Read and explore published posts</li>
+        <li>✅ Use the editor for local drafts (saved in your browser)</li>
+        <li>✅ Export posts as HTML or text files</li>
+        <li>❌ Cannot publish to this site without GitHub token</li>
+      </ul>
+
+      <p><strong>To Publish Your Own Posts:</strong></p>
+      <ol>
+        <li>Create your own GitHub repository</li>
+        <li>Get a GitHub Personal Access Token (with repo permissions)</li>
+        <li>Use Connect > Setup GitHub to configure your own publishing</li>
+        <li>Your token stays private in YOUR browser only</li>
+      </ol>
+      
+      <p><strong>Privacy:</strong> Your drafts and GitHub tokens are stored locally in your browser and never shared with others.</p>
+    </div>
+    
+    <div class="modal-buttons">
+      <button onclick="editor.closeModal('securityNotice')" class="btn primary">Got it!</button>
+      <input type="checkbox" id="dontShowAgain" style="margin: 0 5px;"> Don't show again
+    </div>
+  </div>
+</div>
+
+<!-- Keywords/Flags Input Modal -->
+<div id="keywordsModal" class="modal">
+  <div class="modal-content">
+    <h3>Post Flags/Keywords</h3>
+    <div class="input-section">
+      <label for="keywords-input">Keywords (separated by commas):</label>
+      <input type="text" id="keywords-input" placeholder="e.g. devlog:ProjectName, programming, design">
+      <div class="keywords-help">
+        Use "devlog:ProjectName" to categorize as devlog project<br>
+        Separate multiple keywords with commas
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button onclick="window.editorInstance.closeModal('keywordsModal')" class="btn">Cancel</button>
+      <button onclick="window.editorInstance.saveKeywords()" class="btn btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- GitHub Setup Modal -->
+<div id="githubModal" class="modal">
+  <div class="modal-content">
+    <h3>Setup GitHub Publishing</h3>
+    <p>Enter your GitHub details to publish posts directly:</p>
+    
+    <div style="margin: 15px 0;">
+      <label><strong>GitHub Personal Access Token:</strong></label>
+      <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
+      <small style="color: #666;">Create at: <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> (needs repo scope)</small>
+    </div>
+    
+    <div style="margin: 15px 0;">
+      <label><strong>Repository:</strong></label>
+      <input type="text" id="github-repo" placeholder="username/repository-name">
+    </div>
+    
+    <div style="margin: 15px 0;">
+      <label><strong>Branch:</strong></label>
+      <input type="text" id="github-branch" value="main">
+    </div>
+    
+    <div class="modal-buttons">
+      <button onclick="editor.saveGitHubConfig()" class="btn primary">Save & Test</button>
+      <button onclick="editor.closeModal('githubModal')" class="btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Drafts Modal -->
+<div id="draftsModal" class="modal">
+  <div class="modal-content">
+    <h3>Your Drafts</h3>
+    <div id="drafts-list"></div>
+    <div class="modal-buttons">
+      <button onclick="editor.closeModal('draftsModal')" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Message Modal -->
+<div id="messageModal" class="modal">
+  <div class="modal-content">
+    <h3 id="message-title">Simple Editor</h3>
+    <p id="message-content"></p>
+    <div class="modal-buttons">
+      <button onclick="editor.closeModal('messageModal')" class="btn primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Box Style 1 Inputs -->
+<div id="noteInputBox" class="box-style-1 hidden">
+  <input type="text" placeholder="Enter your note..." maxlength="200">
+</div>
+
+<div id="publishInputBox" class="box-style-1 hidden">
+  <input type="text" placeholder="Commit message (optional)..." maxlength="100">
+</div>
+
+<div id="exportInputBox" class="box-style-1 hidden">
+  <input type="text" placeholder="Filename (optional)..." maxlength="50">
+</div>
+
+<div id="keywordsInputBox" class="box-style-1 hidden">
+  <input type="text" placeholder="e.g. devlog:ProjectName, programming, design" maxlength="200">
+</div>
+
+<div id="messageBox" class="box-style-1 message-box hidden">
+  <span class="message-text">Message will appear here</span>
+</div>
+
+<!-- Image Magazine - Draggable Box Style 1 Frame -->
+<div id="imageMagazine" class="box-style-1 image-magazine hidden">
+  <div class="image-magazine-header">
+    <div class="image-magazine-controls">
+      <button class="image-magazine-btn" id="import-image-btn">Import</button>
+      <button class="image-magazine-btn" id="reload-images-btn">Reload</button>
+      <button class="image-magazine-btn close-btn" id="close-magazine-btn">×</button>
+    </div>
+  </div>
+  <div class="image-magazine-content">
+    <div class="image-gallery" id="imageGallery">
+      <div class="no-images-message">
+        <p>No images found in repository</p>
+        <p><small>Click Import to add images</small></p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Hidden file input for image upload -->
