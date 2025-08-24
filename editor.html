@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+
+<!-- Taskbar will be loaded by JS -->
+
+<!-- Main Editor -->
+<div class="frame">
+  <main class="center-content">
+    <div class="editor-main-column">
+      <div class="editor-header">
+        <div id="current-flags-display" class="flags-display"></div>
+        <input type="text" id="postTitle" class="title-input" placeholder="...">
+      </div>
+      
+      <div class="editor-main">
+        <div id="visualEditor" class="visual-editor" contenteditable="true" 
+             data-placeholder="Write your post content here using Markdown...">
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- All modals from original editor.html -->
+<div id="securityNotice" class="modal" style="display: none;">
+  <div class="modal-content">
+    <h3>🔒 Security Notice</h3>
+    <p>This editor is safe to use publicly. Your drafts and tokens are stored locally in your browser.</p>
+    <button class="btn primary">Got it!</button>
+  </div>
+</div>
+
+<div id="keywordsModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <h3>Post Flags/Keywords</h3>
+    <input type="text" id="keywords-input" placeholder="e.g. devlog:ProjectName, programming">
+    <button class="btn btn-primary">Save</button>
+  </div>
+</div>
+
+<div id="githubModal" class="modal" style="display: none;">
+    <h3>Setup GitHub Publishing</h3>
+    <p>Enter your GitHub details to publish posts directly:</p>
+    <input type="password" id="github-token" placeholder="GitHub Personal Access Token">
+    <input type="text" id="github-repo" placeholder="username/repository-name">
+    <input type="text" id="github-branch" value="main">
+    <div class="modal-buttons">
+        <button class="btn">Cancel</button>
+        <button class="btn primary">Save & Test</button>
+    </div>
+</div>
+
+<div id="draftsModal" class="modal" style="display: none;">
+    <h3>Your Drafts</h3>
+    <div id="drafts-list"></div>
+    <button class="btn">Close</button>
+</div>
+
+<div id="messageModal" class="modal" style="display: none;">
+    <h3 id="message-title">Simple Editor</h3>
+    <p id="message-content"></p>
+    <button class="btn primary">OK</button>
+</div>
+
+<div id="imageMagazine" class="box-style-1 image-magazine hidden">
+  <div class="image-magazine-header">
+      <button id="import-image-btn">Import</button>
+      <button id="reload-images-btn">Reload</button>
+      <button id="close-magazine-btn">×</button>
+  </div>
+  <div id="imageGallery" class="image-gallery"></div>
+</div>
+
+<input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
+
+<script src="js/main.js" type="module"></script>
+
+</body>
+</html>

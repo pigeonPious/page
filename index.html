@@ -1,75 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Blog</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+      <title>PPBlog</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <nav id="taskbar">
-            <div id="taskbar-items">
-                <a href="#" id="home-link">Home</a>
-                <a href="#" id="sitemap-link">Sitemap</a>
-                <div class="theme-switcher">
-                    <label for="theme-select">Theme:</label>
-                    <select id="theme-select">
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                    </select>
-                </div>
-            </div>
-            <div id="admin-controls" style="display: none;">
-                <button id="new-post-btn">New Post</button>
-                <button id="image-magazine-btn">Image Magazine</button>
-            </div>
-        </nav>
+<div id="taskbar-container"></div>
+<!-- Taskbar will be loaded by JS -->
+
+<div class="page-container">
+  <main class="main-column">
+    <header class="post-header">
+      <h1 class="post-title" id="post-title"># Blog</h1>
+      <div class="post-date" id="post-date"></div>
     </header>
+    <section class="post-content" id="post-content"></section>
+  </main>
+</div>
 
-    <main id="content">
-        <!-- Blog posts and other content will be dynamically loaded here -->
-    </main>
+<div id="hoverNote" role="tooltip"></div>
+<div id="cornerGif" aria-hidden="true" title="Corner Logo"></div>
 
-    <footer>
-        <p>&copy; 2024 My Blog</p>
-    </footer>
-
-    <script src="app.js"></script>
-
-    <!-- Post Editor Modal -->
-    <div id="editor-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h3>Create/Edit Post</h3>
-            <form id="post-form">
-                <label for="post-title">Title</label>
-                <input type="text" id="post-title" required>
-                
-                <label for="post-category">Category</label>
-                <input type="text" id="post-category" required>
-
-                <label for="post-content">Content (HTML)</label>
-                <textarea id="post-content" rows="10" required></textarea>
-
-                <button type="submit">Save Post</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Image Magazine Modal -->
-    <div id="image-magazine-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h3>Image Magazine</h3>
-            <div class="image-uploader">
-                <input type="file" id="image-upload-input" accept="image/*">
-                <button id="upload-image-btn">Upload Image</button>
-            </div>
-            <div id="image-gallery">
-                <!-- Images will be loaded here -->
-            </div>
-        </div>
-    </div>
+<script src="js/main.js" type="module"></script>
 </body>
 </html>
