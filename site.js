@@ -1899,15 +1899,21 @@ class SimpleBlog {
             const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
             
             mediaExtensions.forEach(ext => {
-              const regex = new RegExp(`href="[^"]*\\.${ext}"`, 'gi');
+              // Look specifically for files in the posts/slug folder, not GitHub's general assets
+              const regex = new RegExp(`href="[^"]*/posts/${slug}/[^"]*\\.${ext}"`, 'gi');
               const matches = htmlContent.match(regex);
               if (matches) {
-                console.log(`loadImagesForPost: Found ${matches.length} matches for .${ext} files`);
+                console.log(`loadImagesForPost: Found ${matches.length} matches for .${ext} files in posts/${slug}/`);
                 matches.forEach(match => {
                   const href = match.match(/href="([^"]+)"/)[1];
                   console.log(`loadImagesForPost: Processing href: ${href}`);
-                  if (href.includes(`/posts/${slug}/`) && href.endsWith(`.${ext}`)) {
-                    const filename = href.split('/').pop();
+                  
+                  // Extract just the filename from the full path
+                  const pathParts = href.split('/');
+                  const filename = pathParts[pathParts.length - 1];
+                  
+                  // Double-check this is actually a file in our post folder
+                  if (href.includes(`/posts/${slug}/`) && filename.endsWith(`.${ext}`)) {
                     console.log(`loadImagesForPost: Processing file ${filename}, detected type: ${ext}`);
                     imageFiles.push({
                       name: filename,
@@ -1924,6 +1930,56 @@ class SimpleBlog {
           }
         } catch (error) {
           console.log(`loadImagesForPost: Directory browsing error:`, error);
+        }
+      }
+      
+      // Method 3: Direct raw GitHub access for common image types
+      if (imageFiles.length === 0) {
+        try {
+          console.log(`loadImagesForPost: Trying direct raw GitHub access for common image types`);
+          
+          // Common image extensions to try
+          const commonExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+          
+          for (const ext of commonExtensions) {
+            // Try to find files by checking if they exist at raw GitHub URLs
+            const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/`;
+            
+            // We'll try a few common naming patterns
+            const testNames = [
+              `image.${ext}`,
+              `1.${ext}`,
+              `img.${ext}`,
+              `photo.${ext}`,
+              `screenshot.${ext}`,
+              `Screenshot.${ext}`,
+              `IMG.${ext}`,
+              `Photo.${ext}`
+            ];
+            
+            for (const testName of testNames) {
+              try {
+                const response = await fetch(testUrl + testName, { method: 'HEAD' });
+                if (response.ok) {
+                  console.log(`loadImagesForPost: Found file via direct access: ${testName}`);
+                  imageFiles.push({
+                    name: testName,
+                    url: testUrl + testName,
+                    type: ext
+                  });
+                  break; // Found one, move to next extension
+                }
+              } catch (error) {
+                // Continue to next test name
+              }
+            }
+            
+            if (imageFiles.length > 0) {
+              break; // Found some images, stop trying more extensions
+            }
+          }
+        } catch (error) {
+          console.log(`loadImagesForPost: Direct access method failed:`, error);
         }
       }
       
