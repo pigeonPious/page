@@ -149,10 +149,7 @@ class SimpleBlog {
     // Check authentication status
     this.checkAndUpdateAuthStatus();
     
-    // Setup console commands for logo management
-    console.log('🔧 Setting up logo console commands...');
-    this.setupConsoleCommands();
-    console.log('🔧 Logo console commands setup called');
+
     
     // Load logo from configuration
     this.loadLogoFromConfig();
@@ -169,14 +166,7 @@ class SimpleBlog {
         <div class="menu-bar-inner">
           <div class="menu-star" id="star-button" title="Home">*</div>
           
-          <div class="menu-item" data-menu="file">
-            <div class="label">File</div>
-            <div class="menu-dropdown">
 
-              <div class="menu-separator"></div>
-              <div class="menu-entry" id="open-console-btn">Open Console</div>
-            </div>
-          </div>
           
 
           
@@ -785,10 +775,7 @@ class SimpleBlog {
     this.showDeletePostConfirmation();
   });
 
-  this.addClickHandler('#open-console-btn', () => {
-    console.log('Console button clicked');
-    this.showConsole();
-  });
+  
 
     // Open in GitHub button
     this.addClickHandler('#open-in-github', () => {
@@ -8885,16 +8872,14 @@ class SimpleBlog {
   }
 
   setupHoverNotes() {
-    console.log('Setting up hover notes...');
-    
-    // Find all elements with data-note attribute (including .note-link and .pigeon-label)
-    const noteElements = document.querySelectorAll('[data-note]');
+    // Find all elements with data-note or data-hover attributes
+    const noteElements = document.querySelectorAll('[data-note], [data-hover]');
     
     noteElements.forEach(element => {
       // Remove existing listeners to prevent duplication
       element.removeEventListener('mouseenter', this.showHoverNote);
       element.removeEventListener('mouseleave', this.hideHoverNote);
-      element.removeEventListener('mousemove', this.updateHoverNotePosition);
+      element.addEventListener('mousemove', this.updateHoverNotePosition);
       element.removeEventListener('click', this.handleHoverNoteClick);
       
       // Add hover event listeners
@@ -8903,18 +8888,16 @@ class SimpleBlog {
       element.addEventListener('mousemove', (e) => this.updateHoverNotePosition(e));
       
       // Add click handler for existing hovernotes with URLs
-      const noteText = element.getAttribute('data-note');
+      const noteText = element.getAttribute('data-note') || element.getAttribute('data-hover');
       if (noteText && noteText.match(/(https?:\/\/[^\s]+)/i)) {
         element.addEventListener('click', (e) => this.handleHoverNoteClick(e));
       }
     });
-    
-    console.log(` Hover notes setup for ${noteElements.length} elements`);
   }
 
   showHoverNote(event) {
     const link = event.target;
-    const noteText = link.getAttribute('data-note');
+    const noteText = link.getAttribute('data-note') || link.getAttribute('data-hover');
     
     if (!noteText) return;
     
