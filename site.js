@@ -1926,6 +1926,61 @@ class SimpleBlog {
         }
       }
       
+      // Method 3: Try to find any media files by checking raw URLs directly
+      if (imageFiles.length === 0) {
+        try {
+          console.log(`loadImagesForPost: Trying direct raw URL access for posts/${slug}`);
+          
+          // Common media extensions to check
+          const mediaExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
+          
+          for (const ext of mediaExtensions) {
+            // Try to access the raw GitHub URL directly
+            const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/`;
+            
+            // We'll try a few common naming patterns
+            const testPatterns = [
+              `1.${ext}`,
+              `image.${ext}`,
+              `img.${ext}`,
+              `photo.${ext}`,
+              `screenshot.${ext}`,
+              `Screenshot.${ext}`,
+              `IMG.${ext}`,
+              `Photo.${ext}`,
+              `video.${ext}`,
+              `movie.${ext}`,
+              `clip.${ext}`,
+              `Screen Recording.${ext}`,
+              `Screen Recording 2025-07-04 at 5.03.24 PM.${ext}`
+            ];
+            
+            for (const pattern of testPatterns) {
+              try {
+                const response = await fetch(rawUrl + pattern, { method: 'HEAD' });
+                if (response.ok) {
+                  console.log(`loadImagesForPost: Found media file via direct raw access: ${pattern}`);
+                  imageFiles.push({
+                    name: pattern,
+                    url: rawUrl + pattern,
+                    type: ext
+                  });
+                  break; // Found one with this extension, move to next
+                }
+              } catch (error) {
+                // Continue to next pattern
+              }
+            }
+            
+            if (imageFiles.length > 0) {
+              break; // Found some files, stop scanning
+            }
+          }
+        } catch (error) {
+          console.log(`loadImagesForPost: Direct raw access method failed:`, error);
+        }
+      }
+      
       console.log(`loadImagesForPost: Total images found: ${imageFiles.length}`);
       return imageFiles;
       
