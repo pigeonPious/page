@@ -179,6 +179,9 @@ class SimpleBlog {
     // Setup text selection monitoring
     this.setupSelectionMonitoring();
     
+    // Setup text selection monitoring
+    this.setupSelectionMonitoring();
+    
     // Check authentication status
 
     
@@ -2215,6 +2218,8 @@ class SimpleBlog {
         height: 120px !important;
         object-fit: cover;
         display: block;
+        background: #000;
+        border-radius: 8px;
       `;
       
       // Ensure video shows first frame as thumbnail
@@ -2245,6 +2250,19 @@ class SimpleBlog {
             video.pause();
           }
         }, 100);
+      });
+      
+      // Force video to load and display first frame
+      video.addEventListener('canplaythrough', () => {
+        console.log('Video canplaythrough event fired for:', mediaUrl);
+        // Ensure first frame is visible
+        video.currentTime = 0.1;
+        video.pause();
+        // Force a repaint
+        video.style.display = 'none';
+        setTimeout(() => {
+          video.style.display = 'block';
+        }, 10);
       });
       
       // Create play button overlay
@@ -3761,6 +3779,18 @@ class SimpleBlog {
     }, 100);
   }
 
+  // Load saved post flags
+  loadSavedFlags() {
+    try {
+      const savedFlags = localStorage.getItem('current_post_flags');
+      if (savedFlags) {
+        console.log('Loading saved post flags:', savedFlags);
+        // You can add logic here to restore flags if needed
+      }
+    } catch (error) {
+      console.warn('Could not load saved flags:', error);
+    }
+  }
 
   setupSelectionMonitoring() {
     console.log('Setting up text selection monitoring...');
@@ -5546,7 +5576,7 @@ class SimpleBlog {
     tooltip.style.display = 'block';
     
     // Position tooltip with boundary detection
-    this.positionHoverNote(tooltip, event);
+    positionHoverNote(tooltip, event);
   }
 
   positionHoverNote(tooltip, event) {
@@ -5593,7 +5623,7 @@ class SimpleBlog {
   updateHoverNotePosition(event) {
     const tooltip = document.getElementById('hoverNote');
     if (tooltip && tooltip.style.display === 'block') {
-      this.positionHoverNote(tooltip, event);
+      positionHoverNote(tooltip, event);
     }
   }
 
@@ -5679,7 +5709,7 @@ class SimpleBlog {
     tooltip.style.display = 'block';
     
     // Position tooltip with boundary detection (same as regular hover notes)
-    this.positionHoverNote(tooltip, event);
+    positionHoverNote(tooltip, event);
   }
 
   hideHoverNotePreview() {
