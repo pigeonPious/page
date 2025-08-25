@@ -2219,6 +2219,7 @@ class SimpleBlog {
       
       // Ensure video shows first frame as thumbnail
       video.addEventListener('loadeddata', () => {
+        console.log('Video loadeddata event fired for:', mediaUrl);
         // Seek to 0.1 seconds to ensure first frame is visible
         video.currentTime = 0.1;
         // Pause the video to keep it on the first frame
@@ -2227,10 +2228,23 @@ class SimpleBlog {
       
       // Fallback: if loadeddata doesn't fire, try to show first frame
       video.addEventListener('canplay', () => {
+        console.log('Video canplay event fired for:', mediaUrl);
         if (video.readyState >= 2) { // HAVE_CURRENT_DATA
           video.currentTime = 0.1;
           video.pause();
         }
+      });
+      
+      // Additional fallback for when video loads
+      video.addEventListener('loadedmetadata', () => {
+        console.log('Video loadedmetadata event fired for:', mediaUrl);
+        // Try to show first frame
+        setTimeout(() => {
+          if (video.readyState >= 2) {
+            video.currentTime = 0.1;
+            video.pause();
+          }
+        }, 100);
       });
       
       // Create play button overlay
@@ -2246,8 +2260,7 @@ class SimpleBlog {
         this.showVideoPreview(video.src, mediaName || 'Video');
       });
       
-      // Add visual indication that video is clickable
-      videoWrapper.title = 'Click to view full size';
+
       
       // Assemble the thumbnail
       videoWrapper.appendChild(video);
@@ -2279,8 +2292,7 @@ class SimpleBlog {
         this.showImagePreview(img.src, img.alt || 'Image');
       });
       
-      // Add visual indication that image is clickable
-      img.title = 'Click to view full size';
+
       
       // Replace the placeholder with the actual image
       placeholder.parentNode.replaceChild(img, placeholder);
@@ -2597,7 +2609,7 @@ class SimpleBlog {
       
       // Add visual indication that image is clickable
       newImg.style.cursor = 'pointer';
-      newImg.title = 'Click to view full size';
+
       
       // Ensure the image is clickable
       newImg.style.pointerEvents = 'auto';
@@ -3899,7 +3911,7 @@ class SimpleBlog {
     }
     
     // Construct the GitHub URL for the post file
-    const githubUrl = `https://github.com/pigeonPious/page/blob/main/posts/${postSlug}.json`;
+    const githubUrl = `https://github.com/pigeonPious/page/blob/main/posts/${postSlug}.txt`;
     
           console.log('Opening GitHub URL:', githubUrl);
     
