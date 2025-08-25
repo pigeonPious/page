@@ -1,0 +1,97 @@
+name: Rename Assets to Numeric Format
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'posts/**'
+  workflow_dispatch:
+
+jobs:
+  rename-assets:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Rename Assets to Numeric Format
+      run: |
+        python3 -c "
+        import os
+        import re
+        import shutil
+        from pathlib import Path
+        
+        def rename_assets_to_numeric():
+            posts_dir = 'posts'
+            media_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.mp4', '.mov', '.avi', '.webm']
+            total_renamed = 0
+            
+            if not os.path.exists(posts_dir):
+                print('Posts directory not found')
+                return 0
+            
+            # Process each subdirectory in posts
+            for item in os.listdir(posts_dir):
+                item_path = os.path.join(posts_dir, item)
+                if os.path.isdir(item_path):
+                    print(f'Processing directory: {item}')
+                    
+                    # Find media files in this directory
+                    media_files = []
+                    for file in os.listdir(item_path):
+                        file_path = os.path.join(item_path, file)
+                        if os.path.isfile(file_path):
+                            file_ext = os.path.splitext(file)[1].lower()
+                            if file_ext in media_extensions:
+                                media_files.append(file)
+                    
+                    if media_files:
+                        print(f'  Found {len(media_files)} media files')
+                        
+                        # Sort files for consistent numbering
+                        media_files.sort()
+                        
+                        # Rename files to numeric format
+                        for i, old_name in enumerate(media_files):
+                            old_path = os.path.join(item_path, old_name)
+                            file_ext = os.path.splitext(old_name)[1]
+                            new_name = f'{i + 1}{file_ext}'
+                            new_path = os.path.join(item_path, new_name)
+                            
+                            # Check if file already has numeric name
+                            name_without_ext = os.path.splitext(old_name)[0]
+                            if not re.match(r'^\d+$', name_without_ext):
+                                # Only rename if the new name doesn't already exist
+                                if not os.path.exists(new_path):
+                                    try:
+                                        shutil.move(old_path, new_path)
+                                        print(f'    Renamed: {old_name} → {new_name}')
+                                        total_renamed += 1
+                                    except Exception as e:
+                                        print(f'    Error renaming {old_name}: {e}')
+                                else:
+                                    print(f'    Skipped {old_name}: {new_name} already exists')
+                            else:
+                                print(f'    Skipped {old_name}: already numeric')
+            
+            return total_renamed
+        
+        # Execute the renaming
+        renamed_count = rename_assets_to_numeric()
+        print(f'Asset renaming completed. Total files renamed: {renamed_count}')
+        "
+        
+    - name: Commit and push renamed assets
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add -A
+        git diff --quiet && git diff --staged --quiet || git commit -m "Rename assets to numeric format [skip ci]"
+        git push

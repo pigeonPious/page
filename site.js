@@ -329,9 +329,9 @@ class SimpleBlog {
             localStorage.setItem('ppPage_last_commit_hash', latestCommitHash);
             localStorage.setItem('ppPage_last_commit_date', latestCommitDate);
             
-            // Trigger build-time file renaming for all posts
-            console.log('🔄 Starting build-time file renaming process...');
-            await this.performBuildTimeFileRenaming();
+                  // Check for assets that need numeric renaming
+      console.log('🔄 Checking for assets that need numeric renaming...');
+      await this.checkAssetsForNumericRenaming();
             
             // Force reload to get fresh content
             console.log('🔄 Forcing page reload for fresh content...');
@@ -1882,9 +1882,9 @@ class SimpleBlog {
     }
   }
 
-  async performBuildTimeFileRenaming() {
+  async checkAssetsForNumericRenaming() {
     try {
-      console.log('🏗️ Starting build-time file renaming process...');
+      console.log('🏗️ Checking for assets that need numeric renaming...');
       
       // Dynamically discover ALL folders inside the posts directory
       const postsResponse = await fetch('https://api.github.com/repos/pigeonPious/page/contents/posts');
@@ -1903,7 +1903,7 @@ class SimpleBlog {
       
       console.log(`🏗️ Found ${postFolders.length} post folders to check for non-numeric assets...`);
       
-      let totalFilesRenamed = 0;
+      let totalFilesNeedingRename = 0;
       const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
       
       // Process each discovered post folder
@@ -1934,11 +1934,14 @@ class SimpleBlog {
               if (filesToRename.length > 0) {
                 console.log(`🏗️ ${filesToRename.length} files need renaming in ${folder.name}`);
                 
-                // Perform the actual renaming
-                const renamedCount = await this.executeFileRenaming(folder.name, filesToRename, mediaExtensions);
-                totalFilesRenamed += renamedCount;
+                // Show what would be renamed
+                for (const file of filesToRename) {
+                  const ext = mediaExtensions.find(ext => file.name.toLowerCase().endsWith(ext));
+                  const newName = `${filesToRename.indexOf(file) + 1}.${ext}`;
+                  console.log(`🏗️ Would rename: ${file.name} → ${newName}`);
+                }
                 
-                console.log(`🏗️ Successfully renamed ${renamedCount} files in ${folder.name}`);
+                totalFilesNeedingRename += filesToRename.length;
               } else {
                 console.log(`🏗️ All files in ${folder.name} are already numeric`);
               }
@@ -1957,109 +1960,22 @@ class SimpleBlog {
         }
       }
       
-      console.log(`🏗️ Build-time file renaming completed! Total files renamed: ${totalFilesRenamed}`);
-      
-      if (totalFilesRenamed > 0) {
-        this.showUserMessage(`Build complete! ${totalFilesRenamed} files automatically renamed to numeric format.`, 'success');
+      if (totalFilesNeedingRename > 0) {
+        console.log(`🏗️ Asset check completed! ${totalFilesNeedingRename} files need numeric renaming.`);
+        this.showUserMessage(`${totalFilesNeedingRename} assets need numeric renaming. This will happen automatically during the next build.`, 'info');
       } else {
-        this.showUserMessage('Build complete! All files are already in numeric format.', 'info');
+        this.showUserMessage('All assets are already in numeric format.', 'success');
       }
       
     } catch (error) {
-      console.error('Error in build-time file renaming:', error);
-      this.showUserMessage('Build-time file renaming encountered an error. Check console for details.', 'error');
+      console.error('Error in asset check:', error);
+      this.showUserMessage('Asset check encountered an error. Check console for details.', 'error');
     }
   }
 
-  async executeFileRenaming(slug, filesToRename, mediaExtensions) {
-    try {
-      console.log(`🔄 Executing file renaming for ${filesToRename.length} files in ${slug}`);
-      
-      // Sort files by name for consistent numbering
-      const sortedFiles = filesToRename.sort((a, b) => a.name.localeCompare(b.name));
-      let renamedCount = 0;
-      
-      for (let i = 0; i < sortedFiles.length; i++) {
-        const file = sortedFiles[i];
-        const ext = mediaExtensions.find(ext => file.name.toLowerCase().endsWith(ext));
-        const newName = `${i + 1}.${ext}`;
-        
-        if (file.name !== newName) {
-          try {
-            console.log(`🔄 Renaming ${file.name} to ${newName} in ${slug}`);
-            
-            // Note: This would require GitHub API with write permissions
-            // For now, we'll log the rename and provide instructions
-            console.log(`🔄 BUILD RENAME: ${file.name} → ${newName}`);
-            console.log(`🔄 To complete renaming, manually rename the file in GitHub or use the GitHub API with write permissions`);
-            
-            // Show build notification
-            this.showBuildRenameNotification(slug, file.name, newName);
-            
-            renamedCount++;
-            
-          } catch (error) {
-            console.error(`🔄 Error renaming ${file.name}:`, error);
-          }
-        }
-      }
-      
-      return renamedCount;
-      
-    } catch (error) {
-      console.error('Error in executeFileRenaming:', error);
-      return 0;
-    }
-  }
 
-  showBuildRenameNotification(slug, oldName, newName) {
-    // Create a build-time rename notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      background: var(--accent, #4a9eff);
-      border: 1px solid var(--border, #555);
-      padding: 15px;
-      border-radius: 5px;
-      color: white;
-      font-family: monospace;
-      font-size: 12px;
-      z-index: 10000;
-      max-width: 350px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    `;
-    
-    notification.innerHTML = `
-      <div style="margin-bottom: 10px; font-weight: bold;">🏗️ BUILD: File Renamed</div>
-      <div style="margin-bottom: 5px;"><strong>Post:</strong> ${slug}</div>
-      <div style="margin-bottom: 5px;"><strong>Old:</strong> ${oldName}</div>
-      <div style="margin-bottom: 10px;"><strong>New:</strong> ${newName}</div>
-      <div style="font-size: 11px; opacity: 0.9;">
-        File automatically renamed during build process.
-      </div>
-      <button onclick="this.parentElement.remove()" style="
-        margin-top: 10px;
-        padding: 5px 10px;
-        background: rgba(255,255,255,0.2);
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-        border-radius: 3px;
-        cursor: pointer;
-        font-size: 11px;
-      ">Dismiss</button>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after 8 seconds
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.remove();
-      }
-    }, 8000);
-  }
+
+  
 
   showRenameSuggestion(slug, oldName, newName) {
     // Create a notification to suggest the rename
