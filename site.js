@@ -2213,8 +2213,7 @@ class SimpleBlog {
       video.className = 'post-video-thumbnail';
       video.muted = true;
       video.playsInline = true;
-      video.crossOrigin = 'anonymous';
-      video.setAttribute('poster', ''); // Clear any poster to ensure video shows
+
       video.style.cssText = `
         width: 120px !important;
         height: 120px !important;
@@ -2223,68 +2222,53 @@ class SimpleBlog {
         border-radius: 8px;
       `;
       
-      // Ensure video shows first frame as thumbnail
-      video.addEventListener('loadeddata', () => {
-        console.log('Video loadeddata event fired for:', mediaUrl);
-        // Seek to 0.1 seconds to ensure first frame is visible
+      // Generate poster frame from first frame of video
+      video.addEventListener('loadedmetadata', () => {
+        // Seek to 0.1 seconds to avoid black frame at start
         video.currentTime = 0.1;
-        // Pause the video to keep it on the first frame
-        video.pause();
       });
       
-      // Fallback: if loadeddata doesn't fire, try to show first frame
-      video.addEventListener('canplay', () => {
-        console.log('Video canplay event fired for:', mediaUrl);
-        if (video.readyState >= 2) { // HAVE_CURRENT_DATA
-          video.currentTime = 0.1;
-          video.pause();
+      video.addEventListener('seeked', () => {
+        // Create canvas to capture the current frame
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size to match video dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw the current video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to data URL and set as poster
+        try {
+          const posterUrl = canvas.toDataURL('image/jpeg', 0.8);
+          video.poster = posterUrl;
+          
+          // Reset video to beginning
+          video.currentTime = 0;
+          
+          console.log('Generated poster for video:', mediaName);
+        } catch (error) {
+          console.log('Could not generate poster for video:', error);
         }
       });
       
-      // Additional fallback for when video loads
-      video.addEventListener('loadedmetadata', () => {
-        console.log('Video loadedmetadata event fired for:', mediaUrl);
-        // Try to show first frame
-        setTimeout(() => {
-          if (video.readyState >= 2) {
-            video.currentTime = 0.1;
-            video.pause();
-          }
-        }, 100);
+      // Track play/pause state for play button overlay
+      video.addEventListener('play', () => {
+        video.setAttribute('paused', 'false');
       });
       
-      // Force video to load and display first frame
-      video.addEventListener('canplaythrough', () => {
-        console.log('Video canplaythrough event fired for:', mediaUrl);
-        // Ensure first frame is visible
-        video.currentTime = 0.1;
-        video.pause();
-        // Force a repaint
-        video.style.display = 'none';
-        setTimeout(() => {
-          video.style.display = 'block';
-        }, 10);
+      video.addEventListener('pause', () => {
+        video.setAttribute('paused', 'true');
       });
       
-      // Additional method: try to load first frame immediately
-      video.addEventListener('loadeddata', () => {
-        console.log('Video loadeddata event fired for:', mediaUrl);
-        // Try to show first frame by seeking to different positions
-        video.currentTime = 0.1;
-        video.pause();
-        
-        // Force the video to render by briefly playing and pausing
-        setTimeout(() => {
-          video.play().then(() => {
-            setTimeout(() => {
-              video.pause();
-              video.currentTime = 0.1;
-            }, 100);
-          }).catch(err => {
-            console.log('Could not play video for thumbnail:', err);
-          });
-        }, 200);
+      video.addEventListener('ended', () => {
+        video.setAttribute('paused', 'true');
       });
+      
+      // Set initial paused state
+      video.setAttribute('paused', 'true');
       
       // Create play button overlay
       const playButton = document.createElement('div');
