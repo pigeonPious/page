@@ -2053,21 +2053,10 @@ class SimpleBlog {
           if (mediaFiles.length > 0) {
             console.log(`loadImagesForPost: Found ${mediaFiles.length} media files via GitHub API`);
             
-            // Check if any files need automatic renaming to numeric format
-            const filesToRename = mediaFiles.filter(file => {
-              const filename = file.name;
-              const ext = mediaExtensions.find(ext => filename.toLowerCase().endsWith(ext));
-              const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
-              // Check if filename is already numeric (1, 2, 3, etc.)
-              return !/^\d+$/.test(nameWithoutExt);
-            });
+            // Sort files by name for consistent ordering (1.jpg, 2.png, etc.)
+            mediaFiles.sort((a, b) => a.name.localeCompare(b.name));
             
-            if (filesToRename.length > 0) {
-              console.log(`loadImagesForPost: ${filesToRename.length} files need automatic renaming to numeric format`);
-              await this.autoRenameMediaFiles(slug, filesToRename, mediaExtensions);
-            }
-            
-            // Now load the files (either original or renamed)
+            // Load all media files directly - no more renaming checks needed
             mediaFiles.forEach(item => {
               imageFiles.push({
                 name: item.name,
@@ -2090,82 +2079,11 @@ class SimpleBlog {
         console.log(`loadImagesForPost: GitHub API error:`, error);
       }
       
-      // Method 2: Try to construct URLs based on common file patterns (optimized)
+      // Method 2: Simple fallback - if GitHub API fails, just return empty array
+      // No more URL testing since assets should be properly named and in the folder
       if (imageFiles.length === 0) {
-        console.log(`loadImagesForPost: Trying to construct URLs for common media files in posts/${slug}`);
-        
-        // Common media file extensions (prioritized by frequency)
-        const mediaExtensions = ['jpg', 'png', 'gif', 'mp4', 'mov', 'jpeg', 'webp', 'svg', 'avi', 'webm'];
-        
-        // Try to find media files by constructing URLs and checking if they exist
-        // Use parallel requests for much faster loading
-        const testPromises = [];
-        
-        for (const ext of mediaExtensions) {
-          // Try only first 5 numeric filenames (most posts have fewer than 5 media files)
-          for (let i = 1; i <= 5; i++) {
-            const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${i}.${ext}`;
-            testPromises.push(
-              fetch(testUrl, { method: 'HEAD' })
-                .then(response => {
-                  if (response.ok) {
-                    return {
-                      name: `${i}.${ext}`,
-                      url: testUrl,
-                      type: ext
-                    };
-                  }
-                  return null;
-                })
-                .catch(() => null)
-            );
-          }
-        }
-        
-        // Wait for all requests to complete in parallel
-        const results = await Promise.all(testPromises);
-        
-        // Filter out null results and add found files
-        results.forEach(result => {
-          if (result) {
-            imageFiles.push(result);
-            console.log(`loadImagesForPost: Found media file via numeric URL: ${result.name}`);
-          }
-        });
-        
-        // If still no files found, try a few common descriptive names
-        if (imageFiles.length === 0) {
-          const commonNames = ['image', 'video', 'screenshot'];
-          const descriptivePromises = [];
-          
-          for (const ext of mediaExtensions.slice(0, 4)) { // Only try first 4 extensions
-            for (const name of commonNames) {
-              const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${name}.${ext}`;
-              descriptivePromises.push(
-                fetch(testUrl, { method: 'HEAD' })
-                  .then(response => {
-                    if (response.ok) {
-                      return {
-                        name: `${name}.${ext}`,
-                        url: testUrl,
-                        type: ext
-                      };
-                    }
-                    return null;
-                  })
-                  .catch(() => null)
-              );
-            }
-          }
-          
-          const descriptiveResults = await Promise.all(descriptivePromises);
-          descriptiveResults.forEach(result => {
-            if (result) {
-              imageFiles.push(result);
-              console.log(`loadImagesForPost: Found media file via descriptive URL: ${result.name}`);
-            }
-          });
-        }
+        console.log(`loadImagesForPost: GitHub API unavailable - no media files loaded for ${slug}`);
+        console.log(`loadImagesForPost: This is normal for public repositories due to rate limiting`);
       }
       
       console.log(`loadImagesForPost: Total images found: ${imageFiles.length}`);
