@@ -2090,58 +2090,81 @@ class SimpleBlog {
         console.log(`loadImagesForPost: GitHub API error:`, error);
       }
       
-      // Method 2: Try to construct URLs based on common file patterns
+      // Method 2: Try to construct URLs based on common file patterns (optimized)
       if (imageFiles.length === 0) {
         console.log(`loadImagesForPost: Trying to construct URLs for common media files in posts/${slug}`);
         
-        // Common media file extensions
-        const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
+        // Common media file extensions (prioritized by frequency)
+        const mediaExtensions = ['jpg', 'png', 'gif', 'mp4', 'mov', 'jpeg', 'webp', 'svg', 'avi', 'webm'];
         
         // Try to find media files by constructing URLs and checking if they exist
+        // Use parallel requests for much faster loading
+        const testPromises = [];
+        
         for (const ext of mediaExtensions) {
-          // Try numeric filenames first (1.png, 2.mp4, etc.) - much more reliable
-          for (let i = 1; i <= 10; i++) {
+          // Try only first 5 numeric filenames (most posts have fewer than 5 media files)
+          for (let i = 1; i <= 5; i++) {
             const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${i}.${ext}`;
-            console.log(`loadImagesForPost: Testing numeric URL: ${testUrl}`);
-            try {
-              const response = await fetch(testUrl, { method: 'HEAD' });
-              if (response.ok) {
-                imageFiles.push({
-                  name: `${i}.${ext}`,
-                  url: testUrl,
-                  type: ext
-                });
-                console.log(`loadImagesForPost: Found media file via numeric URL: ${i}.${ext}`);
-              } else {
-                console.log(`loadImagesForPost: File not found: ${testUrl} (status: ${response.status})`);
-              }
-            } catch (error) {
-              console.log(`loadImagesForPost: Error checking ${testUrl}:`, error.message);
+            testPromises.push(
+              fetch(testUrl, { method: 'HEAD' })
+                .then(response => {
+                  if (response.ok) {
+                    return {
+                      name: `${i}.${ext}`,
+                      url: testUrl,
+                      type: ext
+                    };
+                  }
+                  return null;
+                })
+                .catch(() => null)
+            );
+          }
+        }
+        
+        // Wait for all requests to complete in parallel
+        const results = await Promise.all(testPromises);
+        
+        // Filter out null results and add found files
+        results.forEach(result => {
+          if (result) {
+            imageFiles.push(result);
+            console.log(`loadImagesForPost: Found media file via numeric URL: ${result.name}`);
+          }
+        });
+        
+        // If still no files found, try a few common descriptive names
+        if (imageFiles.length === 0) {
+          const commonNames = ['image', 'video', 'screenshot'];
+          const descriptivePromises = [];
+          
+          for (const ext of mediaExtensions.slice(0, 4)) { // Only try first 4 extensions
+            for (const name of commonNames) {
+              const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${name}.${ext}`;
+              descriptivePromises.push(
+                fetch(testUrl, { method: 'HEAD' })
+                  .then(response => {
+                    if (response.ok) {
+                      return {
+                        name: `${name}.${ext}`,
+                        url: testUrl,
+                        type: ext
+                      };
+                    }
+                    return null;
+                  })
+                  .catch(() => null)
+              );
             }
           }
           
-          // If no numeric files found, try some common descriptive names as fallback
-          if (imageFiles.length === 0) {
-            const commonNames = ['image', 'video', 'media', 'screenshot', 'recording', 'demo'];
-            for (const name of commonNames) {
-              const testUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${name}.${ext}`;
-              console.log(`loadImagesForPost: Testing descriptive URL: ${testUrl}`);
-              try {
-                const response = await fetch(testUrl, { method: 'HEAD' });
-                if (response.ok) {
-                  imageFiles.push({
-                    name: `${name}.${ext}`,
-                    url: testUrl,
-                    type: ext
-                  });
-                  console.log(`loadImagesForPost: Found media file via descriptive URL: ${name}.${ext}`);
-                  break; // Found one file with this extension, move to next extension
-                }
-              } catch (error) {
-                console.log(`loadImagesForPost: Error checking ${testUrl}:`, error.message);
-              }
+          const descriptiveResults = await Promise.all(descriptivePromises);
+          descriptiveResults.forEach(result => {
+            if (result) {
+              imageFiles.push(result);
+              console.log(`loadImagesForPost: Found media file via descriptive URL: ${result.name}`);
             }
-          }
+          });
         }
       }
       
