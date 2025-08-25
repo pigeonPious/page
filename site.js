@@ -2210,6 +2210,28 @@ class SimpleBlog {
       video.className = 'post-video-thumbnail';
       video.muted = true;
       video.playsInline = true;
+      video.style.cssText = `
+        width: 120px !important;
+        height: 120px !important;
+        object-fit: cover;
+        display: block;
+      `;
+      
+      // Ensure video shows first frame as thumbnail
+      video.addEventListener('loadeddata', () => {
+        // Seek to 0.1 seconds to ensure first frame is visible
+        video.currentTime = 0.1;
+        // Pause the video to keep it on the first frame
+        video.pause();
+      });
+      
+      // Fallback: if loadeddata doesn't fire, try to show first frame
+      video.addEventListener('canplay', () => {
+        if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+          video.currentTime = 0.1;
+          video.pause();
+        }
+      });
       
       // Create play button overlay
       const playButton = document.createElement('div');
