@@ -2199,35 +2199,40 @@ class SimpleBlog {
     }
     
     if (isVideo) {
-      // Create video element
+      // Create video thumbnail wrapper
+      const videoWrapper = document.createElement('div');
+      videoWrapper.className = `post-video-wrapper ${alignmentClasses.join(' ')}`;
+      
+      // Create video element for thumbnail
       const video = document.createElement('video');
       video.src = mediaUrl;
-      video.controls = true;
       video.preload = 'metadata';
-      video.className = `post-media-content post-video-content ${alignmentClasses.join(' ')}`;
-      video.style.cssText = `
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 1em 0;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        cursor: pointer;
-      `;
+      video.className = 'post-video-thumbnail';
+      video.muted = true;
+      video.playsInline = true;
+      
+      // Create play button overlay
+      const playButton = document.createElement('div');
+      playButton.className = 'post-video-play-button';
+      playButton.innerHTML = '▶';
       
       // Add click handler for full preview
-      video.addEventListener('click', (e) => {
+      videoWrapper.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('Video clicked:', video.src);
+        console.log('Video thumbnail clicked:', video.src);
         this.showVideoPreview(video.src, mediaName || 'Video');
       });
       
       // Add visual indication that video is clickable
-      video.title = 'Click to view full size';
+      videoWrapper.title = 'Click to view full size';
       
-      // Replace the placeholder with the actual video
-      placeholder.parentNode.replaceChild(video, placeholder);
+      // Assemble the thumbnail
+      videoWrapper.appendChild(video);
+      videoWrapper.appendChild(playButton);
+      
+      // Replace the placeholder with the video thumbnail
+      placeholder.parentNode.replaceChild(videoWrapper, placeholder);
     } else {
       // Create image element (existing logic)
       const img = document.createElement('img');
