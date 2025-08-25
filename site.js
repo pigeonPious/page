@@ -2213,12 +2213,13 @@ class SimpleBlog {
       video.className = 'post-video-thumbnail';
       video.muted = true;
       video.playsInline = true;
+      video.crossOrigin = 'anonymous';
+      video.setAttribute('poster', ''); // Clear any poster to ensure video shows
       video.style.cssText = `
         width: 120px !important;
         height: 120px !important;
         object-fit: cover;
         display: block;
-        background: #000;
         border-radius: 8px;
       `;
       
@@ -2263,6 +2264,26 @@ class SimpleBlog {
         setTimeout(() => {
           video.style.display = 'block';
         }, 10);
+      });
+      
+      // Additional method: try to load first frame immediately
+      video.addEventListener('loadeddata', () => {
+        console.log('Video loadeddata event fired for:', mediaUrl);
+        // Try to show first frame by seeking to different positions
+        video.currentTime = 0.1;
+        video.pause();
+        
+        // Force the video to render by briefly playing and pausing
+        setTimeout(() => {
+          video.play().then(() => {
+            setTimeout(() => {
+              video.pause();
+              video.currentTime = 0.1;
+            }, 100);
+          }).catch(err => {
+            console.log('Could not play video for thumbnail:', err);
+          });
+        }, 200);
       });
       
       // Create play button overlay
