@@ -2654,11 +2654,21 @@ class SimpleBlog {
       // Calculate scaling to fit within viewport
       const scaleX = viewportWidth / displayWidth;
       const scaleY = viewportHeight / displayHeight;
-      const scale = Math.min(scaleX, scaleY); // Allow scaling up for small images
+      const scale = Math.min(scaleX, scaleY, 1); // Don't scale up for better performance
       
       // Apply calculated dimensions
       displayWidth = Math.floor(displayWidth * scale);
       displayHeight = Math.floor(displayHeight * scale);
+      
+      // For GIFs, limit maximum size to prevent performance issues
+      if (imageSrc.toLowerCase().endsWith('.gif')) {
+        const maxGifSize = 800; // Maximum dimension for GIFs
+        if (displayWidth > maxGifSize || displayHeight > maxGifSize) {
+          const gifScale = Math.min(maxGifSize / displayWidth, maxGifSize / displayHeight);
+          displayWidth = Math.floor(displayWidth * gifScale);
+          displayHeight = Math.floor(displayHeight * gifScale);
+        }
+      }
       
       fullImage.style.width = `${displayWidth}px`;
       fullImage.style.height = `${displayHeight}px`;
@@ -2667,7 +2677,8 @@ class SimpleBlog {
         natural: `${fullImage.naturalWidth}x${fullImage.naturalHeight}`,
         display: `${displayWidth}x${displayHeight}`,
         viewport: `${viewportWidth}x${viewportHeight}`,
-        scale: scale.toFixed(3)
+        scale: scale.toFixed(3),
+        isGif: imageSrc.toLowerCase().endsWith('.gif')
       });
     };
     
@@ -5522,9 +5533,51 @@ class SimpleBlog {
     tooltip.style.display = 'block';
     
     // Position tooltip with boundary detection
-    positionHoverNote(tooltip, event);
+    this.positionHoverNote(tooltip, event);
   }
 
+  positionHoverNote(tooltip, event) {
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    const offset = 10;
+    
+    // Get tooltip dimensions (need to make it visible first to measure)
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const tooltipWidth = tooltipRect.width;
+    const tooltipHeight = tooltipRect.height;
+    
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    let left = mouseX + offset;
+    let top = mouseY - tooltipHeight - offset;
+    
+    // Check right boundary - if tooltip would go off screen, position to the left of cursor
+    if (left + tooltipWidth > viewportWidth) {
+      left = mouseX - tooltipWidth - offset;
+    }
+    
+    // Check left boundary - if still off screen, align to left edge
+    if (left < 0) {
+      left = 5;
+    }
+    
+    // Check top boundary - if tooltip would go off screen, position below cursor
+    if (top < 0) {
+      top = mouseY + offset;
+    }
+    
+    // Check bottom boundary - if tooltip would go off screen, position above cursor
+    if (top + tooltipHeight > viewportHeight) {
+      top = mouseY - tooltipHeight - offset;
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+
+  // Position hover note tooltip with boundary detection
   positionHoverNote(tooltip, event) {
     const mouseX = event.clientX;
     const mouseY = event.clientY;
@@ -5569,7 +5622,7 @@ class SimpleBlog {
   updateHoverNotePosition(event) {
     const tooltip = document.getElementById('hoverNote');
     if (tooltip && tooltip.style.display === 'block') {
-      positionHoverNote(tooltip, event);
+      this.positionHoverNote(tooltip, event);
     }
   }
 
@@ -5655,7 +5708,7 @@ class SimpleBlog {
     tooltip.style.display = 'block';
     
     // Position tooltip with boundary detection (same as regular hover notes)
-    positionHoverNote(tooltip, event);
+    this.positionHoverNote(tooltip, event);
   }
 
   hideHoverNotePreview() {
