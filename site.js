@@ -1340,8 +1340,9 @@ class SimpleBlog {
           const posts = [];
           for (const postData of indexData.posts) {
             try {
-              // Load the actual post content
-              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postData.filename}`;
+              // Load the actual post content (support nested path via path or filename)
+              const relativePath = (postData && (postData.path || postData.filename)) || '';
+              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
               const response = await fetch(postUrl);
               if (response.ok) {
                 const content = await response.text();
@@ -1351,7 +1352,7 @@ class SimpleBlog {
                 }
               }
             } catch (error) {
-              console.error('All Posts submenu: Error loading post content:', postData.filename, error);
+              console.error('All Posts submenu: Error loading post content:', postData && postData.filename, error);
             }
           }
           
@@ -1560,16 +1561,18 @@ class SimpleBlog {
       
       // Try to load from the static posts index first
       const indexResponse = await fetch('posts-index.json');
+      let posts = [];
       if (indexResponse.ok) {
         const indexData = await indexResponse.json();
         console.log('loadPosts: Found static index with', indexData.total_posts, 'posts');
         
         // Convert index data to post objects
-        const posts = [];
         for (const postData of indexData.posts) {
           try {
-            // Load the actual post content
-            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postData.filename}`;
+            // Support nested paths: prefer path, else filename (which itself may include folders)
+            const relativePath = (postData && (postData.path || postData.filename)) || '';
+            if (!relativePath) continue;
+            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
             const response = await fetch(postUrl);
             if (response.ok) {
               const content = await response.text();
@@ -1579,13 +1582,12 @@ class SimpleBlog {
               }
             }
           } catch (error) {
-            console.error('Error loading post content:', postData.filename, error);
+            console.error('Error loading post content:', postData && postData.filename, error);
           }
         }
         
         if (posts.length > 0) {
-          console.log('loadPosts: Successfully loaded', posts.length, 'posts from static index');
-          return posts;
+          console.log('loadPosts: Loaded', posts.length, 'posts from static index; will also discover nested posts');
         }
       }
     } catch (error) {
@@ -1678,38 +1680,41 @@ class SimpleBlog {
       }
     }
     
+    // Combine: posts discovered from index (if any) plus recursively discovered files
+    const discoveredPosts = [];
     if (postFiles.length > 0) {
       console.log('loadPosts: Processing', postFiles.length, 'post files...');
-      
-      // Fetch and parse each post file
-      const posts = [];
       for (const postFile of postFiles) {
         try {
           const postResponse = await fetch(postFile.download_url + (postFile.download_url.includes('?') ? '&' : '?') + '_cb=' + cacheBust);
           if (postResponse.ok) {
             const postContent = await postResponse.text();
-              
-            // Extract slug from filename (remove .txt extension)
             const slug = postFile.name.replace('.txt', '');
-              
-            // Parse the .txt file content
             const post = this.parseTxtPost(postContent, slug);
-              
             if (post) {
-              posts.push(post);
-              console.log('loadPosts: Successfully parsed post:', post.title);
+              discoveredPosts.push(post);
             }
           }
         } catch (postError) {
           console.warn('Could not parse post file:', postFile.name, postError);
         }
       }
-      
-      return posts;
     }
     
-    console.log('loadPosts: No posts found');
-    return [];
+    // Merge unique by slug, prefer index-loaded metadata when duplicate
+    const bySlug = new Map();
+    for (const p of posts) bySlug.set(p.slug, p);
+    for (const p of discoveredPosts) if (!bySlug.has(p.slug)) bySlug.set(p.slug, p);
+    const combined = Array.from(bySlug.values());
+    
+    if (combined.length === 0) {
+      console.log('loadPosts: No posts found');
+      return [];
+    }
+    
+    // Sort by date desc
+    combined.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return combined;
   }
 
   parseTxtPost(content, slug) {
@@ -2031,62 +2036,58 @@ class SimpleBlog {
 
   async loadImagesForPost(slug) {
     try {
-      console.log(`loadImagesForPost: Looking for images in post folder: ${slug}`);
+      console.log(`loadImagesForPost: Resolving media for slug: ${slug}`);
       
-      let imageFiles = [];
+      const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
+      const imageFiles = [];
       
-      // Method 1: Try GitHub API first (most reliable)
-      try {
-        console.log(`loadImagesForPost: Trying GitHub API for folder: posts/${slug}`);
-        const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}`);
-        
-        if (response.ok) {
+      // Determine candidate folders to search for media
+      // Priority 1: Folder containing the .txt file (co-located media)
+      // Priority 2: Legacy folder named after slug (e.g., posts/<slug>/)
+      const candidateFolders = [];
+      if (slug.includes('/')) {
+        const coLocatedDir = slug.substring(0, slug.lastIndexOf('/'));
+        if (coLocatedDir) {
+          candidateFolders.push(`posts/${coLocatedDir}`);
+        }
+      }
+      // Legacy behavior fallback
+      candidateFolders.push(`posts/${slug}`);
+      
+      for (const folder of candidateFolders) {
+        try {
+          console.log(`loadImagesForPost: Checking folder via GitHub API: ${folder}`);
+          const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/${folder}`);
+          if (!response.ok) {
+            console.log(`loadImagesForPost: Folder not accessible (${response.status}): ${folder}`);
+            continue;
+          }
           const contents = await response.json();
-          console.log(`loadImagesForPost: GitHub API returned ${contents.length} items`);
-          
-          // Filter for media files (images and videos)
-          const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
           const mediaFiles = contents.filter(item => 
             item.type === 'file' && mediaExtensions.some(ext => item.name.toLowerCase().endsWith(ext))
           );
-          
-          if (mediaFiles.length > 0) {
-            console.log(`loadImagesForPost: Found ${mediaFiles.length} media files via GitHub API`);
-            
-            // Sort files by name for consistent ordering (1.jpg, 2.png, etc.)
-            mediaFiles.sort((a, b) => a.name.localeCompare(b.name));
-            
-            // Load all media files directly - no more renaming checks needed
-            mediaFiles.forEach(item => {
-              imageFiles.push({
-                name: item.name,
-                url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${item.name}`,
-                type: mediaExtensions.find(ext => item.name.toLowerCase().endsWith(ext))
-              });
-              console.log(`loadImagesForPost: Added media via API: ${item.name}`);
+          if (mediaFiles.length === 0) {
+            console.log(`loadImagesForPost: No media in folder: ${folder}`);
+            continue;
+          }
+          // Sort for consistency
+          mediaFiles.sort((a, b) => a.name.localeCompare(b.name));
+          mediaFiles.forEach(item => {
+            imageFiles.push({
+              name: item.name,
+              url: `https://raw.githubusercontent.com/pigeonPious/page/main/${folder}/${item.name}`,
+              type: mediaExtensions.find(ext => item.name.toLowerCase().endsWith(ext))
             });
-            
-            console.log(`loadImagesForPost: Successfully loaded ${imageFiles.length} images via GitHub API`);
-            return imageFiles;
-          }
-        } else {
-          console.log(`loadImagesForPost: GitHub API failed with status: ${response.status}`);
-          if (response.status === 403) {
-            console.log(`loadImagesForPost: GitHub API rate limited or authentication required. This is normal for public repositories.`);
-          }
+          });
+          console.log(`loadImagesForPost: Loaded ${imageFiles.length} media from ${folder}`);
+          // Stop after first folder that yields media
+          break;
+        } catch (folderErr) {
+          console.log(`loadImagesForPost: Error reading folder ${folder}:`, folderErr);
         }
-      } catch (error) {
-        console.log(`loadImagesForPost: GitHub API error:`, error);
       }
       
-      // Method 2: Simple fallback - if GitHub API fails, just return empty array
-      // No more URL testing since assets should be properly named and in the folder
-      if (imageFiles.length === 0) {
-        console.log(`loadImagesForPost: GitHub API unavailable - no media files loaded for ${slug}`);
-        console.log(`loadImagesForPost: This is normal for public repositories due to rate limiting`);
-      }
-      
-      console.log(`loadImagesForPost: Total images found: ${imageFiles.length}`);
+      console.log(`loadImagesForPost: Total media found: ${imageFiles.length}`);
       return imageFiles;
       
     } catch (error) {
@@ -2320,7 +2321,7 @@ class SimpleBlog {
       let post = null;
       
       try {
-        // Use raw GitHub URL directly - this bypasses all API rate limits and authentication issues
+        // Support nested paths: slug may contain folders relative to posts/
         const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.txt`;
         
         const response = await fetch(rawUrl);
@@ -2339,7 +2340,7 @@ class SimpleBlog {
       
       // If raw method failed, try the same fallback methods as sitemap
       if (!post) {
-        // Method 1: Try GitHub API with headers
+        // Method 1: Try GitHub API with headers (nested path supported)
         try {
           const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.txt`, {
             headers: {
@@ -2356,7 +2357,7 @@ class SimpleBlog {
           // Method 1 failed silently
         }
         
-        // Method 2: Try GitHub Tree API
+        // Method 2: Try GitHub Tree API (nested path supported)
       if (!post) {
         try {
             const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
@@ -3969,8 +3970,9 @@ class SimpleBlog {
           // Convert index data to post objects
           for (const postData of indexData.posts) {
             try {
-              // Load the actual post content
-              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postData.filename}`;
+              // Load the actual post content (support nested path via path or filename)
+              const relativePath = (postData && (postData.path || postData.filename)) || '';
+              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
               const response = await fetch(postUrl);
               if (response.ok) {
                 const content = await response.text();
@@ -3981,7 +3983,7 @@ class SimpleBlog {
                 }
               }
             } catch (error) {
-              console.error('All Posts: Error loading post content:', postData.filename, error);
+              console.error('All Posts: Error loading post content:', postData && postData.filename, error);
             }
           }
           
@@ -4052,6 +4054,29 @@ class SimpleBlog {
             }
           } catch (error) {
             console.log('All Posts: Directory browsing failed:', error);
+          }
+        }
+        
+        // Method 3: Try GitHub Tree API for recursive discovery (nested folders)
+        if (postFiles.length === 0) {
+          try {
+            console.log('All Posts: Trying GitHub Tree API...');
+            const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+            if (response.ok) {
+              const treeData = await response.json();
+              const txtFiles = treeData.tree.filter(item => 
+                item.path.startsWith('posts/') && item.path.endsWith('.txt')
+              );
+              if (txtFiles.length > 0) {
+                postFiles = txtFiles.map(item => ({
+                  name: item.path.replace('posts/', ''),
+                  download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}?_cb=${cacheBust}`
+                }));
+                console.log('All Posts: Found', postFiles.length, 'posts via Tree API');
+              }
+            }
+          } catch (error) {
+            console.log('All Posts: Tree API failed:', error);
           }
         }
         
@@ -4902,8 +4927,9 @@ class SimpleBlog {
             const posts = [];
             for (const postData of indexData.posts) {
               try {
-                // Load the actual post content
-                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${postData.filename}`;
+                // Load the actual post content (support nested path via path or filename)
+                const relativePath = (postData && (postData.path || postData.filename)) || '';
+                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
                 const response = await fetch(postUrl);
                 if (response.ok) {
                   const content = await response.text();
@@ -4914,7 +4940,7 @@ class SimpleBlog {
                   }
                 }
               } catch (error) {
-                console.error('Site map: Error loading post content:', postData.filename, error);
+                console.error('Site map: Error loading post content:', postData && postData.filename, error);
               }
             }
             
@@ -4985,6 +5011,29 @@ class SimpleBlog {
             }
           } catch (error) {
             console.log('Site map: Directory browsing failed:', error);
+          }
+        }
+        
+        // Method 3: Try GitHub Tree API for recursive discovery (nested folders)
+        if (postFiles.length === 0) {
+          try {
+            console.log('Site map: Trying GitHub Tree API...');
+            const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+            if (response.ok) {
+              const treeData = await response.json();
+              const txtFiles = treeData.tree.filter(item => 
+                item.path.startsWith('posts/') && item.path.endsWith('.txt')
+              );
+              if (txtFiles.length > 0) {
+                postFiles = txtFiles.map(item => ({
+                  name: item.path.replace('posts/', ''),
+                  download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}?_cb=${cacheBust}`
+                }));
+                console.log('Site map: Found', postFiles.length, 'posts via Tree API');
+              }
+            }
+          } catch (error) {
+            console.log('Site map: Tree API failed:', error);
           }
         }
         
