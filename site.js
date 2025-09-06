@@ -1576,7 +1576,8 @@ class SimpleBlog {
             const response = await fetch(postUrl);
             if (response.ok) {
               const content = await response.text();
-              const post = this.parseTxtPost(content, postData.slug);
+              const slug = postData.slug || this.computeSlugFromPostPath(relativePath);
+              const post = this.parseTxtPost(content, slug);
               if (post) {
                 posts.push(post);
               }
@@ -1814,6 +1815,29 @@ class SimpleBlog {
     } catch (error) {
       console.error('Error parsing .txt post:', error);
       return null;
+    }
+  }
+
+  // Compute canonical slug from a relative post path under posts/
+  // Example: 'devlogs/newpost/newpost.txt' -> 'devlogs/newpost'
+  //          'notes/today.txt' -> 'notes/today'
+  //          'sample-post.txt' -> 'sample-post'
+  computeSlugFromPostPath(relativePath) {
+    try {
+      if (!relativePath || typeof relativePath !== 'string') return '';
+      const withoutExt = relativePath.replace(/\.txt$/i, '');
+      const parts = withoutExt.split('/');
+      if (parts.length >= 2) {
+        const last = parts[parts.length - 1];
+        const parent = parts[parts.length - 2];
+        if (last === parent) {
+          return parts.slice(0, parts.length - 1).join('/');
+        }
+      }
+      return withoutExt;
+    } catch (e) {
+      console.warn('computeSlugFromPostPath error for', relativePath, e);
+      return String(relativePath || '').replace(/\.txt$/i, '');
     }
   }
 
@@ -3976,7 +4000,8 @@ class SimpleBlog {
               const response = await fetch(postUrl);
               if (response.ok) {
                 const content = await response.text();
-                const post = this.parseTxtPost(content, postData.slug);
+                const slug = postData.slug || this.computeSlugFromPostPath(relativePath);
+                const post = this.parseTxtPost(content, slug);
                 if (post) {
                   allPosts.push(post);
                   console.log('All Posts: Successfully parsed post:', post.title);
@@ -4933,7 +4958,8 @@ class SimpleBlog {
                 const response = await fetch(postUrl);
                 if (response.ok) {
                   const content = await response.text();
-                  const post = this.parseTxtPost(content, postData.slug);
+                  const slug = postData.slug || this.computeSlugFromPostPath(relativePath);
+                  const post = this.parseTxtPost(content, slug);
                   if (post) {
                     posts.push(post);
                     console.log('Site map: Successfully parsed post:', post.title);
@@ -5245,7 +5271,7 @@ class SimpleBlog {
         this.siteMapResizeHandler = () => {
           const windowWidth = window.innerWidth;
           const siteMapWidth = 280; // Approximate width of site map content
-          const minContentWidth = 600; // Minimum width needed for main content
+          const minContentWidth = 480; // Minimum width needed for main content (reduced to be less aggressive)
           
           if (windowWidth < (siteMapWidth + minContentWidth)) {
             this.hideSiteMap();
@@ -5254,8 +5280,7 @@ class SimpleBlog {
         
         window.addEventListener('resize', this.siteMapResizeHandler);
         
-        // Check initial window size
-        this.siteMapResizeHandler();
+        // Don't auto-hide immediately on initial render; only react on subsequent resizes
         
       }).catch(error => {
         console.error('Error loading posts for site map:', error);
