@@ -1,7 +1,5 @@
 # About [FLAGS:_About]
 
-Date: 2025-01-30
-
 Welcome to PPPage!
 
 This is a simplified blog system that reads posts from .txt files and displays them with hover notes and embedded images.
