@@ -1845,6 +1845,21 @@ class SimpleBlog {
     }
   }
 
+  // Resolve relative path under posts/ for a given slug using loaded index
+  resolvePathForSlug(slug) {
+    try {
+      if (!slug) return '';
+      const fromIndex = (this.posts || []).find(p => p && p.slug === slug);
+      if (fromIndex && fromIndex.path) {
+        return fromIndex.path;
+      }
+      // Fallback to naive mapping
+      return `${slug}.txt`;
+    } catch (e) {
+      return `${slug}.txt`;
+    }
+  }
+
   processPostContent(content, slug) {
     // Process hover notes: [DISPLAY TEXT:HOVERNOTE CONTENT HERE]
     content = content.replace(/\[([^:]+):([^\]]+)\]/g, (match, displayText, hoverContent) => {
@@ -2340,7 +2355,8 @@ class SimpleBlog {
       
       try {
         // Support nested paths: slug may contain folders relative to posts/
-        const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.txt`;
+        const relativePath = this.resolvePathForSlug(slug);
+        const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
         
         const response = await fetch(rawUrl);
         
@@ -2360,7 +2376,8 @@ class SimpleBlog {
       if (!post) {
         // Method 1: Try GitHub API with headers (nested path supported)
         try {
-          const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${slug}.txt`, {
+          const relativePath = this.resolvePathForSlug(slug);
+          const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts/${relativePath}`, {
             headers: {
               'Accept': 'application/vnd.github.v3+json',
               'User-Agent': 'SimpleBlog/1.0'
@@ -2381,12 +2398,11 @@ class SimpleBlog {
             const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
             if (response.ok) {
               const treeData = await response.json();
-              const postFile = treeData.tree.find(item => 
-                item.path === `posts/${slug}.txt`
-              );
+              const relativePath = this.resolvePathForSlug(slug);
+              const postFile = treeData.tree.find(item => item.path === `posts/${relativePath}`);
               
               if (postFile) {
-                const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}.txt`;
+                const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
                 const postResponse = await fetch(rawUrl);
                 if (postResponse.ok) {
                   const postContent = await postResponse.text();
