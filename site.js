@@ -1583,6 +1583,7 @@ class SimpleBlog {
               const slug = postData.slug || this.computeSlugFromPostPath(relativePath);
               const post = this.parseTxtPost(content, slug);
               if (post) {
+                post.path = relativePath; // keep exact relative path for media loading
                 posts.push(post);
               }
             }
@@ -1591,9 +1592,7 @@ class SimpleBlog {
           }
         }
         
-        if (posts.length > 0) {
-          console.log('loadPosts: Loaded', posts.length, 'posts from static index; will also discover nested posts');
-        }
+        console.log('loadPosts: Loaded', posts.length, 'posts from static index; will also discover nested posts');
       }
     } catch (error) {
       console.log('loadPosts: Static index failed, falling back to live discovery:', error);
@@ -1604,7 +1603,7 @@ class SimpleBlog {
     const cacheBust = Date.now();
     let postFiles = [];
     
-    // Method 1: Try GitHub API first
+    // Method 1: GitHub API (top-level files)
     try {
       console.log('loadPosts: Scanning GitHub repository for .txt files...');
       const response = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/posts?_cb=${cacheBust}`);
@@ -1613,96 +1612,90 @@ class SimpleBlog {
         const txtFiles = contents.filter(item => 
           item.type === 'file' && item.name.endsWith('.txt')
         );
-        
-        if (txtFiles.length > 0) {
-          postFiles = txtFiles.map(item => ({
-            name: item.name,
+        txtFiles.forEach(item => {
+          postFiles.push({
+            name: item.name, // top-level only
             download_url: item.download_url
-          }));
-          console.log('loadPosts: Found', postFiles.length, 'posts via GitHub API');
+          });
+        });
+        if (txtFiles.length > 0) {
+          console.log('loadPosts: Found', txtFiles.length, 'top-level posts via GitHub API');
         }
       }
     } catch (error) {
       console.log('loadPosts: GitHub API method failed:', error);
     }
     
-    // Method 2: Fallback to public directory browsing
-    if (postFiles.length === 0) {
-      try {
-        console.log('loadPosts: Trying public directory browsing...');
-        const corsProxy = 'https://corsproxy.io/?';
-        const postsDirResponse = await fetch(corsProxy + `https://corsproxy.io/?https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
-        
-        if (postsDirResponse.ok) {
-          const htmlContent = await postsDirResponse.text();
-          
-          // Parse HTML to find all .txt files
-          const txtFileMatches = htmlContent.match(/href="[^"]*\.txt"/g);
-          if (txtFileMatches) {
-            const discoveredFiles = txtFileMatches
-              .map(match => match.match(/href="([^"]+)"/)[1])
-              .filter(href => href.includes('/posts/') && href.endsWith('.txt'))
-              .map(href => {
-                const filename = href.split('/').pop();
-                return {
-                  name: filename,
-                  download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}?_cb=${cacheBust}`
-                };
+    // Method 2: Public directory browsing (top-level only)
+    try {
+      console.log('loadPosts: Trying public directory browsing...');
+      const corsProxy = 'https://corsproxy.io/?';
+      const postsDirResponse = await fetch(corsProxy + `https://github.com/pigeonPious/page/tree/main/posts?_cb=${cacheBust}`);
+      if (postsDirResponse.ok) {
+        const htmlContent = await postsDirResponse.text();
+        const txtFileMatches = htmlContent.match(/href="[^"]*\.txt"/g);
+        if (txtFileMatches) {
+          txtFileMatches
+            .map(match => match.match(/href="([^"]+)"/)[1])
+            .filter(href => href.includes('/posts/') && href.endsWith('.txt'))
+            .forEach(href => {
+              const filename = href.split('/').pop();
+              postFiles.push({
+                name: filename,
+                download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${filename}?_cb=${cacheBust}`
               });
-            
-            if (discoveredFiles.length > 0) {
-              postFiles = discoveredFiles;
-              console.log('loadPosts: Found', postFiles.length, 'posts via directory browsing');
-            }
-          }
+            });
+          console.log('loadPosts: Added posts via directory browsing');
         }
-      } catch (error) {
-        console.log('loadPosts: Directory browsing failed:', error);
       }
+    } catch (error) {
+      console.log('loadPosts: Directory browsing failed:', error);
     }
     
-    // Method 3: Try GitHub Tree API as last resort
-    if (postFiles.length === 0) {
-      try {
-        console.log('loadPosts: Trying GitHub Tree API...');
-        const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
-        if (response.ok) {
-          const treeData = await response.json();
-          const txtFiles = treeData.tree.filter(item => 
-            item.path.startsWith('posts/') && item.path.endsWith('.txt')
-          );
-          
-          if (txtFiles.length > 0) {
-            postFiles = txtFiles.map(item => ({
-              name: item.path.replace('posts/', ''),
-              download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}?_cb=${cacheBust}`
-            }));
-            console.log('loadPosts: Found', postFiles.length, 'posts via Tree API');
-          }
+    // Method 3: GitHub Tree API (recursive discovery of nested files)
+    try {
+      console.log('loadPosts: Trying GitHub Tree API for nested posts...');
+      const response = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+      if (response.ok) {
+        const treeData = await response.json();
+        const txtFiles = treeData.tree.filter(item => 
+          item.path.startsWith('posts/') && item.path.endsWith('.txt')
+        );
+        txtFiles.forEach(item => {
+          postFiles.push({
+            name: item.path.replace('posts/', ''), // relative path under posts
+            download_url: `https://raw.githubusercontent.com/pigeonPious/page/main/${item.path}?_cb=${cacheBust}`
+          });
+        });
+        if (txtFiles.length > 0) {
+          console.log('loadPosts: Found', txtFiles.length, 'posts via Tree API');
         }
-      } catch (error) {
-        console.log('loadPosts: Tree API failed:', error);
       }
+    } catch (error) {
+      console.log('loadPosts: Tree API failed:', error);
     }
     
-    // Combine: posts discovered from index (if any) plus recursively discovered files
+    // Deduplicate by relative path name and process
+    const seen = new Set();
     const discoveredPosts = [];
-    if (postFiles.length > 0) {
-      console.log('loadPosts: Processing', postFiles.length, 'post files...');
-      for (const postFile of postFiles) {
-        try {
-          const postResponse = await fetch(postFile.download_url + (postFile.download_url.includes('?') ? '&' : '?') + '_cb=' + cacheBust);
-          if (postResponse.ok) {
-            const postContent = await postResponse.text();
-            const slug = postFile.name.replace('.txt', '');
-            const post = this.parseTxtPost(postContent, slug);
-            if (post) {
-              discoveredPosts.push(post);
-            }
+    console.log('loadPosts: Processing', postFiles.length, 'post files...');
+    for (const postFile of postFiles) {
+      const key = postFile.name;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      try {
+        const postResponse = await fetch(postFile.download_url + (postFile.download_url.includes('?') ? '&' : '?') + '_cb=' + cacheBust);
+        if (postResponse.ok) {
+          const postContent = await postResponse.text();
+          const slug = this.computeSlugFromPostPath(postFile.name);
+          const post = this.parseTxtPost(postContent, slug);
+          if (post) {
+            post.path = postFile.name;
+            discoveredPosts.push(post);
           }
-        } catch (postError) {
-          console.warn('Could not parse post file:', postFile.name, postError);
         }
+      } catch (postError) {
+        console.warn('Could not parse post file:', postFile.name, postError);
       }
     }
     
@@ -2069,10 +2062,8 @@ class SimpleBlog {
       const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
       const imageFiles = [];
       
-      // Determine candidate folders to search for media
-      // Priority 1: Folder containing the .txt file (co-located media)
-      // Priority 2: Legacy folder named after slug (e.g., posts/<slug>/)
-      const candidateFolders = [`posts/${slug}`, `posts/${slug.split('/').pop()}`];
+      // Determine candidate folder: exactly the slug path (co-located media). Legacy lookup removed.
+      const candidateFolders = [`posts/${slug}`];
       
       for (const folder of candidateFolders) {
         try {
