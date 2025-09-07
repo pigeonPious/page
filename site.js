@@ -37,6 +37,23 @@ class SimpleBlog {
     this.init();
   }
 
+  applyCornerLogo() {
+    try {
+      const el = document.getElementById('cornerGif');
+      if (!el) return;
+      const cacheBust = Date.now();
+      el.style.backgroundImage = `url('assets/logo.png?_cb=${cacheBust}')`;
+      // Responsive scale: 50% on small viewports
+      const applySize = () => {
+        const isSmall = window.innerWidth < 700;
+        el.style.width = isSmall ? '50px' : '100px';
+        el.style.height = isSmall ? '50px' : '100px';
+      };
+      applySize();
+      window.addEventListener('resize', applySize);
+    } catch {}
+  }
+
   init() {
     this.createTaskbar();
     this.bindEvents();
@@ -49,6 +66,15 @@ class SimpleBlog {
       this.disableSiteMapAutoHide = true;
       try { this.showSiteMap(); } catch (e) { console.warn('Initial showSiteMap failed', e); }
     }
+
+    // Ensure logo applied on init as well (not only delayed)
+    try {
+      if (typeof this.ensureLogoApplied === 'function') {
+        this.ensureLogoApplied();
+      } else {
+        this.applyCornerLogo();
+      }
+    } catch {}
     
     // Try to load cached posts first for immediate submenu access
     const cachedPosts = localStorage.getItem('posts');
@@ -113,10 +139,7 @@ class SimpleBlog {
       // Load and display projects in menu
       this.loadAndDisplayProjects();
       
-      // Update navigation submenu with loaded posts
-      if (this.posts && this.posts.length > 0) {
-        this.updateAllPostsSubmenu();
-      }
+      // Do not prebuild All Posts submenu; it is built on demand to avoid stale/old styling
     }).catch(error => {
       console.error('Error loading posts:', error);
     });
