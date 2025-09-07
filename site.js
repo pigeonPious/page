@@ -1380,7 +1380,7 @@ class SimpleBlog {
             try {
               // Load the actual post content (support nested path via path or filename)
               const relativePath = (postData && (postData.path || postData.filename)) || '';
-              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
+              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}?_cb=${Date.now()}`;
               const response = await fetch(postUrl);
               if (response.ok) {
                 const content = await response.text();
@@ -1610,7 +1610,7 @@ class SimpleBlog {
             // Support nested paths: prefer path, else filename (which itself may include folders)
             const relativePath = (postData && (postData.path || postData.filename)) || '';
             if (!relativePath) continue;
-            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
+            const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}?_cb=${Date.now()}`;
             const response = await fetch(postUrl);
             if (response.ok) {
               const content = await response.text();
@@ -2130,7 +2130,7 @@ class SimpleBlog {
             const ext = name.split('.').pop().toLowerCase();
             imageFiles.push({
               name,
-              url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${rel}`,
+              url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${rel}?_cb=${Date.now()}`,
               type: ext
             });
           });
@@ -2412,7 +2412,7 @@ class SimpleBlog {
       try {
         // Support nested paths: slug may contain folders relative to posts/
         const relativePath = this.resolvePathForSlug(slug);
-        const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
+        const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}?_cb=${Date.now()}`;
         
         const response = await fetch(rawUrl);
         
@@ -2458,7 +2458,7 @@ class SimpleBlog {
               const postFile = treeData.tree.find(item => item.path === `posts/${relativePath}`);
               
               if (postFile) {
-                const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
+                const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}?_cb=${Date.now()}`;
                 const postResponse = await fetch(rawUrl);
                 if (postResponse.ok) {
                   const postContent = await postResponse.text();
@@ -4062,7 +4062,7 @@ class SimpleBlog {
             try {
               // Load the actual post content (support nested path via path or filename)
               const relativePath = (postData && (postData.path || postData.filename)) || '';
-              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
+              const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}?_cb=${Date.now()}`;
               const response = await fetch(postUrl);
               if (response.ok) {
                 const content = await response.text();
@@ -5021,7 +5021,7 @@ class SimpleBlog {
               try {
                 // Load the actual post content (support nested path via path or filename)
                 const relativePath = (postData && (postData.path || postData.filename)) || '';
-                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}`;
+                const postUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${relativePath}?_cb=${Date.now()}`;
                 const response = await fetch(postUrl);
                 if (response.ok) {
                   const content = await response.text();
