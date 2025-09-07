@@ -905,10 +905,10 @@ class SimpleBlog {
       this.loadRandomPost();
     });
 
-    // Site Map button
+    // Site Map button (toggle)
     this.addClickHandler('#show-site-map', () => {
       console.log('Site Map button clicked');
-      this.showSiteMap();
+      this.toggleSiteMap();
     });
 
     // Build indicator - no click handler needed, only changes on actual builds
