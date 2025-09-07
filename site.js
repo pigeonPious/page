@@ -5787,7 +5787,7 @@ class SimpleBlog {
 
   handleHoverNoteClick(event) {
     const element = event.target;
-    const noteText = element.getAttribute('data-note');
+    const noteText = element.getAttribute('data-note') || element.getAttribute('data-hover');
     
     if (!noteText) return;
     
@@ -5796,6 +5796,8 @@ class SimpleBlog {
     if (urlMatch) {
       const url = urlMatch[1];
       console.log(' Opening URL from hovernote:', url);
+      event.preventDefault();
+      event.stopPropagation();
       window.open(url, '_blank');
     }
   }
