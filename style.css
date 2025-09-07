@@ -590,6 +590,12 @@ body {
   clear: none; /* Allow images to stack/overlap for magazine-style layout */
 }
 
+/* Random asset images inserted by [R] - 25% of normal (150px => 37.5px) */
+.post-content img.random-asset {
+  width: 37.5px !important;
+  height: 37.5px !important;
+}
+
 /* Specific float-left class for left-aligned images */
 .post-content img.float-left {
   float: left;
@@ -620,6 +626,10 @@ body {
   .post-content img {
     width: 120px !important;
     height: 120px !important;
+  }
+  .post-content img.random-asset {
+    width: 30px !important; /* 25% of 120px */
+    height: 30px !important;
   }
   
   .post-video-thumbnail {
