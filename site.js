@@ -9,7 +9,7 @@
 class SimpleBlog {
   constructor() {
     // Version check and cache busting
-    const currentVersion = '2.3';
+    const currentVersion = '2.3.1';
     const storedVersion = localStorage.getItem('ppPage_js_version');
     if (storedVersion !== currentVersion) {
       console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);

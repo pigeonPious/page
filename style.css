@@ -590,10 +590,10 @@ body {
   clear: none; /* Allow images to stack/overlap for magazine-style layout */
 }
 
-/* Random asset images inserted by [R] - 25% of normal (150px => 37.5px) */
+/* Random asset images inserted by [R] - 44% of normal (150px => 54px) */
 .post-content img.random-asset {
-  width: 37.5px !important;
-  height: 37.5px !important;
+  width: 54px !important;
+  height: 54px !important;
 }
 
 /* Specific float-left class for left-aligned images */
@@ -628,8 +628,8 @@ body {
     height: 120px !important;
   }
   .post-content img.random-asset {
-    width: 30px !important; /* 25% of 120px */
-    height: 30px !important;
+    width: 42px !important; /* 35% of 120px (mobile proportional bump) */
+    height: 42px !important;
   }
   
   .post-video-thumbnail {
