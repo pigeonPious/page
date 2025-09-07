@@ -1,32 +1,12 @@
 # Contact [FLAGS:_Contact]
 
-Date: 2025-01-30
 
-## Get In Touch
+Please reach out: 
 
-Thanks for visiting PPPage! Here are some ways to reach out.
+  |          [##Bluesky:https://bsky.app/profile/piouspigeon.bsky.social]
+  |          [##Itch:https://piouspigeon.itch.io]
+  |          [##LinkTree:https://linktr.ee/PiousPigeon]
+  |
+  |           pigeon.pious@gmail.com
 
-## Contact Methods
 
-- **Email**: [your-email@example.com:Click to copy email address]
-- **GitHub**: [GitHub Profile:https://github.com/yourusername]
-- **Website**: [Personal Site:https://yoursite.com]
-
-## About This Site
-
-This blog is built on a simple, text-based system. If you have questions about the technology or want to build something similar, feel free to reach out!
-
-## Technical Support
-
-If you encounter any issues with the site:
-1. Check the browser console for error messages
-2. Ensure your .txt files follow the correct format
-3. Verify that images are in the correct folders
-
-## Contributing
-
-Found a bug or have a feature request? The best way to contribute is through GitHub issues or pull requests.
-
----
-
-*This is a stub contact page. Update it with your actual contact information!*
