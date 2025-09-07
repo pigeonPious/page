@@ -1,0 +1,30 @@
+# PPPage Post Syntax Reference
+
+Title line
+- Use a heading line for the title:
+  # Your Title Here
+- Or metadata:
+  Title: Your Title Here
+  Date: YYYY-MM-DD
+  Keywords: tag1, tag2
+
+Flags
+- Inline anywhere to categorize posts; removed from render, merged into keywords:
+  [FLAGS: Category1, Category2]
+
+Hover notes
+- Create inline hover notes:
+  [DISPLAY TEXT:This text shows on hover]
+- If the note contains a URL, it becomes clickable.
+
+Images (co-located media)
+- Place images/videos in the same folder as the .txt (preferred). Supported: jpg, jpeg, png, gif, webp, svg, mp4, mov, avi, webm.
+- Insert placeholders in content; they will be filled in order by discovered media files.
+  [IMAGE]   # right-aligned
+  [IMAGER]  # right-aligned (explicit)
+  [IMAGEL]  # left-aligned
+
+Notes
+- New posts can live in nested subfolders under posts/, e.g. posts/devlogs/newpost/newpost.txt
+- Slug is derived from the relative path (devlogs/newpost). If the file name matches the parent folder name, the slug omits the duplicated last segment.
+- Media is loaded from posts/<slug>/ using raw GitHub URLs; the static index pre-computes mediaPaths to avoid API rate limits.
