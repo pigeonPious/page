@@ -9,5 +9,5 @@
 
     Thanks for visiting please take a look around. Reach out with any thoughts: 
 
-    [https://piouspigeon.com/#contact:https://piouspigeon.com/#contact]
+    [##contact:https://piouspigeon.com/#contact]
 
