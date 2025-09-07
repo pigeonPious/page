@@ -201,8 +201,12 @@ class SimpleBlog {
     // Load logo from configuration
 
     
-    // Ensure logo is applied when DOM is ready
-    setTimeout(() => this.ensureLogoApplied(), 1000);
+    // Ensure logo is applied when DOM is ready (guard for missing method)
+    setTimeout(() => {
+      if (typeof this.ensureLogoApplied === 'function') {
+        this.ensureLogoApplied();
+      }
+    }, 1000);
     
     console.log('SimpleBlog initialized successfully');
   }
@@ -1567,12 +1571,12 @@ class SimpleBlog {
   }
 
   async loadPosts() {
+    let posts = [];
     try {
       console.log('loadPosts: Loading posts from static index...');
       
       // Try to load from the static posts index first
       const indexResponse = await fetch('posts-index.json');
-      let posts = [];
       if (indexResponse.ok) {
         const indexData = await indexResponse.json();
         console.log('loadPosts: Found static index with', indexData.total_posts, 'posts');
