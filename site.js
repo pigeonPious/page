@@ -1737,11 +1737,20 @@ class SimpleBlog {
       
       // Parse the first few lines for metadata
       let inContent = false;
+      let haveSeenNonEmpty = false;
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const trimmedLine = line.trim();
         
         if (!inContent) {
+          // Skip leading blank lines entirely
+          if (!haveSeenNonEmpty && trimmedLine === '') {
+            continue;
+          }
+          if (trimmedLine !== '') {
+            haveSeenNonEmpty = true;
+          }
+          
           // Look for title (first non-empty line or line starting with #)
           if (trimmedLine.startsWith('# ')) {
             title = trimmedLine.substring(2).trim();
@@ -1763,8 +1772,8 @@ class SimpleBlog {
             continue;
           }
           
-          // If we hit a blank line or content starts, switch to content mode
-          if (trimmedLine === '' || trimmedLine.startsWith('---')) {
+          // If we've seen any non-empty metadata and then hit a blank or '---', switch to content
+          if (haveSeenNonEmpty && (trimmedLine === '' || trimmedLine.startsWith('---'))) {
             inContent = true;
             continue;
           }
