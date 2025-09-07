@@ -64,6 +64,8 @@ function computeSlugFromRelativePath(relativePath) {
   const repoRoot = path.resolve(__dirname, '..');
   const postsDir = path.join(repoRoot, 'posts');
   const indexPath = path.join(repoRoot, 'posts-index.json');
+  const assetsImagesDir = path.join(repoRoot, 'assets', 'images');
+  const assetsImagesIndexPath = path.join(repoRoot, 'assets-images.json');
 
   if (!(await fileExists(postsDir))) {
     console.error('posts directory not found at', postsDir);
@@ -142,6 +144,28 @@ function computeSlugFromRelativePath(relativePath) {
 
   await fsp.writeFile(indexPath, JSON.stringify(index, null, 2) + '\n', 'utf8');
   console.log(`Wrote ${posts.length} posts to`, path.relative(repoRoot, indexPath));
+
+  // Also generate assets-images.json for reliable [R] images
+  const images = [];
+  async function walkImages(dir) {
+    try {
+      const entries = await fsp.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          await walkImages(full);
+        } else if (entry.isFile()) {
+          const lower = entry.name.toLowerCase();
+          if (['.jpg','.jpeg','.png','.gif','.webp','.svg'].some(ext => lower.endsWith(ext))) {
+            images.push(path.relative(repoRoot, full).replace(/\\/g, '/'));
+          }
+        }
+      }
+    } catch {}
+  }
+  await walkImages(assetsImagesDir);
+  await fsp.writeFile(assetsImagesIndexPath, JSON.stringify({ generated_at: new Date().toISOString(), total_images: images.length, images }, null, 2) + '\n', 'utf8');
+  console.log(`Wrote ${images.length} images to`, path.relative(repoRoot, assetsImagesIndexPath));
 })();
 
 
