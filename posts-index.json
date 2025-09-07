@@ -1,46 +1,69 @@
 {
-  "generated_at": "2025-01-23T10:00:00",
-  "total_posts": 5,
+  "generated_at": "2025-09-07T02:58:11.054Z",
+  "total_posts": 7,
   "posts": [
     {
-      "slug": "flags-demo",
-      "title": "Demo Post with FLAGS Syntax",
-      "date": "2024-12-19",
-      "keywords": "demo, programming, tutorial",
-      "filename": "flags-demo.txt",
-      "last_modified": "2024-12-19T10:00:00"
-    },
-    {
       "slug": "about",
-      "title": "About",
-      "date": "2025-01-30",
-      "keywords": "about, info",
+      "title": "About [FLAGS:_About]",
+      "date": "2025-09-06",
+      "keywords": "",
       "filename": "about.txt",
-      "last_modified": "2024-12-19T10:00:00"
+      "path": "about.txt",
+      "last_modified": "2025-09-06T22:19:55.712Z"
     },
     {
-      "slug": "contact",
-      "title": "Contact",
-      "date": "2025-01-30",
-      "keywords": "contact, info, reach",
-      "filename": "contact.txt",
-      "last_modified": "2024-12-19T10:00:00"
+      "slug": "general/_01",
+      "title": "Untitled",
+      "date": "2025-09-06",
+      "keywords": "",
+      "filename": "_01.txt",
+      "path": "general/_01/_01.txt",
+      "last_modified": "2025-09-06T22:21:28.581Z"
     },
     {
       "slug": "sample-post",
       "title": "Sample Post",
-      "date": "2024-12-19",
-      "keywords": "sample, demo, test",
+      "date": "2025-09-06",
+      "keywords": "",
       "filename": "sample-post.txt",
-      "last_modified": "2024-12-19T10:00:00"
+      "path": "sample-post/sample-post.txt",
+      "last_modified": "2025-09-06T22:01:24.330Z"
+    },
+    {
+      "slug": "contact",
+      "title": "Contact [FLAGS:_Contact]",
+      "date": "2025-08-24",
+      "keywords": "",
+      "filename": "contact.txt",
+      "path": "contact.txt",
+      "last_modified": "2025-08-24T17:49:41.206Z"
+    },
+    {
+      "slug": "flags-demo",
+      "title": "Demo Post with FLAGS Syntax [FLAGS: Testing New Flags]",
+      "date": "2025-08-24",
+      "keywords": "",
+      "filename": "flags-demo.txt",
+      "path": "flags-demo.txt",
+      "last_modified": "2025-08-24T16:28:34.551Z"
+    },
+    {
+      "slug": "sample-post/placeholder",
+      "title": "This folder would contain image files for the sample-post.",
+      "date": "2025-08-24",
+      "keywords": "",
+      "filename": "placeholder.txt",
+      "path": "sample-post/placeholder.txt",
+      "last_modified": "2025-08-24T01:22:11.638Z"
     },
     {
       "slug": "video-demo",
       "title": "Video Demo Post",
-      "date": "2025-01-23",
-      "keywords": "demo, video, tutorial, media",
+      "date": "2025-08-24",
+      "keywords": "",
       "filename": "video-demo.txt",
-      "last_modified": "2025-01-23T10:00:00"
+      "path": "video-demo.txt",
+      "last_modified": "2025-08-24T23:09:18.991Z"
     }
   ]
 }
