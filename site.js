@@ -1955,13 +1955,37 @@ class SimpleBlog {
             const ext = exts.find(ext => lower.endsWith(ext));
             images.push({
               name: item.name,
-              url: `https://raw.githubusercontent.com/pigeonPious/page/main/assets/images/${item.name}?_cb=${cacheBust}`,
+              url: encodeURI(`https://raw.githubusercontent.com/pigeonPious/page/main/assets/images/${item.name}?_cb=${cacheBust}`),
               type: ext
             });
           }
         });
       }
     } catch {}
+    // Method 2: Directory browsing via GitHub HTML (CORS proxy)
+    if (images.length === 0) {
+      try {
+        const corsProxy = 'https://corsproxy.io/?';
+        const dirResp = await fetch(corsProxy + `https://github.com/pigeonPious/page/tree/main/assets/images?_cb=${cacheBust}`);
+        if (dirResp.ok) {
+          const html = await dirResp.text();
+          const matches = html.match(/href="([^"]+)"/g) || [];
+          matches
+            .map(m => (m.match(/href="([^"]+)"/) || [null, ''])[1])
+            .filter(href => href.includes('/assets/images/') && exts.some(ext => href.toLowerCase().endsWith(ext)))
+            .forEach(href => {
+              const name = href.split('/').pop();
+              const lower = (name || '').toLowerCase();
+              const ext = exts.find(ext => lower.endsWith(ext));
+              images.push({
+                name,
+                url: encodeURI(`https://raw.githubusercontent.com/pigeonPious/page/main/assets/images/${name}?_cb=${cacheBust}`),
+                type: ext
+              });
+            });
+        }
+      } catch {}
+    }
     if (images.length === 0) {
       try {
         // Fallback to GitHub Tree API
@@ -1974,7 +1998,7 @@ class SimpleBlog {
             const ext = exts.find(ext => lower.endsWith(ext));
             images.push({
               name,
-              url: `https://raw.githubusercontent.com/pigeonPious/page/main/${it.path}?_cb=${cacheBust}`,
+              url: encodeURI(`https://raw.githubusercontent.com/pigeonPious/page/main/${it.path}?_cb=${cacheBust}`),
               type: ext
             });
           });
