@@ -5,11 +5,11 @@
 
 // CACHE BUST: This file was last modified at 2025-01-23
 // If you see this comment, the file is being served fresh
-// Version: 2.2 - Dynamic GitHub Repository Scanning with Video Support
+// Version: 2.3 - Nested posts indexing + sitemap visibility tweaks
 class SimpleBlog {
   constructor() {
     // Version check and cache busting
-    const currentVersion = '2.2';
+    const currentVersion = '2.3';
     const storedVersion = localStorage.getItem('ppPage_js_version');
     if (storedVersion !== currentVersion) {
       console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
@@ -33,6 +33,7 @@ class SimpleBlog {
     // Prevent sitemap from auto-hiding on resize unless explicitly enabled
     this.disableSiteMapAutoHide = true;
 
+    console.log('ppPage runtime JS version', currentVersion, 'build at', new Date().toISOString());
     this.init();
   }
 
@@ -42,6 +43,12 @@ class SimpleBlog {
     
     // Check for repository updates and clear cache if needed
     this.checkRepositoryUpdates();
+    
+    // Ensure sitemap is visible immediately (not in editor)
+    if (!window.location.pathname.includes('editor.html')) {
+      this.disableSiteMapAutoHide = true;
+      try { this.showSiteMap(); } catch (e) { console.warn('Initial showSiteMap failed', e); }
+    }
     
     // Try to load cached posts first for immediate submenu access
     const cachedPosts = localStorage.getItem('posts');
