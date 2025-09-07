@@ -769,10 +769,15 @@ body {
   padding: 6px 8px;
   min-width: 140px;
   max-width: 260px;
+  max-height: 60vh;
+  overflow-y: auto;
   font-size: 12px;
   color: var(--muted);
   display: none;
   box-shadow: none;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* New hover note syntax: [DISPLAY TEXT:HOVERNOTE CONTENT HERE] */
