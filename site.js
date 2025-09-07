@@ -30,6 +30,9 @@ class SimpleBlog {
     // Initialize handler references to prevent memory leaks
     this.allPostsMouseEnterHandler = null;
 
+    // Prevent sitemap from auto-hiding on resize unless explicitly enabled
+    this.disableSiteMapAutoHide = true;
+
     this.init();
   }
 
@@ -92,8 +95,9 @@ class SimpleBlog {
       // Show site map by default after posts are loaded (only in blog mode)
       if (!window.location.pathname.includes('editor.html')) {
         setTimeout(() => {
-          // Only show site map automatically if user hasn't manually toggled it or hidden it
-          if (!this.siteMapManuallyToggled && !this.siteMapManuallyHidden) {
+          // Force show site map on load (do not auto-hide)
+          this.disableSiteMapAutoHide = true;
+          if (!this.siteMapManuallyToggled) {
             this.showSiteMap();
           }
         }, 500);
@@ -2068,15 +2072,7 @@ class SimpleBlog {
       // Determine candidate folders to search for media
       // Priority 1: Folder containing the .txt file (co-located media)
       // Priority 2: Legacy folder named after slug (e.g., posts/<slug>/)
-      const candidateFolders = [];
-      if (slug.includes('/')) {
-        const coLocatedDir = slug.substring(0, slug.lastIndexOf('/'));
-        if (coLocatedDir) {
-          candidateFolders.push(`posts/${coLocatedDir}`);
-        }
-      }
-      // Legacy behavior fallback
-      candidateFolders.push(`posts/${slug}`);
+      const candidateFolders = [`posts/${slug}`, `posts/${slug.split('/').pop()}`];
       
       for (const folder of candidateFolders) {
         try {
@@ -4020,8 +4016,7 @@ class SimpleBlog {
         console.log('All Posts: Static index failed, falling back to live discovery:', error);
       }
       
-      // Fallback to live discovery if static index fails
-      if (allPosts.length === 0) {
+      // Also perform live discovery to include nested posts and merge with index results
         console.log('All Posts: Falling back to live repository scanning...');
         const cacheBust = Date.now();
         let postFiles = [];
@@ -4115,14 +4110,17 @@ class SimpleBlog {
               if (postResponse.ok) {
                 const postContent = await postResponse.text();
                 
-                // Extract slug from filename (remove .txt extension)
-                const slug = postFile.name.replace('.txt', '');
+                // Compute slug from relative path (handles parent/child same-name folders)
+                const slug = this.computeSlugFromPostPath(postFile.name);
                 
                 // Parse the .txt file content
                 const post = this.parseTxtPost(postContent, slug);
                 
                 if (post) {
-                  allPosts.push(post);
+                  // Merge unique by slug
+                  if (!allPosts.find(p => p.slug === post.slug)) {
+                    allPosts.push(post);
+                  }
                   console.log('All Posts: Successfully parsed post:', post.title);
                 }
               }
@@ -4131,7 +4129,6 @@ class SimpleBlog {
             }
           }
         }
-      }
     } catch (error) {
       console.error('All Posts: Error loading posts:', error);
     }
@@ -4979,7 +4976,7 @@ class SimpleBlog {
           console.log('Site map: Static index failed, falling back to live discovery:', error);
         }
         
-        // Fallback to live discovery if static index fails
+        // Also perform live discovery to include nested posts and merge with index results
         console.log('Site map: Falling back to live repository scanning...');
         const cacheBust = Date.now();
         let postFiles = [];
@@ -5074,13 +5071,14 @@ class SimpleBlog {
               if (postResponse.ok) {
                 const postContent = await postResponse.text();
                 
-                // Extract slug from filename (remove .txt extension)
-                const slug = postFile.name.replace('.txt', '');
+                // Compute slug from relative path (handles parent/child same-name folders)
+                const slug = this.computeSlugFromPostPath(postFile.name);
                 
                 // Parse the .txt file content
                 const post = this.parseTxtPost(postContent, slug);
                 
                 if (post) {
+                  // Merge uniqueness handled later; we push and dedupe when setting this.posts
                   posts.push(post);
                   console.log('Site map: Successfully parsed post:', post.title);
                 }
@@ -5090,13 +5088,23 @@ class SimpleBlog {
             }
           }
           
-          console.log('Site map: Successfully loaded', posts.length, 'posts');
+          // Merge with any index-derived posts
+          let merged = posts;
+          try {
+            const fromIndex = JSON.parse(localStorage.getItem('posts') || '[]');
+            const bySlug = new Map();
+            for (const p of fromIndex) bySlug.set(p.slug, p);
+            for (const p of posts) if (!bySlug.has(p.slug)) bySlug.set(p.slug, p);
+            merged = Array.from(bySlug.values());
+          } catch {}
+
+          console.log('Site map: Successfully loaded', merged.length, 'posts');
           
           // Update local state
-          this.posts = posts;
-          localStorage.setItem('posts', JSON.stringify(posts));
+          this.posts = merged;
+          localStorage.setItem('posts', JSON.stringify(merged));
           
-          return posts;
+          return merged;
         } else {
           console.log('Site map: No .txt files found in posts directory');
           return [];
@@ -5273,7 +5281,7 @@ class SimpleBlog {
           const siteMapWidth = 280; // Approximate width of site map content
           const minContentWidth = 480; // Minimum width needed for main content (reduced to be less aggressive)
           
-          if (windowWidth < (siteMapWidth + minContentWidth)) {
+          if (!this.disableSiteMapAutoHide && windowWidth < (siteMapWidth + minContentWidth)) {
             this.hideSiteMap();
           }
         };
