@@ -2088,6 +2088,26 @@ class SimpleBlog {
       const mediaExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'mov', 'avi', 'webm'];
       const imageFiles = [];
       
+      // Prefer index-provided media paths to avoid GitHub API rate limits
+      try {
+        const postFromIndex = (this.posts || []).find(p => p && p.slug === slug);
+        if (postFromIndex && Array.isArray(postFromIndex.mediaPaths) && postFromIndex.mediaPaths.length > 0) {
+          console.log(`loadImagesForPost: Using ${postFromIndex.mediaPaths.length} media paths from index`);
+          postFromIndex.mediaPaths.forEach(rel => {
+            const name = rel.split('/').pop();
+            const ext = name.split('.').pop().toLowerCase();
+            imageFiles.push({
+              name,
+              url: `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${rel}`,
+              type: ext
+            });
+          });
+          return imageFiles;
+        }
+      } catch (e) {
+        console.log('loadImagesForPost: index media lookup failed, falling back to GitHub API');
+      }
+      
       // Determine candidate folder: exactly the slug path (co-located media). Legacy lookup removed.
       const candidateFolders = [`posts/${slug}`];
       

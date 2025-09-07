@@ -84,6 +84,36 @@ function computeSlugFromRelativePath(relativePath) {
     // Date fallback to mtime (YYYY-MM-DD)
     const dateIso = (meta.date && meta.date.trim()) || new Date(stat.mtime).toISOString().split('T')[0];
 
+    // Discover co-located media files
+    const txtDir = path.dirname(fullPath);
+    const baseName = path.basename(fullPath, path.extname(fullPath));
+    const mediaExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.mp4', '.mov', '.avi', '.webm'];
+
+    async function listMediaIn(dir) {
+      try {
+        const entries = await fsp.readdir(dir, { withFileTypes: true });
+        return entries
+          .filter(e => e.isFile() && mediaExts.includes(path.extname(e.name).toLowerCase()))
+          .map(e => path.relative(postsDir, path.join(dir, e.name)).replace(/\\/g, '/'))
+          .sort();
+      } catch { return []; }
+    }
+
+    let mediaPaths = await listMediaIn(txtDir);
+    // If no co-located media, check sibling folder matching base name (supports legacy layouts)
+    if (mediaPaths.length === 0) {
+      const sibling = path.join(txtDir, baseName);
+      if (await fileExists(sibling)) {
+        mediaPaths = await listMediaIn(sibling);
+      } else if (txtDir === postsDir) {
+        // Also check top-level sibling under posts for top-level .txt
+        const topSibling = path.join(postsDir, baseName);
+        if (await fileExists(topSibling)) {
+          mediaPaths = await listMediaIn(topSibling);
+        }
+      }
+    }
+
     posts.push({
       slug,
       title: meta.title,
@@ -91,7 +121,8 @@ function computeSlugFromRelativePath(relativePath) {
       keywords: meta.keywords || '',
       filename: path.basename(fullPath),
       path: relFromPosts,
-      last_modified: new Date(stat.mtime).toISOString()
+      last_modified: new Date(stat.mtime).toISOString(),
+      mediaPaths
     });
   }
 
