@@ -1922,6 +1922,11 @@ class SimpleBlog {
       imageIndex++;
       return `<div class="post-image post-image-right" data-post="${slug}" data-index="${imageIndex}"></div>`;
     });
+
+    // Process [R] - random image from assets/images (25% smaller)
+    content = content.replace(/\[R\]/g, () => {
+      return `<div class="post-random-image post-image-right" data-rand="1"></div>`;
+    });
     
     // Final cleanup: Remove any remaining [FLAGS: ...] syntax that might have been missed
     content = content.replace(/\[FLAGS:\s*[^\]]+\]/g, '');
@@ -1930,6 +1935,92 @@ class SimpleBlog {
     content = content.replace(/\n/g, '<br>');
     
     return content;
+  }
+
+  async loadRandomAssetImages() {
+    if (this._cachedAssetImages && Array.isArray(this._cachedAssetImages) && this._cachedAssetImages.length > 0) {
+      return this._cachedAssetImages;
+    }
+    const cacheBust = Date.now();
+    const images = [];
+    const exts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    try {
+      // Try GitHub API for assets/images
+      const resp = await fetch(`https://api.github.com/repos/pigeonPious/page/contents/assets/images?_cb=${cacheBust}`);
+      if (resp.ok) {
+        const list = await resp.json();
+        list.forEach(item => {
+          const lower = (item.name || '').toLowerCase();
+          if (item.type === 'file' && exts.some(ext => lower.endsWith(ext))) {
+            const ext = exts.find(ext => lower.endsWith(ext));
+            images.push({
+              name: item.name,
+              url: `https://raw.githubusercontent.com/pigeonPious/page/main/assets/images/${item.name}?_cb=${cacheBust}`,
+              type: ext
+            });
+          }
+        });
+      }
+    } catch {}
+    if (images.length === 0) {
+      try {
+        // Fallback to GitHub Tree API
+        const resp = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+        if (resp.ok) {
+          const data = await resp.json();
+          data.tree.filter(it => it.path.startsWith('assets/images/') && exts.some(ext => it.path.toLowerCase().endsWith(ext))).forEach(it => {
+            const name = it.path.split('/').pop();
+            const lower = name.toLowerCase();
+            const ext = exts.find(ext => lower.endsWith(ext));
+            images.push({
+              name,
+              url: `https://raw.githubusercontent.com/pigeonPious/page/main/${it.path}?_cb=${cacheBust}`,
+              type: ext
+            });
+          });
+        }
+      } catch {}
+    }
+    this._cachedAssetImages = images;
+    return images;
+  }
+
+  async loadAndDisplayRandomImages(contentElement) {
+    try {
+      const placeholders = contentElement.querySelectorAll('.post-random-image');
+      if (!placeholders || placeholders.length === 0) return;
+      const assets = await this.loadRandomAssetImages();
+      if (!assets || assets.length === 0) return;
+      placeholders.forEach(ph => {
+        const chosen = assets[Math.floor(Math.random() * assets.length)];
+        // Preserve alignment classes
+        const alignmentClasses = [];
+        if (ph.classList.contains('post-image-right')) alignmentClasses.push('post-image-right');
+        if (ph.classList.contains('post-image-left')) alignmentClasses.push('post-image-left');
+        // Create image element similar to displayMedia image, but 25% smaller
+        const img = document.createElement('img');
+        img.src = chosen.url;
+        img.alt = chosen.name || 'Image';
+        img.className = `post-media-content post-image-content ${alignmentClasses.join(' ')}`;
+        img.style.cssText = `
+          max-width: 75%;
+          height: auto;
+          display: block;
+          margin: 1em 0;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          cursor: pointer;
+        `;
+        img.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.showImagePreview(img.src, img.alt || 'Image');
+        });
+        ph.parentNode.replaceChild(img, ph);
+      });
+    } catch (e) {
+      console.warn('loadAndDisplayRandomImages error', e);
+    }
   }
 
   async autoRenameMediaFiles(slug, filesToRename, mediaExtensions) {
@@ -2583,6 +2674,8 @@ class SimpleBlog {
       
       // Load and display images for this post
       this.loadAndDisplayImages(post.slug, contentElement);
+      // Load and display random asset images for [R]
+      this.loadAndDisplayRandomImages(contentElement);
       
       // Setup image click handlers for full preview
       this.setupImageClickHandlers(contentElement);
