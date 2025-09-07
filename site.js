@@ -9,7 +9,7 @@
 class SimpleBlog {
   constructor() {
     // Version check and cache busting
-    const currentVersion = '2.3.1';
+    const currentVersion = '2.3.2';
     const storedVersion = localStorage.getItem('ppPage_js_version');
     if (storedVersion !== currentVersion) {
       console.log('🔄 New JavaScript version detected:', currentVersion, 'vs stored:', storedVersion);
@@ -2043,7 +2043,8 @@ class SimpleBlog {
       const assets = await this.loadRandomAssetImages();
       if (!assets || assets.length === 0) return;
       placeholders.forEach(ph => {
-        const chosen = assets[Math.floor(Math.random() * assets.length)];
+        const pickRandom = () => assets[Math.floor(Math.random() * assets.length)];
+        let chosen = pickRandom();
         // Preserve alignment classes
         const alignmentClasses = [];
         if (ph.classList.contains('post-image-right')) alignmentClasses.push('post-image-right');
@@ -2063,6 +2064,22 @@ class SimpleBlog {
           e.preventDefault();
           e.stopPropagation();
           this.showImagePreview(img.src, img.alt || 'Image');
+        });
+        // If image fails (e.g., deleted), retry with a different one
+        img.addEventListener('error', () => {
+          const tried = new Set();
+          tried.add(chosen.name);
+          let attempts = 0;
+          const maxAttempts = Math.min(10, assets.length);
+          const tryNext = () => {
+            attempts++;
+            if (attempts > maxAttempts) return; // give up silently
+            const next = pickRandom();
+            if (tried.has(next.name)) return tryNext();
+            tried.add(next.name);
+            img.src = next.url;
+          };
+          tryNext();
         });
         ph.parentNode.replaceChild(img, ph);
       });
@@ -2757,20 +2774,18 @@ class SimpleBlog {
 
   // Open the currently viewed post in GitHub
   openCurrentPostInGitHub() {
-    // Get the current post slug from the URL hash
-    const currentHash = window.location.hash;
-    const currentSlug = currentHash.replace('#', '');
-    
-    if (currentSlug && currentSlug !== '') {
-      // Construct the GitHub URL for the post
-      const githubUrl = `https://github.com/pigeonPious/page/blob/main/posts/${currentSlug}.txt`;
-      
-      // Open in a new tab
+    // Determine the current post slug
+    const hashSlug = (window.location.hash || '').replace('#', '');
+    const storedSlug = localStorage.getItem('current_post_slug');
+    const slug = hashSlug || storedSlug || '';
+
+    if (slug) {
+      // Resolve the actual path under posts/ for this slug
+      const relativePath = this.resolvePathForSlug(slug) || `${slug}.txt`;
+      const githubUrl = `https://github.com/pigeonPious/page/blob/main/posts/${relativePath}`;
       window.open(githubUrl, '_blank');
     } else {
-      // If no post is currently viewed, open the main posts directory
-      const postsUrl = 'https://github.com/pigeonPious/page/tree/main/posts';
-      window.open(postsUrl, '_blank');
+      window.open('https://github.com/pigeonPious/page/tree/main/posts', '_blank');
     }
   }
 
