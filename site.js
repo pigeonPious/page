@@ -2044,7 +2044,7 @@ class SimpleBlog {
         img.alt = chosen.name || 'Image';
         img.className = `post-media-content post-image-content ${alignmentClasses.join(' ')}`;
         img.style.cssText = `
-          max-width: 75%;
+          max-width: 50%;
           height: auto;
           display: block;
           margin: 1em 0;
