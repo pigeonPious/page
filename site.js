@@ -2067,13 +2067,24 @@ class SimpleBlog {
         });
         // If image fails (e.g., deleted), retry with a different one
         img.addEventListener('error', () => {
-          const tried = new Set();
-          tried.add(chosen.name);
+          if (!assets || assets.length <= 1) {
+            // No alternatives — remove the broken image
+            if (img.parentNode) {
+              img.parentNode.removeChild(img);
+            }
+            return;
+          }
+          const tried = new Set([chosen.name]);
           let attempts = 0;
           const maxAttempts = Math.min(10, assets.length);
           const tryNext = () => {
             attempts++;
-            if (attempts > maxAttempts) return; // give up silently
+            if (attempts > maxAttempts) {
+              if (img.parentNode) {
+                img.parentNode.removeChild(img);
+              }
+              return;
+            }
             const next = pickRandom();
             if (tried.has(next.name)) return tryNext();
             tried.add(next.name);
