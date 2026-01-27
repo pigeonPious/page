@@ -5690,6 +5690,27 @@ class SimpleBlog {
         categoryLinks.forEach(link => {
           link.addEventListener('click', () => {
             const category = link.getAttribute('data-category');
+            // If this category only contains one post, navigate straight to it
+            let postsInCategory = categories[category];
+            if (!postsInCategory && category === 'uncategorized') {
+              postsInCategory = uncategorized;
+            }
+
+            if (Array.isArray(postsInCategory) && postsInCategory.length === 1) {
+              const onlyPost = postsInCategory[0];
+              if (onlyPost && onlyPost.slug) {
+                if (window.location.pathname.includes('editor.html')) {
+                  console.log(` Editor mode: Loading sole post ${onlyPost.slug} for editing`);
+                  this.loadEditDataForPost(onlyPost.slug);
+                } else {
+                  console.log(` Blog mode: Loading sole post ${onlyPost.slug} for viewing`);
+                  this.loadPost(onlyPost.slug);
+                }
+                return; // do not expand
+              }
+            }
+
+            // Otherwise expand as normal
             this.expandCategoryInSiteMap(category, posts);
           });
         });
