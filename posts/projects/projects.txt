@@ -10,7 +10,6 @@
 
   [IMAGE]
 ----
-[##Itch:https://piouspigeon.itch.io]
 
 
 
