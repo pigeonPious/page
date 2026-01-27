@@ -2889,47 +2889,22 @@ class SimpleBlog {
   // For each line in the post, adjust left/right margins when floated images overlap that line
   adjustTextMarginsForImages(contentElement) {
     if (!contentElement) return;
-    // If we're in mobile layout, skip per-line margin adjustments to avoid
-    // compressing text when images should stack. 
-    // Mobile threshold matches CSS breakpoint at 480px where images get smaller margins
-    const MOBILE_THRESHOLD = 480;
-    try {
-      if (window.innerWidth <= MOBILE_THRESHOLD) {
-        // Clear any inline margins previously applied
-        const linesClear = contentElement.querySelectorAll('.post-line');
-        linesClear.forEach(l => { l.style.marginLeft = ''; l.style.marginRight = ''; });
-        // On very narrow screens (matching CSS 380px breakpoint), images stack
-        // Let CSS handle image styling - just clear any inline overrides
-        const imgsMobile = contentElement.querySelectorAll('img.post-media-content, img.post-image-content, .post-video-wrapper');
-        imgsMobile.forEach(el => {
-          try {
-            // Clear any inline styles that might conflict with CSS media queries
-            if (el.tagName === 'IMG') {
-              el.style.float = '';
-              el.style.display = '';
-              el.style.width = '';
-              el.style.maxWidth = '';
-              el.style.margin = '';
-            } else {
-              // video wrapper - clear inline styles
-              el.style.float = '';
-              el.style.display = '';
-              el.style.width = '';
-              el.style.maxWidth = '';
-              el.style.margin = '';
-              const vid = el.querySelector('video'); 
-              if (vid) { 
-                vid.style.width = ''; 
-                vid.style.height = ''; 
-              }
-            }
-          } catch (e) {}
-        });
-        return;
-      }
-    } catch (e) {
-      // If anything goes wrong, fall back to normal behavior
-      console.warn('adjustTextMarginsForImages mobile-detection failed', e);
+    
+    // Mobile threshold - skip margin adjustments on narrow screens to prevent text squishing
+    // This matches the CSS breakpoint where we want simpler layout
+    const MOBILE_WIDTH = 600;
+    
+    // If we're on mobile, skip the per-line margin adjustments entirely
+    // Let CSS handle the layout - don't fight with it
+    if (window.innerWidth <= MOBILE_WIDTH) {
+      // Clear any previously applied inline margins
+      const linesClear = contentElement.querySelectorAll('.post-line');
+      linesClear.forEach(l => { 
+        l.style.marginLeft = ''; 
+        l.style.marginRight = ''; 
+      });
+      // Don't apply any inline styles to images - let CSS media queries handle it
+      return;
     }
 
     const lines = Array.from(contentElement.querySelectorAll('.post-line'));

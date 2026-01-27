@@ -488,53 +488,30 @@ body {
   text-decoration: underline;
 }
 
-/* Layout - Unit-based system matching editor */
+/* Layout - Centered content */
 .page-container {
   min-height: calc(100vh - 24px);
-  padding: calc(var(--unit) * 2) calc(var(--unit) * 3) calc(var(--unit) * 3) calc(var(--unit) * 3);
+  padding: 100px 5% 150px 5%;
   box-sizing: border-box;
 }
 
 .main-column {
-  width: calc(100vw - calc(var(--unit) * 6));
-  max-width: calc(var(--unit) * 6);
+  width: 100%;
+  max-width: 600px;
   background: var(--bg);
   color: var(--fg);
   box-sizing: border-box;
-  margin: 0 auto;
+  margin: 0 auto; /* Center the column */
 }
 
-/* Responsive layout - empty space shrinks before main content */
-@media (max-width: 1200px) {
-  .page-container {
-    padding: calc(var(--unit) * 2) calc(var(--unit) * 2) calc(var(--unit) * 3) calc(var(--unit) * 2);
-  }
-  
-  .main-column {
-    width: calc(100vw - calc(var(--unit) * 4));
-    max-width: calc(var(--unit) * 6);
-  }
-}
-
-@media (max-width: 900px) {
-  .page-container {
-    padding: calc(var(--unit) * 2) calc(var(--unit) * 1) calc(var(--unit) * 3) calc(var(--unit) * 1);
-  }
-  
-  .main-column {
-    width: calc(100vw - calc(var(--unit) * 2));
-    max-width: calc(var(--unit) * 6);
-  }
-}
-
+/* Small screens */
 @media (max-width: 600px) {
   .page-container {
-    padding: calc(var(--unit) * 2) calc(var(--unit) * 0.5) calc(var(--unit) * 3) calc(var(--unit) * 0.5);
+    padding: 80px 16px 100px 16px;
   }
   
   .main-column {
-    width: calc(100vw - calc(var(--unit) * 1));
-    max-width: calc(var(--unit) * 6);
+    max-width: 100%;
   }
   
   /* Ensure star button is hidden on very small mobile devices */
@@ -543,27 +520,10 @@ body {
   }
 }
 
-/* Mobile-specific layout - small margins to maximize content width */
-@media (max-width: 480px) {
-  .page-container {
-    padding: 80px 16px 100px 16px;
-  }
-  
-  .main-column {
-    width: calc(100vw - 32px);
-    max-width: 100%;
-  }
-}
-
 /* Extra small mobile devices */
 @media (max-width: 380px) {
   .page-container {
     padding: 60px 12px 80px 12px;
-  }
-  
-  .main-column {
-    width: calc(100vw - 24px);
-    max-width: 100%;
   }
 }
 
@@ -673,16 +633,36 @@ body {
   }
 }
 
-/* Small mobile devices - smaller images */
+/* Mobile layout - prevent JS margin adjustments from squishing text */
+@media (max-width: 600px) {
+  .post-content .post-line {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* Small mobile devices - smaller images and prevent JS margin overrides */
 @media (max-width: 480px) {
-  .post-content img {
+  /* Prevent JS from applying inline margins to post lines */
+  .post-content .post-line {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Constrain images to prevent text squishing */
+  .post-content img,
+  .post-content img.post-media-content,
+  .post-content img.post-image-content {
     width: 100px !important;
     height: 100px !important;
-    margin: 6px 0 10px 12px;
+    max-width: 100px !important;
+    margin: 6px 0 10px 12px !important;
   }
   
   .post-content img.float-left {
-    margin: 6px 12px 10px 0;
+    margin: 6px 12px 10px 0 !important;
   }
   
   .post-content img.random-asset {
@@ -704,12 +684,20 @@ body {
 
 /* Extra small mobile devices - images stack instead of float */
 @media (max-width: 380px) {
-  .post-content img {
+  .post-content .post-line {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     width: 100% !important;
-    max-width: 200px !important;
+  }
+  
+  .post-content img,
+  .post-content img.post-media-content,
+  .post-content img.post-image-content {
+    width: 100% !important;
+    max-width: 180px !important;
     height: auto !important;
     float: none !important;
-    display: block;
+    display: block !important;
     margin: 12px auto !important;
   }
   
@@ -723,29 +711,23 @@ body {
     width: 48px !important;
     height: 48px !important;
     float: right !important;
-    display: inline-block;
+    display: inline-block !important;
     margin: 4px 0 8px 10px !important;
   }
   
   .post-video-wrapper {
-    display: block;
-    margin: 12px auto;
+    display: block !important;
+    float: none !important;
+    margin: 12px auto !important;
   }
   
   .post-video-thumbnail {
     width: 100% !important;
-    max-width: 200px !important;
+    max-width: 180px !important;
     height: auto !important;
   }
 }
 
-/* Mobile post-line styling - prevent JS margin overrides */
-@media (max-width: 480px) {
-  .post-content .post-line {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-}
 
 /* Extra small mobile devices */
 @media (max-width: 500px) {

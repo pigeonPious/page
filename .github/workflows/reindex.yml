@@ -2,12 +2,16 @@ name: Reindex Posts
 
 # Run on every push and PR so the posts index is kept up-to-date for any repo change.
 on:
-  push: {}
-  pull_request: {}
+  push:
+    branches: [main]
   # Run periodically in case pushes/PRs were missed or external changes need indexing
   schedule:
     - cron: '0 */6 * * *' # every 6 hours
   workflow_dispatch: {}
+
+# Need write permissions to push the updated index files
+permissions:
+  contents: write
 
 jobs:
   build:
