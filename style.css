@@ -739,6 +739,14 @@ body {
   }
 }
 
+/* Mobile post-line styling - prevent JS margin overrides */
+@media (max-width: 480px) {
+  .post-content .post-line {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
 /* Extra small mobile devices */
 @media (max-width: 500px) {
   /* Ensure star button is completely hidden on very small screens */
