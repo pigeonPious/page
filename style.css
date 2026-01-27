@@ -488,16 +488,15 @@ body {
   text-decoration: underline;
 }
 
-/* Layout - Centered content with fluid margins */
+/* Layout - Centered content with fluid padding */
 .page-container {
   min-height: calc(100vh - 24px);
   padding-top: calc(var(--unit) * 2);
   padding-bottom: calc(var(--unit) * 3);
-  padding-left: 0;
-  padding-right: 0;
+  /* Fluid horizontal padding that scales with viewport */
+  padding-left: max(20px, 10vw);
+  padding-right: max(20px, 10vw);
   box-sizing: border-box;
-  display: flex;
-  justify-content: center;
 }
 
 .main-column {
@@ -506,33 +505,34 @@ body {
   background: var(--bg);
   color: var(--fg);
   box-sizing: border-box;
-  /* Fluid horizontal margins that scale with viewport */
-  margin-left: max(20px, 10vw);
-  margin-right: max(20px, 10vw);
+  margin: 0 auto; /* Center the column */
 }
 
-/* Large screens - wider margins */
+/* Large screens - wider padding */
 @media (min-width: 1200px) {
-  .main-column {
-    margin-left: max(40px, 15vw);
-    margin-right: max(40px, 15vw);
+  .page-container {
+    padding-left: max(40px, 15vw);
+    padding-right: max(40px, 15vw);
   }
 }
 
 /* Medium screens */
 @media (max-width: 900px) {
-  .main-column {
-    margin-left: max(20px, 5vw);
-    margin-right: max(20px, 5vw);
+  .page-container {
+    padding-left: max(20px, 5vw);
+    padding-right: max(20px, 5vw);
   }
 }
 
 /* Small screens */
 @media (max-width: 600px) {
+  .page-container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
   .main-column {
-    margin-left: 16px;
-    margin-right: 16px;
-    max-width: calc(100vw - 32px);
+    max-width: 100%;
   }
   
   /* Ensure star button is hidden on very small mobile devices */
@@ -546,12 +546,12 @@ body {
   .page-container {
     padding-top: 80px;
     padding-bottom: 100px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   
   .main-column {
-    margin-left: 16px;
-    margin-right: 16px;
-    max-width: calc(100vw - 32px);
+    max-width: 100%;
   }
 }
 
@@ -560,12 +560,12 @@ body {
   .page-container {
     padding-top: 60px;
     padding-bottom: 80px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
   
   .main-column {
-    margin-left: 12px;
-    margin-right: 12px;
-    max-width: calc(100vw - 24px);
+    max-width: 100%;
   }
 }
 
