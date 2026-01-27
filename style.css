@@ -543,6 +543,30 @@ body {
   }
 }
 
+/* Mobile: let content fill the screen with small side margins */
+@media (max-width: 720px) {
+  .page-container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .main-column {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* On narrow screens, stacking media avoids ultra-narrow text columns */
+  .post-content img {
+    float: none !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0.6em 0 !important;
+    object-fit: contain !important;
+  }
+}
+
 /* Content */
 .post-header {
   margin-bottom: 10px;

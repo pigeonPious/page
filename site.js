@@ -2897,16 +2897,33 @@ class SimpleBlog {
         // Clear any inline margins previously applied
         const linesClear = contentElement.querySelectorAll('.post-line');
         linesClear.forEach(l => { l.style.marginLeft = ''; l.style.marginRight = ''; });
-        // Ensure images stack and are full width on mobile
-        const imgsMobile = contentElement.querySelectorAll('img.post-media-content, img.post-image-content, .post-video-wrapper');
-        imgsMobile.forEach(el => {
+        // Ensure media stacks and fills width on mobile (avoid text squeezing)
+        const setImp = (node, prop, value) => {
+          try { node && node.style && node.style.setProperty(prop, value, 'important'); } catch {}
+        };
+        const mediaMobile = contentElement.querySelectorAll('img.post-media-content, img.post-image-content, .post-video-wrapper');
+        mediaMobile.forEach(el => {
           try {
-            if (el.tagName === 'IMG') {
-              el.style.cssText = (el.style.cssText || '') + ';float:none!important;display:block!important;width:100%!important;max-width:100%!important;margin:0.6em 0!important;';
+            if (el && el.tagName === 'IMG') {
+              setImp(el, 'float', 'none');
+              setImp(el, 'display', 'block');
+              setImp(el, 'width', '100%');
+              setImp(el, 'max-width', '100%');
+              setImp(el, 'height', 'auto');
+              setImp(el, 'margin', '0.6em 0');
+              setImp(el, 'object-fit', 'contain');
             } else {
               // video wrapper
-              el.style.cssText = (el.style.cssText || '') + ';float:none!important;display:block!important;width:100%!important;max-width:100%!important;margin:0.6em 0!important;';
-              const vid = el.querySelector('video'); if (vid) { vid.style.width = '100%'; vid.style.height = 'auto'; }
+              setImp(el, 'float', 'none');
+              setImp(el, 'display', 'block');
+              setImp(el, 'width', '100%');
+              setImp(el, 'max-width', '100%');
+              setImp(el, 'margin', '0.6em 0');
+              const vid = el && el.querySelector ? el.querySelector('video') : null;
+              if (vid) {
+                vid.style.width = '100%';
+                vid.style.height = 'auto';
+              }
             }
           } catch (e) {}
         });
@@ -6378,6 +6395,26 @@ class SimpleBlog {
   // responsive style. Call once during setupResponsiveDesign().
   setupMobileTreeToggle(threshold = 720) {
     try {
+      // Expose threshold for other layout logic (e.g. image/text wrapping)
+      this._mobileThreshold = threshold;
+
+      // Toggle a body class so other code paths can reliably detect "mobile mode"
+      const applyMobileClass = () => {
+        try {
+          const isMobile = window.innerWidth <= threshold;
+          document.body.classList.toggle('pp-mobile', isMobile);
+        } catch {}
+      };
+      applyMobileClass();
+      // Keep class in sync on resize
+      try {
+        if (this._mobileClassResizeHandler) {
+          window.removeEventListener('resize', this._mobileClassResizeHandler);
+        }
+        this._mobileClassResizeHandler = this.debounce(applyMobileClass, 80);
+        window.addEventListener('resize', this._mobileClassResizeHandler);
+      } catch {}
+
       const styleId = 'pp-mobile-sitemap-style';
       let styleEl = document.getElementById(styleId);
       const css = `@media (max-width: ${threshold}px) { #site-map { display: none !important; } }`;
