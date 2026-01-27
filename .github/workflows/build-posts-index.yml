@@ -1,11 +1,11 @@
 name: Build Posts Index
 
+# Build posts index on any push/PR and on manual dispatch. This ensures new posts are
+# picked up when changes hit any branch or pull request.
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'posts/**'
-  workflow_dispatch:
+    push: {}
+    pull_request: {}
+    workflow_dispatch: {}
 
 jobs:
   build-posts-index:

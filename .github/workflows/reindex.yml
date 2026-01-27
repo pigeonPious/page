@@ -1,8 +1,13 @@
 name: Reindex Posts
 
+# Run on every push and PR so the posts index is kept up-to-date for any repo change.
 on:
-  push:
-    branches: [ main ]
+  push: {}
+  pull_request: {}
+  # Run periodically in case pushes/PRs were missed or external changes need indexing
+  schedule:
+    - cron: '0 */6 * * *' # every 6 hours
+  workflow_dispatch: {}
 
 jobs:
   build:
@@ -39,7 +44,8 @@ jobs:
             CHANGED=1
           fi
           if [[ $CHANGED -eq 1 ]]; then
-            git commit -m "ci: update indexes (posts-index.json, assets-images.json)"
+            # Add [skip ci] so this automated commit does not retrigger workflows repeatedly
+            git commit -m "ci: update indexes (posts-index.json, assets-images.json) [skip ci]"
             git push
           else
             echo "No index changes to commit"
