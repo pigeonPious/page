@@ -504,10 +504,10 @@ body {
   margin: 0 auto; /* Center the column */
 }
 
-/* Small screens */
+/* Small screens - double margins for better readability */
 @media (max-width: 600px) {
   .page-container {
-    padding: 80px 16px 100px 16px;
+    padding: 80px 32px 100px 32px;
   }
   
   .main-column {
@@ -523,7 +523,7 @@ body {
 /* Extra small mobile devices */
 @media (max-width: 380px) {
   .page-container {
-    padding: 60px 12px 80px 12px;
+    padding: 60px 24px 80px 24px;
   }
 }
 

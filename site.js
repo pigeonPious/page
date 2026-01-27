@@ -2884,22 +2884,14 @@ class SimpleBlog {
   adjustTextMarginsForImages(contentElement) {
     if (!contentElement) return;
     
-    // Mobile threshold - skip margin adjustments on narrow screens to prevent text squishing
-    // This matches the CSS breakpoint where we want simpler layout
-    const MOBILE_WIDTH = 600;
-    
-    // If we're on mobile, skip the per-line margin adjustments entirely
-    // Let CSS handle the layout - don't fight with it
-    if (window.innerWidth <= MOBILE_WIDTH) {
-      // Clear any previously applied inline margins
-      const linesClear = contentElement.querySelectorAll('.post-line');
-      linesClear.forEach(l => { 
-        l.style.marginLeft = ''; 
-        l.style.marginRight = ''; 
-      });
-      // Don't apply any inline styles to images - let CSS media queries handle it
-      return;
-    }
+    // Skip margin adjustments entirely - let CSS handle layout with floats
+    // The CSS float + margin approach works better than JS per-line margins
+    const linesClear = contentElement.querySelectorAll('.post-line');
+    linesClear.forEach(l => { 
+      l.style.marginLeft = ''; 
+      l.style.marginRight = ''; 
+    });
+    return;
 
     const lines = Array.from(contentElement.querySelectorAll('.post-line'));
     const imgs = Array.from(contentElement.querySelectorAll('img.post-media-content, img.post-image-content, .post-video-wrapper'));
