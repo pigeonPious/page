@@ -1625,6 +1625,7 @@ class SimpleBlog {
               const post = this.parseTxtPost(content, slug);
               if (post) {
                 post.path = relativePath; // keep exact relative path for media loading
+                post.mediaPaths = postData.mediaPaths || []; // copy media paths from index
                 posts.push(post);
               }
             }
