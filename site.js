@@ -2889,6 +2889,33 @@ class SimpleBlog {
   // For each line in the post, adjust left/right margins when floated images overlap that line
   adjustTextMarginsForImages(contentElement) {
     if (!contentElement) return;
+    // If we're in mobile layout, skip per-line margin adjustments to avoid
+    // compressing text when images should stack. Mobile layout is enabled by
+    // setupMobileTreeToggle which sets the 'pp-mobile' class on body.
+    try {
+      if (document.body.classList.contains('pp-mobile') || (this._mobileThreshold && window.innerWidth <= this._mobileThreshold)) {
+        // Clear any inline margins previously applied
+        const linesClear = contentElement.querySelectorAll('.post-line');
+        linesClear.forEach(l => { l.style.marginLeft = ''; l.style.marginRight = ''; });
+        // Ensure images stack and are full width on mobile
+        const imgsMobile = contentElement.querySelectorAll('img.post-media-content, img.post-image-content, .post-video-wrapper');
+        imgsMobile.forEach(el => {
+          try {
+            if (el.tagName === 'IMG') {
+              el.style.cssText = (el.style.cssText || '') + ';float:none!important;display:block!important;width:100%!important;max-width:100%!important;margin:0.6em 0!important;';
+            } else {
+              // video wrapper
+              el.style.cssText = (el.style.cssText || '') + ';float:none!important;display:block!important;width:100%!important;max-width:100%!important;margin:0.6em 0!important;';
+              const vid = el.querySelector('video'); if (vid) { vid.style.width = '100%'; vid.style.height = 'auto'; }
+            }
+          } catch (e) {}
+        });
+        return;
+      }
+    } catch (e) {
+      // If anything goes wrong, fall back to normal behavior
+      console.warn('adjustTextMarginsForImages mobile-detection failed', e);
+    }
 
     const lines = Array.from(contentElement.querySelectorAll('.post-line'));
     const imgs = Array.from(contentElement.querySelectorAll('img.post-media-content, img.post-image-content, .post-video-wrapper'));
