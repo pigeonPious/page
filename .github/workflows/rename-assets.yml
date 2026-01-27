@@ -7,6 +7,10 @@ on:
       - 'posts/**'
   workflow_dispatch:
 
+# Need write permissions to push renamed files
+permissions:
+  contents: write
+
 jobs:
   rename-assets:
     runs-on: ubuntu-latest
