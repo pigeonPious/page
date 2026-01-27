@@ -569,7 +569,7 @@ body {
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   float: right; /* Default float right for text wrapping */
-  margin: 8px -20% 12px 8px; /* Small left margin for text gap, negative right to push to edge */
+  margin: 8px 0 12px 10px; /* Tight margins: no right margin, small left gap */
   shape-outside: margin-box; /* Better text wrapping around the entire margin box */
   clear: none; /* Allow images to stack/overlap for magazine-style layout */
 }
@@ -590,7 +590,7 @@ body {
 /* Float-right images (explicit class) */
 .post-content img.float-right {
   float: right;
-  margin: 8px -20% 12px 8px; /* Small left margin for text gap, negative right to push to edge */
+  margin: 8px 0 12px 10px; /* Tight margins: no right margin, small left gap */
   shape-outside: margin-box; /* Better text wrapping */
 }
 
@@ -605,20 +605,38 @@ body {
   transform: scale(0.98);
 }
 
-/* Responsive behavior for mobile */
+/* Responsive behavior for mobile - images stack above text */
 @media (max-width: 640px) {
   .post-content img {
-    width: 120px !important;
-    height: 120px !important;
+    width: 100% !important;
+    max-width: 200px !important;
+    height: auto !important;
+    float: none !important;
+    display: block !important;
+    margin: 12px 0 16px 0 !important;
   }
+  
+  .post-content img.float-right,
+  .post-content img.float-left,
+  .post-content img.post-media-content,
+  .post-content img.post-image-content {
+    float: none !important;
+    display: block !important;
+    margin: 12px 0 16px 0 !important;
+  }
+  
   .post-content img.random-asset {
-    width: 42px !important; /* 35% of 120px (mobile proportional bump) */
+    width: 42px !important;
     height: 42px !important;
+    float: right !important;
+    display: inline-block !important;
+    margin: 4px 0 8px 10px !important;
   }
   
   .post-video-thumbnail {
-    width: 120px !important;
-    height: 120px !important;
+    width: 100% !important;
+    max-width: 200px !important;
+    height: auto !important;
   }
   
   .post-video-play-button {
@@ -641,7 +659,7 @@ body {
   }
 }
 
-/* Small mobile devices - smaller images and prevent JS margin overrides */
+/* Small mobile devices - images stack above text */
 @media (max-width: 480px) {
   /* Prevent JS from applying inline margins to post lines */
   .post-content .post-line {
@@ -649,30 +667,6 @@ body {
     margin-right: 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
-  }
-  
-  /* Constrain images to prevent text squishing */
-  .post-content img,
-  .post-content img.post-media-content,
-  .post-content img.post-image-content {
-    width: 100px !important;
-    height: 100px !important;
-    max-width: 100px !important;
-    margin: 6px 0 10px 12px !important;
-  }
-  
-  .post-content img.float-left {
-    margin: 6px 12px 10px 0 !important;
-  }
-  
-  .post-content img.random-asset {
-    width: 36px !important;
-    height: 36px !important;
-  }
-  
-  .post-video-thumbnail {
-    width: 100px !important;
-    height: 100px !important;
   }
   
   .post-video-play-button {
