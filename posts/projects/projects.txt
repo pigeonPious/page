@@ -1,4 +1,4 @@
-# Pious Pigeon Projects [FLAGS:_Projects]
+# Pious Pigeon Projects [FLAGS:_projects]
 
 [##Bluesky:https://bsky.app/profile/piouspigeon.bsky.social]
 
