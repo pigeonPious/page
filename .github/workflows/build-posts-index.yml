@@ -15,119 +15,18 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
       with:
-        python-version: '3.11'
+        node-version: '20'
         
     - name: Build Posts Index
-      run: |
-        python3 -c "
-        import os
-        import json
-        import re
-        from datetime import datetime
-        
-        def parse_txt_post(file_path):
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                lines = content.split('\n')
-                title = 'Untitled'
-                date = datetime.now().strftime('%Y-%m-%d')
-                keywords = 'general'
-                slug = os.path.splitext(os.path.basename(file_path))[0]
-                
-                # Parse metadata
-                in_content = False
-                for line in lines:
-                    trimmed_line = line.strip()
-                    
-                    if not in_content:
-                        if trimmed_line.startswith('# '):
-                            title = trimmed_line[2:].strip()
-                            continue
-                        elif trimmed_line.startswith('Title: '):
-                            title = trimmed_line[7:].strip()
-                            continue
-                        elif trimmed_line.startswith('Date: '):
-                            date = trimmed_line[6:].strip()
-                            continue
-                        elif trimmed_line.startswith('Keywords: '):
-                            keywords = trimmed_line[10:].strip()
-                            continue
-                        elif trimmed_line == '' or trimmed_line.startswith('---'):
-                            in_content = True
-                            continue
-                        elif title == 'Untitled' and trimmed_line != '':
-                            title = trimmed_line
-                            continue
-                    
-                    # Check for [FLAGS: ...] syntax in title and content
-                    flags_match = title.match(r'\[FLAGS:\s*([^\]]+)\]')
-                    if flags_match:
-                        extracted_flags = flags_match[1].strip()
-                        if keywords and keywords != 'general':
-                            keywords = f'{keywords}, {extracted_flags}'
-                        else:
-                            keywords = extracted_flags
-                        title = re.sub(r'\[FLAGS:\s*[^\]]+\]', '', title).strip()
-                    
-                    # Also check for [FLAGS: ...] in content
-                    content_flags_match = re.search(r'\[FLAGS:\s*([^\]]+)\]', content)
-                    if content_flags_match:
-                        extracted_content_flags = content_flags_match[1].strip()
-                        if keywords and keywords != 'general':
-                            keywords = f'{keywords}, {extracted_content_flags}'
-                        else:
-                            keywords = extracted_content_flags
-                
-                return {
-                    'slug': slug,
-                    'title': title,
-                    'date': date,
-                    'keywords': keywords,
-                    'filename': os.path.basename(file_path),
-                    'last_modified': datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat()
-                }
-            except Exception as e:
-                print(f'Error parsing {file_path}: {e}')
-                return None
-        
-        # Scan posts directory
-        posts_dir = 'posts'
-        posts_index = []
-        
-        if os.path.exists(posts_dir):
-            for filename in os.listdir(posts_dir):
-                if filename.endswith('.txt'):
-                    file_path = os.path.join(posts_dir, filename)
-                    post_data = parse_txt_post(file_path)
-                    if post_data:
-                        posts_index.append(post_data)
-        
-        # Sort by date (newest first)
-        posts_index.sort(key=lambda x: x['date'], reverse=True)
-        
-        # Create index with metadata
-        index_data = {
-            'generated_at': datetime.now().isoformat(),
-            'total_posts': len(posts_index),
-            'posts': posts_index
-        }
-        
-        # Write index file
-        with open('posts-index.json', 'w', encoding='utf-8') as f:
-            json.dump(index_data, f, indent=2, ensure_ascii=False)
-        
-        print(f'Posts index built successfully with {len(posts_index)} posts')
-        "
+      run: node scripts/generate-posts-index.js
         
     - name: Commit and push posts index
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add posts-index.json
+        git add posts-index.json assets-images.json
         git diff --quiet && git diff --staged --quiet || git commit -m "Update posts index [skip ci]"
         git push
