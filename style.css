@@ -529,12 +529,12 @@ body {
 
 @media (max-width: 600px) {
   .page-container {
-    padding: calc(var(--unit) * 2) calc(var(--unit) * 0.5) calc(var(--unit) * 3) calc(var(--unit) * 0.5);
+    padding: calc(var(--unit) * 2) 16px calc(var(--unit) * 3) 16px;
   }
   
   .main-column {
-    width: calc(100vw - calc(var(--unit) * 1));
-    max-width: calc(var(--unit) * 6);
+    width: 100%;
+    max-width: 100%;
   }
   
   /* Ensure star button is hidden on very small mobile devices */
