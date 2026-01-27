@@ -1897,27 +1897,29 @@ class SimpleBlog {
   }
 
   processPostContent(content, slug) {
-        // Process hover notes: [DISPLAY TEXT:HOVERNOTE CONTENT HERE]
-    content = content.replace(/\[([^:]+):([^\]]+)\]/g, (match, displayText, hoverContent) => {
-      return `<span class="hover-note" data-hover="${hoverContent.trim()}">${displayText.trim()}</span>`;
-    });
-    
-    // Process images with alignment options
+    // Process images first to avoid accidental interpretation as hover-notes/links
     let imageIndex = 0;
-    
+
+    // Support explicit filename: [IMAGE:filename.gif] or [IMAGE:filename.png]
+    content = content.replace(/\[IMAGE:([^\]]+)\]/g, (match, filename) => {
+      imageIndex++;
+      const safeName = filename.trim();
+      return `<div class="post-image post-image-right" data-post="${slug}" data-index="${imageIndex}" data-filename="${safeName}"></div>`;
+    });
+
     // Process [IMAGER] - right aligned (default)
     content = content.replace(/\[IMAGER\]/g, () => {
       imageIndex++;
       return `<div class="post-image post-image-right" data-post="${slug}" data-index="${imageIndex}"></div>`;
     });
-    
+
     // Process [IMAGEL] - left aligned
     content = content.replace(/\[IMAGEL\]/g, () => {
       imageIndex++;
       return `<div class="post-image post-image-left" data-post="${slug}" data-index="${imageIndex}"></div>`;
     });
-    
-    // Process [IMAGE] - right aligned (default)
+
+    // Process bare [IMAGE] - right aligned (default)
     content = content.replace(/\[IMAGE\]/g, () => {
       imageIndex++;
       return `<div class="post-image post-image-right" data-post="${slug}" data-index="${imageIndex}"></div>`;
@@ -1926,6 +1928,14 @@ class SimpleBlog {
     // Process [R] - random image from assets/images (25% smaller)
     content = content.replace(/\[R\]/g, () => {
       return `<div class="post-random-image post-image-right" data-rand="1"></div>`;
+    });
+
+    // Now process hover notes: [DISPLAY TEXT:HOVERNOTE CONTENT HERE]
+    // Keep this after image processing so constructs like [IMAGE:foo.gif] don't get
+    // interpreted as a hover-note. Skip tokens that are image commands (IMAGE, IMAGER,
+    // IMAGEL, R) so those are not treated as hover-notes.
+    content = content.replace(/\[(?!\s*(?:IMAGE:|IMAGE\b|IMAGER\b|IMAGEL\b|R\b))([^:\]]+):([^\]]+)\]/gi, (match, displayText, hoverContent) => {
+      return `<span class="hover-note" data-hover="${hoverContent.trim()}">${displayText.trim()}</span>`;
     });
 
 
@@ -2367,17 +2377,41 @@ class SimpleBlog {
         console.log(`loadAndDisplayImages: Found ${imagePlaceholders.length} image placeholders`);
         
         imagePlaceholders.forEach((placeholder, index) => {
-          if (index < images.length) {
-            // Use the image at this index
-            const image = images[index];
-            console.log(`loadAndDisplayImages: Displaying media ${index}: ${image.name}`);
-            this.displayMedia(placeholder, image.url, image.name, image.type);
+          const requestedFilename = placeholder.dataset && placeholder.dataset.filename ? placeholder.dataset.filename.trim() : null;
+
+          if (requestedFilename) {
+            // Try to find a matching image by name from the discovered images
+            const match = images.find(img => img.name === requestedFilename || decodeURIComponent(img.name) === requestedFilename);
+            if (match) {
+              console.log(`loadAndDisplayImages: Found explicit filename match for placeholder ${index}: ${match.name}`);
+              this.displayMedia(placeholder, match.url, match.name, match.type);
+              return;
+            }
+
+            // If not found, fall back to constructing a URL relative to the post folder
+            const fallbackUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/posts/${slug}/${encodeURIComponent(requestedFilename)}`;
+            const ext = (requestedFilename.split('.').pop() || '').toLowerCase();
+            console.log(`loadAndDisplayImages: Using fallback URL for explicit filename ${requestedFilename}: ${fallbackUrl}`);
+            this.displayMedia(placeholder, fallbackUrl, requestedFilename, ext);
+            return;
+          }
+
+          if (images.length > 0) {
+            if (index < images.length) {
+              // Use the image at this index
+              const image = images[index];
+              console.log(`loadAndDisplayImages: Displaying media ${index}: ${image.name}`);
+              this.displayMedia(placeholder, image.url, image.name, image.type);
+            } else {
+              // If we have more placeholders than images, randomly select from available images
+              const randomIndex = Math.floor(Math.random() * images.length);
+              const image = images[randomIndex];
+              console.log(`loadAndDisplayImages: Displaying random media for placeholder ${index}: ${image.name}`);
+              this.displayMedia(placeholder, image.url, image.name, image.type);
+            }
           } else {
-            // If we have more placeholders than images, randomly select from available images
-            const randomIndex = Math.floor(Math.random() * images.length);
-            const image = images[randomIndex];
-            console.log(`loadAndDisplayImages: Displaying random media for placeholder ${index}: ${image.name}`);
-            this.displayMedia(placeholder, image.url, image.name, image.type);
+            // No discovered images; if placeholder had no explicit filename, leave it alone and log
+            console.log(`loadAndDisplayImages: No images available for post ${slug}, placeholder ${index} left empty`);
           }
         });
       } else {
@@ -2712,6 +2746,12 @@ class SimpleBlog {
     
     if (contentElement) {
       contentElement.innerHTML = post.content || '';
+      // Wrap lines into block elements so we can adjust margins per-line when images overlap
+      try {
+        this.wrapLinesForDynamicImageWrap(contentElement);
+      } catch (e) {
+        console.warn('wrapLinesForDynamicImageWrap failed', e);
+      }
       
       // Add flashing cursor at the end of the post, ensuring it's after text content
       const cursor = document.createElement('span');
@@ -2754,6 +2794,23 @@ class SimpleBlog {
       this.loadAndDisplayImages(post.slug, contentElement);
       // Load and display random asset images for [R]
       this.loadAndDisplayRandomImages(contentElement);
+
+      // Watch for image placeholders/media being inserted and re-run wrapping/adjustment
+      try {
+        const observer = new MutationObserver((mutations, obs) => {
+          const found = contentElement.querySelector('img.post-media-content, img.post-image-content, .post-video-wrapper');
+          if (found) {
+            obs.disconnect();
+            try { this.wrapLinesForDynamicImageWrap(contentElement); } catch (e) {}
+            try { this.adjustTextMarginsForImages(contentElement); } catch (e) {}
+          }
+        });
+        observer.observe(contentElement, { childList: true, subtree: true });
+        // Safety timeout to disconnect observer after 3s
+        setTimeout(() => observer.disconnect(), 3000);
+      } catch (e) {
+        // ignore
+      }
       
       // Setup image click handlers for full preview
       this.setupImageClickHandlers(contentElement);
@@ -2768,6 +2825,16 @@ class SimpleBlog {
         padding: 0;
       `;
       contentElement.appendChild(clearfix);
+
+      // Adjust per-line margins to avoid text drawing behind floated images
+      try {
+        // Small delay to allow images to be inserted/loaded
+        setTimeout(() => {
+          this.adjustTextMarginsForImages(contentElement);
+        }, 50);
+      } catch (e) {
+        console.warn('adjustTextMarginsForImages initial call failed', e);
+      }
     } else {
       console.error('contentElement not found!');
     }
@@ -2783,6 +2850,122 @@ class SimpleBlog {
     this.siteMapManuallyHidden = false;
     
     console.log('Post displayed successfully:', post.title);
+  }
+
+  // Wrap content lines (split on <br>) into block elements so we can adjust margins per-line
+  wrapLinesForDynamicImageWrap(contentElement) {
+    if (!contentElement) return;
+    // Preserve any existing images/elements and split on <br> tags
+    const raw = contentElement.innerHTML || '';
+    // Use a regex to split on <br> and variations
+    const parts = raw.split(/<br\s*\/?>/i);
+    // Replace content with block lines
+    contentElement.innerHTML = '';
+    parts.forEach((part, idx) => {
+      const line = document.createElement('div');
+      line.className = 'post-line';
+      // Preserve internal inline HTML and whitespace
+      line.style.whiteSpace = 'pre-wrap';
+      // If empty, add a zero-width space so the line has height
+      line.innerHTML = (part && part.trim() !== '') ? part : '&zwnj;';
+      contentElement.appendChild(line);
+    });
+  }
+
+  // For each line in the post, adjust left/right margins when floated images overlap that line
+  adjustTextMarginsForImages(contentElement) {
+    if (!contentElement) return;
+
+    const lines = Array.from(contentElement.querySelectorAll('.post-line'));
+    const imgs = Array.from(contentElement.querySelectorAll('img.post-media-content, img.post-image-content, .post-video-wrapper'));
+
+    if (lines.length === 0 || imgs.length === 0) return;
+
+    const contentRect = contentElement.getBoundingClientRect();
+
+    // Precompute image regions in content-relative coords
+    const imageRegions = imgs.map(el => {
+      const r = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const floatDir = (style.cssFloat || style.getPropertyValue('float') || '').toLowerCase();
+      return {
+        el,
+        left: r.left - contentRect.left,
+        top: r.top - contentRect.top,
+        right: r.right - contentRect.left,
+        bottom: r.bottom - contentRect.top,
+        width: r.width,
+        height: r.height,
+        floatDir
+      };
+    });
+
+    // For each line, compute required left/right margins from overlapping images
+    lines.forEach(line => {
+      // Reset prior inline margins
+      line.style.marginLeft = '';
+      line.style.marginRight = '';
+
+      const lr = { left: 0, right: 0 };
+      const lRect = line.getBoundingClientRect();
+      const lineTop = lRect.top - contentRect.top;
+      const lineBottom = lRect.bottom - contentRect.top;
+
+      imageRegions.forEach(img => {
+        const intersects = !(lineBottom <= img.top || lineTop >= img.bottom);
+        if (intersects) {
+          // If image is floated right, push right margin; if left, push left margin
+          if (img.floatDir === 'right' || elHasClass(img.el, 'post-image-right')) {
+            lr.right = Math.max(lr.right, img.width + 12); // 12px extra gap
+          } else if (img.floatDir === 'left' || elHasClass(img.el, 'post-image-left')) {
+            lr.left = Math.max(lr.left, img.width + 12);
+          } else {
+            // Fallback: determine from element's bounding position relative to content center
+            const imgCenter = (img.left + img.right) / 2;
+            const contentCenter = contentRect.width / 2;
+            if (imgCenter >= contentCenter) lr.right = Math.max(lr.right, img.width + 12);
+            else lr.left = Math.max(lr.left, img.width + 12);
+          }
+        }
+      });
+
+      if (lr.left > 0) line.style.marginLeft = lr.left + 'px';
+      if (lr.right > 0) line.style.marginRight = lr.right + 'px';
+    });
+
+    // Helper to check class on possibly non-element region.el
+    function elHasClass(el, cls) {
+      try { return el && el.classList && el.classList.contains(cls); } catch { return false; }
+    }
+
+    // Re-run on window resize (debounced)
+    if (this._textWrapResizeHandler) window.removeEventListener('resize', this._textWrapResizeHandler);
+  this._textWrapResizeHandler = this.debounce(() => this.adjustTextMarginsForImages(contentElement), 120);
+    window.addEventListener('resize', this._textWrapResizeHandler);
+
+    // Also observe image load events to re-run when they finish
+    imageRegions.forEach(ir => {
+      const imgEl = ir.el;
+      if (imgEl && imgEl.tagName === 'IMG') {
+        if (!imgEl._wrapListenerAttached) {
+          imgEl.addEventListener('load', () => this.adjustTextMarginsForImages(contentElement));
+          imgEl._wrapListenerAttached = true;
+        }
+      }
+    });
+  }
+
+  // Simple debounce utility
+  
+  
+  
+  
+  debounce(fn, wait) {
+    let t = null;
+    return (...args) => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => { t = null; fn.apply(this, args); }, wait);
+    };
   }
 
   // Open the currently viewed post in GitHub
@@ -5208,6 +5391,39 @@ class SimpleBlog {
             
             if (posts.length > 0) {
               console.log('Site map: Successfully loaded', posts.length, 'posts from static index');
+              // Try to discover any posts missing from the static index via the GitHub Tree API
+              try {
+                const treeResp = await fetch('https://api.github.com/repos/pigeonPious/page/git/trees/main?recursive=1');
+                if (treeResp.ok) {
+                  const treeData = await treeResp.json();
+                  const txtFiles = (treeData.tree || []).filter(it => it.path && it.path.startsWith('posts/') && it.path.toLowerCase().endsWith('.txt'));
+                  const existingSlugs = new Set(posts.map(p => p.slug));
+                  for (const f of txtFiles) {
+                    const relative = f.path.replace(/^posts\//, '');
+                    const slug = this.computeSlugFromPostPath(relative);
+                    if (!existingSlugs.has(slug)) {
+                      try {
+                        const rawUrl = `https://raw.githubusercontent.com/pigeonPious/page/main/${f.path}?_cb=${Date.now()}`;
+                        const resp = await fetch(rawUrl);
+                        if (resp.ok) {
+                          const txt = await resp.text();
+                          const parsed = this.parseTxtPost(txt, slug);
+                          if (parsed) {
+                            posts.push(parsed);
+                            existingSlugs.add(slug);
+                            console.log('Site map: Merged missing post from tree API:', parsed.title || slug);
+                          }
+                        }
+                      } catch (e) {
+                        // ignore per-file errors
+                      }
+                    }
+                  }
+                }
+              } catch (e) {
+                // ignore tree API failure
+              }
+
               return posts;
             }
           }
