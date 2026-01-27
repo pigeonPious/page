@@ -508,7 +508,14 @@ class SimpleBlog {
     
     // Update on window resize
     window.addEventListener('resize', updateNavigationText);
-    
+
+    // Ensure sitemap is hidden on small screens
+    try {
+      this.setupMobileTreeToggle(720);
+    } catch (e) {
+      console.warn('setupMobileTreeToggle call failed', e);
+    }
+
     console.log('Responsive design setup complete');
   }
 
@@ -2841,6 +2848,13 @@ class SimpleBlog {
     
     // Setup hover notes for the displayed post
     this.setupHoverNotes();
+    // Ensure hover-note elements inside the wrapped post content have
+    // reliable click/hover handlers and z-index so they remain clickable
+    try {
+      this.attachHoverNoteHandlers(contentElement);
+    } catch (e) {
+      console.warn('attachHoverNoteHandlers failed', e);
+    }
     
     // Add navigation controls
     this.addPostNavigation(post);
@@ -6277,6 +6291,80 @@ class SimpleBlog {
     const tooltip = document.getElementById('hoverNotePreview');
     if (tooltip) {
       tooltip.style.display = 'none';
+    }
+  }
+
+  // Ensure hover-note spans inside a specific content element have proper
+  // event handlers and styling after the DOM is modified (wrapping/line split)
+  attachHoverNoteHandlers(contentElement) {
+    if (!contentElement) return;
+
+    // Find hover-note elements inside the content area
+    const hoverNotes = contentElement.querySelectorAll('.hover-note');
+    hoverNotes.forEach(el => {
+      try {
+        // Make sure the element is clickable and above other content
+        el.style.position = el.style.position || 'relative';
+        el.style.zIndex = el.style.zIndex || 20;
+        el.style.cursor = 'pointer';
+        el.style.pointerEvents = 'auto';
+
+        // Remove old listeners to avoid duplication
+        el.removeEventListener('mouseenter', this.showHoverNote);
+        el.removeEventListener('mouseleave', this.hideHoverNote);
+        el.removeEventListener('mousemove', this.updateHoverNotePosition);
+        el.removeEventListener('click', this.handleHoverNoteClick);
+
+        // Attach fresh handlers bound to this instance
+        el.addEventListener('mouseenter', (e) => this.showHoverNote(e));
+        el.addEventListener('mouseleave', () => this.hideHoverNote());
+        el.addEventListener('mousemove', (e) => this.updateHoverNotePosition(e));
+
+        // Only attach click handler if the hover-note text contains a URL
+        const noteText = el.getAttribute('data-note') || el.getAttribute('data-hover') || '';
+        if (noteText.match(/https?:\/\//i)) {
+          el.addEventListener('click', (e) => this.handleHoverNoteClick(e));
+        }
+      } catch (err) {
+        console.warn('attachHoverNoteHandlers: failed for element', el, err);
+      }
+    });
+
+    // Observe for new hover-note nodes being added by later transforms and
+    // reattach handlers (debounced)
+    if (!contentElement._hoverNoteObserverAttached) {
+      const reattach = this.debounce(() => this.attachHoverNoteHandlers(contentElement), 150);
+      const mo = new MutationObserver((mutations) => {
+        let added = false;
+        for (const m of mutations) {
+          if (m.addedNodes && m.addedNodes.length) { added = true; break; }
+        }
+        if (added) reattach();
+      });
+      mo.observe(contentElement, { childList: true, subtree: true });
+      contentElement._hoverNoteObserverAttached = true;
+      contentElement._hoverNoteObserver = mo;
+    }
+  }
+
+  // Hide the sitemap automatically on narrow viewports by injecting a small
+  // responsive style. Call once during setupResponsiveDesign().
+  setupMobileTreeToggle(threshold = 720) {
+    try {
+      const styleId = 'pp-mobile-sitemap-style';
+      let styleEl = document.getElementById(styleId);
+      const css = `@media (max-width: ${threshold}px) { #site-map { display: none !important; } }`;
+      if (styleEl) {
+        if (styleEl.textContent !== css) styleEl.textContent = css;
+        return;
+      }
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      styleEl.textContent = css;
+      document.head.appendChild(styleEl);
+      console.log('setupMobileTreeToggle: injected mobile sitemap CSS for threshold', threshold);
+    } catch (e) {
+      console.warn('setupMobileTreeToggle failed', e);
     }
   }
   showMenuStyle1Message(message, type = 'info') {
