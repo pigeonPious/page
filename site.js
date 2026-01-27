@@ -2539,15 +2539,8 @@ class SimpleBlog {
       img.src = mediaUrl;
       img.alt = mediaName || 'Post image';
       img.className = `post-media-content post-image-content ${alignmentClasses.join(' ')}`;
-      img.style.cssText = `
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 1em 0;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        cursor: pointer;
-      `;
+      // Let CSS handle styling - only set cursor for click interaction
+      img.style.cursor = 'pointer';
       
       // Add click handler for full preview
       img.addEventListener('click', (e) => {
