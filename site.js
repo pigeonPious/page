@@ -6192,7 +6192,9 @@ class SimpleBlog {
   }
 
   handleHoverNoteClick(event) {
-    const element = event.target;
+    // Use currentTarget so clicks on inner children (e.g. styled spans) still reference
+    // the hover-note element that carries the data-hover/data-note attribute.
+    const element = event.currentTarget || event.target;
     const noteText = element.getAttribute('data-note') || element.getAttribute('data-hover');
     
     if (!noteText) return;
