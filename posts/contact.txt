@@ -1,8 +1,6 @@
 # Contact [FLAGS:_Contact]
 
 
-Please reach out: 
-
   |          [##Bluesky:https://bsky.app/profile/piouspigeon.bsky.social]
   |          [##Itch:https://piouspigeon.itch.io]
   |          [##LinkTree:https://linktr.ee/PiousPigeon]
