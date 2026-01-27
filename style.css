@@ -673,6 +673,14 @@ body {
   }
 }
 
+/* Mobile layout - prevent JS margin adjustments from squishing text */
+@media (max-width: 600px) {
+  .post-content .post-line {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
 /* Small mobile devices - smaller images and prevent JS margin overrides */
 @media (max-width: 480px) {
   /* Prevent JS from applying inline margins to post lines */
