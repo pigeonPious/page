@@ -1897,7 +1897,10 @@ class SimpleBlog {
   }
 
   processPostContent(content, slug) {
-
+        // Process hover notes: [DISPLAY TEXT:HOVERNOTE CONTENT HERE]
+    content = content.replace(/\[([^:]+):([^\]]+)\]/g, (match, displayText, hoverContent) => {
+      return `<span class="hover-note" data-hover="${hoverContent.trim()}">${displayText.trim()}</span>`;
+    });
     
     // Process images with alignment options
     let imageIndex = 0;
@@ -1925,10 +1928,7 @@ class SimpleBlog {
       return `<div class="post-random-image post-image-right" data-rand="1"></div>`;
     });
 
-        // Process hover notes: [DISPLAY TEXT:HOVERNOTE CONTENT HERE]
-    content = content.replace(/\[([^:]+):([^\]]+)\]/g, (match, displayText, hoverContent) => {
-      return `<span class="hover-note" data-hover="${hoverContent.trim()}">${displayText.trim()}</span>`;
-    });
+
     
     // Final cleanup: Remove any remaining [FLAGS: ...] syntax that might have been missed
     content = content.replace(/\[FLAGS:\s*[^\]]+\]/g, '');
