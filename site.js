@@ -2890,23 +2890,38 @@ class SimpleBlog {
   adjustTextMarginsForImages(contentElement) {
     if (!contentElement) return;
     // If we're in mobile layout, skip per-line margin adjustments to avoid
-    // compressing text when images should stack. Mobile layout is enabled by
-    // setupMobileTreeToggle which sets the 'pp-mobile' class on body.
+    // compressing text when images should stack. 
+    // Mobile threshold matches CSS breakpoint at 480px where images get smaller margins
+    const MOBILE_THRESHOLD = 480;
     try {
-      if (document.body.classList.contains('pp-mobile') || (this._mobileThreshold && window.innerWidth <= this._mobileThreshold)) {
+      if (window.innerWidth <= MOBILE_THRESHOLD) {
         // Clear any inline margins previously applied
         const linesClear = contentElement.querySelectorAll('.post-line');
         linesClear.forEach(l => { l.style.marginLeft = ''; l.style.marginRight = ''; });
-        // Ensure images stack and are full width on mobile
+        // On very narrow screens (matching CSS 380px breakpoint), images stack
+        // Let CSS handle image styling - just clear any inline overrides
         const imgsMobile = contentElement.querySelectorAll('img.post-media-content, img.post-image-content, .post-video-wrapper');
         imgsMobile.forEach(el => {
           try {
+            // Clear any inline styles that might conflict with CSS media queries
             if (el.tagName === 'IMG') {
-              el.style.cssText = (el.style.cssText || '') + ';float:none!important;display:block!important;width:100%!important;max-width:100%!important;margin:0.6em 0!important;';
+              el.style.float = '';
+              el.style.display = '';
+              el.style.width = '';
+              el.style.maxWidth = '';
+              el.style.margin = '';
             } else {
-              // video wrapper
-              el.style.cssText = (el.style.cssText || '') + ';float:none!important;display:block!important;width:100%!important;max-width:100%!important;margin:0.6em 0!important;';
-              const vid = el.querySelector('video'); if (vid) { vid.style.width = '100%'; vid.style.height = 'auto'; }
+              // video wrapper - clear inline styles
+              el.style.float = '';
+              el.style.display = '';
+              el.style.width = '';
+              el.style.maxWidth = '';
+              el.style.margin = '';
+              const vid = el.querySelector('video'); 
+              if (vid) { 
+                vid.style.width = ''; 
+                vid.style.height = ''; 
+              }
             }
           } catch (e) {}
         });
