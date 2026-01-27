@@ -23,6 +23,16 @@
       "mediaPaths": []
     },
     {
+      "slug": "projects",
+      "title": "Pious Pigeon Projects [FLAGS:_projects]",
+      "date": "2025-09-07",
+      "keywords": "",
+      "filename": "projects.txt",
+      "path": "projects.txt",
+      "last_modified": "2025-09-07T05:48:21.912Z",
+      "mediaPaths": []
+    },
+    {
       "slug": "general/_01",
       "title": "Untitled",
       "date": "2025-09-07",
